@@ -5,5 +5,6 @@ urlpatterns = [
 
   
     path('CreateloginApi/', views.CreateLoginApi),
-    path('login/', views.loginApi),
+    path('Login/', views.loginApi),
+    url(r'^Login/(?P<UserId>[0-9a-zA-Z\-]+)$', views.UserLoginApiById),
 ]

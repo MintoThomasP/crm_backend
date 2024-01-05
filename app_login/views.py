@@ -7,7 +7,7 @@ from app_default.serializers import UserTypeSerializer
 from app_login.models import Login
 from django.contrib.auth import logout
 from django.shortcuts import redirect
-from app_login.serializers import LoginAuthSerializer, LoginSaveSerializer, LoginUpdateSerializer
+from app_login.serializers import LoginAuthSerializer, LoginSaveSerializer, LoginSerializer, LoginUpdateSerializer
 from app_staff.models import Staff
 from app_staff.serializers import StaffSerializer
 # Create your views here.
@@ -34,18 +34,32 @@ def CreateLoginApi(request):
             logSerializer.save()
             return JsonResponse("Update successfully", safe=False)
         return JsonResponse("Failed to Update", safe=False)
+@csrf_exempt
+def UserLoginApiById(request, UserId=""):
+    try:
+        if request.method == 'GET':
+            userLogin = Login.objects.get(UserId=UserId)
+            userLoginSerializer = LoginSerializer(userLogin)
+            return JsonResponse(userLoginSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            userLogin = Login.objects.get(UserId=UserId)
+            userLogin.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
 
 
 @csrf_exempt
 def loginApi(request):
-    try:
+    # try:
         if request.method == 'POST':
             login_data = JSONParser().parse(request)
             login = Login.objects.filter(
                 EmailId=login_data['EmailId'], Password=login_data['Password'], UserType=login_data['UserType']).exclude(Password__isnull=True).exclude(Password__exact='')
             Data = []
             login_serializer = LoginAuthSerializer(login, many=True)
-            # return JsonResponse(login_serializer.data[0], safe=False)
+          
             UserData = []
             if not login_serializer.data:
                 login = Login.objects.filter(
@@ -53,13 +67,11 @@ def loginApi(request):
                 login_serializer = LoginAuthSerializer(login, many=True)
                 if not login_serializer.data:
                     Data.append('FAILED')
-                    Data.append('')
                     Data.append(
                         'Please check the username/password and try again.')
                 else:
                     Data.append('FAILED')
                     Data.append(login_serializer.data[0])
-                   
             else:
                 userType = UserType.objects.get(UserTypeId=login_data['UserType'])
                 userType_serializer = UserTypeSerializer(userType)
@@ -67,15 +79,15 @@ def loginApi(request):
                 message=""
                 if userType_serializer.data['UserType'] == 'Staff':
                     staff = Staff.objects.get(
-                        staffId=login_serializer.data[0]['UserId'])
+                        StaffId=login_serializer.data[0]['UserId'])
                     staff_serializer = StaffSerializer(staff)
-                    if staff_serializer.data['Status'] == -1:
-                        status="FAILED"
-                        message='Your account has been blocked. Please contact administrator.'
-                    else:
-                        status="SUCCESS"
-                        message='Successfully logged in'
-                        UserData = staff_serializer.data
+                    # if staff_serializer.data['Status'] == -1:
+                    #     status="FAILED"
+                    #     message='Your account has been blocked. Please contact administrator.'
+                    # else:
+                    status="SUCCESS"
+                    message='Successfully logged in'
+                    UserData = staff_serializer.data
                 else:
                     status="SUCCESS"
                     message='Successfully logged in'
@@ -94,5 +106,5 @@ def loginApi(request):
                 login_serializer.save()
                 return JsonResponse("Update successfully", safe=False)
             return JsonResponse("Failed to Update", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
