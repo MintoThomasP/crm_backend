@@ -26,7 +26,7 @@ class ProjectTask(models.Model):
     Title=models.CharField(blank=True, null=True, max_length=300)
     Description=models.TextField(blank=True, null=True)
     Duration=models.IntegerField(default=0)
-    Status=models.ForeignKey('app_default.TaskStatus',on_delete=models.CASCADE)
+    Status=models.CharField(blank=True, null=True, max_length=300)
     CreatedDate=models.DateTimeField(editable=False, default=datetime.now)
     StartDate=models.DateTimeField(null=True, default=None)
     EndDate=models.DateTimeField(null=True, default=None)
