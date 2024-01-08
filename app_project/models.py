@@ -30,8 +30,8 @@ class ProjectTask(models.Model):
     CreatedDate=models.DateTimeField(editable=False, default=datetime.now)
     StartDate=models.CharField(blank=True, null=True, max_length=100)
     EndDate=models.CharField(blank=True, null=True, max_length=100)
-    TaskPoint=models.CharField(default="0", max_length=3)
-    CompletionPoint=models.CharField(default="0", max_length=3)
+    TaskPoint=models.IntegerField(default=0)
+    CompletionPoint=models.IntegerField(default=0)
 
 
 class TaskReviews(models.Model):
