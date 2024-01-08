@@ -2,6 +2,8 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
+from app_default.models import TaskStatus
+from app_default.serializers import TaskStatusSerializer
 
 from app_project.models import Project, ProjectTask, TaskReviews
 from app_project.serializers import ProjectSerializer, ProjectTaskSerializer, TaskReviewsSerializer
@@ -117,7 +119,13 @@ def ProjectTaskApiByProjectId(request, ProjectId=""):
                     ProjectId=ProjectId)
             projectTaskSerializer = ProjectTaskSerializer(
                     projectTask,many=True)
-            return JsonResponse(projectTaskSerializer.data, safe=False)
+            taskStatusName=[]
+            for row in projectTaskSerializer.data:
+                taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                row['StatusName']=taskStatusSerializer.data['Status']
+                taskStatusName.append(row)
+            return JsonResponse(taskStatusName, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
@@ -131,7 +139,14 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
                     TaskAssignedTo=TaskAssignedTo)
             projectTaskSerializer = ProjectTaskSerializer(
                     projectTask,many=True)
-            return JsonResponse(projectTaskSerializer.data, safe=False)
+            taskStatusName=[]
+            for row in projectTaskSerializer.data:
+                taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                row['StatusName']=taskStatusSerializer.data['Status']
+                taskStatusName.append(row)
+            return JsonResponse(taskStatusName, safe=False)
+            
         else:
             return JsonResponse("", safe=False)
     except:
@@ -146,7 +161,13 @@ def ProjectTaskApiByUserIdAndProjectId(request):
                     ProjectId=projectTaskData['ProjectId'],TaskAssignedTo=projectTaskData['TaskAssignedTo'])
             projectTaskSerializer = ProjectTaskSerializer(
                     projectTask,many=True)
-            return JsonResponse(projectTaskSerializer.data, safe=False)
+            taskStatusName=[]
+            for row in projectTaskSerializer.data:
+                taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                row['StatusName']=taskStatusSerializer.data['Status']
+                taskStatusName.append(row)
+            return JsonResponse(taskStatusName, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
