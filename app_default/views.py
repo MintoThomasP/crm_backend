@@ -72,3 +72,22 @@ def UserTypeApi(request):
     except:
         return JsonResponse("", safe=False)
     
+
+
+
+from rest_framework import serializers
+from django.contrib.auth.models import Permission
+
+class PermissionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Permission
+        fields = ['id', 'name', 'codename', 'content_type']
+
+# Example of usage in a view or API endpoint
+def get_permissions(request):
+    permissions = Permission.objects.all()
+    serializer = PermissionSerializer(permissions, many=True)
+    serialized_data = serializer.data
+
+    # You can return the serialized data as a JSON response
+    return JsonResponse({'permissions': serialized_data})

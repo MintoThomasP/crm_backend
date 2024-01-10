@@ -20,7 +20,6 @@ def staffApi(request):
                 data=staffData)
             if staffSerializer.is_valid():
                 staffSerializer.save()
-
                 return JsonResponse(staffSerializer.data['StaffId'], safe=False)
             return JsonResponse("Failed to add", safe=False)
         elif request.method == 'PUT':
