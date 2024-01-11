@@ -1,4 +1,4 @@
-from app_default.models import TaskStatus, UserType
+from app_default.models import Designation, TaskStatus, UserGroup, UserType
 from rest_framework import serializers
 
 
@@ -21,3 +21,21 @@ class UserTypeSerializer(serializers.ModelSerializer):
 'UserType',
 
 )
+        
+
+class DesignationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Designation
+        fields = ('SortId',
+                  'DesignationId',
+                  'Designation',
+                  )
+        
+
+class UserGroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserGroup
+        fields = ('SortId',
+                  'UserGroupId',
+                  'UserGroup',
+                  'AccessTo')

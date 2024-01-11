@@ -8,8 +8,15 @@ from app_default.serializers import TaskStatusSerializer
 from app_project.models import Project, ProjectTask, TaskReviews
 from app_project.serializers import ProjectSerializer, ProjectTaskSerializer, TaskReviewsSerializer
 
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework.decorators import api_view
+
 
 @csrf_exempt
+@swagger_auto_schema(method='POST', request_body=ProjectSerializer)
+@swagger_auto_schema(method='PUT', request_body=ProjectSerializer)
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Project Details",)
+@api_view(['GET','POST','PUT'])
 def ProjectApi(request):
     try:
         if request.method == 'GET':
@@ -42,6 +49,8 @@ def ProjectApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give ProjectId to get one project detail",)
+@api_view(['GET','DELETE'])
 def ProjectApiById(request, ProjectId=""):
     try:
         if request.method == 'GET': 
@@ -62,6 +71,10 @@ def ProjectApiById(request, ProjectId=""):
 
 
 @csrf_exempt
+@swagger_auto_schema(method='POST', request_body=ProjectTaskSerializer)
+@swagger_auto_schema(method='PUT', request_body=ProjectTaskSerializer)
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all ProjectTask Details",)
+@api_view(['GET','POST','PUT'])
 def ProjectTaskApi(request):
     try:
         if request.method == 'GET':
@@ -132,6 +145,8 @@ def ProjectTaskApiByProjectId(request, ProjectId=""):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get projecttask by staff",)
+@api_view(['GET'])
 def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
     try:
         if request.method == 'GET': 

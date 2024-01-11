@@ -21,6 +21,23 @@ from django.urls import path, re_path as url
 from django.views.static import serve
 from django.conf import settings
 from django.conf.urls.static import static
+from django.urls import include
+from rest_framework import permissions
+from drf_yasg.views import get_schema_view
+from drf_yasg import openapi
+
+schema_view = get_schema_view(
+    openapi.Info(
+      title="PROJECT MANAGE API",
+      default_version='v1',
+      description="Welcome to the Spog website documentation page",
+      terms_of_service="https://www.google.com/policies/terms/",
+      contact=openapi.Contact(email="contact@snippets234.local"),
+      license=openapi.License(name=""),
+    ),
+    public=False,
+    permission_classes=(permissions.IsAuthenticated,),
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -29,7 +46,13 @@ urlpatterns = [
     path('api-staff/', include('app_staff.urls')),
     path('api-client/', include('app_client.urls')),
     path('api-login/', include('app_login.urls')),
+    path('swagger<str:format>', schema_view.without_ui(cache_timeout=0), name='schema-json'),
+    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     # url(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT,}),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
+
+admin.site.site_url = '/swagger/' 

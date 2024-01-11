@@ -1,5 +1,6 @@
 from django.db import models
 import uuid
+from datetime import datetime
 
 # Create your models here.
 
@@ -12,3 +13,16 @@ class TaskStatus(models.Model):
 class UserType(models.Model):
     UserTypeId = models.CharField(max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
     UserType = models.CharField(max_length=300, blank=True, null=True)
+
+class Designation(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    DesignationId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    Designation = models.CharField(max_length=300, blank=True, null=True)
+
+class UserGroup(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    UserGroupId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    UserGroup = models.CharField(max_length=300, blank=True, null=True)
+    AccessTo = models.TextField(blank=True, null=True)

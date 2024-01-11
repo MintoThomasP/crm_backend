@@ -8,7 +8,14 @@ from io import BytesIO
 from app_staff.models import Staff
 import os
 from app_staff.serializers import SaveStaffSerializer, StaffSerializer
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework.decorators import api_view
+
 @csrf_exempt
+@swagger_auto_schema(method='POST', request_body=SaveStaffSerializer)
+@swagger_auto_schema(method='PUT', request_body=SaveStaffSerializer)
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Staff",)
+@api_view(['GET','POST','PUT'])
 def staffApi(request):
     # try:
         if request.method == 'GET':
@@ -55,6 +62,8 @@ def staffApi(request):
     #     return JsonResponse("", safe=False)
     
 @csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give StaffId to get one staffdetail",)
+@api_view(['GET','DELETE'])
 def StaffApiById(request, StaffId=""):
     try:
         if request.method == 'GET': 
