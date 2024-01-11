@@ -2,12 +2,15 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
-
+import qrcode
+from PIL import Image
+from io import BytesIO
 from app_staff.models import Staff
-from app_staff.serializers import StaffSerializer
+import os
+from app_staff.serializers import SaveStaffSerializer, StaffSerializer
 @csrf_exempt
 def staffApi(request):
-    try:
+    # try:
         if request.method == 'GET':
            
             staff = Staff.objects.all().order_by('-SortId')
@@ -16,17 +19,31 @@ def staffApi(request):
             return JsonResponse(staffSerializer.data, safe=False)
         elif request.method == 'POST':
             staffData = JSONParser().parse(request)
-            staffSerializer = StaffSerializer(
+            staffSerializer = SaveStaffSerializer(
                 data=staffData)
             if staffSerializer.is_valid():
-                staffSerializer.save()
+                staff = staffSerializer.save()
+
+                qr = qrcode.QRCode(
+                    version=1,
+                    error_correction=qrcode.constants.ERROR_CORRECT_L,
+                    box_size=9,
+                    border=1,
+                )
+                qr.add_data(f"https://staff.cubexizsoft.in/{staff.StaffCode}")
+                qr.make(fit=True)
+                img = qr.make_image(fill_color="black", back_color="white")
+                buffer = BytesIO()
+                img.save(buffer, format="PNG")
+                staff.QrCode.save(f'{staff.StaffId}.png', buffer)
+                staff.save()
                 return JsonResponse(staffSerializer.data['StaffId'], safe=False)
             return JsonResponse("Failed to add", safe=False)
         elif request.method == 'PUT':
             staffData = JSONParser().parse(request)
             staff = Staff.objects.get(
                 StaffId=staffData['StaffId'])
-            staffSerializer = StaffSerializer(
+            staffSerializer = SaveStaffSerializer(
                 staff, data=staffData)
             if staffSerializer.is_valid():
                 staffSerializer.save()
@@ -34,8 +51,8 @@ def staffApi(request):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
 @csrf_exempt
 def StaffApiById(request, StaffId=""):

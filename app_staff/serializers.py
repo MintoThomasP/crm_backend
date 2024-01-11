@@ -8,6 +8,23 @@ class StaffSerializer(serializers.ModelSerializer):
         fields = ('SortId',
 'StaffId',
 'StaffName',
+'StaffCode',
+'PhoneNumber',
+'Gender',
+'DOB',
+'EmailId',
+'Address',
+'JoinedOn',
+'QrCode'
+)
+        
+
+class SaveStaffSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Staff
+        fields = ('SortId',
+'StaffId',
+'StaffName',
 'PhoneNumber',
 'Gender',
 'DOB',

@@ -14,5 +14,6 @@ class StaffAdmin(admin.ModelAdmin):
 'DOB',
 'EmailId',
 'Address',
-'JoinedOn')
+'JoinedOn',
+'QrCode')
 admin.site.register(Staff, StaffAdmin)
