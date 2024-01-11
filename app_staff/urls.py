@@ -15,7 +15,8 @@ urlpatterns = [
     url(r'^StaffGuardian/(?P<StaffGuardianId>[0-9a-zA-Z\-]+)$', views.staffGuardianApiById),
     url(r'^StaffGuardianByStaffId/(?P<StaffId>[0-9a-zA-Z\-]+)$', views.staffGuardianApiByStaffId),
 
-   
+   url(r'^uploadStaffProfileImage/(?P<pk>[0-9a-zA-Z\-]+)$',
+        views.uploadStaffProfileImage.as_view()),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

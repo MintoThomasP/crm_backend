@@ -19,7 +19,8 @@ class StaffSerializer(serializers.ModelSerializer):
 'Salary',
 'Designation',
 'UserGroup',
-'CurrentAddress'
+'CurrentAddress',
+'ProfilePhoto'
 )
         
 
@@ -41,6 +42,15 @@ class SaveStaffSerializer(serializers.ModelSerializer):
 'UserGroup',
 'CurrentAddress')
         
+
+
+class UpdateStaffSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Staff
+        fields = (
+'StaffId',
+'ProfilePhoto'
+)
 
 
 class StaffGuardianSerializer(serializers.ModelSerializer):

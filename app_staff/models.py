@@ -21,6 +21,7 @@ class Staff(models.Model):
     Designation=models.CharField(blank=True, null=True, max_length=300)
     UserGroup=models.CharField(blank=True, null=True, max_length=300)
     CurrentAddress=models.TextField(blank=True, null=True)
+    ProfilePhoto=models.ImageField(upload_to='profiles/',null=True,blank=True)
 
     def save(self, *args, **kwargs):
         if not self.StaffCode or self.StaffCode == 'CS-E-1':

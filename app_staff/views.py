@@ -7,9 +7,11 @@ from PIL import Image
 from io import BytesIO
 from app_staff.models import Staff, StaffGuardian
 import os
-from app_staff.serializers import SaveStaffSerializer, StaffGuardianSerializer, StaffSerializer
+from app_staff.serializers import SaveStaffSerializer, StaffGuardianSerializer, StaffSerializer, UpdateStaffSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
+from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser
 
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=SaveStaffSerializer)
@@ -154,3 +156,36 @@ def staffGuardianApiByStaffId(request, StaffId=""):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
+    
+
+
+class  uploadStaffProfileImage(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+    def post(self, request, pk="", *args, **kwargs):
+        try:
+            if not pk:
+                file_serializer = UpdateStaffSerializer(
+                    data=request.data)
+                if file_serializer.is_valid():
+                    file_serializer.save()
+                    return JsonResponse("ok", safe=False)
+                else:
+                    return JsonResponse("failed", safe=False)
+            else:
+                staff = Staff.objects.get(
+                    StaffId=pk)
+                try:
+                    Staff.objects.get(
+                        StaffId=pk).ProfilePhoto.delete(save=True)
+                except:
+                    p=""
+
+                staffSerializer = UpdateStaffSerializer(
+                    staff, data=request.data)
+                if staffSerializer.is_valid():
+                    staffSerializer.save()
+                    return JsonResponse("ok", safe=False)
+                else:
+                    return JsonResponse(pk, safe=False)
+        except:
+            return JsonResponse("", safe=False)
