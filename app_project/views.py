@@ -107,6 +107,8 @@ def ProjectTaskApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give ProjectTaskId to get one task detail",)
+@api_view(['GET','DELETE'])
 def ProjectTaskApiById(request, ProjectTaskId=""):
     try:
         if request.method == 'GET': 
@@ -125,6 +127,8 @@ def ProjectTaskApiById(request, ProjectTaskId=""):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give ProjectId to get task detail",)
+@api_view(['GET'])
 def ProjectTaskApiByProjectId(request, ProjectId=""):
     try:
         if request.method == 'GET': 
@@ -168,6 +172,8 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
         return JsonResponse("", safe=False)
 
 @csrf_exempt
+@swagger_auto_schema(method='POST',request_body=ProjectTaskSerializer,operation_description="Give ProjectId and TaskAssignedTo in payload",)
+@api_view(['POST'])
 def ProjectTaskApiByUserIdAndProjectId(request):
     try:
         if request.method == 'POST': 
@@ -189,6 +195,10 @@ def ProjectTaskApiByUserIdAndProjectId(request):
         return JsonResponse("", safe=False)   
 
 @csrf_exempt
+@swagger_auto_schema(method='POST', request_body=TaskReviewsSerializer)
+@swagger_auto_schema(method='PUT', request_body=TaskReviewsSerializer)
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get task reviews",)
+@api_view(['GET','POST','PUT'])
 def TaskReviewsApi(request):
     try:
         if request.method == 'GET':
@@ -221,6 +231,8 @@ def TaskReviewsApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give TaskReviewId to get one review",)
+@api_view(['GET'])
 def TaskReviewsApiById(request, TaskReviewId=""):
     try:
         if request.method == 'GET': 

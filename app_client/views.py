@@ -5,9 +5,16 @@ from django.http.response import JsonResponse
 
 from app_client.models import Client
 from app_client.serializers import ClientSerializer
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework.decorators import api_view
+
 
 
 @csrf_exempt
+@swagger_auto_schema(method='POST', request_body=ClientSerializer)
+@swagger_auto_schema(method='PUT', request_body=ClientSerializer)
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all client details",)
+@api_view(['GET','POST','PUT'])
 def clientApi(request):
     try:
         if request.method == 'GET':
@@ -39,6 +46,8 @@ def clientApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give ClientId to get one clientdetail",)
+@api_view(['GET','DELETE'])
 def ClientApiById(request, ClientId=""):
     try:
         if request.method == 'GET': 

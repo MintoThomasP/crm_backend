@@ -14,9 +14,13 @@ class Staff(models.Model):
     Gender = models.CharField(blank=True, null=True, max_length=30)
     DOB=models.DateTimeField(null=True, default=None)
     EmailId = models.CharField(blank=True, null=True, max_length=150)
-    Address = models.TextField(blank=True, null=True)
+    PermanentAddress = models.TextField(blank=True, null=True)
     JoinedOn=models.DateTimeField(default=datetime.now)
     QrCode=models.ImageField(upload_to='qr_codes/',null=True,blank=True)
+    Salary=models.CharField(blank=True, null=True, max_length=15)
+    Designation=models.CharField(blank=True, null=True, max_length=300)
+    UserGroup=models.CharField(blank=True, null=True, max_length=300)
+    CurrentAddress=models.TextField(blank=True, null=True)
 
     def save(self, *args, **kwargs):
         if not self.StaffCode or self.StaffCode == 'CS-E-1':
@@ -31,3 +35,17 @@ class Staff(models.Model):
         else:
             new_number = 1  # Starting number
         return f'CS-E-{new_number:03d}'
+    
+
+
+class StaffGuardian(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    StaffGuardianId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    StaffId=models.CharField(blank=True, null=True, max_length=50)
+    GuardianName=models.CharField(blank=True, null=True, max_length=300)
+    PhoneNumber=models.CharField(blank=True, null=True, max_length=12)
+    EmailId=models.CharField(blank=True, null=True, max_length=150)
+    Relation=models.CharField(blank=True, null=True, max_length=300)
+
+

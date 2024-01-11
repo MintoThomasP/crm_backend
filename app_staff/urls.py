@@ -11,6 +11,10 @@ urlpatterns = [
     path('Staff/', views.staffApi),
     url(r'^Staff/(?P<StaffId>[0-9a-zA-Z\-]+)$', views.StaffApiById),
 
+    path('StaffGuardian/', views.staffGuardianApi),
+    url(r'^StaffGuardian/(?P<StaffGuardianId>[0-9a-zA-Z\-]+)$', views.staffGuardianApiById),
+    url(r'^StaffGuardianByStaffId/(?P<StaffId>[0-9a-zA-Z\-]+)$', views.staffGuardianApiByStaffId),
+
    
 ]
 if settings.DEBUG:

@@ -5,9 +5,9 @@ from django.http.response import JsonResponse
 import qrcode
 from PIL import Image
 from io import BytesIO
-from app_staff.models import Staff
+from app_staff.models import Staff, StaffGuardian
 import os
-from app_staff.serializers import SaveStaffSerializer, StaffSerializer
+from app_staff.serializers import SaveStaffSerializer, StaffGuardianSerializer, StaffSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 
@@ -76,6 +76,80 @@ def StaffApiById(request, StaffId=""):
             staff = Staff.objects.get(StaffId=StaffId)
             staff.delete()
             return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=StaffGuardianSerializer)
+@swagger_auto_schema(method='PUT', request_body=StaffGuardianSerializer)
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Staff's guardian details",)
+@api_view(['GET','POST','PUT'])
+def staffGuardianApi(request):
+    # try:
+        if request.method == 'GET':
+           
+            staffGuardian = StaffGuardian.objects.all().order_by('-SortId')
+            staffGuardianSerializer = StaffGuardianSerializer(
+                    staffGuardian, many=True)
+            return JsonResponse(staffGuardianSerializer.data, safe=False)
+        elif request.method == 'POST':
+            staffGuardianData = JSONParser().parse(request)
+            staffGuardianSerializer = StaffGuardianSerializer(
+                data=staffGuardianData)
+            if staffGuardianSerializer.is_valid():
+                staffGuardianSerializer.save()
+                return JsonResponse(staffGuardianSerializer.data['StaffGuardianId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            staffGuardianData = JSONParser().parse(request)
+            staffGuardian = StaffGuardian.objects.get(
+                StaffGuardianId=staffGuardianData['StaffGuardianId'])
+            staffGuardianSerializer = StaffGuardianSerializer(
+                staffGuardian, data=staffGuardianData)
+            if staffGuardianSerializer.is_valid():
+                staffGuardianSerializer.save()
+                return JsonResponse(staffGuardianSerializer.data['StaffGuardianId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
+    
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give staffGuardianId to get one Guardian detail",)
+@api_view(['GET','DELETE'])
+def staffGuardianApiById(request, StaffGuardianId=""):
+    try:
+        if request.method == 'GET': 
+            staffGuardian = StaffGuardian.objects.get(
+                    StaffGuardianId=StaffGuardianId)
+            staffGuardianSerializer = StaffGuardianSerializer(
+                    staffGuardian)
+            return JsonResponse(staffGuardianSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            staffGuardian = Staff.objects.get(StaffGuardianId=StaffGuardianId)
+            staffGuardian.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give staffId to get all guardian details",)
+@api_view(['GET'])
+def staffGuardianApiByStaffId(request, StaffId=""):
+    try:
+        if request.method == 'GET': 
+            staffGuardian = StaffGuardian.objects.filter(
+                    StaffId=StaffId)
+            staffGuardianSerializer = StaffGuardianSerializer(
+                    staffGuardian,many=True)
+            return JsonResponse(staffGuardianSerializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:

@@ -10,12 +10,17 @@ from django.shortcuts import redirect
 from app_login.serializers import LoginAuthSerializer, LoginSaveSerializer, LoginSerializer, LoginUpdateSerializer
 from app_staff.models import Staff
 from app_staff.serializers import StaffSerializer
+from drf_yasg.utils import swagger_auto_schema
+from rest_framework.decorators import api_view
 # Create your views here.
 
 
 
 
 @csrf_exempt
+@swagger_auto_schema(method='PUT', request_body=LoginSaveSerializer)
+@swagger_auto_schema(method='POST', request_body=LoginSaveSerializer)
+@api_view(['POST','PUT'])
 def CreateLoginApi(request):
     if request.method == 'POST':
         userLogin_data = JSONParser().parse(request)
@@ -34,7 +39,10 @@ def CreateLoginApi(request):
             logSerializer.save()
             return JsonResponse("Update successfully", safe=False)
         return JsonResponse("Failed to Update", safe=False)
+    
 @csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: get login details by UserId",)
+@api_view(['GET','DELETE'])
 def UserLoginApiById(request, UserId=""):
     try:
         if request.method == 'GET':
@@ -51,6 +59,9 @@ def UserLoginApiById(request, UserId=""):
 
 
 @csrf_exempt
+@swagger_auto_schema(method='POST', request_body=LoginAuthSerializer)
+@swagger_auto_schema(method='PUT', request_body=LoginUpdateSerializer)
+@api_view(['POST','PUT'])
 def loginApi(request):
     # try:
         if request.method == 'POST':

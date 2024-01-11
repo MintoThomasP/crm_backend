@@ -11,6 +11,10 @@ from rest_framework.decorators import api_view
 
 
 @csrf_exempt
+@swagger_auto_schema(method='POST', request_body=TaskStatusSerializer)
+@swagger_auto_schema(method='PUT', request_body=TaskStatusSerializer)
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all task status",)
+@api_view(['GET','POST','PUT'])
 def TaskStatusApi(request):
     try:
         if request.method == 'GET':
@@ -42,6 +46,8 @@ def TaskStatusApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give StatusId to get one status",)
+@api_view(['GET','DELETE'])
 def TaskStatusApiById(request, StatusId=""):
     try:
         if request.method == 'GET': 
@@ -61,6 +67,8 @@ def TaskStatusApiById(request, StatusId=""):
     
 
 @csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: get all Usertypes",)
+@api_view(['GET'])
 def UserTypeApi(request):
     try:
         if request.method == 'GET':
@@ -91,7 +99,7 @@ def get_permissions(request):
     serialized_data = serializer.data
 
     # You can return the serialized data as a JSON response
-    return JsonResponse({'permissions': serialized_data})
+    return JsonResponse(serialized_data,safe=False)
 
 
 
