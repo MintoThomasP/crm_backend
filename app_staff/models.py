@@ -16,7 +16,7 @@ class Staff(models.Model):
     EmailId = models.CharField(blank=True, null=True, max_length=150)
     Address = models.TextField(blank=True, null=True)
     JoinedOn=models.DateTimeField(default=datetime.now)
-    QrCode=models.ImageField(upload_to='qr_codes/')
+    QrCode=models.ImageField(upload_to='qr_codes/',null=True,blank=True)
 
     def save(self, *args, **kwargs):
         if not self.StaffCode or self.StaffCode == 'CS-E-1':
