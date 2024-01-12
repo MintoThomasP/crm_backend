@@ -12,7 +12,7 @@ class Staff(models.Model):
     StaffName = models.CharField(blank=True, null=True, max_length=300)
     PhoneNumber = models.CharField(blank=True, null=True, max_length=30)
     Gender = models.CharField(blank=True, null=True, max_length=30)
-    DOB=models.DateTimeField(null=True, default=None)
+    DOB=models.DateTimeField(default=datetime.now)
     EmailId = models.CharField(blank=True, null=True, max_length=150)
     PermanentAddress = models.TextField(blank=True, null=True)
     JoinedOn=models.DateTimeField(default=datetime.now)
