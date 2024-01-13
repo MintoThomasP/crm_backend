@@ -18,7 +18,7 @@ class Staff(models.Model):
     JoinedOn=models.DateTimeField(default=datetime.now)
     QrCode=models.ImageField(upload_to='qr_codes/',null=True,blank=True)
     Salary=models.CharField(blank=True, null=True, max_length=15)
-    Designation=models.CharField(blank=True, null=True, max_length=300)
+    Designation=models.CharField(blank=True, null=True, max_length=50)
     UserGroup=models.CharField(blank=True, null=True, max_length=300)
     CurrentAddress=models.TextField(blank=True, null=True)
     ProfilePhoto=models.ImageField(upload_to='profiles/',null=True,blank=True)

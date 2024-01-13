@@ -5,6 +5,8 @@ from django.http.response import JsonResponse
 import qrcode
 from PIL import Image
 from io import BytesIO
+from app_default.models import Designation
+from app_default.serializers import DesignationSerializer
 from app_staff.models import Staff, StaffGuardian
 import os
 from app_staff.serializers import SaveStaffSerializer, StaffGuardianSerializer, StaffSerializer, UpdateStaffSerializer
@@ -67,21 +69,26 @@ def staffApi(request):
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give StaffId to get one staffdetail",)
 @api_view(['GET','DELETE'])
 def StaffApiById(request, StaffId=""):
-    try:
+    # try:
         if request.method == 'GET': 
             staff = Staff.objects.get(
                     StaffId=StaffId)
             staffSerializer = StaffSerializer(
                     staff)
-            return JsonResponse(staffSerializer.data, safe=False)
+            designation=Designation.objects.get(DesignationId=staffSerializer.data['Designation'])
+            designationSerializer=DesignationSerializer(designation)
+            designationData=staffSerializer.data
+            designationData['DesignationName']=designationSerializer.data['Designation']
+           
+            return JsonResponse(designationData, safe=False)
         elif request.method == 'DELETE':
             staff = Staff.objects.get(StaffId=StaffId)
             staff.delete()
             return JsonResponse("Deleted successfully", safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
 
 @csrf_exempt
