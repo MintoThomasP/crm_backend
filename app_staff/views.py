@@ -7,6 +7,7 @@ from PIL import Image
 from io import BytesIO
 from app_default.models import Designation
 from app_default.serializers import DesignationSerializer
+from app_login.serializers import LoginSerializer
 from app_staff.models import Staff, StaffGuardian
 import os
 from app_staff.serializers import SaveStaffSerializer, StaffGuardianSerializer, StaffSerializer, UpdateStaffSerializer
@@ -48,7 +49,19 @@ def staffApi(request):
                 img.save(buffer, format="PNG")
                 staff.QrCode.save(f'{staff.StaffCode}.png', buffer)
                 staff.save()
-                
+                loginData={
+                    "UserId":staffSerializer.data['StaffId'],
+                    "EmailId":staffSerializer.data['EmailId'],
+                    "UserType":"db031447-2f11-463b-8582-f49dbe4a634f",
+                    "Password":staffSerializer.data['StaffCode']
+
+
+                }
+                loginSerializer=LoginSerializer(data=loginData)
+                if loginSerializer.is_valid():
+                    loginSerializer.save()
+
+
                 return JsonResponse(staffSerializer.data['StaffId'], safe=False)
             return JsonResponse("Failed to add", safe=False)
         elif request.method == 'PUT':
@@ -197,3 +210,23 @@ class  uploadStaffProfileImage(APIView):
                     return JsonResponse(pk, safe=False)
         except:
             return JsonResponse("", safe=False)
+        
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give staffId to get all guardian details",)
+@api_view(['GET'])
+def staffApiByStaffCode(request, StaffCode=""):
+    try:
+        if request.method == 'GET': 
+            staff = Staff.objects.get(
+                    StaffCode=StaffCode)
+            staffSerializer = StaffSerializer(
+                    staff)
+            return JsonResponse(staffSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
