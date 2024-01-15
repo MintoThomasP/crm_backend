@@ -48,6 +48,7 @@ def staffApi(request):
                 img.save(buffer, format="PNG")
                 staff.QrCode.save(f'{staff.StaffCode}.png', buffer)
                 staff.save()
+                
                 return JsonResponse(staffSerializer.data['StaffId'], safe=False)
             return JsonResponse("Failed to add", safe=False)
         elif request.method == 'PUT':
