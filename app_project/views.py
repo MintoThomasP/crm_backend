@@ -170,6 +170,30 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
+    
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get projecttask by staff",)
+@api_view(['GET'])
+def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
+    try:
+        if request.method == 'GET': 
+            projectTask = ProjectTask.objects.filter(
+                    TaskAssignedBy=TaskAssignedBy)
+            projectTaskSerializer = ProjectTaskSerializer(
+                    projectTask,many=True)
+            taskStatusName=[]
+            for row in projectTaskSerializer.data:
+                taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                row['StatusName']=taskStatusSerializer.data['Status']
+                taskStatusName.append(row)
+            return JsonResponse(taskStatusName, safe=False)
+            
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+
 
 @csrf_exempt
 @swagger_auto_schema(method='POST',request_body=ProjectTaskSerializer,operation_description="Give ProjectId and TaskAssignedTo in payload",)

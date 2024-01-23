@@ -10,6 +10,7 @@ urlpatterns = [
     url(r'^ProjectTaskById/(?P<ProjectTaskId>[0-9a-zA-Z\-]+)$', views.ProjectTaskApiById),
     url(r'^ProjectTaskApiByProjectId/(?P<ProjectId>[0-9a-zA-Z\-]+)$', views.ProjectTaskApiByProjectId),
     url(r'^ProjectTaskApiByUserId/(?P<TaskAssignedTo>[0-9a-zA-Z\-]+)$', views.ProjectTaskApiByUserId),
+    url(r'^ProjectTaskApiByTaskAssignedBy/(?P<TaskAssignedBy>[0-9a-zA-Z\-]+)$', views.ProjectTaskApiByTaskAssignedBy),
     path('ProjectTaskApiByUserIdAndProjectId/', views.ProjectTaskApiByUserIdAndProjectId),
 
 

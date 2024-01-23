@@ -22,13 +22,21 @@ from rest_framework.parsers import MultiPartParser, FormParser
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all Staff",)
 @api_view(['GET','POST','PUT'])
 def staffApi(request):
-    # try:
+    try:
         if request.method == 'GET':
            
             staff = Staff.objects.all().order_by('-SortId')
             staffSerializer = StaffSerializer(
                     staff, many=True)
-            return JsonResponse(staffSerializer.data, safe=False)
+            designationData=[]
+            for row in staffSerializer.data:
+                designation=Designation.objects.get(DesignationId=row['Designation'])
+                designationSerializer=DesignationSerializer(designation)
+                row['DesignationName']=designationSerializer.data['Designation']
+                designationData.append(row)
+            
+                
+            return JsonResponse(designationData, safe=False)
         elif request.method == 'POST':
             staffData = JSONParser().parse(request)
             staffSerializer = SaveStaffSerializer(
@@ -76,8 +84,8 @@ def staffApi(request):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give StaffId to get one staffdetail",)
@@ -218,15 +226,24 @@ class  uploadStaffProfileImage(APIView):
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give staffId to get all guardian details",)
 @api_view(['GET'])
 def staffApiByStaffCode(request, StaffCode=""):
-    try:
+    # try:
         if request.method == 'GET': 
             staff = Staff.objects.get(
                     StaffCode=StaffCode)
             staffSerializer = StaffSerializer(
                     staff)
-            return JsonResponse(staffSerializer.data, safe=False)
+            StaffData=staffSerializer.data
+            try:
+                designation=Designation.objects.get(DesignationId=StaffData['Designation'])
+                designationSerializer=DesignationSerializer(designation)
+                StaffData['DesignationName']=designationSerializer.data['Designation']
+            except:
+                StaffData['DesignationName']=""
+
+            
+            return JsonResponse(StaffData, safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
