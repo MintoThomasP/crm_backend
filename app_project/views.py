@@ -5,6 +5,10 @@ from django.http.response import JsonResponse
 from app_default.models import TaskStatus
 from app_default.serializers import TaskStatusSerializer
 
+from app_staff.models import Staff
+
+from app_staff.serializers import StaffSerializer
+
 from app_project.models import Project, ProjectTask, TaskReviews
 from app_project.serializers import ProjectSerializer, ProjectTaskSerializer, TaskReviewsSerializer
 
@@ -209,6 +213,9 @@ def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
                 project = Project.objects.get(ProjectId=row['ProjectId'])
                 projectSerializer = ProjectSerializer(project)
                 row['ProjectName'] = projectSerializer.data['ProjectName']
+                staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
+                staffSerializer = StaffSerializer(staff)
+                row['StaffName'] = staffSerializer.data['StaffName']
 
                 taskStatusName.append(row)
 
