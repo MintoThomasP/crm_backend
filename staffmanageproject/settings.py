@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-_5@07uks53!#s287u04jba(%+hqtq^jk50m4t$pxjz&rn7-hu8
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1','13.127.179.202','192.168.10.190']
+ALLOWED_HOSTS = ['127.0.0.1','13.127.179.202','192.168.10.218']
 CORS_ORIGIN_ALLOW_ALL=True
 
 # Application definition
@@ -95,10 +95,10 @@ DATABASES = {
      'default': {
         'ENGINE': 'dj_db_conn_pool.backends.mysql',
         'NAME': 'staffmanage_db',
-        'USER': 'root',
-        'PASSWORD': '',
-        # 'USER': 'cubexizsoftadmin',
-        # 'PASSWORD': 'admin',
+        # 'USER': 'root',
+        # 'PASSWORD': '',
+        'USER': 'cubexizsoftadmin',
+        'PASSWORD': 'admin',
         'HOST': 'localhost',
         'PORT': '3306',
         'POOL_OPTIONS' : {
