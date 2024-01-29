@@ -14,6 +14,6 @@ urlpatterns = [
     path('UserGroup/', views.UserGroupApi),
     url(r'^UserGroup/(?P<UserGroupId>[0-9a-zA-Z\-]+)$',
         views.UserGroupApiById),
-   
+   path('UserType/', views.UserTypeApi),
    
 ]
