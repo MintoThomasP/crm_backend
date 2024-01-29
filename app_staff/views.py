@@ -22,7 +22,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all Staff",)
 @api_view(['GET','POST','PUT'])
 def staffApi(request):
-    try:
+    # try:
         if request.method == 'GET':
            
             staff = Staff.objects.all().order_by('-SortId')
@@ -84,8 +84,8 @@ def staffApi(request):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give StaffId to get one staffdetail",)
