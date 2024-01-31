@@ -241,9 +241,13 @@ def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
                 taskStatus = TaskStatus.objects.get(StatusId=row['Status'])
                 taskStatusSerializer = TaskStatusSerializer(taskStatus)
                 row['StatusName'] = taskStatusSerializer.data['Status']
-                project = Project.objects.get(ProjectId=row['ProjectId'])
-                projectSerializer = ProjectSerializer(project)
-                row['ProjectName'] = projectSerializer.data['ProjectName']
+                try:
+                    project = Project.objects.get(ProjectId=row['ProjectId'])
+                    projectSerializer = ProjectSerializer(project)
+                    row['ProjectName'] = projectSerializer.data['ProjectName']
+                except:
+                    row['ProjectName'] = ""
+
                 staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
                 staffSerializer = StaffSerializer(staff)
                 row['StaffName'] = staffSerializer.data['StaffName']
