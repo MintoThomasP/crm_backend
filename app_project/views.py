@@ -80,12 +80,31 @@ def ProjectApiById(request, ProjectId=""):
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all ProjectTask Details",)
 @api_view(['GET','POST','PUT'])
 def ProjectTaskApi(request):
-    try:
+    # try:
         if request.method == 'GET':
             projectTask = ProjectTask.objects.all().order_by('-SortId')
             projectTaskSerializer = ProjectTaskSerializer(
                     projectTask, many=True)
-            return JsonResponse(projectTaskSerializer.data, safe=False)
+            taskData=[]
+            for row in projectTaskSerializer.data:
+                project=Project.objects.get(ProjectId=row['ProjectId'])
+                projectSerializer=ProjectSerializer(project)
+                row['ProjectName']=projectSerializer.data['ProjectName']
+
+                staff=Staff.objects.get(StaffId=row['TaskAssignedTo'])
+                staffSerializer=StaffSerializer(staff)
+                row['AssignedTo']=staffSerializer.data['StaffName']
+
+                staff=Staff.objects.get(StaffId=row['TaskAssignedBy'])
+                staffSerializer=StaffSerializer(staff)
+                row['AssignedBy']=staffSerializer.data['StaffName']
+
+                taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                row['StatusName']=taskStatusSerializer.data['Status']
+                taskData.append(row)
+
+            return JsonResponse(taskData, safe=False)
         elif request.method == 'POST':
             projectTaskData = JSONParser().parse(request)
             projectTaskSerializer = ProjectTaskSerializer(
@@ -107,8 +126,8 @@ def ProjectTaskApi(request):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give ProjectTaskId to get one task detail",)
@@ -246,7 +265,37 @@ def ProjectTaskApiByUserIdAndProjectId(request):
         else:
             return JsonResponse("", safe=False)
     except:
-        return JsonResponse("", safe=False)   
+        return JsonResponse("", safe=False)
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST',request_body=ProjectTaskSerializer,operation_description="Give ProjectId and TaskAssignedTo in payload",)
+@api_view(['POST'])
+def ProjectTaskApiByTaskAssignedByAndProjectId(request):
+    try:
+        if request.method == 'POST': 
+            projectTaskData = JSONParser().parse(request)
+            projectTask = ProjectTask.objects.filter(
+                    ProjectId=projectTaskData['ProjectId'],TaskAssignedBy=projectTaskData['TaskAssignedBy'])
+            projectTaskSerializer = ProjectTaskSerializer(
+                    projectTask,many=True)
+            taskData=[]
+            for row in projectTaskSerializer.data:
+                taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                row['StatusName']=taskStatusSerializer.data['Status']
+                project = Project.objects.get(ProjectId=row['ProjectId'])
+                projectSerializer = ProjectSerializer(project)
+                row['ProjectName'] = projectSerializer.data['ProjectName']
+                staff = Staff.objects.get(StaffId=row['TaskAssignedBy'])
+                staffSerializer = StaffSerializer(staff)
+                row['StaffName'] = staffSerializer.data['StaffName']
+                taskData.append(row)
+            return JsonResponse(taskData, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False) 
 
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=TaskReviewsSerializer)
