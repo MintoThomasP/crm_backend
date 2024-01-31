@@ -164,6 +164,12 @@ def ProjectTaskApiByProjectId(request, ProjectId=""):
                 taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
                 taskStatusSerializer=TaskStatusSerializer(taskStatus)
                 row['StatusName']=taskStatusSerializer.data['Status']
+                project = Project.objects.get(ProjectId=row['ProjectId'])
+                projectSerializer = ProjectSerializer(project)
+                row['ProjectName'] = projectSerializer.data['ProjectName']
+                staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
+                staffSerializer = StaffSerializer(staff)
+                row['StaffName'] = staffSerializer.data['StaffName']
                 taskStatusName.append(row)
             return JsonResponse(taskStatusName, safe=False)
         else:
@@ -186,6 +192,12 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
                 taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
                 taskStatusSerializer=TaskStatusSerializer(taskStatus)
                 row['StatusName']=taskStatusSerializer.data['Status']
+                project = Project.objects.get(ProjectId=row['ProjectId'])
+                projectSerializer = ProjectSerializer(project)
+                row['ProjectName'] = projectSerializer.data['ProjectName']
+                staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
+                staffSerializer = StaffSerializer(staff)
+                row['StaffName'] = staffSerializer.data['StaffName']
                 taskStatusName.append(row)
             return JsonResponse(taskStatusName, safe=False)
             
@@ -260,6 +272,12 @@ def ProjectTaskApiByUserIdAndProjectId(request):
                 taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
                 taskStatusSerializer=TaskStatusSerializer(taskStatus)
                 row['StatusName']=taskStatusSerializer.data['Status']
+                project = Project.objects.get(ProjectId=row['ProjectId'])
+                projectSerializer = ProjectSerializer(project)
+                row['ProjectName'] = projectSerializer.data['ProjectName']
+                staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
+                staffSerializer = StaffSerializer(staff)
+                row['StaffName'] = staffSerializer.data['StaffName']
                 taskStatusName.append(row)
             return JsonResponse(taskStatusName, safe=False)
         else:
