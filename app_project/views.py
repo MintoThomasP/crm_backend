@@ -4,13 +4,14 @@ from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
 from app_default.models import TaskStatus
 from app_default.serializers import TaskStatusSerializer
-
+from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser
 from app_staff.models import Staff
 
 from app_staff.serializers import StaffSerializer
 
-from app_project.models import Project, ProjectTask, TaskReviews
-from app_project.serializers import ProjectSerializer, ProjectTaskSerializer, TaskReviewsSerializer
+from app_project.models import Project, ProjectTask, ProjectTaskFile, TaskReviews
+from app_project.serializers import ProjectSerializer, ProjectTaskFileSerializer, ProjectTaskSerializer, SaveProjectTaskFileSerializer, TaskReviewsSerializer, UploadProjectTaskFileSerializer
 
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
@@ -102,9 +103,17 @@ def ProjectTaskApi(request):
                 staffSerializer=StaffSerializer(staff)
                 row['AssignedBy']=staffSerializer.data['StaffName']
 
+                try:
+                    staff=Staff.objects.get(StaffId=row['VerifiedBy'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['VerifiedByName']=staffSerializer.data['StaffName']
+                except:
+                    row['VerifiedByName']= ""
+
                 taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
                 taskStatusSerializer=TaskStatusSerializer(taskStatus)
                 row['StatusName']=taskStatusSerializer.data['Status']
+
                 taskData.append(row)
 
             return JsonResponse(taskData, safe=False)
@@ -173,6 +182,12 @@ def ProjectTaskApiByProjectId(request, ProjectId=""):
                     row['ProjectName'] = projectSerializer.data['ProjectName']
                 except:
                     row['ProjectName'] = ""
+                try:
+                    staff=Staff.objects.get(StaffId=row['VerifiedBy'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['VerifiedByName']=staffSerializer.data['StaffName']
+                except:
+                    row['VerifiedByName']= ""
 
                 staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
                 staffSerializer = StaffSerializer(staff)
@@ -208,6 +223,14 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
                 staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
                 staffSerializer = StaffSerializer(staff)
                 row['StaffName'] = staffSerializer.data['StaffName']
+
+                try:
+                    staff=Staff.objects.get(StaffId=row['VerifiedBy'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['VerifiedByName']=staffSerializer.data['StaffName']
+                except:
+                    row['VerifiedByName']= ""
+
                 taskStatusName.append(row)
             return JsonResponse(taskStatusName, safe=False)
             
@@ -262,6 +285,13 @@ def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
                 staffSerializer = StaffSerializer(staff)
                 row['StaffName'] = staffSerializer.data['StaffName']
 
+                try:
+                    staff=Staff.objects.get(StaffId=row['VerifiedBy'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['VerifiedByName']=staffSerializer.data['StaffName']
+                except:
+                    row['VerifiedByName']= ""
+
                 taskStatusName.append(row)
 
             return JsonResponse(taskStatusName, safe=False)
@@ -295,6 +325,12 @@ def ProjectTaskApiByUserIdAndProjectId(request):
                 staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
                 staffSerializer = StaffSerializer(staff)
                 row['StaffName'] = staffSerializer.data['StaffName']
+                try:
+                    staff=Staff.objects.get(StaffId=row['VerifiedBy'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['VerifiedByName']=staffSerializer.data['StaffName']
+                except:
+                    row['VerifiedByName']= ""
                 taskStatusName.append(row)
             return JsonResponse(taskStatusName, safe=False)
         else:
@@ -328,6 +364,14 @@ def ProjectTaskApiByTaskAssignedByAndProjectId(request):
                 staff = Staff.objects.get(StaffId=row['TaskAssignedBy'])
                 staffSerializer = StaffSerializer(staff)
                 row['StaffName'] = staffSerializer.data['StaffName']
+
+                try:
+                    staff=Staff.objects.get(StaffId=row['VerifiedBy'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['VerifiedByName']=staffSerializer.data['StaffName']
+                except:
+                    row['VerifiedByName']= ""
+
                 taskData.append(row)
             return JsonResponse(taskData, safe=False)
         else:
@@ -390,3 +434,104 @@ def TaskReviewsApiById(request, TaskReviewId=""):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
+    
+
+    
+@csrf_exempt
+@api_view(['POST'])
+def GetAllTasksStatus(request):
+    # try:
+        if request.method == 'POST':
+            Statusdata = JSONParser().parse(request)
+            projectTask = ProjectTask.objects.filter(Status=Statusdata['StatusId'])
+            projectTaskSerializer = ProjectTaskSerializer(
+                        projectTask,many=True)
+            return JsonResponse(projectTaskSerializer.data, safe=False)
+        else:
+                return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
+        
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all project Task file",)
+@swagger_auto_schema(method='PUT', request_body=SaveProjectTaskFileSerializer)
+@swagger_auto_schema(method='POST', request_body=SaveProjectTaskFileSerializer)
+@api_view(['GET','POST','PUT'])
+def ProjectTaskFileApi(request, pk=""):
+    try:
+        if request.method == 'GET':
+            projectTaskFile = ProjectTaskFile.objects.all()
+            projectTaskFileSerializer = ProjectTaskFileSerializer(
+                projectTaskFile,many=True)
+            return JsonResponse(projectTaskFileSerializer.data, safe=False)
+        elif request.method == 'POST':
+            projectTaskFile = JSONParser().parse(request)
+            projectTaskFileSerializer = SaveProjectTaskFileSerializer(
+                data=projectTaskFile)
+            if projectTaskFileSerializer.is_valid():
+                projectTaskFileSerializer.save()
+                return JsonResponse(projectTaskFileSerializer.data['ProjectTaskFileId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            projectTaskFiledata = JSONParser().parse(request)
+            projectTaskFile = ProjectTaskFile.objects.get(
+                ProjectTaskFileId=projectTaskFiledata['ProjectTaskFileId'])
+            projectTaskFileSerializer = SaveProjectTaskFileSerializer(
+                projectTaskFile, data=projectTaskFiledata)
+            if projectTaskFileSerializer.is_valid():
+                projectTaskFileSerializer.save()
+                return JsonResponse(projectTaskFileSerializer.data['ProjectTaskFileId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="",)
+@api_view(['GET','DELETE'])
+def CURDprojectTaskFileApiById(request, ProjectTaskFileId=""):
+    try:
+        if request.method == 'GET':
+            projectTaskFile = ProjectTaskFile.objects.get(
+                ProjectTaskFileId=ProjectTaskFileId)
+            projectTaskFileSerializer = ProjectTaskFileSerializer(
+                projectTaskFile)
+            return JsonResponse(projectTaskFileSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            projectTaskFile = ProjectTaskFile.objects.get(ProjectTaskFileId=ProjectTaskFileId)
+            projectTaskFile.objects.get(ProjectTaskFileId=ProjectTaskFileId).TaskFile.delete(save=True)
+            projectTaskFile.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+class UploadProjectTaskFile(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request, ProjectTaskFileId="", *args, **kwargs):
+        try:
+
+                projectTaskFile = ProjectTaskFile.objects.get(
+                    ProjectTaskFileId=ProjectTaskFileId)
+                try:
+                    projectTaskFile.objects.get(
+                        ProjectTaskFileId=ProjectTaskFileId).TaskFile.delete(save=True)
+                except:
+                    p = ""
+                Serializer = UploadProjectTaskFileSerializer(
+                    projectTaskFile, data=request.data)
+                if Serializer.is_valid():
+                    Serializer.save()
+                    return JsonResponse("ok", safe=False)
+                else:
+                    return JsonResponse("", safe=False)
+        except:
+            return JsonResponse("", safe=False)

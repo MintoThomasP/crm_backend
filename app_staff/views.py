@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from app_project.models import ProjectTask
+from app_project.serializers import ProjectTaskSerializer
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
 import qrcode
@@ -33,6 +35,31 @@ def staffApi(request):
                 designation=Designation.objects.get(DesignationId=row['Designation'])
                 designationSerializer=DesignationSerializer(designation)
                 row['DesignationName']=designationSerializer.data['Designation']
+
+                projectTask=ProjectTask.objects.filter(TaskAssignedTo=row['StaffId'])
+                projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
+                work_status_count = {'Pending': 0, 'Completed': 0, 'Due': 0, 'Not Completed': 0, 'Finished': 0, 'Delay Finished': 0}
+                current_date = str(date.today())
+            
+                for task in projectTaskSerializer.data:
+                
+                    
+                    if task['CreatedDate'] >= current_date  and task['Status'] == '1':
+                        work_status_count['Pending'] += 1
+                
+                    if task['CreatedDate'] >= current_date and task['Status'] == '3':
+                        work_status_count['Completed'] += 1
+            
+                    if task['CreatedDate'] < current_date and task['Status'] == '1':
+                        work_status_count['Due'] += 1
+                    if task['CreatedDate'] < current_date and task['Status'] == '7':
+                        work_status_count['Delay Finished'] += 1
+                    if task['Status'] == '2':
+                        work_status_count['Not Completed'] += 1   
+                    if task['CreatedDate'] <= task['EndDate'] and  task['Status'] == '7':
+                        work_status_count['Finished'] += 1
+
+                row['WorkStatusCount'] = work_status_count
                 designationData.append(row)
             
                 
@@ -86,7 +113,7 @@ def staffApi(request):
             return JsonResponse("", safe=False)
     # except:
     #     return JsonResponse("", safe=False)
-    
+from datetime import datetime,date   
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give StaffId to get one staffdetail",)
 @api_view(['GET','DELETE'])
@@ -101,6 +128,33 @@ def StaffApiById(request, StaffId=""):
             designationSerializer=DesignationSerializer(designation)
             designationData=staffSerializer.data
             designationData['DesignationName']=designationSerializer.data['Designation']
+
+            projectTask=ProjectTask.objects.filter(TaskAssignedTo=staffSerializer.data['StaffId'])
+            projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
+            work_status_count = {'Pending': 0, 'Completed': 0, 'Due': 0, 'Not Completed': 0, 'Finished': 0, 'Delay Finished': 0}
+            current_date = str(date.today())
+          
+            for task in projectTaskSerializer.data:
+              
+                
+                if task['CreatedDate'] >= current_date  and task['Status'] == '1':
+                    work_status_count['Pending'] += 1
+               
+                if task['CreatedDate'] >= current_date and task['Status'] == '3':
+                    work_status_count['Completed'] += 1
+        
+                if task['CreatedDate'] < current_date and task['Status'] == '1':
+                    work_status_count['Due'] += 1
+                if task['CreatedDate'] < current_date and task['Status'] == '7':
+                    work_status_count['Delay Finished'] += 1
+                if task['Status'] == '2':
+                    work_status_count['Not Completed'] += 1   
+                if task['CreatedDate'] <= task['EndDate'] and  task['Status'] == '7':
+                    work_status_count['Finished'] += 1
+
+            designationData['WorkStatusCount'] = work_status_count
+           
+            
            
             return JsonResponse(designationData, safe=False)
         elif request.method == 'DELETE':

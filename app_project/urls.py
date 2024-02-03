@@ -18,5 +18,13 @@ urlpatterns = [
 
     path('TaskReviews/', views.TaskReviewsApi),
     url(r'^TaskReviewsById/(?P<TaskReviewId>[0-9a-zA-Z\-]+)$', views.TaskReviewsApiById),
-   
+    path('GetAllTasksStatus/', views.GetAllTasksStatus),
+
+
+
+    path('ProjectTaskFile/', views.ProjectTaskFileApi),
+    url(r'^ProjectTaskFile/(?P<ProjectTaskFileId>[0-9a-zA-Z\-]+)$', views.CURDprojectTaskFileApiById),
+    url(r'^uploadProjectTaskFile/(?P<ProjectTaskFileId>[0-9a-zA-Z\-]+)$',
+        views.UploadProjectTaskFile.as_view()),
+
 ]

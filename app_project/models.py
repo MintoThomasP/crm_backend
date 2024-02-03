@@ -32,6 +32,16 @@ class ProjectTask(models.Model):
     EndDate=models.CharField(blank=True, null=True, max_length=100)
     TaskPoint=models.IntegerField(default=0)
     CompletionPoint=models.IntegerField(default=0)
+    VerifiedBy=models.CharField(blank=True, null=True, max_length=50)
+
+
+class ProjectTaskFile(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    ProjectTaskFileId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    ProjectTaskId=models.CharField(blank=True, null=True, max_length=50)
+    TaskFile=models.FileField(null=True,blank=True, upload_to='Taskfiles')
+
 
 
 class TaskReviews(models.Model):

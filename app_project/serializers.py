@@ -1,4 +1,4 @@
-from app_project.models import Project, ProjectTask, TaskReviews
+from app_project.models import Project, ProjectTask, ProjectTaskFile, TaskReviews
 from rest_framework import serializers
 
 
@@ -33,7 +33,32 @@ class ProjectTaskSerializer(serializers.ModelSerializer):
 'StartDate',
 'EndDate',
 'TaskPoint',
-'CompletionPoint')
+'CompletionPoint',
+'VerifiedBy')
+
+
+class ProjectTaskFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectTaskFile
+        fields = ( 'SortId',
+                  'ProjectTaskFileId',
+                  'ProjectTaskId',
+                  'TaskFile')
+class SaveProjectTaskFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectTaskFile
+        fields = ( 'SortId',
+                  'ProjectTaskFileId',
+                  'ProjectTaskId',
+                  )
+        
+class UploadProjectTaskFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectTaskFile
+        fields = (
+                  'ProjectTaskFileId',
+                  'TaskFile')
+
         
 
 class TaskReviewsSerializer(serializers.ModelSerializer):
