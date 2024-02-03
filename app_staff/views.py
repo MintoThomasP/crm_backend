@@ -293,6 +293,31 @@ def staffApiByStaffCode(request, StaffCode=""):
                 StaffData['DesignationName']=designationSerializer.data['Designation']
             except:
                 StaffData['DesignationName']=""
+            
+            projectTask=ProjectTask.objects.filter(TaskAssignedTo=staffSerializer.data['StaffId'])
+            projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
+            work_status_count = {'Pending': 0, 'Completed': 0, 'Due': 0, 'Not Completed': 0, 'Finished': 0, 'Delay Finished': 0}
+            current_date = str(date.today())
+          
+            for task in projectTaskSerializer.data:
+              
+                
+                if task['CreatedDate'] >= current_date  and task['Status'] == '1':
+                    work_status_count['Pending'] += 1
+               
+                if task['CreatedDate'] >= current_date and task['Status'] == '3':
+                    work_status_count['Completed'] += 1
+        
+                if task['CreatedDate'] < current_date and task['Status'] == '1':
+                    work_status_count['Due'] += 1
+                if task['CreatedDate'] < current_date and task['Status'] == '7':
+                    work_status_count['Delay Finished'] += 1
+                if task['Status'] == '2':
+                    work_status_count['Not Completed'] += 1   
+                if task['CreatedDate'] <= task['EndDate'] and  task['Status'] == '7':
+                    work_status_count['Finished'] += 1
+
+            StaffData['WorkStatusCount'] = work_status_count
 
             
             return JsonResponse(StaffData, safe=False)
