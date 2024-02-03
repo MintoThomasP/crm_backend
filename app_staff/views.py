@@ -42,9 +42,7 @@ def staffApi(request):
                 current_date = str(date.today())
             
                 for task in projectTaskSerializer.data:
-                
-                    
-                    if task['CreatedDate'] >= current_date  and task['Status'] == '1':
+                    if task['Status'] == '1':
                         work_status_count['Pending'] += 1
                 
                     if task['CreatedDate'] >= current_date and task['Status'] == '3':
@@ -137,7 +135,7 @@ def StaffApiById(request, StaffId=""):
             for task in projectTaskSerializer.data:
               
                 
-                if task['CreatedDate'] >= current_date  and task['Status'] == '1':
+                if task['Status'] == '1':
                     work_status_count['Pending'] += 1
                
                 if task['CreatedDate'] >= current_date and task['Status'] == '3':
@@ -300,14 +298,10 @@ def staffApiByStaffCode(request, StaffCode=""):
             current_date = str(date.today())
           
             for task in projectTaskSerializer.data:
-              
-                
-                if task['CreatedDate'] >= current_date  and task['Status'] == '1':
+                if task['Status'] == '1':
                     work_status_count['Pending'] += 1
-               
                 if task['CreatedDate'] >= current_date and task['Status'] == '3':
                     work_status_count['Completed'] += 1
-        
                 if task['CreatedDate'] < current_date and task['Status'] == '1':
                     work_status_count['Due'] += 1
                 if task['CreatedDate'] < current_date and task['Status'] == '7':
