@@ -94,14 +94,20 @@ def ProjectTaskApi(request):
                     row['ProjectName']=projectSerializer.data['ProjectName']
                 except:
                     row['ProjectName']=""
+                try:
+                    staff=Staff.objects.get(StaffId=row['TaskAssignedTo'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['AssignedTo']=staffSerializer.data['StaffName']
+                except:
+                    row['AssignedTo']=""
 
-                staff=Staff.objects.get(StaffId=row['TaskAssignedTo'])
-                staffSerializer=StaffSerializer(staff)
-                row['AssignedTo']=staffSerializer.data['StaffName']
+                try:
+                    staff=Staff.objects.get(StaffId=row['TaskAssignedBy'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['AssignedBy']=staffSerializer.data['StaffName']
+                except:
+                    row['AssignedBy']=""
 
-                staff=Staff.objects.get(StaffId=row['TaskAssignedBy'])
-                staffSerializer=StaffSerializer(staff)
-                row['AssignedBy']=staffSerializer.data['StaffName']
 
                 try:
                     staff=Staff.objects.get(StaffId=row['VerifiedBy'])
@@ -113,6 +119,13 @@ def ProjectTaskApi(request):
                 taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
                 taskStatusSerializer=TaskStatusSerializer(taskStatus)
                 row['StatusName']=taskStatusSerializer.data['Status']
+
+                try:
+                    projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+                    projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
+                    row['ProjectTaskFiles']=projectTaskFileSerializer.data
+                except:
+                    row['ProjectTaskFiles']=""
 
                 taskData.append(row)
 
@@ -151,7 +164,49 @@ def ProjectTaskApiById(request, ProjectTaskId=""):
                     ProjectTaskId=ProjectTaskId)
             projectTaskSerializer = ProjectTaskSerializer(
                     projectTask)
-            return JsonResponse(projectTaskSerializer.data, safe=False)
+            ProjectTaskData=projectTaskSerializer.data
+            try:
+                taskStatus=TaskStatus.objects.get(StatusId=projectTaskSerializer.data['Status'])
+                taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                ProjectTaskData['StatusName']=taskStatusSerializer.data['Status']
+            except:
+                ProjectTaskData['StatusName']=""
+
+            try:
+                project = Project.objects.get(ProjectId=projectTaskSerializer.data['ProjectId'])
+                projectSerializer = ProjectSerializer(project)
+                ProjectTaskData['ProjectName'] = projectSerializer.data['ProjectName']
+            except:
+                ProjectTaskData['ProjectName']=""
+            try:
+                staff = Staff.objects.get(StaffId=projectTaskSerializer.data['TaskAssignedBy'])
+                staffSerializer = StaffSerializer(staff)
+                ProjectTaskData['AssignedBy'] = staffSerializer.data['StaffName']
+            except:
+                ProjectTaskData['AssignedBy']=""
+            
+            try:
+                staff = Staff.objects.get(StaffId=projectTaskSerializer.data['TaskAssignedTo'])
+                staffSerializer = StaffSerializer(staff)
+                ProjectTaskData['AssignedTo'] = staffSerializer.data['StaffName']
+            except:
+                ProjectTaskData['AssignedTo']=""
+
+
+            try:
+                staff=Staff.objects.get(StaffId=projectTaskSerializer.data['VerifiedBy'])
+                staffSerializer=StaffSerializer(staff)
+                ProjectTaskData['VerifiedByName']=staffSerializer.data['StaffName']
+            except:
+                ProjectTaskData['VerifiedByName']= ""
+            try:
+                projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=projectTaskSerializer.data['ProjectTaskId'])
+                projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
+                ProjectTaskData['ProjectTaskFiles']=projectTaskFileSerializer.data
+            except:
+                ProjectTaskData['ProjectTaskFiles']=""
+
+            return JsonResponse(ProjectTaskData, safe=False)
         elif request.method == 'DELETE':
             projectTask = ProjectTask.objects.get(ProjectTaskId=ProjectTaskId)
             projectTask.delete()
@@ -188,6 +243,13 @@ def ProjectTaskApiByProjectId(request, ProjectId=""):
                     row['VerifiedByName']=staffSerializer.data['StaffName']
                 except:
                     row['VerifiedByName']= ""
+                
+                try:
+                    projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+                    projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
+                    row['ProjectTaskFiles']=projectTaskFileSerializer.data
+                except:
+                    row['ProjectTaskFiles']=""
 
                 staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
                 staffSerializer = StaffSerializer(staff)
@@ -230,6 +292,12 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
                     row['VerifiedByName']=staffSerializer.data['StaffName']
                 except:
                     row['VerifiedByName']= ""
+                try:
+                    projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+                    projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
+                    row['ProjectTaskFiles']=projectTaskFileSerializer.data
+                except:
+                    row['ProjectTaskFiles']=""
 
                 taskStatusName.append(row)
             return JsonResponse(taskStatusName, safe=False)
@@ -291,6 +359,13 @@ def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
                     row['VerifiedByName']=staffSerializer.data['StaffName']
                 except:
                     row['VerifiedByName']= ""
+                
+                try:
+                    projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+                    projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
+                    row['ProjectTaskFiles']=projectTaskFileSerializer.data
+                except:
+                    row['ProjectTaskFiles']=""
 
                 taskStatusName.append(row)
 
@@ -331,6 +406,13 @@ def ProjectTaskApiByUserIdAndProjectId(request):
                     row['VerifiedByName']=staffSerializer.data['StaffName']
                 except:
                     row['VerifiedByName']= ""
+
+                try:
+                    projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+                    projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
+                    row['ProjectTaskFiles']=projectTaskFileSerializer.data
+                except:
+                    row['ProjectTaskFiles']=""
                 taskStatusName.append(row)
             return JsonResponse(taskStatusName, safe=False)
         else:
@@ -361,9 +443,13 @@ def ProjectTaskApiByTaskAssignedByAndProjectId(request):
                     row['ProjectName'] = projectSerializer.data['ProjectName']
                 except:
                     row['ProjectName']=""
-                staff = Staff.objects.get(StaffId=row['TaskAssignedBy'])
-                staffSerializer = StaffSerializer(staff)
-                row['StaffName'] = staffSerializer.data['StaffName']
+                try:
+                    staff = Staff.objects.get(StaffId=row['TaskAssignedBy'])
+                    staffSerializer = StaffSerializer(staff)
+                    row['StaffName'] = staffSerializer.data['StaffName']
+                except:
+                    row['StaffName']=""
+
 
                 try:
                     staff=Staff.objects.get(StaffId=row['VerifiedBy'])
@@ -371,6 +457,12 @@ def ProjectTaskApiByTaskAssignedByAndProjectId(request):
                     row['VerifiedByName']=staffSerializer.data['StaffName']
                 except:
                     row['VerifiedByName']= ""
+                try:
+                    projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+                    projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
+                    row['ProjectTaskFiles']=projectTaskFileSerializer.data
+                except:
+                    row['ProjectTaskFiles']=""
 
                 taskData.append(row)
             return JsonResponse(taskData, safe=False)
