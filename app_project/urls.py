@@ -24,7 +24,21 @@ urlpatterns = [
 
     path('ProjectTaskFile/', views.ProjectTaskFileApi),
     url(r'^ProjectTaskFile/(?P<ProjectTaskFileId>[0-9a-zA-Z\-]+)$', views.CURDprojectTaskFileApiById),
-    url(r'^uploadProjectTaskFile/(?P<ProjectTaskFileId>[0-9a-zA-Z\-]+)$',
+    url(r'^UploadProjectTaskFile/(?P<ProjectTaskFileId>[0-9a-zA-Z\-]+)$',
         views.UploadProjectTaskFile.as_view()),
+
+
+
+    path('Comment/', views.CommentApi),
+    url(r'^CURDCommentApiById/(?P<CommentId>[0-9a-zA-Z\-]+)$', views.CURDCommentApiById),
+
+
+    path('CommentFile/', views.CommentFileApi),
+    url(r'^CURDCommentFileApiById/(?P<CommentFileId>[0-9a-zA-Z\-]+)$', views.CURDCommentFileApiById),
+    path('UploadCommentFile/', views.UploadCommentFile.as_view()),
+
+
+     url(r'^send_notification/(?P<ProjectTaskId>[0-9a-zA-Z\-]+)$', views.send_notification_on_comment),
+
 
 ]

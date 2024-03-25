@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-_5@07uks53!#s287u04jba(%+hqtq^jk50m4t$pxjz&rn7-hu8
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1','13.127.179.202','192.168.10.218']
+ALLOWED_HOSTS = ['127.0.0.1','13.127.179.202','192.168.10.152','192.168.1.11']
 CORS_ORIGIN_ALLOW_ALL=True
 
 # Application definition
@@ -95,10 +95,10 @@ DATABASES = {
      'default': {
         'ENGINE': 'dj_db_conn_pool.backends.mysql',
         'NAME': 'staffmanage_db',
-        # 'USER': 'root',
-        # 'PASSWORD': '',
-        'USER': 'cubexizsoftadmin',
-        'PASSWORD': 'admin',
+        'USER': 'root',
+        'PASSWORD': '',
+        # 'USER': 'cubexizsoftadmin',
+        # 'PASSWORD': 'admin',
         'HOST': 'localhost',
         'PORT': '3306',
         'POOL_OPTIONS' : {
@@ -160,3 +160,15 @@ MEDIA_ROOT = os.path.join(BASE_DIR,'media')
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+
+
+# cred = credentials.Certificate("..\serviceAccountKey.json")
+# firebase_admin.initialize_app(cred)
+# import os
+# from firebase_admin import credentials
+
+# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+# firebase_cred = credentials.Certificate(os.path.join(BASE_DIR, 'serviceAccountKey.json'))

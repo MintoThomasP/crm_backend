@@ -6,6 +6,12 @@ urlpatterns = [
     path('Client/', views.clientApi),
     url(r'^ClientById/(?P<ClientId>[0-9a-zA-Z\-]+)$', views.ClientApiById),
 
+    path('ClientOtherDetails/', views.ClientOtherDetailsApi),
+
+    url(r'^ClientOtherDetailsApiById/(?P<ClientOtherDetailId>[0-9a-zA-Z\-]+)$', views.ClientOtherDetailsApiById),
+
+    path('UploadClientDocument/', views.UploadClientDocument.as_view()),
+
  
    
 ]

@@ -1,4 +1,5 @@
-from app_project.models import Project, ProjectTask, ProjectTaskFile, TaskReviews
+
+from app_project.models import CommentFile, Comments, Project, ProjectTask, ProjectTaskFile, TaskReviews
 from rest_framework import serializers
 
 
@@ -71,3 +72,24 @@ class TaskReviewsSerializer(serializers.ModelSerializer):
 'TaskReview',
 'ProjectTaskId'
 )
+        
+class CommentsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Comments
+        fields = ('SortId',
+                  'CommentId',
+                  'ProjectTaskId',
+                  'Comment',
+                  'CommentedBy',
+                  'Status')
+        
+class CommentFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CommentFile
+        fields = ('SortId',
+                  'CommentFileId',
+                  'CommentId',
+                  'CommentFile')
+        
+
+        

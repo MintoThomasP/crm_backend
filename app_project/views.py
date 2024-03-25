@@ -1,3 +1,4 @@
+from django.dispatch import receiver
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
@@ -10,8 +11,8 @@ from app_staff.models import Staff
 
 from app_staff.serializers import StaffSerializer
 
-from app_project.models import Project, ProjectTask, ProjectTaskFile, TaskReviews
-from app_project.serializers import ProjectSerializer, ProjectTaskFileSerializer, ProjectTaskSerializer, SaveProjectTaskFileSerializer, TaskReviewsSerializer, UploadProjectTaskFileSerializer
+from app_project.models import CommentFile, Comments, Project, ProjectTask, ProjectTaskFile, TaskReviews
+from app_project.serializers import CommentFileSerializer, CommentsSerializer, ProjectSerializer, ProjectTaskFileSerializer, ProjectTaskSerializer,  SaveProjectTaskFileSerializer, TaskReviewsSerializer, UploadProjectTaskFileSerializer
 
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
@@ -205,7 +206,19 @@ def ProjectTaskApiById(request, ProjectTaskId=""):
                 ProjectTaskData['ProjectTaskFiles']=projectTaskFileSerializer.data
             except:
                 ProjectTaskData['ProjectTaskFiles']=""
+            try:
+                comment=Comments.objects.filter(ProjectTaskId=ProjectTaskId).order_by('SortId')
+                commentSerializer = CommentsSerializer(comment,many=True)
+                commentData=[]
+                for fileSer in commentSerializer.data:
+                    commentFile = CommentFile.objects.filter(CommentId=fileSer['CommentId'])
+                    commentFileSerializer = CommentFileSerializer(commentFile,many=True)
+                    fileSer['CommentFiles']=commentFileSerializer.data
+                    commentData.append(fileSer)
+                ProjectTaskData['Comments']=commentData
 
+            except:
+                ProjectTaskData['Comments']=[]
             return JsonResponse(ProjectTaskData, safe=False)
         elif request.method == 'DELETE':
             projectTask = ProjectTask.objects.get(ProjectTaskId=ProjectTaskId)
@@ -329,6 +342,8 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
 #             return JsonResponse("", safe=False)
 #     except:
 #         return JsonResponse("", safe=False)
+    
+
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get projecttask by staff",)
 @api_view(['GET'])
@@ -348,11 +363,12 @@ def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
                     row['ProjectName'] = projectSerializer.data['ProjectName']
                 except:
                     row['ProjectName'] = ""
-
-                staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
-                staffSerializer = StaffSerializer(staff)
-                row['StaffName'] = staffSerializer.data['StaffName']
-
+                try:
+                    staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
+                    staffSerializer = StaffSerializer(staff)
+                    row['StaffName'] = staffSerializer.data['StaffName']
+                except:
+                    row['StaffName'] =[]
                 try:
                     staff=Staff.objects.get(StaffId=row['VerifiedBy'])
                     staffSerializer=StaffSerializer(staff)
@@ -595,7 +611,7 @@ def CURDprojectTaskFileApiById(request, ProjectTaskFileId=""):
             return JsonResponse(projectTaskFileSerializer.data, safe=False)
         elif request.method == 'DELETE':
             projectTaskFile = ProjectTaskFile.objects.get(ProjectTaskFileId=ProjectTaskFileId)
-            projectTaskFile.objects.get(ProjectTaskFileId=ProjectTaskFileId).TaskFile.delete(save=True)
+            ProjectTaskFile.objects.get(ProjectTaskFileId=ProjectTaskFileId).TaskFile.delete(save=True)
             projectTaskFile.delete()
             return JsonResponse("Deleted successfully", safe=False)
         else:
@@ -614,7 +630,7 @@ class UploadProjectTaskFile(APIView):
                 projectTaskFile = ProjectTaskFile.objects.get(
                     ProjectTaskFileId=ProjectTaskFileId)
                 try:
-                    projectTaskFile.objects.get(
+                    ProjectTaskFile.objects.get(
                         ProjectTaskFileId=ProjectTaskFileId).TaskFile.delete(save=True)
                 except:
                     p = ""
@@ -627,3 +643,160 @@ class UploadProjectTaskFile(APIView):
                     return JsonResponse("", safe=False)
         except:
             return JsonResponse("", safe=False)
+        
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all project Task file",)
+@swagger_auto_schema(method='PUT', request_body=CommentsSerializer)
+@swagger_auto_schema(method='POST', request_body=CommentsSerializer)
+@api_view(['GET','POST','PUT'])
+def CommentApi(request, pk=""):
+    # try:
+        if request.method == 'GET':
+            comment = Comments.objects.all()
+            commentSerializer = CommentsSerializer(
+                comment,many=True)
+            return JsonResponse(commentSerializer.data, safe=False)
+        elif request.method == 'POST':
+            comment = JSONParser().parse(request)
+            commentSerializer = CommentsSerializer(
+                data=comment)
+           
+            if commentSerializer.is_valid():
+                commentSerializer.save()
+               
+                return JsonResponse(commentSerializer.data['CommentId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            commentdata = JSONParser().parse(request)
+            comment = Comments.objects.get(
+                CommentId=commentdata['CommentId'])
+            commentSerializer = CommentsSerializer(
+                comment, data=commentdata)
+            if commentSerializer.is_valid():
+                commentSerializer.save()
+                return JsonResponse(commentSerializer.data['CommentId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
+    
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="",)
+@api_view(['GET','DELETE'])
+def CURDCommentApiById(request, CommentId=""):
+    try:
+        if request.method == 'GET':
+            comment = Comments.objects.get(
+                CommentId=CommentId)
+            commentSerializer = CommentsSerializer(
+                comment)
+            return JsonResponse(commentSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            comment = Comments.objects.get(CommentId=CommentId)
+            comment.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all project Task file",)
+@swagger_auto_schema(method='PUT', request_body=CommentFileSerializer)
+@swagger_auto_schema(method='POST', request_body=CommentFileSerializer)
+@api_view(['GET','POST','PUT'])
+def CommentFileApi(request, pk=""):
+    try:
+        if request.method == 'GET':
+            commentFile = CommentFile.objects.all()
+            commentFileSerializer = CommentFileSerializer(
+                commentFile,many=True)
+            return JsonResponse(commentFileSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="",)
+@api_view(['GET','DELETE'])
+def CURDCommentFileApiById(request, CommentFileId=""):
+    try:
+        if request.method == 'GET':
+            commentFile = CommentFile.objects.get(
+                CommentFileId=CommentFileId)
+            commentFileSerializer = CommentFileSerializer(
+                commentFile)
+            return JsonResponse(commentFileSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            commentFile = CommentFile.objects.get(CommentFileId=CommentFileId)
+            commentFile.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+class UploadCommentFile(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+    def post(self, request,  *args, **kwargs):
+        try:
+                Serializer = CommentFileSerializer(
+                    data=request.data)
+                if Serializer.is_valid():
+                    Serializer.save()
+                    return JsonResponse(Serializer.data['CommentFileId'], safe=False)
+                else:
+                    return JsonResponse("", safe=False)
+        except:
+            return JsonResponse("", safe=False)
+        
+
+
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.db.models.signals import post_save
+import json
+
+# Initialize Firebase Admin SDK with credentials
+# cred = credentials.Certificate('serviceAccountKey.json')
+# initialize_app(cred)
+
+import firebase_admin
+from firebase_admin import auth
+from firebase_admin import credentials, messaging
+firebase_cred = credentials.Certificate('serviceAccountKey.json')
+firebase_app = firebase_admin.initialize_app(firebase_cred)
+uid = 'uuid.uuid4'
+custom_token = auth.create_custom_token(uid)
+
+
+def send_notification(token, message_title, message_body):
+    message = messaging.Message(
+        notification=messaging.Notification(
+            title=message_title,
+            body=message_body,
+        ),
+        token=token,
+    )
+    response = messaging.send(message)
+    # response = messaging.send_multicast(message)
+    print('Notification sent:', response)   
+
+
+@receiver(post_save, sender=Comments)
+def send_notification_on_comment(sender, ProjectTaskId="", **kwargs):
+    projectTask=ProjectTask.objects.get(ProjectTaskId=ProjectTaskId)
+        
+    recipient_token = projectTask.TaskAssignedTo  
+    message_title = "New Comment Added"
+    message_body = "A new comment has been added to your task."
+    send_notification(recipient_token, message_title, message_body)
+
