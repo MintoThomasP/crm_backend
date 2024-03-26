@@ -15,5 +15,22 @@ urlpatterns = [
     url(r'^UserGroup/(?P<UserGroupId>[0-9a-zA-Z\-]+)$',
         views.UserGroupApiById),
    path('UserType/', views.UserTypeApi),
+
+
+
+    path('Currency/', views.CurrencyApi),
+    path('PaymentMode/', views.PaymentModeApi),
+    path('DepositTo/', views.DepositToApi),
+    path('InvoiceStatus/', views.InvoiceStatusApi),
+
+
+
+    path('State/', views.StateApi),
+    url(r'^StateApiById/(?P<StateId>[0-9a-zA-Z\-]+)$', views.StateApiById),
+
+    path('City/', views.CityApi),
+    url(r'^CityApiById/(?P<CityId>[0-9a-zA-Z\-]+)$', views.CityApiById),
    
+    path('Country/', views.CountryApi),
+    url(r'^CountryApiById/(?P<CountryId>[0-9a-zA-Z\-]+)$', views.CountryApiById),
 ]

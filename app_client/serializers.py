@@ -15,7 +15,8 @@ class ClientSerializer(serializers.ModelSerializer):
 'CustomerDisplayName',
 'EmailId',
 'Phone1',
-'Phone2'
+'Phone2',
+'CustomerType'
 )
         
 class ClientOtherDetailsSerializer(serializers.ModelSerializer):
@@ -56,7 +57,7 @@ class ClientAddressSerializer(serializers.ModelSerializer):
 'Address2',
 'ZipCode',
 'Phone',
-'Faxnumber',
+'FaxNumber',
 'IsDefaultAddress'
 
 )
@@ -76,5 +77,4 @@ class ContactPersonSerializer(serializers.ModelSerializer):
 'EmailId',
 'Phone1',
 'Phone2'
-
 )

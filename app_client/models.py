@@ -17,6 +17,7 @@ class Client(models.Model):
     EmailId=models.CharField(max_length=150, blank=True, null=True)
     Phone1=models.CharField(max_length=15, blank=True, null=True)
     Phone2=models.CharField(max_length=15, blank=True, null=True)
+    CustomerType=models.CharField(max_length=300, blank=True, null=True)
 
 
 
@@ -36,6 +37,7 @@ class ClientDocuments(models.Model):
     ClientOtherDetailId=models.CharField(max_length=50, blank=True, null=True)
     Document=models.FileField(upload_to='ClientDocuments/',null=True,blank=True)
     
+
 class ClientAddress(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)
     ClientAddressId=models.CharField(
@@ -48,7 +50,7 @@ class ClientAddress(models.Model):
     Address2=models.TextField(blank=True, null=True)
     ZipCode=models.CharField(max_length=20, blank=True, null=True)
     Phone=models.CharField(max_length=15, blank=True, null=True)
-    Faxnumber=models.CharField(max_length=20, blank=True, null=True)    
+    FaxNumber=models.CharField(max_length=20, blank=True, null=True)    
     IsDefaultAddress=models.BooleanField(default=False)
 
 class ContactPerson(models.Model):

@@ -48,7 +48,9 @@ INSTALLED_APPS = [
     'app_default',
     'app_project',
     'app_client',
-    'app_login'
+    'app_login',
+    'app_sale',
+    
     
 ]
 
@@ -172,3 +174,20 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # firebase_cred = credentials.Certificate(os.path.join(BASE_DIR, 'serviceAccountKey.json'))
+
+
+
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.office365.com'
+EMAIL_HOST_USER_NAME='PaintMart'
+EMAIL_HOST_USER = 'test.paintmart@outlook.com'
+EMAIL_HOST_PASSWORD = 'paintmart@123'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+CUBEXIZSOFT_MAIL_REGRADS="""Best Regards, 
+        <br/>
+        
+        <br/>
+        Cubexizsoft"""
+

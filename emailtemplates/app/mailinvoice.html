@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice</title>
+</head>
+<body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4;">
+    <div style="max-width: 600px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
+       <p>Dear {{customerName}},</p>
+
+ <p>Attached, please find the invoice for the services/products provided by {{Companyname}} as per our recent agreement.</p>
+        </div>
+        <div style="margin-top: 20px;">
+            <h2 style="color: #007bff; border-bottom: 1px solid #007bff; padding-bottom: 5px;">Invoice Details</h2>
+            <p style="margin: 5px 0;">Invoice Number: {{InvoiceNumber}}</p>
+            <!-- <p style="margin: 5px 0;">Date: {{InvoiceDate}}</p> -->
+            <p style="margin: 5px 0;">Total Amount: {{TotalAmount}}</p>
+        </div>
+        <div style="margin-top: 20px;">
+            <h2 style="color: #007bff; border-bottom: 1px solid #007bff; padding-bottom: 5px;">Bank Details</h2>
+            <p style="margin: 5px 0;">Bank Name: ADCB (Abu Dhabi Commercial Bank)</p>
+            <p style="margin: 5px 0;">Account holder name: WEB BUREAU WEB DESIGN CO LLC</p>
+            <p style="margin: 5px 0;">Account number: 13145265920001</p>
+            <p style="margin: 5px 0;">IBAN: AE320030013145265920001</p>
+            <p style="margin: 5px 0;"></p>
+        </div>
+        <p><a href="http://spog-api.spogprint.com/api-sale/DownloadPDF/{{InvoiceId}}" style="display: inline-block; background-color: #007bff; color: #fff;text-decoration: none; padding: 10px 20px;border-radius: 5px;">Download Invoice</a></p>
+
+        <div style="margin-top: 20px;">
+            <h2 style="color: #007bff; border-bottom: 1px solid #007bff; padding-bottom: 5px;">Additional Information</h2>
+            <p style="margin: 5px 0;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla facilisi. Proin hendrerit nulla ac arcu vehicula ultricies.</p>
+            <p style="margin: 5px 0;">Integer euismod elit eget mi finibus, non luctus turpis ullamcorper.</p>
+        </div>
+    </div>
+</body>
+</html>

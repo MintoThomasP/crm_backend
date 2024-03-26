@@ -1,0 +1,107 @@
+from rest_framework import serializers
+
+from app_sale.models import Invoice, InvoiceDocument, InvoiceItem, PaymentReceived, Quotation, QuotationFile, QuotationItem
+
+
+class QuotationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Quotation
+        fields = ('SortId',
+'QuotationId',
+'ClientId',
+'QuotationNumber',
+'ReferenceNumber',
+'QuoteDate',
+'ExpiryDate',
+'SalesPerson',
+'ProjectId',
+'Subject',
+'CustomerNotes',
+'TermsNConditions',
+'SubTotalAmount',
+'TotalAmount')
+        
+
+class QuotationItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuotationItem
+        fields = ('SortId',
+'QuotationItemId',
+'QuotationId',
+'ItemName',
+'Quantity',
+'Rate',
+'DiscountPercent',
+'Amount')
+        
+
+class QuotationFileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuotationFile
+        fields = ('SortId',
+'QuotationFileId',
+'QuotationId',
+'QuoteFile',
+)
+
+
+class InvoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Invoice
+        fields = ('SortId',
+'InvoiceId',
+'InvoiceNumber',
+'OrderNumber',
+'ClientId',
+'InvoiceDate',
+'DueDate',
+'SalesPerson',
+'Subject',
+'CustomerNotes',
+'TermsNConditions',
+'SubTotalAmount',
+'TotalAmount',
+'AmountDue',
+'InvoiceFile',
+'Payment',
+'Status')
+
+
+
+class InvoiceItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InvoiceItem
+        fields = ('SortId',
+'InvoiceItemId',
+'InvoiceId',
+'ItemDetails',
+'Quantity',
+'Rate',
+'DiscountPercent',
+'Amount')
+
+class InvoiceDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InvoiceDocument
+        fields = ('SortId',
+'InvoiceDocumentId',
+'InvoiceId',
+'Document',
+)
+        
+class PaymentReceivedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentReceived
+        fields = ('SortId',
+'PaymentReceivedId',
+'ClientId',
+'AmountReceived',
+'IsFullAmount',
+'BankCharges',
+'PaymentDate',
+'PaymentNumber',
+'PaymentMode',
+'DepositTo',
+'ReferenceNumber'
+
+)

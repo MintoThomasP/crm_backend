@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Roboto:wght@100;300;400;500;700;900&display=swap');
+
+    html {
+        font-family: 'Roboto', sans-serif;
+    }
+
+    th {
+        font-size: 12px;
+    }
+
+    td {
+        font-size: 12px;
+    }
+
+    .header_icons_mail::before {
+        content: url('call\ icon.png');
+        padding-right: 6px;
+    }
+
+    .header_icons_phone::before {
+        content: url('mobile\ icon.png');
+        padding-right: 6px;
+    }
+
+    .header_icons_landline::before {
+        content: url('call\ icon.png');
+        padding-right: 6px;
+    }
+
+    .header_icons_location::before {
+        content: url('location\ icon.png');
+        padding-right: 6px;
+    }
+
+    /* .invoice_header table {
+        width: 100%;
+        border-bottom: 3px solid transparent;
+        border-image: linear-gradient(0.25turn, #595959, #595959);
+        border-image-slice: 100%;
+        border-image-slice: 1;
+        padding-bottom: 15px;
+    } */
+
+    .trn {
+        font-weight: 600;
+        /* border: 1px solid #686868; */
+        padding: 0px 6px;
+        display: block;
+        /* text-align: center; */
+    }
+
+    .trn_td {
+        text-align: center;
+    }
+
+
+    .invoice_heading_main table tr th h3 {
+        text-align: center;
+    }
+
+    .cust_detail_td ul li {
+        list-style-type: none;
+        
+    }
+
+    .cust_detail_td ul {
+        padding: 0;
+        margin: 0;
+    }
+
+    .text-red {
+        color: red;
+    }
+
+    .customer_details_main table {
+        width: 100%;
+        margin-top:20px;
+    }
+
+    .invoice_heading_main table {
+        width: 100%;
+    }
+
+    .customer_details_main table,
+    .customer_details_main th,
+    .customer_details_main td {
+        
+       
+        border-collapse: collapse;
+       
+    }
+
+    .product_table table {
+        width: 100%;
+        
+    }
+
+    .product_table {
+        /* border-bottom: 3px solid transparent; */
+        /* border-image: linear-gradient(0.25turn, #111010, #0f0f0f); */
+        border-image-slice: 1;
+    }
+
+    .product_table table,
+    .product_table th,
+    .product_table td {
+        /* border: 2px solid #131212; */
+        border-collapse: collapse;
+        padding: 4px;
+    }
+
+    .demo table {
+        width: 100%;
+    }
+
+    .demo table,
+    .demo th,
+    .demo td {
+        border: 2px solid #595959;
+        border-collapse: collapse;
+        padding: 4px;
+    }
+
+    tr.bill_custom {
+        border: none;
+    }
+
+    .reference_table {
+        margin: -10px 0;
+    }
+
+    .product_table th {
+        background-color: #131212 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+        color:rgb(226, 232, 238);
+    }
+
+
+
+    .bank_details ul li {
+        list-style-type: none;
+        padding-bottom: 6px;
+    }
+
+    .bank_details ul {
+        padding: 0;
+        margin: 0;
+    }
+
+    .amount_words ul li {
+        list-style-type: none;
+        padding-bottom: 6px;
+    }
+
+    .amount_words ul {
+        padding-left: 0;
+    }
+
+    .right-number {
+        text-align: right;
+    }
+
+    .page_bottom table {
+        width: 100%;
+    }
+
+    .invoice_header table tr td {
+        font-size: 12px;
+    }
+
+    .product_height {
+        height: 165px;
+        vertical-align: baseline;
+    }
+
+    .amount_words {
+        vertical-align: baseline;
+    }
+
+    /* .invoice_header table tr td img {
+        width: 200px;
+    } */
+
+    .esign_bg {
+        background-image: url("esign.png");
+    }
+
+    .esign_img img {
+        width: 100px;
+    }
+
+    .esign_img {
+        text-align: center;
+    }
+
+    .header_div img {
+        width: 20px !important;
+    }
+
+    .header_div {
+        display: inline-flex;
+    }
+
+    .header_div2 img {
+        width: 20px !important;
+    }
+
+
+
+    .header_div2 span {
+        height: 12px;
+        line-height: 21px;
+        padding-left: 6px;
+    }
+
+    .header_div span {
+        height: 16px;
+        line-height: 17px;
+        padding-left: 6px;
+    }
+
+    .header_table tr td {
+        padding: 0;
+    }
+</style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <div class="invoice_header">
+            <table>
+                <tr style=" padding-bottom: 10px;">
+                    <td style="width: 80%; padding-right:10px;"><img src="./static/images/logo.png"
+                            style="width: 200px;" />
+                            <div class="header_div">
+                                <p><b>WEB BUREAU WEB-DESIGN CO LLC</b><br>Dubai<br>United Arab Emirates</p>
+                            </div>
+                            </td>
+                    <td style="width:40%;padding-left:10px;text-align: right;">
+                        <div class="header_div">
+                            
+                            <p><b>INVOICE<br># {{invoice.InvoiceNumber}}</b></p>
+                        </div>
+                        <div class="header_div">
+                           
+                            <span>Balance Due<br>
+                                <b>AED{{invoice.AmountDue}}</b></span>
+                        </div>
+                    
+                       
+                    </td>
+                </tr>
+            </table>
+
+        </div>
+
+
+
+        <div class="customer_details_main">
+            <table>
+                <tr style="width:40%">
+                    <td rowspan="3" class="cust_detail_td">
+                        <ul>
+                            <li>Bill To:</li>
+                           
+                            <li><b>{{clientaddress.CustomerName}}</b></li>
+                                <li>{{clientaddress.Address1}}</li>
+                                <li>{{clientaddress.Address2}}</li>
+                                <li>{{clientaddress.City}}</li>
+                                <li>{{clientaddress.Country}}</li>
+                                <li>{{clientaddress.ZipCode}}</li>
+
+                        </ul>
+                    </td>
+                    
+                  
+                    
+                </tr>
+               
+               
+                <tr style="width:40%;">
+                    <td style="vertical-align: top;">Invoice Date:</b></td>
+                    <td style="vertical-align: top;">{{invoice.InvoiceDate|date:"d-m-Y"}}</b></td>
+                </tr>
+                
+                <tr>
+                    <td style="vertical-align: top;">Due Date:</b></td>
+                    <td style="vertical-align: top;">{{invoice.DueDate|date:"d-m-Y"}}</b></td>
+                </tr>
+           
+            </table>
+            <div class="product_table">
+                <table style="width: 100%;">
+                    <tr>
+                        <th style="width: 5%;">#</th>
+    
+                        <th style="width: 50%; text-align: left;">Item & Description </th>
+                        <th style="width: 15%;">Qty</th>
+                        <th style="width: 15%;">Rate</th>
+                   
+                         <th style="width: 15%;" >Amount</th> 
+    
+                    </tr>
+                    {%for row in invoiceItems%}
+                    <tr style="border-bottom: 1px solid black;">
+                        <td style="width: 5%;">1</td>
+    
+                        <td style="width: 50%; text-align: left;">{{row.ItemDetails}}</td>
+                        <td style="width: 15%;">{{row.Quantity|floatformat:2}}</td>
+                        <td style="width: 15%;">{{row.Rate|floatformat:2}}</td>
+                   
+                         <td style="width: 15%;" >{{row.Amount|floatformat:2}}</td> 
+                        
+  
+
+                    </tr>
+                    {%endfor%}
+                </table>
+                <table>
+                    <tr style="border-bottom: 1px solid black;">
+                        <td style="width: 40%;"></td>
+                        <td style="width: 40%;"></td>
+                        <td style="width: 10%; text-align: right;"><b>Sub Total</b></td>
+                        <td style="width: 10%; text-align: right;">{{invoice.SubTotalAmount}}</td>
+    
+                    </tr>
+                    <tr>
+                        <td style="width: 35%;"></td>
+                        <td style="width: 35%;"></td>
+                        <td style="width: 15%; text-align: right;"><b>Total</b> </td>
+                        <td style="width: 15%; text-align: right;"><b>AED{{invoice.TotalAmount}}</b></td>
+
+                    </tr>
+                    <tr>
+                        <td style="width: 35%;"></td>
+                        <td style="width: 35%;"></td>
+                        <td style="width: 15%; text-align: right;">Payment Made</td>
+                        <td style="width: 15%; text-align: right;">(-) {{invoice.Payment}}</td>
+                    </tr>
+                    <tr>
+                        <td style="width: 35%;"></td>
+                        <td style="width: 35%;"></td>
+                        <td style="width: 15%; text-align: right; background-color: #f3f0f0;"><b>Balance Due</b> </td>
+                        <td style="width: 15%; text-align: right;background-color: #f3f0f0;"><b>AED{{invoice.AmountDue}}</b></td>
+                    </tr>
+                </table>
+                    
+        </div>
+        <p>NOTES<br>Thank you for the payment. You just made our day</p>
+        </div>
+</body>
+
+</html>
