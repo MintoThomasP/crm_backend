@@ -611,13 +611,18 @@ def SendInvoice(request):
 
             invoice = Invoice.objects.get(InvoiceId=InvoiceId)
             invoiceItems = InvoiceItem.objects.filter(InvoiceId=InvoiceId)
-            clientaddress = ClientAddress.objects.get(ClientId=invoice.ClientId)
+            billingAddress=json.loads[invoice.BillingAddress]
+            try:
+                clientaddress = ClientAddress.objects.get(ClientId=invoice.ClientId)
+            except:
+                clientaddress=""
             client = Client.objects.get(ClientId=invoice.ClientId)
             context = {
                 'invoice': invoice,
                 'invoiceItems': invoiceItems,
                 'clientaddress': clientaddress,
-                'client':client
+                'client':client,
+                'billingAddress':billingAddress
             }
             pdf = render_to_pdf('invoice.html', context)
             invoice_file_name = f'{InvoiceId}.pdf'
