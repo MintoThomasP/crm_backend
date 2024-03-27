@@ -28,10 +28,19 @@ urlpatterns = [
 
     path('PaymentReceivedApi/', views.PaymentReceivedApi),
     url(r'^PaymentReceivedApiById/(?P<PaymentReceivedId>[0-9a-zA-Z\-]+)$', views.PaymentReceivedApiById),
-    
+    path('UploadPaymentDocument/', views.UploadPaymentDocument.as_view()),
+    url(r'^PaymentDocumentApiById/(?P<PaymentDocumentId>[0-9a-zA-Z\-]+)$', views.PaymentDocumentApiById),
+
+    path('PaymentReceivedDetail/', views.PaymentReceivedDetailApi),
+    url(r'^PaymentReceivedDetailApiById/(?P<PaymentReceivedDetailId>[0-9a-zA-Z\-]+)$', views.PaymentReceivedDetailApiById),
+
+
     url(r'^DownloadPDF/(?P<InvoiceId>[0-9a-zA-Z\-]+)$', views.DownloadPDF.as_view()),
     url(r'^ViewPDF/(?P<InvoiceId>[0-9a-zA-Z\-]+)$', views.ViewPDF),
        path('SendInvoice/', views.SendInvoice),
+
+
+    url(r'^GetAllUnpaidInvoiceByClientIdApi/(?P<ClientId>[0-9a-zA-Z\-]+)$', views.GetAllUnpaidInvoiceByClientIdApi),
 
 
     ]

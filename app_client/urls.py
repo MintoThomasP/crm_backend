@@ -14,6 +14,9 @@ urlpatterns = [
 
     path('ClientAddress/', views.ClientAddressApi),
     url(r'^ClientAddressApiById/(?P<ClientAddressId>[0-9a-zA-Z\-]+)$', views.ClientAddressApiById),
+    url(r'^ClientAddressApiByClientId/(?P<ClientId>[0-9a-zA-Z\-]+)$', views.ClientAddressApiByClientId),
+
+    
 
     path('ContactPerson/', views.ContactPersonApi),
     url(r'^ContactPersonApiById/(?P<ContactPersonId>[0-9a-zA-Z\-]+)$', views.ContactPersonApiById),

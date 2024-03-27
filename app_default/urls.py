@@ -27,9 +27,10 @@ urlpatterns = [
 
     path('State/', views.StateApi),
     url(r'^StateApiById/(?P<StateId>[0-9a-zA-Z\-]+)$', views.StateApiById),
+    url(r'^StateApiByCountryId/(?P<CountryId>[0-9a-zA-Z\-]+)$', views.StateApiByCountryId),
 
-    path('City/', views.CityApi),
-    url(r'^CityApiById/(?P<CityId>[0-9a-zA-Z\-]+)$', views.CityApiById),
+
+
    
     path('Country/', views.CountryApi),
     url(r'^CountryApiById/(?P<CountryId>[0-9a-zA-Z\-]+)$', views.CountryApiById),

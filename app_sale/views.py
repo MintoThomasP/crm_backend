@@ -1,5 +1,6 @@
 from django.shortcuts import render
 import os
+from django.db.models import Q
 import smtplib
 from email.message import EmailMessage
 import codecs
@@ -15,8 +16,15 @@ from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 
 from app_client.models import Client, ClientAddress
+from app_client.serializers import ClientSerializer
+from app_default.models import InvoiceStatus
+from app_default.serializers import InvoiceStatusSerializer
+from app_project.models import Project
+from app_project.serializers import ProjectSerializer
 from app_sale.models import Invoice, InvoiceDocument, InvoiceItem, PaymentReceived, Quotation, QuotationFile, QuotationItem
-from app_sale.serializers import InvoiceDocumentSerializer, InvoiceItemSerializer, InvoiceSerializer, PaymentReceivedSerializer, QuotationFileSerializer, QuotationItemSerializer, QuotationSerializer
+from app_sale.serializers import InvoiceDocumentSerializer, InvoiceItemSerializer, InvoiceSerializer, PaymentDocumentSerializer, PaymentReceivedDetailSerializer, PaymentReceivedSerializer, QuotationFileSerializer, QuotationItemSerializer, QuotationSerializer
+from app_staff.models import Staff
+from app_staff.serializers import StaffSerializer
 
 def sendCubexizsoftMail(msg=""):
     EMAIL_ADDRESS = settings.EMAIL_HOST_USER
@@ -43,7 +51,19 @@ def QuotationApi(request):
             quotation = Quotation.objects.all().order_by('-SortId')
             quotationSerializer = QuotationSerializer(
                     quotation, many=True)
-            return JsonResponse(quotationSerializer.data, safe=False)
+            quoteData=[]
+            for row in quotationSerializer.data:
+                client=Client.objects.get(ClientId=row['ClientId'])
+                clientSerializer=ClientSerializer(client)
+                row['ClientName']=clientSerializer.data['CustomerDisplayName']
+                project=Project.objects.get(ProjectId=row['ProjectId'])
+                projectSerializer=ProjectSerializer(project)
+                row['ProjectName']=projectSerializer.data['ProjectName']
+                staff=Staff.objects.get(StaffId=row['SalesPerson'])
+                staffSerializer=StaffSerializer(staff)
+                row['StaffName']=staffSerializer.data['StaffName']
+                quoteData.append(row)
+            return JsonResponse(quoteData, safe=False)
         elif request.method == 'POST':
             quotationData = JSONParser().parse(request)
             quotationSerializer = QuotationSerializer(
@@ -119,7 +139,6 @@ def QuotationItemApi(request):
                 data=quotationItemData)
             if quotationItemSerializer.is_valid():
                 quotationItemSerializer.save()
-
                 return JsonResponse(quotationItemSerializer.data['QuotationItemId'], safe=False)
             return JsonResponse("Failed to add", safe=False)
         elif request.method == 'PUT':
@@ -187,6 +206,7 @@ def QuotationFileApiById(request, QuotationFileId=""):
             return JsonResponse(quotationFileSerializer.data, safe=False)
         elif request.method == 'DELETE':
             quotationFile = QuotationFile.objects.get(QuotationFileId=QuotationFileId)
+            QuotationFile.objects.get(QuotationFileId=QuotationFileId).QuoteFile.delete(save=True)
             quotationFile.delete()
             return JsonResponse("Deleted successfully", safe=False)
         else:
@@ -207,7 +227,19 @@ def InvoiceApi(request):
             invoice = Invoice.objects.all().order_by('-SortId')
             invoiceSerializer = InvoiceSerializer(
                     invoice, many=True)
-            return JsonResponse(invoiceSerializer.data, safe=False)
+            invoiceData=[]
+            for row in invoiceSerializer.data:
+                client=Client.objects.get(ClientId=row['ClientId'])
+                clientSerializer=ClientSerializer(client)
+                row['ClientName']=clientSerializer.data['CustomerDisplayName']
+                invoiceStatus = InvoiceStatus.objects.get(InvoiceStatusId=row['Status'])
+                invoiceStatusSerializer = InvoiceStatusSerializer(invoiceStatus)
+                row['StatusName']=invoiceStatusSerializer.data['InvoiceStatus']
+                staff=Staff.objects.get(StaffId=row['SalesPerson'])
+                staffSerializer=StaffSerializer(staff)
+                row['StaffName']=staffSerializer.data['StaffName']
+                invoiceData.append(row)
+            return JsonResponse(invoiceData, safe=False)
         elif request.method == 'POST':
             invoiceData = JSONParser().parse(request)
             invoiceSerializer = InvoiceSerializer(
@@ -241,7 +273,18 @@ def InvoiceApiById(request, InvoiceId=""):
                     InvoiceId=InvoiceId)
             invoiceSerializer = InvoiceSerializer(
                     invoice)
-            return JsonResponse(invoiceSerializer.data, safe=False)
+            invoiceData=invoiceSerializer.data
+            invoiceItem = InvoiceItem.objects.filter(InvoiceId=InvoiceId)
+            invoiceItemSerializer = InvoiceItemSerializer(
+                    invoiceItem, many=True)
+            invoiceData['InvoiceItem']=invoiceItemSerializer.data
+            invoiceDocument = InvoiceDocument.objects.filter(
+                    InvoiceId=InvoiceId)
+            invoiceDocumentSerializer = InvoiceDocumentSerializer(
+                    invoiceDocument,many=True)
+            invoiceData['InvoiceDocuments']=invoiceDocumentSerializer.data
+
+            return JsonResponse(invoiceData, safe=False)
         elif request.method == 'DELETE':
             invoice = Invoice.objects.get(InvoiceId=InvoiceId)
             invoice.delete()
@@ -270,7 +313,6 @@ def InvoiceItemApi(request):
                 data=invoiceItemData)
             if invoiceItemSerializer.is_valid():
                 invoiceItemSerializer.save()
-
                 return JsonResponse(invoiceItemSerializer.data['InvoiceItemId'], safe=False)
             return JsonResponse("Failed to add", safe=False)
         elif request.method == 'PUT':
@@ -311,8 +353,6 @@ def InvoiceItemApiById(request, InvoiceItemId=""):
 
 
 
-
-
 class UploadInvoiceDocument(APIView):
     parser_classes = (MultiPartParser, FormParser)
     def post(self, request,  *args, **kwargs):
@@ -342,6 +382,7 @@ def InvoiceDocumentApiById(request, InvoiceDocumentId=""):
             return JsonResponse(invoiceDocumentSerializer.data, safe=False)
         elif request.method == 'DELETE':
             invoiceDocument = InvoiceDocument.objects.get(InvoiceDocumentId=InvoiceDocumentId)
+            InvoiceDocument.objects.get(InvoiceDocumentId=InvoiceDocumentId).Document.delete(save=True)
             invoiceDocument.delete()
             return JsonResponse("Deleted successfully", safe=False)
         else:
@@ -360,28 +401,27 @@ def InvoiceDocumentApiById(request, InvoiceDocumentId=""):
 def PaymentReceivedApi(request):
     try:
         if request.method == 'GET':
-            quotationItem = PaymentReceived.objects.all()
-            quotationItemSerializer = PaymentReceivedSerializer(
-                    quotationItem, many=True)
-            return JsonResponse(quotationItemSerializer.data, safe=False)
+            paymentReceived = PaymentReceived.objects.all()
+            paymentReceivedSerializer = PaymentReceivedSerializer(
+                    paymentReceived, many=True)
+            return JsonResponse(paymentReceivedSerializer.data, safe=False)
         elif request.method == 'POST':
-            quotationItemData = JSONParser().parse(request)
-            quotationItemSerializer = PaymentReceivedSerializer(
-                data=quotationItemData)
-            if quotationItemSerializer.is_valid():
-                quotationItemSerializer.save()
-
-                return JsonResponse(quotationItemSerializer.data['PaymentReceivedId'], safe=False)
+            paymentReceivedData = JSONParser().parse(request)
+            paymentReceivedSerializer = PaymentReceivedSerializer(
+                data=paymentReceivedData)
+            if paymentReceivedSerializer.is_valid():
+                paymentReceivedSerializer.save()
+                return JsonResponse(paymentReceivedSerializer.data['PaymentReceivedId'], safe=False)
             return JsonResponse("Failed to add", safe=False)
         elif request.method == 'PUT':
-            quotationItemData = JSONParser().parse(request)
-            quotationItem = PaymentReceived.objects.get(
-                PaymentReceivedId=quotationItemData['PaymentReceivedId'])
-            quotationItemSerializer = PaymentReceivedSerializer(
-                quotationItem, data=quotationItemData)
-            if quotationItemSerializer.is_valid():
-                quotationItemSerializer.save()
-                return JsonResponse(quotationItemSerializer.data['PaymentReceivedId'], safe=False)
+            paymentReceivedData = JSONParser().parse(request)
+            paymentReceived = PaymentReceived.objects.get(
+                PaymentReceivedId=paymentReceivedData['PaymentReceivedId'])
+            paymentReceivedSerializer = PaymentReceivedSerializer(
+                paymentReceived, data=paymentReceivedData)
+            if paymentReceivedSerializer.is_valid():
+                paymentReceivedSerializer.save()
+                return JsonResponse(paymentReceivedSerializer.data['PaymentReceivedId'], safe=False)
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
@@ -389,25 +429,63 @@ def PaymentReceivedApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give PaymentReceivedId to get one quotationItem detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give PaymentReceivedId to get one paymentReceived detail",)
 @api_view(['GET','DELETE'])
 def PaymentReceivedApiById(request, PaymentReceivedId=""):
     try:
-        if request.method == 'GET': 
-            quotationItem = PaymentReceived.objects.get(
+        if request.method == 'GET':
+            paymentReceived = PaymentReceived.objects.get(
                     PaymentReceivedId=PaymentReceivedId)
-            quotationItemSerializer = PaymentReceivedSerializer(
-                    quotationItem)
-            return JsonResponse(quotationItemSerializer.data, safe=False)
+            paymentReceivedSerializer = PaymentReceivedSerializer(
+                    paymentReceived)
+            return JsonResponse(paymentReceivedSerializer.data, safe=False)
         elif request.method == 'DELETE':
-            quotationItem = PaymentReceived.objects.get(PaymentReceivedId=PaymentReceivedId)
-            quotationItem.delete()
+            paymentReceived = PaymentReceived.objects.get(PaymentReceivedId=PaymentReceivedId)
+            paymentReceived.delete()
             return JsonResponse("Deleted successfully", safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
     
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give QuotationFileId to get one quotationItem detail",)
+@api_view(['GET','DELETE'])
+def PaymentDocumentApiById(request, PaymentDocumentId=""):
+    try:
+        if request.method == 'GET': 
+            paymentDocument = PaymentDocument.objects.get(
+                    PaymentDocumentId=PaymentDocumentId)
+            paymentDocumentSerializer = PaymentDocumentSerializer(
+                    paymentDocument)
+            return JsonResponse(paymentDocumentSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            paymentDocument = PaymentDocument.objects.get(PaymentDocumentId=PaymentDocumentId)
+            PaymentDocument.objects.get(PaymentDocumentId=PaymentDocumentId).Document.delete(save=True)
+            paymentDocument.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+class UploadPaymentDocument(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+    def post(self, request,  *args, **kwargs):
+        try:
+                Serializer = PaymentDocumentSerializer(
+                    data=request.data)
+                if Serializer.is_valid():
+                    Serializer.save()
+                    return JsonResponse(Serializer.data['PaymentDocumentId'], safe=False)
+                else:
+                    return JsonResponse("", safe=False)
+        except:
+            return JsonResponse("", safe=False)
+        
 
 
 from django.template.loader import get_template
@@ -424,8 +502,6 @@ class DownloadPDF(View):
                    'invoiceItem':invoiceItem,
                    'clientadrress':clientadrress,}
         pdf = render_to_pdf('invoice.html', context)
-      
-
         response = HttpResponse(pdf, content_type='application/pdf')
         filename = "Estimate_%s.pdf" %(context['invoice'])
         content = "attachment; filename=%s" %(filename)
@@ -481,7 +557,7 @@ def render_to_pdf(template_src, context_dict={}):
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view
-from .models import Invoice, InvoiceItem
+from .models import Invoice, InvoiceItem, PaymentDocument, PaymentReceivedDetail
 from django.core.files.base import ContentFile
 
 #save and print
@@ -494,10 +570,13 @@ def ViewPDF(request, InvoiceId=""):
             invoice = Invoice.objects.get(InvoiceId=InvoiceId)
             invoiceItems = InvoiceItem.objects.filter(InvoiceId=InvoiceId)
             clientaddress = ClientAddress.objects.get(ClientId=invoice.ClientId)
+            totalAmount=int(invoice.TotalAmount)
+            amountinwords=decimal_number_to_words(totalAmount)
             context = {
                 'invoice': invoice,
                 'invoiceItems': invoiceItems,
                 'clientaddress': clientaddress,
+                'amountinwords':amountinwords
             }
             pdf = render_to_pdf('invoice.html', context)
             invoice_file_name = f'{InvoiceId}.pdf'
@@ -526,8 +605,8 @@ def SendInvoice(request):
     # try:
         if request.method == 'POST':
             requestData = JSONParser().parse(request)
-            # CCEmail = requestData.get('CCEmailId', '').split(',')
-            CCEmail = json.loads(requestData.get('CCEmailId', '[]'))
+            CCEmail = requestData.get('CCEmailId', '').split(',')
+            # CCEmail = json.loads(requestData.get('CCEmailId', '[]'))
             InvoiceId=requestData['InvoiceId']
 
             invoice = Invoice.objects.get(InvoiceId=InvoiceId)
@@ -574,9 +653,176 @@ def SendInvoice(request):
             msg.add_alternative(data, subtype='html')
 
             response = sendCubexizsoftMail(msg)
-            # hashlib.sha1(repr(OTPCODE).encode('utf-8')).hexdigest()
             return JsonResponse("Success", safe=False)
         else:
             return JsonResponse("", safe=False)
     # except:
     #     return JsonResponse("Invalid", safe=False)
+    
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=PaymentReceivedDetailSerializer)
+@swagger_auto_schema(method='PUT', request_body=PaymentReceivedDetailSerializer)
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all InvoiceDocument Details",)
+@api_view(['GET','POST','PUT'])
+def PaymentReceivedDetailApi(request):
+    try:
+        if request.method == 'GET':
+            paymentReceivedDetail = PaymentReceivedDetail.objects.all()
+            paymentReceivedDetailSerializer = PaymentReceivedDetailSerializer(
+                    paymentReceivedDetail, many=True)
+            return JsonResponse(paymentReceivedDetailSerializer.data, safe=False)
+        elif request.method == 'POST':
+            paymentReceivedDetailData = JSONParser().parse(request)
+            paymentReceivedDetailSerializer = PaymentReceivedDetailSerializer(
+                data=paymentReceivedDetailData)
+            if paymentReceivedDetailSerializer.is_valid():
+                paymentReceivedDetailSerializer.save()
+                return JsonResponse(paymentReceivedDetailSerializer.data['PaymentReceivedDetailId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            paymentReceivedDetailData = JSONParser().parse(request)
+            paymentReceivedDetail = PaymentReceivedDetail.objects.get(
+                PaymentReceivedDetailId=paymentReceivedDetailData['PaymentReceivedDetailId'])
+            paymentReceivedDetailSerializer = PaymentReceivedDetailSerializer(
+                paymentReceivedDetail, data=paymentReceivedDetailData)
+            if paymentReceivedDetailSerializer.is_valid():
+                paymentReceivedDetailSerializer.save()
+                return JsonResponse(paymentReceivedDetailSerializer.data['PaymentReceivedDetailId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give PaymentReceivedDetailId to get one paymentReceivedDetail detail",)
+@api_view(['GET','DELETE'])
+def PaymentReceivedDetailApiById(request, PaymentReceivedDetailId=""):
+    try:
+        if request.method == 'GET':
+            paymentReceivedDetail = PaymentReceivedDetail.objects.get(
+                    PaymentReceivedDetailId=PaymentReceivedDetailId)
+            paymentReceivedDetailSerializer = PaymentReceivedDetailSerializer(
+                    paymentReceivedDetail)
+            return JsonResponse(paymentReceivedDetailSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            paymentReceivedDetail = PaymentReceivedDetail.objects.get(PaymentReceivedDetailId=PaymentReceivedDetailId)
+            paymentReceivedDetail.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+
+
+
+# @csrf_exempt
+# @swagger_auto_schema(method='GET',operation_description="NOTE: Get All Unpaid Invoice By ClientId",)
+# @api_view(['GET'])
+# def GetAllUnpaidInvoiceByClientIdApi(request,ClientId=""):
+#     try:
+#         if request.method == 'GET':
+#             invoice = Invoice.objects.filter(Q(Status=2) | Q(Status=3), ClientId=ClientId)
+#             invoiceSerializer = InvoiceSerializer(
+#                     invoice, many=True)
+#             invoiceData=[]
+#             PendingAmount=0
+#             for row in invoiceSerializer.data:
+#                 client=Client.objects.get(ClientId=row['ClientId'])
+#                 clientSerializer=ClientSerializer(client)
+#                 row['ExcessAmount']=clientSerializer.data['AdvanceAmount']
+#                 invoiceData.append(row)
+
+#                 PendingAmount += int(row['AmountDue'])
+#                 invoiceData.append({'PendingAmount': PendingAmount})
+
+#             return JsonResponse(invoiceData, safe=False)
+#         else:
+#             return JsonResponse("", safe=False)
+#     except:
+#         return JsonResponse("", safe=False)
+
+
+from django.db.models import Sum
+
+@csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: Get All Unpaid Invoice By ClientId")
+@api_view(['GET'])
+def GetAllUnpaidInvoiceByClientIdApi(request, ClientId=""):
+    try:
+        if request.method == 'GET':
+            invoices = Invoice.objects.filter(Q(Status=2) | Q(Status=3), ClientId=ClientId).order_by('SortId')
+            invoice_serializer = InvoiceSerializer(invoices, many=True)
+            invoiceData = []
+            pendingAmount = 0
+            advanceAmount = 0
+            for row in invoice_serializer.data:
+                client = Client.objects.get(ClientId=row['ClientId'])
+                invoiceData.append(row)
+                pendingAmount += int(row['AmountDue'])
+            client = Client.objects.get(ClientId=ClientId)
+            advanceAmount = client.AdvanceAmount
+            
+            invoiceData.append({'PendingAmount': pendingAmount, 'AdvanceAmount': advanceAmount})
+            
+            return JsonResponse(invoiceData, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        
+        return JsonResponse("", safe=False)
+
+
+
+def number_to_words(number):
+    # Define lists of words for numbers
+    units = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"]
+    teens = ["", "Eleven", "Twelve", "Thirteen", "Fourteen", "Fifteen", "Sixteen", "Seventeen", "Eighteen", "Nineteen"]
+    tens = ["", "Ten", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
+ 
+    # Define the scale of numbers (thousands, millions, etc.)
+    scales = ["", "thousand", "million", "billion", "trillion"]
+ 
+    # Helper function to convert a number less than 1000 to words
+    def convert_less_than_thousand(num):
+        if num == 0:
+            return ""
+        elif num < 10:
+            return units[num]
+        elif num < 20:
+            return teens[num - 10]
+        elif num < 100:
+            return tens[num // 10] + (" " + convert_less_than_thousand(num % 10) if num % 10 != 0 else "")
+        else:
+            return units[num // 100] + " hundred" + (" and " + convert_less_than_thousand(num % 100) if num % 100 != 0 else "")
+ 
+    # Main function to convert a number to words
+    if number == 0:
+        return "zero"
+ 
+    result = ""
+    scale_index = 0
+ 
+    while number > 0:
+        chunk = number % 1000
+        if chunk != 0:
+            result = convert_less_than_thousand(chunk) + (" " + scales[scale_index] if scale_index > 0 else "") + (" " + result if result != "" else "")
+ 
+        number //= 1000
+        scale_index += 1
+ 
+    return result.strip()
+
+def decimal_number_to_words(number):
+    integer_part = int(number)
+    fractional_part = int((number - integer_part) * 100)
+    
+    words_integer_part = number_to_words(integer_part)
+    words_fractional_part = number_to_words(fractional_part)
+ 
+    return words_integer_part+" Dirhams and "+words_fractional_part+" Fils."

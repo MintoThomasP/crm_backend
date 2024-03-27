@@ -241,7 +241,22 @@ def ClientAddressApiById(request, ClientAddressId=""):
     except:
         return JsonResponse("", safe=False)
     
-
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give ClientId to get clientAddressdetail",)
+@api_view(['GET',])
+def ClientAddressApiByClientId(request, ClientId=""):
+    try:
+        if request.method == 'GET': 
+            clientAddress = ClientAddress.objects.filter(
+                    ClientId=ClientId)
+            clientAddressSerializer = ClientAddressSerializer(
+                    clientAddress,many=True)
+            return JsonResponse(clientAddressSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
 
 
 

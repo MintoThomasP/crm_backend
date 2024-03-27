@@ -33,13 +33,7 @@ class UserGroup(models.Model):
     UserGroup = models.CharField(max_length=300, blank=True, null=True)
     AccessTo = models.TextField(blank=True, null=True)
 
-class City(models.Model):
-    SortId = models.DateTimeField(editable=False, default=datetime.now)
-    CityId = models.CharField(
-        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
-    StateId = models.CharField(
-        max_length=50, blank=True, null=True)
-    City = models.CharField(max_length=300, blank=True, null=True)
+
 
 class Country(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)

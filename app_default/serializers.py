@@ -1,5 +1,5 @@
 
-from app_default.models import City, Country, Currency, DepositTo, Designation, InvoiceStatus, PaymentMode, State, TaskStatus, UserGroup, UserType
+from app_default.models import Country, Currency, DepositTo, Designation, InvoiceStatus, PaymentMode, State, TaskStatus, UserGroup, UserType
 from rest_framework import serializers
 
 
@@ -44,15 +44,7 @@ class UserGroupSerializer(serializers.ModelSerializer):
 
 
 
-class CitySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = City
-        fields = ('SortId',
-                  'CityId',
-                  'StateId',
-                  'City',
-                  )
-        
+
 class CountrySerializer(serializers.ModelSerializer):
     class Meta:
         model = Country

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from app_sale.models import Invoice, InvoiceDocument, InvoiceItem, PaymentReceived, Quotation, QuotationFile, QuotationItem
+from app_sale.models import Invoice, InvoiceDocument, InvoiceItem, PaymentDocument, PaymentReceived, PaymentReceivedDetail, Quotation, QuotationFile, QuotationItem
 
 
 class QuotationSerializer(serializers.ModelSerializer):
@@ -59,6 +59,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
 'Subject',
 'CustomerNotes',
 'TermsNConditions',
+'BillingAddress',
 'SubTotalAmount',
 'TotalAmount',
 'AmountDue',
@@ -102,6 +103,29 @@ class PaymentReceivedSerializer(serializers.ModelSerializer):
 'PaymentNumber',
 'PaymentMode',
 'DepositTo',
-'ReferenceNumber'
+'StaffId'
 
 )
+
+class PaymentReceivedDetailSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentReceivedDetail
+        fields = ('SortId',
+                  'PaymentReceivedDetailId',
+'PaymentReceivedId',
+'Description',
+'Amount',
+'Type',
+'RefId'
+
+)     
+
+class PaymentDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PaymentDocument
+        fields = ('SortId',
+'PaymentDocumentId',
+'PaymentReceivedId',
+'Document',
+)
+        

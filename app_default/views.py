@@ -3,8 +3,8 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
 
-from app_default.models import City, Country, Currency, DepositTo, Designation, InvoiceStatus, PaymentMode, State, TaskStatus, UserGroup, UserType
-from app_default.serializers import CitySerializer, CountrySerializer, CurrencySerializer, DepositToSerializer, DesignationSerializer, InvoiceStatusSerializer, PaymentModeSerializer, StateSerializer, TaskStatusSerializer, UserGroupSerializer, UserTypeSerializer
+from app_default.models import Country, Currency, DepositTo, Designation, InvoiceStatus, PaymentMode, State, TaskStatus, UserGroup, UserType
+from app_default.serializers import CountrySerializer, CurrencySerializer, DepositToSerializer, DesignationSerializer, InvoiceStatusSerializer, PaymentModeSerializer, StateSerializer, TaskStatusSerializer, UserGroupSerializer, UserTypeSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 
@@ -346,64 +346,6 @@ def CountryApiById(request, CountryId=""):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=CitySerializer)
-@swagger_auto_schema(method='PUT', request_body=CitySerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all City Details",)
-@api_view(['GET','POST','PUT'])
-def CityApi(request):
-    try:
-        if request.method == 'GET':
-            city = City.objects.all()
-            city_serializer = CitySerializer(
-                city, many=True)  
-            return JsonResponse(city_serializer.data, safe=False)
-
-        elif request.method == 'POST':
-            cityData = JSONParser().parse(request)
-            citySerializer = CitySerializer(
-                data=cityData)
-            if citySerializer.is_valid():
-                citySerializer.save()
-                return JsonResponse(citySerializer.data['CityId'], safe=False)
-            return JsonResponse("Failed to add", safe=False)
-        elif request.method == 'PUT':
-            cityData = JSONParser().parse(request)
-            city = City.objects.get(
-                CityId=cityData['CityId'])
-            citySerializer = CitySerializer(
-                city, data=cityData)
-            if citySerializer.is_valid():
-                citySerializer.save()
-                return JsonResponse(citySerializer.data['CityId'], safe=False)
-            return JsonResponse("Failed to Update", safe=False)
-        else:
-            return JsonResponse("Invalid request", safe=False)
-    except:
-        return JsonResponse("Invalid payload", safe=False)
-    
-
-@csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give CityId to get one detail",)
-@api_view(['GET','DELETE'])
-def CityApiById(request, CityId=""):
-    try:
-        if request.method == 'GET':
-            city = City.objects.get(CityId=CityId)
-            citySerializer = CitySerializer(city)
-            return JsonResponse(citySerializer.data, safe=False)
-        elif request.method == 'DELETE':
-            city = City.objects.get(
-                CityId=CityId)
-            city.delete()
-            return JsonResponse("Deleted successfully", safe=False)
-        else:
-            return JsonResponse("Invalid request", safe=False)
-    except:
-        return JsonResponse("Invalid payload", safe=False)
-    
-
-
-@csrf_exempt
 @swagger_auto_schema(method='POST', request_body=StateSerializer)
 @swagger_auto_schema(method='PUT', request_body=StateSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all State Details",)
@@ -458,3 +400,20 @@ def StateApiById(request, StateId=""):
             return JsonResponse("Invalid request", safe=False)
     except:
         return JsonResponse("Invalid payload", safe=False)
+    
+
+
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all State by CountryId",)
+@api_view(['GET'])
+def StateApiByCountryId(request,CountryId=""):
+    try:
+        if request.method == 'GET':
+            state = State.objects.filter(CountryId=CountryId)
+            state_serializer = StateSerializer(
+                state, many=True)  
+            return JsonResponse(state_serializer.data, safe=False)
+        else:
+            return JsonResponse("Invalid request", safe=False)
+    except:
+        return JsonResponse("Invalid payload", safe=False)
+    

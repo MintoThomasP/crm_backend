@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from app_default.models import City, Country, Currency, DepositTo, Designation, InvoiceStatus, PaymentMode, State, TaskStatus, UserGroup, UserType
+from app_default.models import Country, Currency, DepositTo, Designation, InvoiceStatus, PaymentMode, State, TaskStatus, UserGroup, UserType
 
 # Register your models here.
 
@@ -34,13 +34,7 @@ admin.site.register(UserGroup, UserGroupAdmin)
 
 
 
-class CityAdmin(admin.ModelAdmin):
-    list_display = ('SortId',
-                  'CityId',
-                  'StateId',
-                  'City',
-                  )
-admin.site.register(City, CityAdmin)
+
 
 
 class CountryAdmin(admin.ModelAdmin):

@@ -16,7 +16,8 @@ class ClientSerializer(serializers.ModelSerializer):
 'EmailId',
 'Phone1',
 'Phone2',
-'CustomerType'
+'CustomerType',
+'AdvanceAmount'
 )
         
 class ClientOtherDetailsSerializer(serializers.ModelSerializer):

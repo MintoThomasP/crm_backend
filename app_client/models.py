@@ -18,6 +18,7 @@ class Client(models.Model):
     Phone1=models.CharField(max_length=15, blank=True, null=True)
     Phone2=models.CharField(max_length=15, blank=True, null=True)
     CustomerType=models.CharField(max_length=300, blank=True, null=True)
+    AdvanceAmount=models.CharField(max_length=15, blank=True, null=True, default="0")
 
 
 

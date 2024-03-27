@@ -58,9 +58,10 @@ class Invoice(models.Model):
     Subject=models.TextField(blank=True, null=True)
     CustomerNotes=models.TextField(blank=True, null=True)
     TermsNConditions=models.TextField(blank=True, null=True)
+    BillingAddress=models.TextField(blank=True, null=True)
     SubTotalAmount=models.CharField(blank=True, null=True, max_length=15)
     TotalAmount=models.CharField(blank=True, null=True, max_length=15)
-    AmountDue=models.CharField(blank=True, null=True, max_length=15)
+    AmountDue=models.CharField(blank=True, null=True, max_length=15, default="0.00")
     Payment=models.CharField(blank=True, null=True, max_length=15)
     InvoiceFile=models.FileField(null=True,blank=True, upload_to='Invoicefiles')
     Status=models.IntegerField(default=1) 
@@ -100,8 +101,25 @@ class PaymentReceived(models.Model):
     PaymentNumber=models.CharField(blank=True, null=True, max_length=15)
     PaymentMode=models.CharField(blank=True, null=True, max_length=50)
     DepositTo=models.CharField(blank=True, null=True, max_length=50)
-    ReferenceNumber=models.CharField(blank=True, null=True, max_length=50)
+    StaffId=models.CharField(blank=True, null=True, max_length=50)
+
+class PaymentReceivedDetail(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    PaymentReceivedDetailId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    PaymentReceivedId=models.CharField(blank=True, null=True, max_length=50)
+    Description=models.TextField(blank=True, null=True)
+    Amount=models.CharField(blank=True, null=True, max_length=15)
+    Type=models.CharField(blank=True, null=True, max_length=100)# Invoice, from advance, To advance
+    RefId=models.CharField(blank=True, null=True, max_length=50) # Clientid/InvoiceId
 
     
+
+class PaymentDocument(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    PaymentDocumentId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    PaymentReceivedId=models.CharField(blank=True, null=True, max_length=50)
+    Document=models.FileField(null=True,blank=True, upload_to='paymentDocument')
 
 
