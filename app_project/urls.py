@@ -38,7 +38,7 @@ urlpatterns = [
     path('UploadCommentFile/', views.UploadCommentFile.as_view()),
 
 
-     url(r'^send_notification/(?P<ProjectTaskId>[0-9a-zA-Z\-]+)$', views.send_notification_on_comment),
+    #  url(r'^send_notification/(?P<ProjectTaskId>[0-9a-zA-Z\-]+)$', views.send_notification_on_comment),
 
 
 ]
