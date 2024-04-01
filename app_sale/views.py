@@ -5,6 +5,7 @@ import smtplib
 from email.message import EmailMessage
 import codecs
 import os
+from django.db.models import Max
 from django.conf import settings 
 # Create your views here.
 from drf_yasg.utils import swagger_auto_schema
@@ -23,6 +24,7 @@ from app_project.models import Project
 from app_project.serializers import ProjectSerializer
 from app_sale.models import Invoice, InvoiceDocument, InvoiceItem, PaymentReceived, Quotation, QuotationFile, QuotationItem
 from app_sale.serializers import InvoiceDocumentSerializer, InvoiceItemSerializer, InvoiceSerializer, PaymentDocumentSerializer, PaymentReceivedDetailSerializer, PaymentReceivedSerializer, QuotationFileSerializer, QuotationItemSerializer, QuotationSerializer
+from app_site.models import SiteSettings
 from app_staff.models import Staff
 from app_staff.serializers import StaffSerializer
 
@@ -222,22 +224,31 @@ def QuotationFileApiById(request, QuotationFileId=""):
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all Invoice Details",)
 @api_view(['GET','POST','PUT'])
 def InvoiceApi(request):
-    try:
+    # try:
         if request.method == 'GET':
             invoice = Invoice.objects.all().order_by('-SortId')
             invoiceSerializer = InvoiceSerializer(
                     invoice, many=True)
             invoiceData=[]
             for row in invoiceSerializer.data:
-                client=Client.objects.get(ClientId=row['ClientId'])
-                clientSerializer=ClientSerializer(client)
-                row['ClientName']=clientSerializer.data['CustomerDisplayName']
-                invoiceStatus = InvoiceStatus.objects.get(InvoiceStatusId=row['Status'])
-                invoiceStatusSerializer = InvoiceStatusSerializer(invoiceStatus)
-                row['StatusName']=invoiceStatusSerializer.data['InvoiceStatus']
-                staff=Staff.objects.get(StaffId=row['SalesPerson'])
-                staffSerializer=StaffSerializer(staff)
-                row['StaffName']=staffSerializer.data['StaffName']
+                try:
+                    client=Client.objects.get(ClientId=row['ClientId'])
+                    clientSerializer=ClientSerializer(client)
+                    row['ClientName']=clientSerializer.data['CustomerDisplayName']
+                except:
+                    row['ClientName']=[]
+                try:
+                    invoiceStatus = InvoiceStatus.objects.get(InvoiceStatusId=row['Status'])
+                    invoiceStatusSerializer = InvoiceStatusSerializer(invoiceStatus)
+                    row['StatusName']=invoiceStatusSerializer.data['InvoiceStatus']
+                except:
+                    row['StatusName']=[]
+                try:
+                    staff=Staff.objects.get(StaffId=row['SalesPerson'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['StaffName']=staffSerializer.data['StaffName']
+                except:
+                    row['StaffName']=[]
                 invoiceData.append(row)
             return JsonResponse(invoiceData, safe=False)
         elif request.method == 'POST':
@@ -260,8 +271,8 @@ def InvoiceApi(request):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give InvoiceId to get one invoice detail",)
@@ -404,7 +415,23 @@ def PaymentReceivedApi(request):
             paymentReceived = PaymentReceived.objects.all()
             paymentReceivedSerializer = PaymentReceivedSerializer(
                     paymentReceived, many=True)
-            return JsonResponse(paymentReceivedSerializer.data, safe=False)
+            paymentData=[]
+            for row in paymentReceivedSerializer.data:
+                try:
+                    client=Client.objects.get(ClientId=row['ClientId'])
+                    clientSerializer=ClientSerializer(client)
+                    row['ClientName']=clientSerializer.data['CustomerDisplayName']
+                except:
+                    row['ClientName']=[]
+                try:
+                    staff=Staff.objects.get(StaffId=row['StaffId'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['StaffName']=staffSerializer.data['StaffName']
+                except:
+                    row['StaffName']=[]
+                paymentData.append(row)
+            
+            return JsonResponse(paymentData, safe=False)
         elif request.method == 'POST':
             paymentReceivedData = JSONParser().parse(request)
             paymentReceivedSerializer = PaymentReceivedSerializer(
@@ -498,10 +525,19 @@ class DownloadPDF(View):
                 InvoiceId=InvoiceId)
         invoiceItem=InvoiceItem.objects.filter(InvoiceId=InvoiceId)
         clientadrress=ClientAddress.objects.get(ClientId=invoice.ClientId)
+        last_id = SiteSettings.objects.aggregate(
+                Max('SiteSettingsId'))['SiteSettingsId__max']
+        siteSettings = SiteSettings.objects.get(
+                    SiteSettingsId=last_id)
         context = {'invoice': invoice,
                    'invoiceItem':invoiceItem,
-                   'clientadrress':clientadrress,}
-        pdf = render_to_pdf('invoice.html', context)
+                   'clientadrress':clientadrress,
+                   'siteSettings':siteSettings}
+        if siteSettings.InvoiceTemplate=='invoice.html':
+            pdf = render_to_pdf('invoice.html', context)
+
+        elif siteSettings.InvoiceTemplate=='woodsInvoice.html':
+            pdf = render_to_pdf('woodsInvoice.html', context)
         response = HttpResponse(pdf, content_type='application/pdf')
         filename = "Estimate_%s.pdf" %(context['invoice'])
         content = "attachment; filename=%s" %(filename)
@@ -572,13 +608,21 @@ def ViewPDF(request, InvoiceId=""):
             clientaddress = ClientAddress.objects.get(ClientId=invoice.ClientId)
             totalAmount=int(invoice.TotalAmount)
             amountinwords=decimal_number_to_words(totalAmount)
+            last_id = SiteSettings.objects.aggregate(
+                Max('SiteSettingsId'))['SiteSettingsId__max']
+            siteSettings = SiteSettings.objects.get(
+                    SiteSettingsId=last_id)
             context = {
                 'invoice': invoice,
                 'invoiceItems': invoiceItems,
                 'clientaddress': clientaddress,
-                'amountinwords':amountinwords
+                'amountinwords':amountinwords,
+                'siteSettings':siteSettings
             }
-            pdf = render_to_pdf('invoice.html', context)
+            if siteSettings.InvoiceTemplate=='invoice.html':
+                pdf = render_to_pdf('invoice.html', context)
+            elif siteSettings.InvoiceTemplate=='woodsInvoice.html':
+                pdf = render_to_pdf('woodsInvoice.html', context)
             invoice_file_name = f'{InvoiceId}.pdf'
             if invoice.InvoiceFile:
                 invoice.InvoiceFile.delete(save=True)
@@ -611,7 +655,11 @@ def SendInvoice(request):
 
             invoice = Invoice.objects.get(InvoiceId=InvoiceId)
             invoiceItems = InvoiceItem.objects.filter(InvoiceId=InvoiceId)
-            billingAddress=json.loads[invoice.BillingAddress]
+            billingAddress=json.loads(invoice.BillingAddress)
+            last_id = SiteSettings.objects.aggregate(
+                Max('SiteSettingsId'))['SiteSettingsId__max']
+            siteSettings = SiteSettings.objects.get(
+                    SiteSettingsId=last_id)
             try:
                 clientaddress = ClientAddress.objects.get(ClientId=invoice.ClientId)
             except:
@@ -622,9 +670,14 @@ def SendInvoice(request):
                 'invoiceItems': invoiceItems,
                 'clientaddress': clientaddress,
                 'client':client,
-                'billingAddress':billingAddress
+                'billingAddress':billingAddress,
+                'siteSettings':siteSettings
             }
-            pdf = render_to_pdf('invoice.html', context)
+            if siteSettings.InvoiceTemplate=='invoice.html':
+                pdf = render_to_pdf('invoice.html', context)
+
+            elif siteSettings.InvoiceTemplate=='woodsInvoice.html':
+                pdf = render_to_pdf('woodsInvoice.html', context)
             invoice_file_name = f'{InvoiceId}.pdf'
             if invoice.InvoiceFile:
                 invoice.InvoiceFile.delete(save=True)
@@ -831,3 +884,73 @@ def decimal_number_to_words(number):
     words_fractional_part = number_to_words(fractional_part)
  
     return words_integer_part+" Dirhams and "+words_fractional_part+" Fils."
+
+
+
+
+@csrf_exempt
+@api_view(['GET'])
+def ViewPDFWoodsInteriors(request, InvoiceId=""):
+    try:
+        if request.method == 'GET':
+            invoice = Invoice.objects.get(InvoiceId=InvoiceId)
+            invoiceItems = InvoiceItem.objects.filter(InvoiceId=InvoiceId)
+            clientaddress = ClientAddress.objects.get(ClientId=invoice.ClientId)
+            totalAmount=int(invoice.TotalAmount)
+            billingAddress=json.loads(invoice.BillingAddress)
+            
+            amountinwords=decimal_number_to_words(totalAmount)
+            context = {
+                'invoice': invoice,
+                'invoiceItems': invoiceItems,
+                'clientaddress': clientaddress,
+                'amountinwords':amountinwords,
+                'billingAddress':billingAddress
+            }
+            pdf = render_to_pdf('woodsInvoice.html', context)
+           
+           
+            invoice_file_name = f'{InvoiceId}.pdf'
+            if invoice.InvoiceFile:
+                invoice.InvoiceFile.delete(save=True)
+                invoice.InvoiceFile.save(invoice_file_name, ContentFile(pdf.content))
+            else:
+                invoice.InvoiceFile.save(invoice_file_name, ContentFile(pdf.content))
+            return HttpResponse(pdf.content, content_type='application/pdf')
+
+        else:
+            return JsonResponse({"error": "Invalid method"}, status=405)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+    
+
+from django.http import HttpResponse
+from django.template.loader import get_template
+from xhtml2pdf import pisa
+from io import BytesIO
+
+
+def generate_to_pdf(template_src, context_dict={}):
+    template = get_template(template_src)
+    html = template.render(context_dict)
+
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="generated_pdf.pdf"'
+    result = BytesIO()
+
+    pisa_status = pisa.CreatePDF(
+        html, dest=result,
+        link_callback=fetch_resources)  # Pass fetch_resources as the link_callback
+
+    if not pisa_status.err:
+        response.write(result.getvalue())
+        return response
+    return None
+
+
+# Ensure you have defined the fetch_resources function as shown above
+def fetch_resources(uri, rel):
+    return os.path.join(settings.MEDIA_ROOT, uri.replace(settings.MEDIA_URL, ''))
+
+
+

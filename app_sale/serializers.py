@@ -103,7 +103,8 @@ class PaymentReceivedSerializer(serializers.ModelSerializer):
 'PaymentNumber',
 'PaymentMode',
 'DepositTo',
-'StaffId'
+'StaffId',
+'CreatedBy'
 
 )
 

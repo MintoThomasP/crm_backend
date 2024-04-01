@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <style>
+     @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Roboto:wght@100;300;400;500;700;900&display=swap');
+     html {
+            font-family: 'Roboto', sans-serif;
+        }
+
+        th {
+            font-size: 12px;
+        }
+
+        td {
+            font-size: 12px;
+        }
+        p {
+            font-size: 12px;
+            margin-top: 0;
+        }
+     .header_div {
+            display: inline-flex;
+        }
+        .header_div span {
+            height: 16px;
+            line-height: 17px;
+            padding-left: 6px;
+        }
+        .customer_details_main table {
+            width: 100%;
+            margin-top: 20px;
+
+        }
+
+
+
+        .customer_details_main table,
+        .customer_details_main th,
+        .customer_details_main td {
+
+
+            border-collapse: collapse;
+
+        }
+        .customer_details_main tr span{
+            font-size: 15px;
+
+        }
+
+        .product_table table {
+            width: 100%;
+
+
+        }
+
+        .product_table {
+            /* border-bottom: 3px solid transparent; */
+            /* border-image: linear-gradient(0.25turn, #111010, #0f0f0f); */
+            border-image-slice: 1;
+            margin-top: 20px;
+        }
+        /* .product_table table, */
+        .product_table th,
+        .product_table td {
+            border: 1px solid #918880;
+            border-collapse: collapse;
+            padding-bottom: 2px;
+            padding-top: 4px;
+            padding-right: 2px;
+            padding-left: 2px;
+        }
+
+        .product_table3 {
+            /* border-bottom: 3px solid transparent; */
+            /* border-image: linear-gradient(0.25turn, #111010, #0f0f0f); */
+            border-image-slice: 1;
+            margin-top: 20px;
+        }
+        /* .product_table table, */
+        .product_table3 th,
+        .product_table3 td {
+            /* border: 1px solid #918880; */
+            border-collapse: collapse;
+            padding-bottom: 2px;
+            padding-top: 4px;
+            
+            
+        }
+        
+        .accounts {
+            margin-top: 10px;
+   
+        }
+        .accounts2 {
+            padding-top: 10px;
+            padding-bottom: 10px;
+
+        }
+
+        footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 10px;
+}
+
+hr {
+    border: none;
+    border-top: 1px solid #333;
+}
+
+
+
+@page {
+    size: A4 portrait;
+    margin: 30pt;
+@frame footer_frame {
+    -pdf-frame-content: footer_content;
+    left: 30pt;
+    
+    width: 100%;
+    bottom: 10pt;
+    height: 40px;
+}
+}
+
+#footer_content {
+    font-size: 10pt;
+    text-align: center;
+}
+
+      
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid">
+        <table>
+            <tr style="padding-bottom: 10px;">
+                <td style="width: 50%; padding-right:10px;"><img src="./static/images/logo.png"
+                        style="width: 200px;" />
+                    
+                </td>
+                
+                <td style="width:50%; text-align:right; padding-top:24px;">
+                    <div class="header_div">
+
+                        <p><b>WEB BUREAU WEB-DESIGN CO LLC</b><br>
+                            Dubai<br>United Arab Emirates<br> +971 509885442<br>
+                            <!-- TRN100398835700003 -->
+                    </div>
+                    
+
+
+                </td>
+                </tr>
+                </table>
+                <table>
+                    <tr>
+                        <td style="width:35%; vertical-align:top; padding-top:10px;"><hr></td>
+                        <td style="width:30%; font-size: 25px; text-align: center;">TAX INVOICE</td>
+                        <td style="width:35%; vertical-align: top;padding-top:10px;"><hr></td>
+                    </tr>
+                </table>
+
+        <!--  -->
+        <div class="customer_details_main">
+            <table>
+                <tr style="width:100%;">
+                    <td style="width:70%;" rowspan="3">
+                       
+                        <p>Bill To<br><b>{{billingAddress.CustomerName}}</b><br>
+                            <!-- <br>TRN100398835700003<br> -->
+                            {{billingAddress.Address1}}<br>
+                            {{billingAddress.Address2}}<br>
+                            {{billingAddress.City}}<br>
+                        </p>
+                    </td>
+
+
+
+                    <td style="vertical-align: top; width:10%; text-align: left;">Invoice#</td>
+                    <td style="vertical-align: top; width:20%; text-align: right; font-size: 15px;"><b>{{invoice.InvoiceNumber}}</b></td>
+                </tr>
+                <tr>
+                    <td style="vertical-align: top; width:10%; text-align: left;">Invoice Date</td>
+                    <td style="vertical-align: top; width:20%; text-align: right;"><b>{{invoice.InvoiceDate|date:"d-m-Y"}}</b></td>
+                </tr>
+                <tr>
+                    <td style="vertical-align: top; width:10%; text-align: left;">Due Date</td>
+                    <td style="vertical-align: top; width:20%; text-align: right;"><b>{{invoice.DueDate|date:"d-m-Y"}}</b></td>
+                </tr>
+            </table>
+    </div>
+
+    <!--  -->
+    <!-- <div class="product_table">
+        <table style="width: 100%; ">
+            <tr style="background-color: #918880;color: white; font-size: 30px;">
+                <th style="width: 20%;text-align: left; ">Invoice Date</th>
+                <th style="width: 40%; text-align: left;">Terms of Payment</th>
+                <th style="width: 20%;text-align: left;">Due Date</th>
+                <th style="width: 20%;text-align: left;">P.O.#|Contract#</th>
+            </tr>
+            
+            <tr style="padding:5px;">
+                <td style="width: 20%;text-align: celeftnter;">19 Jan 2024</td>
+                <td style="width: 40%; text-align: left;">Due on Receipt</td>
+                <td style="width: 20%;text-align: left;">19 Jan 2024</td>
+                <td style="width: 20%; text-align: left;">RJ/23/130/KCH</td>
+                
+            </tr>
+           
+        </table>
+    </div> -->
+    <!--  -->
+    <div class="product_table">
+        <table style="width: 100%;">
+            <tr style="background-color: #918880;color: white; font-size: 30px;">
+                <th style="width: 5%;text-align: left; ">#</th>
+                <th style="width: 59%; text-align: left;">Item & Description</th>
+                <th style="width: 10%;text-align: right;">Qty</th>
+                <th style="width: 13%;text-align: right;">Rate</th>
+                <th style="width: 13%;text-align: right;">Amount</th>
+            </tr>
+            {%for row in invoiceItems%}
+            <tr style="padding:5px;">
+                <td style="width: 5%;text-align: celeftnter;">{{forloop.counter}}</td>
+                <td style="width: 59%; text-align: left;">{{row.ItemDetails|safe}}</td>
+                <td style="width: 10%;text-align: right;">{{row.Quantity}}</td>
+                <td style="width: 13%; text-align: right;">AED {{row.Rate|floatformat:2}}</td>
+                <td style="width: 13%; text-align: right;">AED {{row.Amount|floatformat:2}}</td>
+                
+            </tr>
+            {%endfor%}
+        </table>
+
+    </div>
+    <div class="product_table3">
+        <table style="width: 100%;">
+            <tr>
+                <td style="width: 60%; padding-right: 10px;" rowspan="2">General Terms<br>
+                    Any Discrepancies in this invoice please notify our accounts department with in
+                    2 working days /accounts@woodsin.com
+                <br>This Invoice is Non-negotiable</td>
+                <td style="width: 20%; text-align: right;border-bottom: 1px solid black;">Sub Total </td>
+                <td style="width: 20%; text-align: right;border-bottom: 1px solid black;">AED {{invoice.SubTotalAmount}}</td>
+            </tr>
+            <!-- <tr>
+                <td style="width: 20%; text-align: right; border-bottom: 1px solid black;">Value Added Tax (5%)</td>
+                <td style="width: 20%; text-align: right;border-bottom: 1px solid black;">2,406.45</td>
+            </tr> -->
+            <tr>
+                <!-- <td style="width: 60%;"></td> -->
+                <td style="width: 20%; text-align: right; border-bottom: 1px solid black;"><b>Total</b></td>
+                <td style="width: 20%; text-align: right;border-bottom: 1px solid black;"><b>AED {{invoice.TotalAmount}}</b></td>
+            </tr>
+            <tr>
+                <td style="width: 60%;"></td>
+                <td style="width: 15%; text-align: right;vertical-align: top;">Total In Words:</td>
+                <td style="width: 30%; text-align: left;"><b><i>{{amountinwords}}</i></b></td>
+            </tr>
+            </table> 
+            
+            
+    </div>
+    <div class="accounts">
+        <p>Bank Name :  ADCB (Abu Dhabi Commercial Bank)<br>
+            Account Title : WEB BUREAU WEB-DESIGN CO LLC<br>
+            Account No: 13145265920001 | IBAN: AE320030013145265920001</p>
+    </div>
+    <div class="accounts1">
+        <p style="font-size:14px;">Terms & Conditions</p>
+            <p style="margin-top:0px;">Payment Terms
+                <br>&#x2022; &#x00A0; 30 % Advance Payment along with LPO / Work Order.<br>
+                &#x2022; &#x00A0; 50 % Progressive Invoice<br>
+                &#x2022; &#x00A0; 20 % Upon delivery . (Ex-Factory Delivery)<br>
+                <!-- <ul style="margin-top:0px;">
+                    <li>30 % Advance Payment along with LPO / Work Order.</li>
+                    <li>50 % Progressive Invoice</li>
+                    <li>20 % Upon delivery . (Ex-Factory Delivery)</li>
+                </ul> -->
+
+            Payment Notes:<br>
+            All the Payments to be released within 4 business days from the submission of invoices/Issue of Payment Certificate.<br>
+            Special Notes:<br>
+            We reserve the right to stop the supply (Part/Full) in case of any delay in the payment and terms mutually agreed.</p>
+        </div>
+        <div class="accounts2">
+            <table>
+                <tr>
+                    <td style="width: 50%;vertical-align: bottom;font-size: 14px;">Authorized Signature_________________________</td>
+                    <!-- <td style="width: 40%; vertical-align: bottom;"><hr></td> -->
+                </tr>
+
+               
+            </table>
+
+    </div>
+
+
+    <div id="footer_content">
+        <table style="width: 80%;">
+            <tr style="border-top: 1px solid black; padding-top: 5px;">
+                <td style="width: 90%;">https://webbureau.ae/ | info@webbureau.ae - WEB BUREAU WEB-DESIGN CO LLC DUBAI </td>
+                <td style="width: 5%;"><pdf:pagenumber/> / <pdf:pagecount/></td>
+            </tr>
+        </table>
+</div> 
+
+
+</div>
+</body>
+
+</html>

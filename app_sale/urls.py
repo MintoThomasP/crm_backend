@@ -42,6 +42,7 @@ urlpatterns = [
 
     url(r'^GetAllUnpaidInvoiceByClientIdApi/(?P<ClientId>[0-9a-zA-Z\-]+)$', views.GetAllUnpaidInvoiceByClientIdApi),
 
+    url(r'^ViewPDFWoodsInteriors/(?P<InvoiceId>[0-9a-zA-Z\-]+)$', views.ViewPDFWoodsInteriors),
 
     ]
 if settings.DEBUG:

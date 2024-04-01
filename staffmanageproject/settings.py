@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'app_client',
     'app_login',
     'app_sale',
+    'app_site'
     
     
 ]

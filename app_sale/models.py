@@ -102,6 +102,8 @@ class PaymentReceived(models.Model):
     PaymentMode=models.CharField(blank=True, null=True, max_length=50)
     DepositTo=models.CharField(blank=True, null=True, max_length=50)
     StaffId=models.CharField(blank=True, null=True, max_length=50)
+    CreatedBy=models.CharField(blank=True, null=True, max_length=50)
+
 
 class PaymentReceivedDetail(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)

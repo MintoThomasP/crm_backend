@@ -10,6 +10,9 @@ from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 
+from app_default.models import Country
+from app_default.serializers import CountrySerializer
+
 
 
 @csrf_exempt
@@ -251,7 +254,14 @@ def ClientAddressApiByClientId(request, ClientId=""):
                     ClientId=ClientId)
             clientAddressSerializer = ClientAddressSerializer(
                     clientAddress,many=True)
-            return JsonResponse(clientAddressSerializer.data, safe=False)
+            clientData=[]
+            for row in clientAddressSerializer.data:
+                country=Country.objects.get(CountryId=row['Country'])
+                countrySerializer=CountrySerializer(country)
+                row['CountryName']=countrySerializer.data['Country']
+                clientData.append(row)
+
+            return JsonResponse(clientData, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:

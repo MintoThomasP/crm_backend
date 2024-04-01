@@ -322,7 +322,7 @@
             <div class="product_table">
                 <table style="width: 100%;">
                     <tr>
-                        <th style="width: 5%;text-align: center;">{{forloop.counter}}</th>
+                        <th style="width: 5%;text-align: center;">#</th>
                         <th style="width: 50%; text-align: left;">Item & Description </th>
                         <th style="width: 15%;text-align: center;">Qty</th>
                         <th style="width: 15%;text-align: center;">Rate</th>
@@ -330,13 +330,11 @@
                     </tr>
                     {%for row in invoiceItems%}
                     <tr style="border-top: 1px solid black; padding:5px;">
-                        <td style="width: 5%;text-align: center;">1</td>
+                        <td style="width: 5%;text-align: center;">{{forloop.counter}}</td>
                         <td style="width: 50%; text-align: left;">{{row.ItemDetails|safe}}</td>
                         <td style="width: 15%;text-align: center;">{{row.Quantity}}</td>
                         <td style="width: 15%; text-align: center;">AED {{row.Rate|floatformat:2}}</td>
                         <td style="width: 15%; text-align: right;">AED {{row.Amount|floatformat:2}}</td>
-
-
 
                     </tr>
                     {%endfor%}
