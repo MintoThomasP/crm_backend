@@ -760,43 +760,43 @@ class UploadCommentFile(APIView):
         
 
 
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.db.models.signals import post_save
-import json
+# from django.http import JsonResponse
+# from django.views.decorators.csrf import csrf_exempt
+# from django.db.models.signals import post_save
+# import json
 
-# Initialize Firebase Admin SDK with credentials
-# cred = credentials.Certificate('serviceAccountKey.json')
-# initialize_app(cred)
+# # Initialize Firebase Admin SDK with credentials
+# # cred = credentials.Certificate('serviceAccountKey.json')
+# # initialize_app(cred)
 
-import firebase_admin
-from firebase_admin import auth
-from firebase_admin import credentials, messaging
-firebase_cred = credentials.Certificate('serviceAccountKey.json')
-firebase_app = firebase_admin.initialize_app(firebase_cred)
-uid = 'uuid.uuid4'
-custom_token = auth.create_custom_token(uid)
-
-
-def send_notification(token, message_title, message_body):
-    message = messaging.Message(
-        notification=messaging.Notification(
-            title=message_title,
-            body=message_body,
-        ),
-        token=token,
-    )
-    response = messaging.send(message)
-    # response = messaging.send_multicast(message)
-    print('Notification sent:', response)   
+# import firebase_admin
+# from firebase_admin import auth
+# from firebase_admin import credentials, messaging
+# firebase_cred = credentials.Certificate('serviceAccountKey.json')
+# firebase_app = firebase_admin.initialize_app(firebase_cred)
+# uid = 'uuid.uuid4'
+# custom_token = auth.create_custom_token(uid)
 
 
-@receiver(post_save, sender=Comments)
-def send_notification_on_comment(sender, ProjectTaskId="", **kwargs):
-    projectTask=ProjectTask.objects.get(ProjectTaskId=ProjectTaskId)
+# def send_notification(token, message_title, message_body):
+#     message = messaging.Message(
+#         notification=messaging.Notification(
+#             title=message_title,
+#             body=message_body,
+#         ),
+#         token=token,
+#     )
+#     response = messaging.send(message)
+#     # response = messaging.send_multicast(message)
+#     print('Notification sent:', response)   
+
+
+# @receiver(post_save, sender=Comments)
+# def send_notification_on_comment(sender, ProjectTaskId="", **kwargs):
+#     projectTask=ProjectTask.objects.get(ProjectTaskId=ProjectTaskId)
         
-    recipient_token = projectTask.TaskAssignedTo  
-    message_title = "New Comment Added"
-    message_body = "A new comment has been added to your task."
-    send_notification(recipient_token, message_title, message_body)
+#     recipient_token = projectTask.TaskAssignedTo  
+#     message_title = "New Comment Added"
+#     message_body = "A new comment has been added to your task."
+#     send_notification(recipient_token, message_title, message_body)
 
