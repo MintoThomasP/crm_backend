@@ -523,7 +523,7 @@ class DownloadPDF(View):
     def get(self, request, InvoiceId="", *args, **kwargs):
         invoice = Invoice.objects.get(
                 InvoiceId=InvoiceId)
-        invoiceItem=InvoiceItem.objects.filter(InvoiceId=InvoiceId)
+        invoiceItems=InvoiceItem.objects.filter(InvoiceId=InvoiceId)
         clientadrress=ClientAddress.objects.get(ClientId=invoice.ClientId)
         billingAddress=json.loads(invoice.BillingAddress)
         totalAmount=int(invoice.TotalAmount)
@@ -533,7 +533,7 @@ class DownloadPDF(View):
         siteSettings = SiteSettings.objects.get(
                     SiteSettingsId=last_id)
         context = {'invoice': invoice,
-                   'invoiceItem':invoiceItem,
+                   'invoiceItems': invoiceItems,
                    'clientadrress':clientadrress,
                    'siteSettings':siteSettings,
                    'billingAddress':billingAddress,
