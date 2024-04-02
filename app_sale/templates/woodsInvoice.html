@@ -177,9 +177,14 @@ hr {
                 <tr style="width:100%;">
                     <td style="width:70%;" rowspan="3">
                        
-                        <p>Bill To<br><b>{{billingAddress.CustomerName}}</b><br>
+                        <p>Bill To
+                            {% if billingAddress.CustomerName %}
+                            <br><b>{{billingAddress.CustomerName}}</b>
+                            {% else %}
+                            <br><b>{{client.CustomerDisplayName}}</b>
+                            {% endif %}
                             <!-- <br>TRN100398835700003<br> -->
-                            {{billingAddress.Address1}}<br>
+                            <br>{{billingAddress.Address1}}<br>
                             {{billingAddress.Address2}}<br>
                             {{billingAddress.City}}<br>
                         </p>

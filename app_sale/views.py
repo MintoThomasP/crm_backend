@@ -524,6 +524,7 @@ class DownloadPDF(View):
         invoice = Invoice.objects.get(
                 InvoiceId=InvoiceId)
         invoiceItems=InvoiceItem.objects.filter(InvoiceId=InvoiceId)
+        client=Client.objects.get(ClientId=invoice.ClientId)
         clientadrress=ClientAddress.objects.get(ClientId=invoice.ClientId)
         billingAddress=json.loads(invoice.BillingAddress)
         totalAmount=int(invoice.TotalAmount)
@@ -537,7 +538,8 @@ class DownloadPDF(View):
                    'clientadrress':clientadrress,
                    'siteSettings':siteSettings,
                    'billingAddress':billingAddress,
-                   'amountinwords':amountinwords}
+                   'amountinwords':amountinwords,
+                   'client':client}
         if siteSettings.InvoiceTemplate=='invoice.html':
             pdf = render_to_pdf('invoice.html', context)
 
@@ -610,6 +612,7 @@ def ViewPDF(request, InvoiceId=""):
         if request.method == 'GET':
             invoice = Invoice.objects.get(InvoiceId=InvoiceId)
             invoiceItems = InvoiceItem.objects.filter(InvoiceId=InvoiceId)
+            client=Client.objects.get(ClientId=invoice.ClientId)
             clientaddress = ClientAddress.objects.get(ClientId=invoice.ClientId)
             billingAddress=json.loads(invoice.BillingAddress)
             totalAmount=int(invoice.TotalAmount)
@@ -624,7 +627,8 @@ def ViewPDF(request, InvoiceId=""):
                 'clientaddress': clientaddress,
                 'amountinwords':amountinwords,
                 'siteSettings':siteSettings,
-                'billingAddress':billingAddress
+                'billingAddress':billingAddress,
+                'client':client
             }
             if siteSettings.InvoiceTemplate=='invoice.html':
                 pdf = render_to_pdf('invoice.html', context)
@@ -659,7 +663,7 @@ def SendInvoice(request):
             CCEmail = requestData.get('CCEmailId', '').split(',')
             # CCEmail = json.loads(requestData.get('CCEmailId', '[]'))
             InvoiceId=requestData['InvoiceId']
-
+            client=Client.objects.get(ClientId=invoice.ClientId)
             invoice = Invoice.objects.get(InvoiceId=InvoiceId)
             invoiceItems = InvoiceItem.objects.filter(InvoiceId=InvoiceId)
             billingAddress=json.loads(invoice.BillingAddress)
@@ -680,7 +684,8 @@ def SendInvoice(request):
                 'client':client,
                 'billingAddress':billingAddress,
                 'siteSettings':siteSettings,
-                'invoiceId':invoiceId
+                'invoiceId':invoiceId,
+                'client':client
             }
             if siteSettings.InvoiceTemplate=='invoice.html':
                 pdf = render_to_pdf('invoice.html', context)

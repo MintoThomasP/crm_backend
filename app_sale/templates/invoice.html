@@ -287,13 +287,16 @@
         </div>
 
 
-
         <div class="customer_details_main">
             <table>
                 <tr style="width:50%;">
                     <td rowspan="3" class="cust_detail_td" style="width:71%;">
                         <p>Bill To:
+                            {% if billingAddress.CustomerName %}
                             <br><b>{{billingAddress.CustomerName}}</b>
+                            {% else %}
+                            <br><b>{{client.CustomerDisplayName}}</b>
+                            {% endif %}
                             <br>{{billingAddress.Address1}}<br>
                             {{billingAddress.Address2}}<br>
                             {{billingAddress.City}}<br>
