@@ -412,7 +412,7 @@ def InvoiceDocumentApiById(request, InvoiceDocumentId=""):
 def PaymentReceivedApi(request):
     try:
         if request.method == 'GET':
-            paymentReceived = PaymentReceived.objects.all()
+            paymentReceived = PaymentReceived.objects.all().order_by('-SortId')
             paymentReceivedSerializer = PaymentReceivedSerializer(
                     paymentReceived, many=True)
             paymentData=[]
@@ -465,7 +465,19 @@ def PaymentReceivedApiById(request, PaymentReceivedId=""):
                     PaymentReceivedId=PaymentReceivedId)
             paymentReceivedSerializer = PaymentReceivedSerializer(
                     paymentReceived)
-            return JsonResponse(paymentReceivedSerializer.data, safe=False)
+            PaymentData=paymentReceivedSerializer.data
+            paymentReceivedDetail = PaymentReceivedDetail.objects.filter(
+                    PaymentReceivedId=PaymentReceivedId)
+            paymentReceivedDetailSerializer = PaymentReceivedDetailSerializer(
+                    paymentReceivedDetail,many=True)
+            PaymentData['PaymentReceivedDetail']=paymentReceivedDetailSerializer.data
+            paymentDocument = PaymentDocument.objects.filter(
+                    PaymentReceivedId=PaymentReceivedId)
+            paymentDocumentSerializer = PaymentDocumentSerializer(
+                    paymentDocument,many=True)
+            PaymentData['PaymentDocument']=paymentDocumentSerializer.data
+
+            return JsonResponse(PaymentData, safe=False)
         elif request.method == 'DELETE':
             paymentReceived = PaymentReceived.objects.get(PaymentReceivedId=PaymentReceivedId)
             paymentReceived.delete()
@@ -969,3 +981,21 @@ def fetch_resources(uri, rel):
 
 
 
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all InvoiceDocument Details",)
+@api_view(['GET'])
+def PaymentReceivedApClientId(request,ClientId=""):
+    try:
+        if request.method == 'GET':
+           
+            paymentReceivedDetail = PaymentReceivedDetail.objects.filter(RefId=ClientId)
+            paymentReceivedDetailSerializer = PaymentReceivedDetailSerializer(
+                paymentReceivedDetail, many=True)
+            # row['ToAdvanceDetail']=paymentReceivedDetailSerializer.data
+            # PaymentData.append(row)
+            return JsonResponse(paymentReceivedDetailSerializer.data, safe=False)
+
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("Invalid", safe=False)

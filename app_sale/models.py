@@ -114,7 +114,7 @@ class PaymentReceivedDetail(models.Model):
     Amount=models.CharField(blank=True, null=True, max_length=15)
     Type=models.CharField(blank=True, null=True, max_length=100)# Invoice, from advance, To advance
     RefId=models.CharField(blank=True, null=True, max_length=50) # Clientid/InvoiceId
-
+    Date=models.CharField(blank=True, null=True, max_length=300)
     
 
 class PaymentDocument(models.Model):

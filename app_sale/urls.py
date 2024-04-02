@@ -33,6 +33,7 @@ urlpatterns = [
 
     path('PaymentReceivedDetail/', views.PaymentReceivedDetailApi),
     url(r'^PaymentReceivedDetailApiById/(?P<PaymentReceivedDetailId>[0-9a-zA-Z\-]+)$', views.PaymentReceivedDetailApiById),
+    url(r'^PaymentReceivedApClientId/(?P<ClientId>[0-9a-zA-Z\-]+)$', views.PaymentReceivedApClientId),
 
 
     url(r'^DownloadPDF/(?P<InvoiceId>[0-9a-zA-Z\-]+)$', views.DownloadPDF.as_view()),

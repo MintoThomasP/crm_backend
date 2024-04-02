@@ -117,7 +117,8 @@ class PaymentReceivedDetailSerializer(serializers.ModelSerializer):
 'Description',
 'Amount',
 'Type',
-'RefId'
+'RefId',
+'Date'
 
 )     
 
