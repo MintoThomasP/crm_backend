@@ -10,8 +10,8 @@ from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 
-from app_default.models import Country
-from app_default.serializers import CountrySerializer
+from app_default.models import Country, State
+from app_default.serializers import CountrySerializer, StateSerializer
 
 
 
@@ -259,6 +259,12 @@ def ClientAddressApiByClientId(request, ClientId=""):
                 country=Country.objects.get(CountryId=row['Country'])
                 countrySerializer=CountrySerializer(country)
                 row['CountryName']=countrySerializer.data['Country']
+                try:
+                    state=State.objects.get(StateId=row['State'])
+                    stateSerializer=StateSerializer(state)
+                    row['StateName']=stateSerializer.data['State']
+                except:
+                    row['StateName']=[]
                 clientData.append(row)
 
             return JsonResponse(clientData, safe=False)
