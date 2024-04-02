@@ -665,13 +665,15 @@ def SendInvoice(request):
             except:
                 clientaddress=""
             client = Client.objects.get(ClientId=invoice.ClientId)
+            invoiceId=invoice.InvoiceId
             context = {
                 'invoice': invoice,
                 'invoiceItems': invoiceItems,
                 'clientaddress': clientaddress,
                 'client':client,
                 'billingAddress':billingAddress,
-                'siteSettings':siteSettings
+                'siteSettings':siteSettings,
+                'invoiceId':invoiceId
             }
             if siteSettings.InvoiceTemplate=='invoice.html':
                 pdf = render_to_pdf('invoice.html', context)
@@ -702,6 +704,7 @@ def SendInvoice(request):
                 __file__)), "emailtemplates/app/mailinvoice.html"), 'r')
             data = f.read().replace("{{customerName}}", Name)
             data = data.replace("{{Companyname}}", Companyname)
+            data = data.replace("{{InvoiceId}}", invoiceId)
             data = data.replace("{{InvoiceNumber}}", InvoiceNumber)
             data = data.replace("{{TotalAmount}}", TotalAmount)
             # data = data.replace("{{InvoiceDate}}", InvoiceDate)

@@ -20,5 +20,7 @@ class SiteSettingsSerializer(serializers.ModelSerializer):
                   'TaxPercentage',
                   'TaxType',
                   'CurrencyType',
-                  'InvoiceTemplate'
+                  'InvoiceTemplate',
+                  'MobilePattern',
+                  'WhatsAppPattern'
         )

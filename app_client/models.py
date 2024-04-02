@@ -47,6 +47,7 @@ class ClientAddress(models.Model):
     CustomerName=models.CharField(max_length=300, blank=True, null=True)
     Country=models.CharField(max_length=100, blank=True, null=True)
     City=models.CharField(max_length=100, blank=True, null=True)
+    State=models.CharField(max_length=50, blank=True, null=True)
     Address1=models.TextField(blank=True, null=True)
     Address2=models.TextField(blank=True, null=True)
     ZipCode=models.CharField(max_length=20, blank=True, null=True)

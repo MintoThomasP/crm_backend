@@ -17,3 +17,5 @@ class SiteSettings(models.Model):
     TaxType  = models.CharField(max_length=300, blank=True, null=True)            
     CurrencyType = models.CharField(max_length=300, blank=True, null=True)
     InvoiceTemplate=models.CharField(max_length=300, blank=True, null=True)
+    MobilePattern=models.CharField(blank=True, null=True, max_length=300)   
+    WhatsAppPattern = models.CharField(max_length=300, blank=True, null=True)

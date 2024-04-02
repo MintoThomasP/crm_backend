@@ -54,6 +54,7 @@ class ClientAddressSerializer(serializers.ModelSerializer):
 'CustomerName',
 'Country',
 'City',
+'State',
 'Address1',
 'Address2',
 'ZipCode',
