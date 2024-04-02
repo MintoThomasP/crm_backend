@@ -294,9 +294,9 @@
                         <p>Bill To:
                             {% if billingAddress.CustomerName %}
                             <br><b>{{billingAddress.CustomerName}}</b>
-                            {% else %}
-                            <br><b>{{client.CustomerDisplayName}}</b>
                             {% endif %}
+                            <br><b>{{client.CustomerDisplayName}}</b>
+                           
                             <br>{{billingAddress.Address1}}<br>
                             {{billingAddress.Address2}}<br>
                             {{billingAddress.City}}<br>

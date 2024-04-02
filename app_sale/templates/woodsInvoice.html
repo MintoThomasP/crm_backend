@@ -180,9 +180,9 @@ hr {
                         <p>Bill To
                             {% if billingAddress.CustomerName %}
                             <br><b>{{billingAddress.CustomerName}}</b>
-                            {% else %}
-                            <br><b>{{client.CustomerDisplayName}}</b>
                             {% endif %}
+                            <br><b>{{client.CustomerDisplayName}}</b>
+                            
                             <!-- <br>TRN100398835700003<br> -->
                             <br>{{billingAddress.Address1}}<br>
                             {{billingAddress.Address2}}<br>

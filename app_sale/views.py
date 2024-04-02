@@ -663,7 +663,7 @@ def SendInvoice(request):
             CCEmail = requestData.get('CCEmailId', '').split(',')
             # CCEmail = json.loads(requestData.get('CCEmailId', '[]'))
             InvoiceId=requestData['InvoiceId']
-            client=Client.objects.get(ClientId=invoice.ClientId)
+            # client=Client.objects.get(ClientId=invoice.ClientId)
             invoice = Invoice.objects.get(InvoiceId=InvoiceId)
             invoiceItems = InvoiceItem.objects.filter(InvoiceId=InvoiceId)
             billingAddress=json.loads(invoice.BillingAddress)
@@ -685,7 +685,7 @@ def SendInvoice(request):
                 'billingAddress':billingAddress,
                 'siteSettings':siteSettings,
                 'invoiceId':invoiceId,
-                'client':client
+                # 'client':client
             }
             if siteSettings.InvoiceTemplate=='invoice.html':
                 pdf = render_to_pdf('invoice.html', context)
