@@ -525,6 +525,9 @@ class DownloadPDF(View):
                 InvoiceId=InvoiceId)
         invoiceItem=InvoiceItem.objects.filter(InvoiceId=InvoiceId)
         clientadrress=ClientAddress.objects.get(ClientId=invoice.ClientId)
+        billingAddress=json.loads(invoice.BillingAddress)
+        totalAmount=int(invoice.TotalAmount)
+        amountinwords=decimal_number_to_words(totalAmount)
         last_id = SiteSettings.objects.aggregate(
                 Max('SiteSettingsId'))['SiteSettingsId__max']
         siteSettings = SiteSettings.objects.get(
@@ -532,7 +535,9 @@ class DownloadPDF(View):
         context = {'invoice': invoice,
                    'invoiceItem':invoiceItem,
                    'clientadrress':clientadrress,
-                   'siteSettings':siteSettings}
+                   'siteSettings':siteSettings,
+                   'billingAddress':billingAddress,
+                   'amountinwords':amountinwords}
         if siteSettings.InvoiceTemplate=='invoice.html':
             pdf = render_to_pdf('invoice.html', context)
 
