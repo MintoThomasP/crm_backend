@@ -606,6 +606,7 @@ def ViewPDF(request, InvoiceId=""):
             invoice = Invoice.objects.get(InvoiceId=InvoiceId)
             invoiceItems = InvoiceItem.objects.filter(InvoiceId=InvoiceId)
             clientaddress = ClientAddress.objects.get(ClientId=invoice.ClientId)
+            billingAddress=json.loads(invoice.BillingAddress)
             totalAmount=int(invoice.TotalAmount)
             amountinwords=decimal_number_to_words(totalAmount)
             last_id = SiteSettings.objects.aggregate(
@@ -617,7 +618,8 @@ def ViewPDF(request, InvoiceId=""):
                 'invoiceItems': invoiceItems,
                 'clientaddress': clientaddress,
                 'amountinwords':amountinwords,
-                'siteSettings':siteSettings
+                'siteSettings':siteSettings,
+                'billingAddress':billingAddress
             }
             if siteSettings.InvoiceTemplate=='invoice.html':
                 pdf = render_to_pdf('invoice.html', context)
