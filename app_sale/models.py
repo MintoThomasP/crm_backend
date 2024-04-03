@@ -103,6 +103,7 @@ class PaymentReceived(models.Model):
     DepositTo=models.CharField(blank=True, null=True, max_length=50)
     StaffId=models.CharField(blank=True, null=True, max_length=50)
     CreatedBy=models.CharField(blank=True, null=True, max_length=50)
+    Receipt=models.FileField(null=True,blank=True, upload_to='Invoicefiles')
 
 
 class PaymentReceivedDetail(models.Model):

@@ -104,7 +104,8 @@ class PaymentReceivedSerializer(serializers.ModelSerializer):
 'PaymentMode',
 'DepositTo',
 'StaffId',
-'CreatedBy'
+'CreatedBy',
+'Receipt'
 
 )
 

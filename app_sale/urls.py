@@ -45,6 +45,9 @@ urlpatterns = [
 
     url(r'^ViewPDFWoodsInteriors/(?P<InvoiceId>[0-9a-zA-Z\-]+)$', views.ViewPDFWoodsInteriors),
 
+
+url(r'^ViewPaymentPDF/(?P<PaymentReceivedId>[0-9a-zA-Z\-]+)$', views.ViewPaymentPDF),
+url(r'^DownloadPaymentPDF/(?P<PaymentReceivedId>[0-9a-zA-Z\-]+)$', views.DownloadPaymentPDF.as_view()),
     ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

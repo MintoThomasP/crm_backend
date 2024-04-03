@@ -1,37 +1,88 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Invoice</title>
-</head>
-<body style="font-family: Arial, sans-serif; margin: 0; padding: 0; background-color: #f4f4f4;">
-    <div style="max-width: 600px; margin: 20px auto; padding: 20px; background-color: #fff; border-radius: 5px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);">
-       <p>Dear {{customerName}},</p>
 
- <p>Attached, please find the invoice for the services/products provided by {{Companyname}} as per our recent agreement.</p>
-        </div>
-        <div style="margin-top: 20px;">
-            <h2 style="color: #007bff; border-bottom: 1px solid #007bff; padding-bottom: 5px;">Invoice Details</h2>
-            <p style="margin: 5px 0;">Invoice Number: {{InvoiceNumber}}</p>
-            <!-- <p style="margin: 5px 0;">Date: {{InvoiceDate}}</p> -->
-            <p style="margin: 5px 0;">Total Amount: {{TotalAmount}}</p>
-        </div>
-        <div style="margin-top: 20px;">
-            <h2 style="color: #007bff; border-bottom: 1px solid #007bff; padding-bottom: 5px;">Bank Details</h2>
-            <p style="margin: 5px 0;">Bank Name: ADCB (Abu Dhabi Commercial Bank)</p>
-            <p style="margin: 5px 0;">Account holder name: WEB BUREAU WEB DESIGN CO LLC</p>
-            <p style="margin: 5px 0;">Account number: 13145265920001</p>
-            <p style="margin: 5px 0;">IBAN: AE320030013145265920001</p>
-            <p style="margin: 5px 0;"></p>
-        </div>
-        <p><a href="http://13.127.179.202/api-sale/DownloadPDF/{{InvoiceId}}" style="display: inline-block; background-color: #007bff; color: #fff;text-decoration: none; padding: 10px 20px;border-radius: 5px;">Download Invoice</a></p>
+<html>
 
-        <!-- <div style="margin-top: 20px;">
-            <h2 style="color: #007bff; border-bottom: 1px solid #007bff; padding-bottom: 5px;">Additional Information</h2>
-            <p style="margin: 5px 0;">Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla facilisi. Proin hendrerit nulla ac arcu vehicula ultricies.</p>
-            <p style="margin: 5px 0;">Integer euismod elit eget mi finibus, non luctus turpis ullamcorper.</p>
-        </div> -->
+
+
+<body>
+
+    <div style="background: #e5f5ef; padding: 20px 20px; ">
+        <div style="background: #ffffff; padding: 10px 10px; ">
+            <!-- <hr /> -->
+
+            <img src="./logo.webp" alt="" style="width: 140px;">
+
+            <hr style="color: #fdfdfd4a;" />
+
+            <div style="padding: 5px 15px;">
+
+                <p>Hi {{customerName}},</p>
+
+                <p>Please find attached the invoice {{InvoiceNumber}} for .</p>
+                <ul>{{Itemdetails}}</ul>
+                <p>Kindly release the payment at your earliest convenience within the due date. Should you have any questions, please do not hesitate to contact us immediately.</p>
+                <p>Your prompt acknowledgment upon receiving this email would be greatly appreciated.</p>
+           <h4 style="padding-top:20px;">Invoice Details</h4>
+           <table style="border: 1px solid grey; border-collapse: collapse; width:100%;">
+            <tr style="border: 1px solid grey; border-collapse: collapse;">
+                <td style="border: 1px solid grey; border-collapse: collapse; padding: 5px; width:50%;">Invoice Number</td>
+                <td style="border: 1px solid grey; border-collapse: collapse; width:50%; padding: 5px;"># {{InvoiceNumber}}</td>
+            </tr>
+            <tr style="border: 1px solid grey; border-collapse: collapse;">
+                <td style="border: 1px solid grey; border-collapse: collapse; padding: 5px;">Invoice Date</td>
+                <td style="padding: 5px;">{{InvoiceDate}}</td>
+            </tr>
+            <tr style="border: 1px solid grey; border-collapse: collapse;">
+                <td style="border: 1px solid grey; border-collapse: collapse; padding: 5px;">Due Date</td>
+                <td style="padding: 5px;">{{DueDate}}</td>
+            </tr>
+            <tr style="border: 1px solid grey; border-collapse: collapse;">
+                <td style="border: 1px solid grey; border-collapse: collapse; padding: 5px;">Total Amount</td>
+                <td style="padding: 5px;">AED. {{TotalAmount}}</td>
+            </tr>
+           </table>
+           <h4 style="padding-top:20px;">Account Details</h4>
+           <table style="border: 1px solid grey; border-collapse: collapse; width:100%;">
+            <tr style="border: 1px solid grey; border-collapse: collapse;width:50%;">
+                <td style="border: 1px solid grey; border-collapse: collapse; padding: 5px;width:50%;">Bank Name</td>
+                <td style="padding: 5px;">ADCB (Abu Dhabi Commercial Bank)</td>
+            </tr>
+            <tr style="border: 1px solid grey; border-collapse: collapse;">
+                <td style="border: 1px solid grey; border-collapse: collapse; padding: 5px;">Account holder name</td>
+                <td style="padding: 5px;">WEB BUREAU WEB DESIGN CO LLC</td>
+            </tr>
+            <tr style="border: 1px solid grey; border-collapse: collapse;">
+                <td style="border: 1px solid grey; border-collapse: collapse; padding: 5px;">Account number</td>
+                <td style="padding: 5px;">13145265920001</td>
+            </tr>
+            <tr style="border: 1px solid grey; border-collapse: collapse;">
+                <td style="border: 1px solid grey; border-collapse: collapse; padding: 5px;">IBAN</td>
+                <td style="padding: 5px;">AE320030013145265920001</td>
+            </tr>
+           </table>
+           <p><a href="http://13.127.179.202/api-sale/DownloadPDF{{InvoiceId}}" style="display: inline-block; background-color: #007bff; color: #fff;text-decoration: none; padding: 10px 20px;border-radius: 5px;">Download Attached File</a></p>
+
+           <br/>
+           <h4 style="padding-top:50px;">Finance</h4>
+          
+           <img src="http://13.127.179.202/static/images/logo.png" style="width: 200px;" />
+           
+           <p>Web Bureau Web-Design Co LLC<br>Dubai, UAE</p>
+
+<p><a href="http://www.webbureau.ae">www.webbureau.ae</a></p>
+
+            
+ 
+
+            </div>
+        </div>
     </div>
+
+
+
+
 </body>
+
+
+
 </html>

@@ -176,7 +176,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # firebase_cred = credentials.Certificate(os.path.join(BASE_DIR, 'serviceAccountKey.json'))
 
-
+WEBBUREAU_LOGO="http://13.127.179.202/static/images/logo.png"
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.office365.com'
