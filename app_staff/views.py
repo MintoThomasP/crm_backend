@@ -210,7 +210,7 @@ def staffGuardianApi(request):
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give staffGuardianId to get one Guardian detail",)
 @api_view(['GET','DELETE'])
 def staffGuardianApiById(request, StaffGuardianId=""):
-    try:
+    # try:
         if request.method == 'GET': 
             staffGuardian = StaffGuardian.objects.get(
                     StaffGuardianId=StaffGuardianId)
@@ -218,13 +218,13 @@ def staffGuardianApiById(request, StaffGuardianId=""):
                     staffGuardian)
             return JsonResponse(staffGuardianSerializer.data, safe=False)
         elif request.method == 'DELETE':
-            staffGuardian = Staff.objects.get(StaffGuardianId=StaffGuardianId)
+            staffGuardian = StaffGuardian.objects.get(StaffGuardianId=StaffGuardianId)
             staffGuardian.delete()
             return JsonResponse("Deleted successfully", safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
 
 @csrf_exempt
