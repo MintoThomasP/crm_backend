@@ -3,8 +3,8 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
 
-from app_default.models import Country, Currency, DepositTo, Designation, InvoiceStatus, PaymentMode, State, TaskStatus, UserGroup, UserType
-from app_default.serializers import CountrySerializer, CurrencySerializer, DepositToSerializer, DesignationSerializer, InvoiceStatusSerializer, PaymentModeSerializer, StateSerializer, TaskStatusSerializer, UserGroupSerializer, UserTypeSerializer
+from app_default.models import Country, Currency, DepositTo, Designation, InvoiceStatus, LeaveType, PaymentMode, StaffStatus, State, TaskStatus, UserGroup, UserType
+from app_default.serializers import CountrySerializer, CurrencySerializer, DepositToSerializer, DesignationSerializer, InvoiceStatusSerializer, LeaveTypeSerializer, PaymentModeSerializer, StaffStatusSerializer, StateSerializer, TaskStatusSerializer, UserGroupSerializer, UserTypeSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 
@@ -417,3 +417,37 @@ def StateApiByCountryId(request,CountryId=""):
     except:
         return JsonResponse("Invalid payload", safe=False)
     
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all StaffStatus Details",)
+@api_view(['GET'])
+def StaffStatusApi(request):
+    try:
+        if request.method == 'GET':
+            staffStatus = StaffStatus.objects.all()
+            staffStatus_serializer = StaffStatusSerializer(
+                staffStatus, many=True)  
+            return JsonResponse(staffStatus_serializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("Invalid", safe=False)
+    
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all LeaveType Details",)
+@api_view(['GET'])
+def LeaveTypeApi(request):
+    try:
+        if request.method == 'GET':
+            leaveType = LeaveType.objects.all()
+            leaveType_serializer = LeaveTypeSerializer(
+                leaveType, many=True)  
+            return JsonResponse(leaveType_serializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("Invalid", safe=False)

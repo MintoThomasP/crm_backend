@@ -10,9 +10,9 @@ from io import BytesIO
 from app_default.models import Designation
 from app_default.serializers import DesignationSerializer
 from app_login.serializers import LoginSerializer
-from app_staff.models import Staff, StaffGuardian
+from app_staff.models import Staff, StaffDocuments, StaffGuardian
 import os
-from app_staff.serializers import SaveStaffSerializer, StaffGuardianSerializer, StaffSerializer, UpdateStaffSerializer
+from app_staff.serializers import SaveStaffSerializer, StaffDocumentsSerializer, StaffGuardianSerializer, StaffSerializer, UpdateStaffSerializer, UploadStaffDocumentsSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -330,3 +330,124 @@ def staffApiByStaffCode(request, StaffCode=""):
     # except:
     #     return JsonResponse("", safe=False)
     
+
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=StaffDocumentsSerializer)
+@swagger_auto_schema(method='PUT', request_body=StaffDocumentsSerializer)
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Staff's Documents details",)
+@api_view(['GET','POST','PUT'])
+def staffDocumentsApi(request):
+    # try:
+        if request.method == 'GET':
+           
+            staffDocuments = StaffDocuments.objects.all().order_by('-SortId')
+            staffDocumentsSerializer = StaffDocumentsSerializer(
+                    staffDocuments, many=True)
+            return JsonResponse(staffDocumentsSerializer.data, safe=False)
+        elif request.method == 'POST':
+            staffDocumentsData = JSONParser().parse(request)
+            staffDocumentsSerializer = StaffDocumentsSerializer(
+                data=staffDocumentsData)
+            if staffDocumentsSerializer.is_valid():
+                staffDocumentsSerializer.save()
+                return JsonResponse(staffDocumentsSerializer.data['StaffDocumentId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            staffDocumentsData = JSONParser().parse(request)
+            staffDocuments = StaffDocuments.objects.get(
+                StaffDocumentId=staffDocumentsData['StaffDocumentId'])
+            staffDocumentsSerializer = StaffDocumentsSerializer(
+                staffDocuments, data=staffDocumentsData)
+            if staffDocumentsSerializer.is_valid():
+                staffDocumentsSerializer.save()
+                return JsonResponse(staffDocumentsSerializer.data['StaffDocumentId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
+    
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give staffDocumentsId to get one Documents detail",)
+@api_view(['GET','DELETE'])
+def staffDocumentsApiById(request, StaffDocumentId=""):
+    # try:
+        if request.method == 'GET': 
+            staffDocuments = StaffDocuments.objects.get(
+                    StaffDocumentId=StaffDocumentId)
+            staffDocumentsSerializer = StaffDocumentsSerializer(
+                    staffDocuments)
+            return JsonResponse(staffDocumentsSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            staffDocuments = StaffDocuments.objects.get(StaffDocumentId=StaffDocumentId)
+            staffDocuments.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
+        
+
+
+
+class  uploadStaffDocuments(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+    def post(self, request, StaffDocumentId="", *args, **kwargs):
+        try:
+            
+            staff = StaffDocuments.objects.get(
+                StaffDocumentId=StaffDocumentId)
+            try:
+                StaffDocuments.objects.get(
+                    StaffDocumentId=StaffDocumentId).Document.delete(save=True)
+            except:
+                p=""
+
+            staffSerializer = UploadStaffDocumentsSerializer(
+                staff, data=request.data)
+            if staffSerializer.is_valid():
+                staffSerializer.save()
+                return JsonResponse("ok", safe=False)
+            else:
+                return JsonResponse("", safe=False)
+        except:
+            return JsonResponse("", safe=False)
+        
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give staffId to get all StaffDocuments details",)
+@api_view(['GET'])
+def staffDocumentsApiByStaffId(request, StaffId=""):
+    try:
+        if request.method == 'GET': 
+            staffDocuments = StaffDocuments.objects.filter(
+                    StaffId=StaffId)
+            staffDocumentsSerializer = StaffDocumentsSerializer(
+                    staffDocuments,many=True)
+            return JsonResponse(staffDocumentsSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+@csrf_exempt
+
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all active Staff",)
+@api_view(['GET','POST','PUT'])
+def GetAllActiveStaffListApi(request):
+    try:
+        if request.method == 'GET':
+           
+            staff = Staff.objects.filter(Status=1)
+            staffSerializer = StaffSerializer(
+                    staff, many=True)
+            return JsonResponse(staffSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)

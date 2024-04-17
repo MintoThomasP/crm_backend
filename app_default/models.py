@@ -75,3 +75,15 @@ class InvoiceStatus(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)
     InvoiceStatusId = models.AutoField(primary_key=True, editable=False)
     InvoiceStatus = models.CharField(max_length=300, blank=True, null=True)
+
+
+
+class StaffStatus(models.Model):
+    StatusId=models.AutoField(primary_key=True, editable=False)
+    Status=models.CharField(max_length=300, blank=True, null=True)
+
+
+
+class LeaveType(models.Model):
+    LeaveTypeId=models.AutoField(primary_key=True, editable=False)
+    LeaveType=models.CharField(max_length=300, blank=True, null=True)

@@ -22,6 +22,8 @@ class Staff(models.Model):
     UserGroup=models.CharField(blank=True, null=True, max_length=300)
     CurrentAddress=models.TextField(blank=True, null=True)
     ProfilePhoto=models.ImageField(upload_to='profiles/',null=True,blank=True)
+    LeavingDate=models.CharField(blank=True, null=True, max_length=100)
+    Status=models.IntegerField(default=1)
     FCMToken=models.CharField(blank=True, null=True, max_length=300)
 
     def save(self, *args, **kwargs):
@@ -51,3 +53,26 @@ class StaffGuardian(models.Model):
     Relation=models.CharField(blank=True, null=True, max_length=300)
 
 
+class StaffDocuments(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    StaffDocumentId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    StaffId=models.CharField(blank=True, null=True, max_length=50)
+    Document=models.FileField(upload_to='staffdocuments/',null=True,blank=True)
+    DocumentName=models.CharField(blank=True, null=True, max_length=300)
+    Comment=models.TextField(blank=True, null=True)
+
+
+
+class LeaveApplication(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    LeaveApplicationId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    StaffId=models.CharField(blank=True, null=True, max_length=50)
+    Subject=models.CharField(blank=True, null=True, max_length=300)
+    Description=models.TextField(blank=True, null=True)
+    AppliedOn=models.CharField(blank=True, null=True, max_length=100)
+    LeaveFrom=models.CharField(blank=True, null=True, max_length=100)
+    LeaveTo=models.CharField(blank=True, null=True, max_length=100)
+    LeaveType=models.CharField(blank=True, null=True, max_length=100)
+    Status=models.CharField(blank=True, null=True, max_length=100)

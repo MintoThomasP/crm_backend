@@ -31,6 +31,7 @@ class ProjectTaskSerializer(serializers.ModelSerializer):
 'Duration',
 'Status',
 'CreatedDate',
+'ScheduledDeadline',
 'StartDate',
 'EndDate',
 'TaskPoint',

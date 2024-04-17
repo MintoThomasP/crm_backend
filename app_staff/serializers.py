@@ -1,4 +1,4 @@
-from app_staff.models import Staff, StaffGuardian
+from app_staff.models import Staff, StaffDocuments, StaffGuardian
 from rest_framework import serializers
 
 
@@ -20,6 +20,8 @@ class StaffSerializer(serializers.ModelSerializer):
 'Designation',
 'UserGroup',
 'CurrentAddress',
+'LeavingDate',
+'Status',
 'ProfilePhoto'
 )
         
@@ -64,3 +66,38 @@ class StaffGuardianSerializer(serializers.ModelSerializer):
 'EmailId',
 'Relation',
 )
+        
+
+class StaffDocumentsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StaffDocuments
+        fields = ('SortId',
+'StaffDocumentId',
+'StaffId',
+'Document',
+'DocumentName',
+'Comment',
+
+)
+        
+
+class SaveStaffDocumentsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StaffDocuments
+        fields = ('SortId',
+'StaffDocumentId',
+'StaffId',
+'DocumentName',
+'Comment',
+
+)
+        
+class UploadStaffDocumentsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StaffDocuments
+        fields = (
+'StaffDocumentId',
+'Document',
+
+)
+        

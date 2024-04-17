@@ -28,6 +28,7 @@ class ProjectTask(models.Model):
     Duration=models.CharField(blank=True, null=True, max_length=50)
     Status=models.CharField(blank=True, null=True, max_length=300)
     CreatedDate=models.CharField(blank=True, null=True, max_length=15)
+    ScheduledDeadline=models.CharField(blank=True, null=True, max_length=15)
     StartDate=models.CharField(blank=True, null=True, max_length=100)
     EndDate=models.CharField(blank=True, null=True, max_length=100)
     TaskPoint=models.IntegerField(default=0)

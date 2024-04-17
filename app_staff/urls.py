@@ -18,6 +18,15 @@ urlpatterns = [
 
    url(r'^uploadStaffProfileImage/(?P<pk>[0-9a-zA-Z\-]+)$',
         views.uploadStaffProfileImage.as_view()),
+
+
+    path('staffDocumentsApi/', views.staffDocumentsApi),
+    url(r'^staffDocumentsApiById/(?P<StaffDocumentId>[0-9a-zA-Z\-]+)$', views.staffDocumentsApiById),
+   url(r'^uploadStaffDocuments/(?P<StaffDocumentId>[0-9a-zA-Z\-]+)$',
+        views.uploadStaffDocuments.as_view()),
+        url(r'^staffDocumentsApiByStaffId/(?P<StaffId>[0-9a-zA-Z\-]+)$', views.staffDocumentsApiByStaffId),
+
+path('GetAllActiveStaffList/', views.GetAllActiveStaffListApi),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

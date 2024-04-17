@@ -30,7 +30,8 @@ urlpatterns = [
     url(r'^StateApiByCountryId/(?P<CountryId>[0-9a-zA-Z\-]+)$', views.StateApiByCountryId),
 
 
-
+   path('StaffStatusApi/', views.StaffStatusApi),
+   path('LeaveTypeApi/', views.LeaveTypeApi),
    
     path('Country/', views.CountryApi),
     url(r'^CountryApiById/(?P<CountryId>[0-9a-zA-Z\-]+)$', views.CountryApiById),
