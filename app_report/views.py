@@ -95,14 +95,74 @@ def AllStaffReportApi(request):
 
 
 
+# @csrf_exempt
+# @api_view(['POST'])
+# def ProjectReportApiByProjectId(request):
+#     projectData = JSONParser().parse(request)
+#     project=Project.objects.get(ProjectId=projectData['ProjectId'])
+#     projectSerializer=ProjectSerializer(project)
+#     ProjectDetails=projectSerializer.data
+#     projectTask=ProjectTask.objects.filter(ProjectId=projectData['ProjectId'])
+#     projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
+#     StaffDetails=[]
+    # for row in projectTaskSerializer:
+        
+        
+    # return JsonResponse(ProjectDetails, safe=False)
+
+
+# @csrf_exempt
+# @api_view(['POST'])
+# def ProjectReportApiByProjectId(request):
+#     projectData = JSONParser().parse(request)
+#     project = Project.objects.get(ProjectId=projectData['ProjectId'])
+#     projectSerializer = ProjectSerializer(project)
+#     ProjectDetails = projectSerializer.data
+#     projectTask = ProjectTask.objects.filter(ProjectId=projectData['ProjectId'])
+#     projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
+#     total_staff_count = 0
+#     StaffDetails = []
+    
+#     for row in projectTaskSerializer.data:
+#         staff_objects = Staff.objects.filter(StaffId=row['TaskAssignedTo']) 
+#         total_staff_count += staff_objects.count()
+        
+        
+#         staff_data = StaffSerializer(staff_objects, many=True).data
+#         StaffDetails.extend(staff_data)
+    
+#     ProjectDetails['TotalStaffCount'] = total_staff_count
+#     ProjectDetails['StaffDetails'] = StaffDetails
+    
+#     return JsonResponse(ProjectDetails, safe=False)
+    
+
 @csrf_exempt
 @api_view(['POST'])
 def ProjectReportApiByProjectId(request):
     projectData = JSONParser().parse(request)
-    project=Project.objects.get(ProjectId=projectData['ProjectId'])
-    projectSerializer=ProjectSerializer(project)
-    ProjectDetails=projectSerializer.data
-    projectTask=ProjectTask.objects.filter(ProjectId=projectData['ProjectId'])
-    projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
-    ProjectDetails['TaskDetails']=projectTaskSerializer.data
+    project = Project.objects.get(ProjectId=projectData['ProjectId'])
+    projectSerializer = ProjectSerializer(project)
+    ProjectDetails = projectSerializer.data
+    projectTask = ProjectTask.objects.filter(ProjectId=projectData['ProjectId'])
+    projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
+    
+    staff_ids_set = set()  # Set to store unique staff IDs
+    StaffDetails = []
+    
+    for row in projectTaskSerializer.data:
+        staff_objects = Staff.objects.filter(StaffId=row['TaskAssignedTo'])
+        
+        for staff_object in staff_objects:
+            staff_id = staff_object.StaffId
+            if staff_id not in staff_ids_set:
+                staff_ids_set.add(staff_id)
+                staff_data = StaffSerializer(staff_object).data
+                StaffDetails.append(staff_data)
+    
+    total_staff_count = len(staff_ids_set)
+    
+    ProjectDetails['TotalStaffCount'] = total_staff_count
+    ProjectDetails['StaffDetails'] = StaffDetails
+    
     return JsonResponse(ProjectDetails, safe=False)

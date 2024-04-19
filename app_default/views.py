@@ -3,8 +3,8 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
 
-from app_default.models import Country, Currency, DepositTo, Designation, InvoiceStatus, LeaveType, PaymentMode, StaffStatus, State, TaskStatus, UserGroup, UserType
-from app_default.serializers import CountrySerializer, CurrencySerializer, DepositToSerializer, DesignationSerializer, InvoiceStatusSerializer, LeaveTypeSerializer, PaymentModeSerializer, StaffStatusSerializer, StateSerializer, TaskStatusSerializer, UserGroupSerializer, UserTypeSerializer
+from app_default.models import Country, Currency, DepositTo, Designation, InvoiceStatus, LeaveStatus, LeaveType, PaymentMode, StaffStatus, State, TaskStatus, UserGroup, UserType
+from app_default.serializers import CountrySerializer, CurrencySerializer, DepositToSerializer, DesignationSerializer, InvoiceStatusSerializer, LeaveStatusSerializer, LeaveTypeSerializer, PaymentModeSerializer, StaffStatusSerializer, StateSerializer, TaskStatusSerializer, UserGroupSerializer, UserTypeSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 
@@ -447,6 +447,22 @@ def LeaveTypeApi(request):
             leaveType_serializer = LeaveTypeSerializer(
                 leaveType, many=True)  
             return JsonResponse(leaveType_serializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("Invalid", safe=False)
+    
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all LeaveStatus Details",)
+@api_view(['GET'])
+def LeaveStatusApi(request):
+    try:
+        if request.method == 'GET':
+            leaveStatus = LeaveStatus.objects.all()
+            leaveStatus_serializer = LeaveStatusSerializer(
+                leaveStatus, many=True)  
+            return JsonResponse(leaveStatus_serializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:

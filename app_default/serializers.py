@@ -1,5 +1,5 @@
 
-from app_default.models import Country, Currency, DepositTo, Designation, InvoiceStatus, LeaveType, PaymentMode, StaffStatus, State, TaskStatus, UserGroup, UserType
+from app_default.models import Country, Currency, DepositTo, Designation, InvoiceStatus, LeaveStatus, LeaveType, PaymentMode, StaffStatus, State, TaskStatus, UserGroup, UserType
 from rest_framework import serializers
 
 
@@ -117,3 +117,11 @@ class LeaveTypeSerializer(serializers.ModelSerializer):
 'LeaveType'
 )
   
+
+class LeaveStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeaveStatus
+        fields = (
+'StatusId',
+'Status'
+)

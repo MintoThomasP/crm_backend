@@ -87,3 +87,7 @@ class StaffStatus(models.Model):
 class LeaveType(models.Model):
     LeaveTypeId=models.AutoField(primary_key=True, editable=False)
     LeaveType=models.CharField(max_length=300, blank=True, null=True)
+
+class LeaveStatus(models.Model):
+    StatusId=models.AutoField(primary_key=True, editable=False)
+    Status=models.CharField(max_length=300, blank=True, null=True)

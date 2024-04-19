@@ -115,7 +115,7 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
 'AppliedOn',
 'LeaveFrom',
 'LeaveTo',
-'LeaveType'
+'LeaveType',
 'Status'
 
 )
