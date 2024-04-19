@@ -26,7 +26,14 @@ urlpatterns = [
         views.uploadStaffDocuments.as_view()),
         url(r'^staffDocumentsApiByStaffId/(?P<StaffId>[0-9a-zA-Z\-]+)$', views.staffDocumentsApiByStaffId),
 
+
+    path('leaveApplicationApi/', views.leaveApplicationApi),
+    url(r'^leaveApplicationApiById/(?P<LeaveApplicationId>[0-9a-zA-Z\-]+)$', views.leaveApplicationApiById),
+
 path('GetAllActiveStaffList/', views.GetAllActiveStaffListApi),
+
+
+path('staffSalaryByPerformance/', views.staffSalaryByPerformanceApi),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

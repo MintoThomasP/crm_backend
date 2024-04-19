@@ -1,4 +1,4 @@
-from app_staff.models import Staff, StaffDocuments, StaffGuardian
+from app_staff.models import LeaveApplication, Staff, StaffDocuments, StaffGuardian
 from rest_framework import serializers
 
 
@@ -42,6 +42,8 @@ class SaveStaffSerializer(serializers.ModelSerializer):
 'Salary',
 'Designation',
 'UserGroup',
+'LeavingDate',
+'Status',
 'CurrentAddress')
         
 
@@ -101,3 +103,19 @@ class UploadStaffDocumentsSerializer(serializers.ModelSerializer):
 
 )
         
+
+class LeaveApplicationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LeaveApplication
+        fields = ('SortId',
+'LeaveApplicationId',
+'StaffId',
+'Subject',
+'Description',
+'AppliedOn',
+'LeaveFrom',
+'LeaveTo',
+'LeaveType'
+'Status'
+
+)

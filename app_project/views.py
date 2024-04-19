@@ -273,12 +273,12 @@ def ProjectTaskApiByProjectId(request, ProjectId=""):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
+from datetime import datetime
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get projecttask by staff",)
 @api_view(['GET'])
 def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
-    try:
+    # try:
         if request.method == 'GET': 
             projectTask = ProjectTask.objects.filter(
                     TaskAssignedTo=TaskAssignedTo)
@@ -286,6 +286,24 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
                     projectTask,many=True)
             taskStatusName=[]
             for row in projectTaskSerializer.data:
+                if row['StartDate'] and row['EndDate']:
+                    date_format = '%m/%d/%Y, %I:%M:%S %p' 
+                    start_date = datetime.strptime(row['StartDate'], date_format)
+                    end_date = datetime.strptime(row['EndDate'], date_format)
+                    duration = float(row['Duration'])
+                    duration_min=duration*60
+                    duration_seconds=duration_min*60
+                    total_time_taken_seconds = (end_date - start_date).total_seconds()
+                    print("total",total_time_taken_seconds)
+                    print("duration_seconds",duration_seconds)
+                    if total_time_taken_seconds > duration_seconds:
+                        value1 = (total_time_taken_seconds / duration_seconds) * 100
+                        value_percentage = value1-100
+                        point=(row['TaskPoint']*value_percentage)/100
+                        row['CompletedPoint'] = round(row['TaskPoint'] - point)
+                    else:
+                        row['CompletedPoint'] = row['TaskPoint']
+                        
                 taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
                 taskStatusSerializer=TaskStatusSerializer(taskStatus)
                 row['StatusName']=taskStatusSerializer.data['Status']
@@ -311,15 +329,17 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
                     row['ProjectTaskFiles']=projectTaskFileSerializer.data
                 except:
                     row['ProjectTaskFiles']=""
-
+                
+                
                 taskStatusName.append(row)
             return JsonResponse(taskStatusName, safe=False)
             
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
+
 # @csrf_exempt
 # @swagger_auto_schema(method='GET',operation_description="NOTE: Get projecttask by staff",)
 # @api_view(['GET'])
@@ -354,6 +374,22 @@ def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
             projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
             taskStatusName = []
             for row in projectTaskSerializer.data:
+                if row['StartDate'] and row['EndDate']:
+                    date_format = '%m/%d/%Y, %I:%M:%S %p' 
+                    start_date = datetime.strptime(row['StartDate'], date_format)
+                    end_date = datetime.strptime(row['EndDate'], date_format)
+                    duration = float(row['Duration'])
+                    duration_min=duration*60
+                    duration_seconds=duration_min*60
+                    total_time_taken_seconds = (end_date - start_date).total_seconds()
+                    if total_time_taken_seconds > duration_seconds:
+                        value1 = (total_time_taken_seconds / duration_seconds) * 100
+                        value_percentage = value1-100
+
+                        point=(row['TaskPoint']*value_percentage)/100
+                        row['CompletedPoint'] = round(row['TaskPoint'] - point)
+                    else:
+                        row['CompletedPoint'] = row['TaskPoint']
                 taskStatus = TaskStatus.objects.get(StatusId=row['Status'])
                 taskStatusSerializer = TaskStatusSerializer(taskStatus)
                 row['StatusName'] = taskStatusSerializer.data['Status']

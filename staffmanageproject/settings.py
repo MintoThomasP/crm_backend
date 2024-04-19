@@ -50,7 +50,8 @@ INSTALLED_APPS = [
     'app_client',
     'app_login',
     'app_sale',
-    'app_site'
+    'app_site',
+    'app_report'
     
     
 ]
@@ -98,10 +99,10 @@ DATABASES = {
      'default': {
         'ENGINE': 'dj_db_conn_pool.backends.mysql',
         'NAME': 'staffmanage_db',
-        # 'USER': 'root',
-        # 'PASSWORD': '',
-        'USER': 'cubexizsoftadmin',
-        'PASSWORD': 'admin',
+        'USER': 'root',
+        'PASSWORD': '',
+        # 'USER': 'cubexizsoftadmin',
+        # 'PASSWORD': 'admin',
         'HOST': 'localhost',
         'PORT': '3306',
         'POOL_OPTIONS' : {

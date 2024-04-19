@@ -10,9 +10,9 @@ from io import BytesIO
 from app_default.models import Designation
 from app_default.serializers import DesignationSerializer
 from app_login.serializers import LoginSerializer
-from app_staff.models import Staff, StaffDocuments, StaffGuardian
+from app_staff.models import LeaveApplication, Staff, StaffDocuments, StaffGuardian
 import os
-from app_staff.serializers import SaveStaffSerializer, StaffDocumentsSerializer, StaffGuardianSerializer, StaffSerializer, UpdateStaffSerializer, UploadStaffDocumentsSerializer
+from app_staff.serializers import LeaveApplicationSerializer, SaveStaffSerializer, StaffDocumentsSerializer, StaffGuardianSerializer, StaffSerializer, UpdateStaffSerializer, UploadStaffDocumentsSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -114,7 +114,7 @@ def staffApi(request):
             return JsonResponse("", safe=False)
     # except:
     #     return JsonResponse("", safe=False)
-from datetime import datetime,date   
+from datetime import datetime,date, timedelta   
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give StaffId to get one staffdetail",)
 @api_view(['GET','DELETE'])
@@ -178,7 +178,6 @@ def StaffApiById(request, StaffId=""):
 def staffGuardianApi(request):
     # try:
         if request.method == 'GET':
-           
             staffGuardian = StaffGuardian.objects.all().order_by('-SortId')
             staffGuardianSerializer = StaffGuardianSerializer(
                     staffGuardian, many=True)
@@ -451,3 +450,117 @@ def GetAllActiveStaffListApi(request):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
+    
+
+
+@csrf_exempt
+@api_view(['POST'])
+def staffSalaryByPerformanceApi(request):
+    # try:
+        if request.method == 'POST':
+            requestData = JSONParser().parse(request)
+            month=requestData['Month']
+            year=requestData['Year']
+            # start_date=1-month-year
+            # end_date=31-month-year
+
+            start_date = datetime(year, month, 1)
+            end_date = start_date.replace(day=1, month=start_date.month % 12 + 1) - timedelta(days=1)
+            
+        
+            projectTask=ProjectTask.objects.filter(TaskAssignedTo=requestData['StaffId'],ScheduledDeadline__range=(start_date, end_date))
+            projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
+           
+            CompletedPoint=0
+            TaskPoint=0
+            for row in projectTaskSerializer.data:
+                TaskPoint+=row['TaskPoint']
+                if row['StartDate'] and row['EndDate']:
+                    date_format = '%m/%d/%Y, %I:%M:%S %p' 
+                    start_date = datetime.strptime(row['StartDate'], date_format)
+                    end_date = datetime.strptime(row['EndDate'], date_format)
+                    duration = float(row['Duration'])
+                    duration_min=duration*60
+                    duration_seconds=duration_min*60
+                    total_time_taken_seconds = (end_date - start_date).total_seconds()
+                    if total_time_taken_seconds > duration_seconds:
+                        value1 = (total_time_taken_seconds / duration_seconds) * 100
+                        value_percentage = value1-100
+                        point=(row['TaskPoint']*value_percentage)/100
+                        print("point",point)
+                        CompletedPoint += round(row['TaskPoint'] - point)
+                        print("c",CompletedPoint)
+                    else:
+                        CompletedPoint += row['TaskPoint']
+                        staff=Staff.objects.get(StaffId=requestData['StaffId'])
+                        staffSerializer=StaffSerializer(staff)
+                        Salary=int(staffSerializer.data['Salary'])
+                        print(CompletedPoint,TaskPoint)
+                        if CompletedPoint < 0 : 
+                            Payment=Salary+((Salary*0.1)*(((CompletedPoint/TaskPoint)*100))/100)
+                        elif CompletedPoint > TaskPoint:
+                            Payment=Salary+((Salary*0.1)*(((CompletedPoint/TaskPoint)*100)-100)/100)
+                        else:
+                            Payment=Salary
+
+            return JsonResponse(Payment,safe=False)
+
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=LeaveApplicationSerializer)
+@swagger_auto_schema(method='PUT', request_body=LeaveApplicationSerializer)
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Staff's Documents details",)
+@api_view(['GET','POST','PUT'])
+def leaveApplicationApi(request):
+    try:
+        if request.method == 'GET':
+           
+            leaveApplication = LeaveApplication.objects.all().order_by('-SortId')
+            leaveApplicationSerializer = LeaveApplicationSerializer(
+                    leaveApplication, many=True)
+            return JsonResponse(leaveApplicationSerializer.data, safe=False)
+        elif request.method == 'POST':
+            leaveApplicationData = JSONParser().parse(request)
+            leaveApplicationSerializer = LeaveApplicationSerializer(
+                data=leaveApplicationData)
+            if leaveApplicationSerializer.is_valid():
+                leaveApplicationSerializer.save()
+                return JsonResponse(leaveApplicationSerializer.data['LeaveApplicationId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            leaveApplicationData = JSONParser().parse(request)
+            leaveApplication = LeaveApplication.objects.get(
+                LeaveApplicationId=leaveApplicationData['LeaveApplicationId'])
+            leaveApplicationSerializer = LeaveApplicationSerializer(
+                leaveApplication, data=leaveApplicationData)
+            if leaveApplicationSerializer.is_valid():
+                leaveApplicationSerializer.save()
+                return JsonResponse(leaveApplicationSerializer.data['LeaveApplicationId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give leaveApplicationId to get one Documents detail",)
+@api_view(['GET','DELETE'])
+def leaveApplicationApiById(request, LeaveApplicationId=""):
+    try:
+        if request.method == 'GET': 
+            leaveApplication = LeaveApplication.objects.get(
+                    LeaveApplicationId=LeaveApplicationId)
+            leaveApplicationSerializer = LeaveApplicationSerializer(
+                    leaveApplication)
+            return JsonResponse(leaveApplicationSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            leaveApplication = LeaveApplication.objects.get(LeaveApplicationId=LeaveApplicationId)
+            leaveApplication.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+        
