@@ -567,7 +567,8 @@ class DownloadPDF(View):
         elif siteSettings.InvoiceTemplate=='woodsInvoice.html':
             pdf = render_to_pdf('woodsInvoice.html', context)
         response = HttpResponse(pdf, content_type='application/pdf')
-        filename = "Estimate_%s.pdf" %(context['invoice'])
+        filename = "Estimate_%s.pdf" %(context['invoice'].InvoiceNumber)
+       
         content = "attachment; filename=%s" %(filename)
         response['Content-Disposition'] = content
         return response
@@ -585,6 +586,7 @@ def render_to_pdf(template_src, context_dict={}):
     pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
     if not pdf.err:
         return HttpResponse(result.getvalue(), content_type='application/pdf')
+        
     return None
 
 
@@ -652,11 +654,14 @@ def ViewPDF(request, InvoiceId=""):
                 'client':client
             }
             if siteSettings.InvoiceTemplate=='invoice.html':
+                
                 pdf = render_to_pdf('invoice.html', context)
             elif siteSettings.InvoiceTemplate=='woodsInvoice.html':
+                
                 pdf = render_to_pdf('woodsInvoice.html', context)
-            print("iiiiiiiiiiiiiiiiiiiiiiiiiii",invoice.InvoiceNumber)
+
             invoice_file_name = f'{invoice.InvoiceNumber}.pdf'
+            print(invoice_file_name)
             if invoice.InvoiceFile:
                 invoice.InvoiceFile.delete(save=True)
                 invoice.InvoiceFile.save(invoice_file_name, ContentFile(pdf.content))
@@ -970,7 +975,7 @@ def ViewPDFWoodsInteriors(request, InvoiceId=""):
             pdf = render_to_pdf('woodsInvoice.html', context)
            
            
-            invoice_file_name = f'{InvoiceId}.pdf'
+            invoice_file_name = f'{invoice.InvoiceNumber}.pdf'
             if invoice.InvoiceFile:
                 invoice.InvoiceFile.delete(save=True)
                 invoice.InvoiceFile.save(invoice_file_name, ContentFile(pdf.content))
