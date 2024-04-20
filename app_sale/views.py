@@ -655,6 +655,7 @@ def ViewPDF(request, InvoiceId=""):
                 pdf = render_to_pdf('invoice.html', context)
             elif siteSettings.InvoiceTemplate=='woodsInvoice.html':
                 pdf = render_to_pdf('woodsInvoice.html', context)
+            print("iiiiiiiiiiiiiiiiiiiiiiiiiii",invoice.InvoiceNumber)
             invoice_file_name = f'{invoice.InvoiceNumber}.pdf'
             if invoice.InvoiceFile:
                 invoice.InvoiceFile.delete(save=True)
@@ -721,7 +722,7 @@ def SendInvoice(request):
 
             elif siteSettings.InvoiceTemplate=='woodsInvoice.html':
                 pdf = render_to_pdf('woodsInvoice.html', context)
-            invoice_file_name = f'{InvoiceId}.pdf'
+            invoice_file_name = f'{invoice.InvoiceNumber}.pdf'
             if invoice.InvoiceFile:
                 invoice.InvoiceFile.delete(save=True)
                 invoice.InvoiceFile.save(invoice_file_name, ContentFile(pdf.content))

@@ -12,10 +12,23 @@
 
         html {
             font-family: 'Roboto', sans-serif;
+            color: rgba(0, 0, 0, 0);
         }
+        @media print {
+            html {
+                color: rgba(0, 0, 0, 0);
+                text-shadow: 0 0 0 #000000;
+            }
 
+            @media print and (-webkit-min-device-pixel-ratio:0) {
+                html {
+                color: #000000;
+                -webkit-print-color-adjust: exact;
+                }
+            }
+        }
         th {
-            font-size: 12px;
+            font-size: 14px;
         }
 
         td {
@@ -164,7 +177,7 @@
             background-color: #131212 !important;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
-            color: rgb(226, 232, 238);
+            color: rgb(255, 255, 255);
         }
 
 
@@ -258,7 +271,7 @@
 </head>
 
 <body>
-    <div class="container-fluid">
+    <div class="container-fluid" >
         <div class="invoice_header">
             <table>
                 <tr style=" padding-bottom: 10px;">

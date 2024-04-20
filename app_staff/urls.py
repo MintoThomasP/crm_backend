@@ -29,6 +29,7 @@ urlpatterns = [
 
     path('leaveApplicationApi/', views.leaveApplicationApi),
     url(r'^leaveApplicationApiById/(?P<LeaveApplicationId>[0-9a-zA-Z\-]+)$', views.leaveApplicationApiById),
+    url(r'^leaveApplicationApiByStaffId/(?P<StaffId>[0-9a-zA-Z\-]+)$', views.leaveApplicationApiByStaffId),
 
 path('GetAllActiveStaffList/', views.GetAllActiveStaffListApi),
 

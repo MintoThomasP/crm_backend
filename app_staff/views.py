@@ -7,8 +7,8 @@ from django.http.response import JsonResponse
 import qrcode
 from PIL import Image
 from io import BytesIO
-from app_default.models import Designation
-from app_default.serializers import DesignationSerializer
+from app_default.models import Designation, LeaveStatus, LeaveType
+from app_default.serializers import DesignationSerializer, LeaveStatusSerializer, LeaveTypeSerializer
 from app_login.serializers import LoginSerializer
 from app_staff.models import LeaveApplication, Staff, StaffDocuments, StaffGuardian
 import os
@@ -520,7 +520,16 @@ def leaveApplicationApi(request):
             leaveApplication = LeaveApplication.objects.all().order_by('-SortId')
             leaveApplicationSerializer = LeaveApplicationSerializer(
                     leaveApplication, many=True)
-            return JsonResponse(leaveApplicationSerializer.data, safe=False)
+            leaveData=[]
+            for row in leaveApplicationSerializer.data:
+                leaveStatus = LeaveStatus.objects.get(StatusId=row['Status'])
+                leaveStatus_serializer = LeaveStatusSerializer(leaveStatus)
+                row['StatusName']=leaveStatus_serializer.data['Status']
+                leaveType = LeaveType.objects.get(LeaveTypeId=row['LeaveType'])
+                leaveType_serializer = LeaveTypeSerializer(leaveType)
+                row['LeaveTypeName']=leaveType_serializer.data['LeaveType']
+                leaveData.append(row)
+            return JsonResponse(leaveData, safe=False)
         elif request.method == 'POST':
             leaveApplicationData = JSONParser().parse(request)
             leaveApplicationSerializer = LeaveApplicationSerializer(
@@ -564,3 +573,30 @@ def leaveApplicationApiById(request, LeaveApplicationId=""):
     except:
         return JsonResponse("", safe=False)
         
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give StaffId to get one LeaveApplication",)
+@api_view(['GET'])
+def leaveApplicationApiByStaffId(request, StaffId=""):
+    try:
+        if request.method == 'GET': 
+            leaveApplication = LeaveApplication.objects.filter(
+                    StaffId=StaffId)
+            leaveApplicationSerializer = LeaveApplicationSerializer(
+                    leaveApplication,many=True)
+            leaveData=[]
+            for row in leaveApplicationSerializer.data:
+                leaveStatus = LeaveStatus.objects.get(StatusId=row['Status'])
+                leaveStatus_serializer = LeaveStatusSerializer(leaveStatus)
+                row['StatusName']=leaveStatus_serializer.data['Status']
+                leaveType = LeaveType.objects.get(LeaveTypeId=row['LeaveType'])
+                leaveType_serializer = LeaveTypeSerializer(leaveType)
+                row['LeaveTypeName']=leaveType_serializer.data['LeaveType']
+                leaveData.append(row)
+            return JsonResponse(leaveData, safe=False)
+        
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)

@@ -4,9 +4,11 @@ from app_report import views
 
 urlpatterns = [
     path('StaffReportApiByStaffId/', views.StaffReportApiByStaffId),
-    path('AllStaffReport/', views.AllStaffReportApi),
+    # path('AllStaffReport/', views.AllStaffReportApi),
     path('ProjectReportApiByProjectId/', views.ProjectReportApiByProjectId),
 
+   
+    path('getAllProjectReport/', views.getAllProjectReport),
 
 
 ]

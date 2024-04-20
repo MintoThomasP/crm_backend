@@ -99,10 +99,10 @@ DATABASES = {
      'default': {
         'ENGINE': 'dj_db_conn_pool.backends.mysql',
         'NAME': 'staffmanage_db',
-        'USER': 'root',
-        'PASSWORD': '',
-        # 'USER': 'cubexizsoftadmin',
-        # 'PASSWORD': 'admin',
+        # 'USER': 'root',
+        # 'PASSWORD': '',
+        'USER': 'cubexizsoftadmin',
+        'PASSWORD': 'admin',
         'HOST': 'localhost',
         'PORT': '3306',
         'POOL_OPTIONS' : {
