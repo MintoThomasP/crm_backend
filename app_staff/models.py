@@ -20,6 +20,7 @@ class Staff(models.Model):
     Salary=models.CharField(blank=True, null=True, max_length=15)
     Designation=models.CharField(blank=True, null=True, max_length=50)
     UserGroup=models.CharField(blank=True, null=True, max_length=300)
+    UserType=models.CharField(blank=True, null=True, max_length=50)
     CurrentAddress=models.TextField(blank=True, null=True)
     ProfilePhoto=models.ImageField(upload_to='profiles/',null=True,blank=True)
     LeavingDate=models.CharField(blank=True, null=True, max_length=100)

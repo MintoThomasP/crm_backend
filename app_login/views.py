@@ -88,7 +88,7 @@ def loginApi(request):
                 userType_serializer = UserTypeSerializer(userType)
                 status=""
                 message=""
-                if userType_serializer.data['UserType'] == 'Staff':
+                if userType_serializer.data['UserType'] == 'Staff' or userType_serializer.data['UserType'] == 'Admin':
                     staff = Staff.objects.get(
                         StaffId=login_serializer.data[0]['UserId'])
                     staff_serializer = StaffSerializer(staff)
@@ -119,3 +119,26 @@ def loginApi(request):
             return JsonResponse("Failed to Update", safe=False)
     # except:
     #     return JsonResponse("", safe=False)
+        
+
+
+@csrf_exempt
+@api_view(['POST'])
+def UpdateUserTypeApi(request, pk=""):
+    try:
+        if request.method == 'POST':
+            login_data = JSONParser().parse(request)
+            try:
+                login = Login.objects.get(UserId=login_data['UserId'])
+                try:
+                    user_type = UserType.objects.get(UserTypeId=login_data['UserType'])  # Assuming 'UserType' has a field 'name'
+                    print(user_type)
+                    login.UserType = user_type
+                    login.save()
+                    return JsonResponse("Updated", safe=False)
+                except:
+                    return JsonResponse("UserType not found", safe=False)
+            except:
+                return JsonResponse("UserId not found", safe=False)
+    except Exception as e:
+        return JsonResponse(str(e), safe=False)

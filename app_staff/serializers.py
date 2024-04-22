@@ -19,6 +19,7 @@ class StaffSerializer(serializers.ModelSerializer):
 'Salary',
 'Designation',
 'UserGroup',
+'UserType',
 'CurrentAddress',
 'LeavingDate',
 'Status',
@@ -42,6 +43,7 @@ class SaveStaffSerializer(serializers.ModelSerializer):
 'Salary',
 'Designation',
 'UserGroup',
+'UserType',
 'LeavingDate',
 'Status',
 'CurrentAddress')
