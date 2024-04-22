@@ -12,6 +12,7 @@ class ProjectSerializer(serializers.ModelSerializer):
 'ProjectName',
 'Description',
 'StartDate',
+'EndDate',
 'Duration',
 'Status',
 'ClientId')

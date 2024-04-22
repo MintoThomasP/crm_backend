@@ -12,6 +12,7 @@ class Project(models.Model):
     ProjectName = models.CharField(blank=True, null=True, max_length=300)
     Description=models.TextField(blank=True, null=True)
     StartDate=models.DateTimeField(default=datetime.now)
+    EndDate=models.CharField(blank=True, null=True, max_length=100)
     Duration=models.IntegerField(default=0)
     Status=models.ForeignKey('app_default.TaskStatus',on_delete=models.CASCADE)
     ClientId=models.CharField(blank=True, null=True, max_length=50)
