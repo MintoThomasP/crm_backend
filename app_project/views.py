@@ -375,9 +375,15 @@ def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
             taskStatusName = []
             for row in projectTaskSerializer.data:
                 if row['StartDate'] and row['EndDate']:
-                    date_format = '%m/%d/%Y, %I:%M:%S %p' 
-                    start_date = datetime.strptime(row['StartDate'], date_format)
-                    end_date = datetime.strptime(row['EndDate'], date_format)
+                    try:
+                        date_format = '%m/%d/%Y, %I:%M:%S %p' 
+                        start_date = datetime.strptime(row['StartDate'], date_format)
+                        end_date = datetime.strptime(row['EndDate'], date_format)
+                    except:
+                        date_format = '%d/%m/%Y, %I:%M:%S %p'
+                        start_date = datetime.strptime(row['StartDate'], date_format)
+                        end_date = datetime.strptime(row['EndDate'], date_format)
+
                     duration = float(row['Duration'])
                     duration_min=duration*60
                     duration_seconds=duration_min*60
