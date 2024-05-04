@@ -64,7 +64,8 @@ class Invoice(models.Model):
     AmountDue=models.CharField(blank=True, null=True, max_length=15, default="0.00")
     Payment=models.CharField(blank=True, null=True, max_length=15)
     InvoiceFile=models.FileField(null=True,blank=True, upload_to='Invoicefiles')
-    Status=models.IntegerField(default=1) 
+    Status=models.IntegerField(default=1)
+    
 
 class InvoiceItem(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)
@@ -76,6 +77,7 @@ class InvoiceItem(models.Model):
     Rate=models.CharField(blank=True, null=True, max_length=15)
     DiscountPercent=models.CharField(blank=True, null=True, max_length=15)
     Amount=models.CharField(blank=True, null=True, max_length=15)
+    OrderNo=models.IntegerField(default=1)
 
 
 

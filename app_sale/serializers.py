@@ -79,7 +79,8 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
 'Quantity',
 'Rate',
 'DiscountPercent',
-'Amount')
+'Amount',
+'OrderNo')
 
 class InvoiceDocumentSerializer(serializers.ModelSerializer):
     class Meta:

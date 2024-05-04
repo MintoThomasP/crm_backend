@@ -131,7 +131,7 @@ def UpdateUserTypeApi(request, pk=""):
             try:
                 login = Login.objects.get(UserId=login_data['UserId'])
                 try:
-                    user_type = UserType.objects.get(UserTypeId=login_data['UserType'])  # Assuming 'UserType' has a field 'name'
+                    user_type = UserType.objects.get(UserTypeId=login_data['UserType']) 
                     print(user_type)
                     login.UserType = user_type
                     login.save()
