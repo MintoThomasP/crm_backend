@@ -66,15 +66,15 @@ def loginApi(request):
     # try:
         if request.method == 'POST':
             login_data = JSONParser().parse(request)
-            login = Login.objects.filter(
-                EmailId=login_data['EmailId'], Password=login_data['Password'], UserType=login_data['UserType']).exclude(Password__isnull=True).exclude(Password__exact='')
+            login = Login.objects.get(
+                EmailId=login_data['EmailId'], Password=login_data['Password'])
             Data = []
-            login_serializer = LoginAuthSerializer(login, many=True)
+            login_serializer = LoginAuthSerializer(login)
           
             UserData = []
             if not login_serializer.data:
                 login = Login.objects.filter(
-                    EmailId=login_data['EmailId']).exclude(UserType=login_data['UserType'])
+                    EmailId=login_data['EmailId'])
                 login_serializer = LoginAuthSerializer(login, many=True)
                 if not login_serializer.data:
                     Data.append('FAILED')
@@ -84,13 +84,13 @@ def loginApi(request):
                     Data.append('FAILED')
                     Data.append(login_serializer.data[0])
             else:
-                userType = UserType.objects.get(UserTypeId=login_data['UserType'])
+                userType = UserType.objects.get(UserTypeId=login_serializer.data['UserType'])
                 userType_serializer = UserTypeSerializer(userType)
                 status=""
                 message=""
                 if userType_serializer.data['UserType'] == 'Staff' or userType_serializer.data['UserType'] == 'Admin':
                     staff = Staff.objects.get(
-                        StaffId=login_serializer.data[0]['UserId'])
+                        StaffId=login_serializer.data['UserId'])
                     staff_serializer = StaffSerializer(staff)
                     # if staff_serializer.data['Status'] == -1:
                     #     status="FAILED"
@@ -104,7 +104,7 @@ def loginApi(request):
                     message='Successfully logged in'
                     
                 Data.append(status)
-                Data.append(login_serializer.data[0])
+                Data.append(login_serializer.data)
                 Data.append(message)
             Data.append(UserData)
             return JsonResponse(Data, safe=False)
