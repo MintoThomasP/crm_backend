@@ -544,7 +544,7 @@ class DownloadPDF(View):
     def get(self, request, InvoiceId="", *args, **kwargs):
         invoice = Invoice.objects.get(
                 InvoiceId=InvoiceId)
-        invoiceItems=InvoiceItem.objects.filter(InvoiceId=InvoiceId)
+        invoiceItems=InvoiceItem.objects.filter(InvoiceId=InvoiceId).order_by('SortId')
         client=Client.objects.get(ClientId=invoice.ClientId)
         clientadrress=ClientAddress.objects.get(ClientId=invoice.ClientId)
         billingAddress=json.loads(invoice.BillingAddress)
@@ -634,7 +634,7 @@ def ViewPDF(request, InvoiceId=""):
     # try:
         if request.method == 'GET':
             invoice = Invoice.objects.get(InvoiceId=InvoiceId)
-            invoiceItems = InvoiceItem.objects.filter(InvoiceId=InvoiceId)
+            invoiceItems = InvoiceItem.objects.filter(InvoiceId=InvoiceId).order_by('SortId')
             client=Client.objects.get(ClientId=invoice.ClientId)
             clientaddress = ClientAddress.objects.get(ClientId=invoice.ClientId)
             billingAddress=json.loads(invoice.BillingAddress)
@@ -692,7 +692,7 @@ def SendInvoice(request):
             InvoiceId=requestData['InvoiceId']
             # client=Client.objects.get(ClientId=invoice.ClientId)
             invoice = Invoice.objects.get(InvoiceId=InvoiceId)
-            invoiceItems = InvoiceItem.objects.filter(InvoiceId=InvoiceId)
+            invoiceItems = InvoiceItem.objects.filter(InvoiceId=InvoiceId).order_by('SortId')
             invoiceItemSerializer=InvoiceItemSerializer(invoiceItems,many=True)
             Itemdata=[]
             for col in invoiceItemSerializer.data:
@@ -959,7 +959,7 @@ def ViewPDFWoodsInteriors(request, InvoiceId=""):
     try:
         if request.method == 'GET':
             invoice = Invoice.objects.get(InvoiceId=InvoiceId)
-            invoiceItems = InvoiceItem.objects.filter(InvoiceId=InvoiceId)
+            invoiceItems = InvoiceItem.objects.filter(InvoiceId=InvoiceId).order_by('SortId')
             clientaddress = ClientAddress.objects.get(ClientId=invoice.ClientId)
             totalAmount=Decimal(invoice.TotalAmount)
             billingAddress=json.loads(invoice.BillingAddress)

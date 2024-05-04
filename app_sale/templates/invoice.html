@@ -134,13 +134,13 @@
         }
 
         .sub_table {
-
+            width: 100%;
             margin-top: 100px;
             margin-bottom: 100px;
         }
 
         .sub_table1 {
-
+            width: 100%;
             /* margin-top:100px; */
             margin-bottom: 100px;
         }
@@ -148,7 +148,7 @@
         .sub_table1 td {
             /* border: 2px solid #131212; */
             border-collapse: collapse;
-            padding: 10px;
+            padding: 10px 5px;
 
         }
 
@@ -361,11 +361,12 @@
                     {%endfor%}
                 </table>
             </div>
-            {%if invoiceItems.count < 3 %} <div class="sub_table">
-                <table>
+            {%if invoiceItems.count < 3 %} <div class="sub_table1">
+                <table style="width:100%;">
                     <tr style="border-bottom: 1px solid black;border-top: 1px solid black;">
                         <td style="width: 40%;"></td>
                         <td style="width: 40%;"></td>
+                        
                         <td style="width: 10%; text-align: right; vertical-align: middle;"><b>Sub Total</b></td>
                         <td style="width: 10%; text-align: right;">AED {{invoice.SubTotalAmount|floatformat:2}}</td>
 
@@ -388,13 +389,14 @@
                 </table>
         </div>
         {%else%}
-        <div class="sub_table1">
-            <table>
+        <div class="sub_table">
+            <table style="width:100%;">
                 <tr style="border-bottom: 1px solid black;border-top: 1px solid black;">
-                    <td style="width: 40%;"></td>
-                    <td style="width: 40%;"></td>
-                    <td style="width: 10%; text-align: right; vertical-align: middle;"><b>Sub Total</b></td>
-                    <td style="width: 10%; text-align: right;">AED {{invoice.SubTotalAmount|floatformat:2}}</td>
+                    <td style="width: 30%;"></td>
+                    <td style="width: 30%;"></td>
+                    
+                    <td style="width: 25%; text-align: right;"><b>Sub Total</b></td>
+                    <td style="width: 15%; text-align: right;">AED {{invoice.SubTotalAmount|floatformat:2}}</td>
 
                 </tr>
                 <tr>
@@ -408,8 +410,8 @@
                 <tr>
                     <td style="width: 30%;"></td>
                     <td style="width: 30%;"></td>
-                    <td style="width: 10%; text-align: right; background-color: #f3f0f0;"><b>Balance Due</b> </td>
-                    <td style="width: 11%; text-align: right;background-color: #f3f0f0;"><b>AED
+                    <td style="width: 25%; text-align: right; background-color: #f3f0f0;"><b>Balance Due</b> </td>
+                    <td style="width: 15%; text-align: right;background-color: #f3f0f0;"><b>AED
                             {{invoice.AmountDue}}</b></td>
                 </tr>
             </table>
