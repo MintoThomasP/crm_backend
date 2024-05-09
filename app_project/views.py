@@ -295,8 +295,11 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
                         date_format = '%d/%m/%Y, %I:%M:%S %p'
                         start_date = datetime.strptime(row['StartDate'], date_format)
                         end_date = datetime.strptime(row['EndDate'], date_format)
-                        
-                    duration = float(row['Duration'])
+                    try: 
+                        duration = float(row['Duration'])
+                    except:
+                        duration=1
+
                     duration_min=duration*60
                     duration_seconds=duration_min*60
                     total_time_taken_seconds = (end_date - start_date).total_seconds()
@@ -390,7 +393,10 @@ def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
                         start_date = datetime.strptime(row['StartDate'], date_format)
                         end_date = datetime.strptime(row['EndDate'], date_format)
 
-                    duration = float(row['Duration'])
+                    try: 
+                        duration = float(row['Duration'])
+                    except:
+                        duration=1
                     duration_min=duration*60
                     duration_seconds=duration_min*60
                     total_time_taken_seconds = (end_date - start_date).total_seconds()
