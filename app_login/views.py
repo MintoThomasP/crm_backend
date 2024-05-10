@@ -132,7 +132,7 @@ def UpdateUserTypeApi(request, pk=""):
                 login = Login.objects.get(UserId=login_data['UserId'])
                 try:
                     user_type = UserType.objects.get(UserTypeId=login_data['UserType']) 
-                    print(user_type)
+                   
                     login.UserType = user_type
                     login.save()
                     return JsonResponse("Updated", safe=False)

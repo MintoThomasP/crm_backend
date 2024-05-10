@@ -661,7 +661,7 @@ def ViewPDF(request, InvoiceId=""):
                 pdf = render_to_pdf('woodsInvoice.html', context)
 
             invoice_file_name = f'{invoice.InvoiceNumber}.pdf'
-            print(invoice_file_name)
+          
             if invoice.InvoiceFile:
                 invoice.InvoiceFile.delete(save=True)
                 invoice.InvoiceFile.save(invoice_file_name, ContentFile(pdf.content))
@@ -764,7 +764,7 @@ def SendInvoice(request):
             all_item_details = ""
             for item in invoiceItems:
                 all_item_details += f"<li>{item.ItemDetails}</li>\n"
-            print(all_item_details)
+            
 
             # Replace the placeholder for ItemDetails in the email template
             data = data.replace("<ul>{{Itemdetails}}</ul>", f"<ul>{all_item_details}</ul>")
