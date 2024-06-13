@@ -469,6 +469,7 @@ def ProjectReportApiByProjectId(request):
     staff_projects = []
 
     if staffData.get('StartDate') and staffData.get('EndDate'):
+       
         start_date = timezone.datetime.strptime(staffData['StartDate'], '%Y-%m-%d').date()
         end_date = (timezone.datetime.strptime(staffData['EndDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
         projects = ProjectTask.objects.filter(ProjectId=Project_id, ScheduledDeadline__range=(start_date, end_date)).values('TaskAssignedTo').distinct()
@@ -492,14 +493,23 @@ def ProjectReportApiByProjectId(request):
         for task_data in project_task_serializer.data:
             Staff_details['TotalNumberofTask'] += 1
             if task_data['StartDate'] and task_data['EndDate']:
-                date_format = '%m/%d/%Y, %I:%M:%S %p'
-                start_date = datetime.strptime(task_data['StartDate'], date_format)
-                end_date = datetime.strptime(task_data['EndDate'], date_format)
-                # start_date = datetime.strptime(task_data['StartDate'], '%m/%d/%Y, %I:%M:%S %p')
-                # end_date = datetime.strptime(task_data['EndDate'], '%m/%d/%Y, %I:%M:%S %p')
-                duration = float(task_data['Duration'])
-                duration_min = duration * 60
-                duration_seconds = duration_min * 60
+                try:
+                    date_format = '%m/%d/%Y, %I:%M:%S %p' 
+                    start_date = datetime.strptime(task_data['StartDate'], date_format)
+                    end_date = datetime.strptime(task_data['EndDate'], date_format)
+                except:
+                    date_format = '%d/%m/%Y, %I:%M:%S %p'
+                    start_date = datetime.strptime(task_data['StartDate'], date_format)
+                    end_date = datetime.strptime(task_data['EndDate'], date_format)
+
+                try:
+                    duration_parts = task_data['Duration'].split(':')
+                    hours = int(duration_parts[0])*60
+                    minutes = int(duration_parts[1])
+                    duration_min=hours + minutes
+                    duration_seconds=duration_min*60
+                except:
+                    duration_seconds=3600
                 total_time_taken_seconds = (end_date - start_date).total_seconds()
                 if total_time_taken_seconds > duration_seconds:
                     value1 = (total_time_taken_seconds / duration_seconds) * 100
