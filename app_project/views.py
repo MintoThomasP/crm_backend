@@ -385,32 +385,35 @@ def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
             projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
             taskStatusName = []
             for row in projectTaskSerializer.data:
-                if row['StartDate'] and row['EndDate']:
-                    try:
-                        date_format = '%m/%d/%Y, %I:%M:%S %p' 
-                        start_date = datetime.strptime(row['StartDate'], date_format)
-                        end_date = datetime.strptime(row['EndDate'], date_format)
-                    except:
-                        date_format = '%d/%m/%Y, %I:%M:%S %p'
-                        start_date = datetime.strptime(row['StartDate'], date_format)
-                        end_date = datetime.strptime(row['EndDate'], date_format)
-                    try:
-                        duration_parts = row['Duration'].split(':')
-                        hours = int(duration_parts[0])*60
-                        minutes = int(duration_parts[1])
-                        duration_min=hours + minutes
-                        duration_seconds=duration_min*60
-                    except:
-                        duration_seconds=3600
-                    total_time_taken_seconds = (end_date - start_date).total_seconds()
-                    if total_time_taken_seconds > duration_seconds:
-                        value1 = (total_time_taken_seconds / duration_seconds) * 100
-                        value_percentage = value1-100
+                try:
+                    if row['StartDate'] and row['EndDate']:
+                        try:
+                            date_format = '%m/%d/%Y, %I:%M:%S %p' 
+                            start_date = datetime.strptime(row['StartDate'], date_format)
+                            end_date = datetime.strptime(row['EndDate'], date_format)
+                        except:
+                            date_format = '%d/%m/%Y, %I:%M:%S %p'
+                            start_date = datetime.strptime(row['StartDate'], date_format)
+                            end_date = datetime.strptime(row['EndDate'], date_format)
+                        try:
+                            duration_parts = row['Duration'].split(':')
+                            hours = int(duration_parts[0])*60
+                            minutes = int(duration_parts[1])
+                            duration_min=hours + minutes
+                            duration_seconds=duration_min*60
+                        except:
+                            duration_seconds=3600
+                        total_time_taken_seconds = (end_date - start_date).total_seconds()
+                        if total_time_taken_seconds > duration_seconds:
+                            value1 = (total_time_taken_seconds / duration_seconds) * 100
+                            value_percentage = value1-100
 
-                        point=(row['TaskPoint']*value_percentage)/100
-                        row['CompletedPoint'] = round(row['TaskPoint'] - point)
-                    else:
-                        row['CompletedPoint'] = row['TaskPoint']
+                            point=(row['TaskPoint']*value_percentage)/100
+                            row['CompletedPoint'] = round(row['TaskPoint'] - point)
+                        else:
+                            row['CompletedPoint'] = row['TaskPoint']
+                except:
+                    row['CompletedPoint']=""
                 taskStatus = TaskStatus.objects.get(StatusId=row['Status'])
                 taskStatusSerializer = TaskStatusSerializer(taskStatus)
                 row['StatusName'] = taskStatusSerializer.data['Status']

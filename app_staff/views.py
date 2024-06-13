@@ -475,6 +475,7 @@ def staffSalaryByPerformanceApi(request):
             TaskPoint=0
             for row in projectTaskSerializer.data:
                 TaskPoint+=row['TaskPoint']
+               
                 if row['StartDate'] and row['EndDate']:
                     try:
                         date_format = '%m/%d/%Y, %I:%M:%S %p' 
