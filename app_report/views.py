@@ -365,9 +365,28 @@ def StaffReportApiByStaffId(request):
             if task_data['StartDate'] and task_data['EndDate']:
                 start_date = datetime.strptime(task_data['StartDate'], '%m/%d/%Y, %I:%M:%S %p')
                 end_date = datetime.strptime(task_data['EndDate'], '%m/%d/%Y, %I:%M:%S %p')
-                duration = float(task_data['Duration'])
-                duration_min = duration * 60
-                duration_seconds = duration_min * 60
+                # duration = float(task_data['Duration'])
+                # duration_min = duration * 60
+                # duration_seconds = duration_min * 60
+                # total_time_taken_seconds = (end_date - start_date).total_seconds()
+                ##
+                # duration_str = task_data['Duration'] #10:00
+                # hours, minutes = map(int, duration_str.split(':'))
+                # duration_min=hours*60
+                # total_duration_min=duration_min + minutes
+                # duration_seconds=total_duration_min*60
+                ##
+                # duration_hours = hours + minutes / 60.0
+                # print(duration_hours)
+                # duration_seconds = duration_hours * 3600
+                try:
+                    duration_parts = task_data['Duration'].split(':')
+                    hours = int(duration_parts[0])*60
+                    minutes = int(duration_parts[1])
+                    duration_min=hours + minutes
+                    duration_seconds=duration_min*60
+                except:
+                    duration_seconds=3600
                 total_time_taken_seconds = (end_date - start_date).total_seconds()
                 if total_time_taken_seconds > duration_seconds:
                     value1 = (total_time_taken_seconds / duration_seconds) * 100
