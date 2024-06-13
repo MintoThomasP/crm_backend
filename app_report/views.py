@@ -492,33 +492,37 @@ def ProjectReportApiByProjectId(request):
         }
         for task_data in project_task_serializer.data:
             Staff_details['TotalNumberofTask'] += 1
-            if task_data['StartDate'] and task_data['EndDate']:
-                try:
-                    date_format = '%m/%d/%Y, %I:%M:%S %p' 
-                    start_date = datetime.strptime(task_data['StartDate'], date_format)
-                    end_date = datetime.strptime(task_data['EndDate'], date_format)
-                except:
-                    date_format = '%d/%m/%Y, %I:%M:%S %p'
-                    start_date = datetime.strptime(task_data['StartDate'], date_format)
-                    end_date = datetime.strptime(task_data['EndDate'], date_format)
+            try:
+                if task_data['StartDate'] and task_data['EndDate']:
+                    try:
+                        date_format = '%m/%d/%Y, %I:%M:%S %p' 
+                        start_date = datetime.strptime(task_data['StartDate'], date_format)
+                        end_date = datetime.strptime(task_data['EndDate'], date_format)
+                    except:
+                        date_format = '%d/%m/%Y, %I:%M:%S %p'
+                        start_date = datetime.strptime(task_data['StartDate'], date_format)
+                        end_date = datetime.strptime(task_data['EndDate'], date_format)
 
-                try:
-                    duration_parts = task_data['Duration'].split(':')
-                    hours = int(duration_parts[0])*60
-                    minutes = int(duration_parts[1])
-                    duration_min=hours + minutes
-                    duration_seconds=duration_min*60
-                except:
-                    duration_seconds=3600
-                total_time_taken_seconds = (end_date - start_date).total_seconds()
-                if total_time_taken_seconds > duration_seconds:
-                    value1 = (total_time_taken_seconds / duration_seconds) * 100
-                    value_percentage = value1 - 100
-                    point = (float(task_data['TaskPoint']) * value_percentage) / 100
-                    Staff_details['TotalCompletedPoints'] += round(float(task_data['TaskPoint']) - point)
-                else:
-                    Staff_details['TotalCompletedPoints'] += float(task_data['TaskPoint'])
-                    Staff_details['OnTimeCompletedTaskCount'] += 1
+                    try:
+                        duration_parts = task_data['Duration'].split(':')
+                        hours = int(duration_parts[0])*60
+                        minutes = int(duration_parts[1])
+                        duration_min=hours + minutes
+                        duration_seconds=duration_min*60
+                    except:
+                        duration_seconds=3600
+                    total_time_taken_seconds = (end_date - start_date).total_seconds()
+                    if total_time_taken_seconds > duration_seconds:
+                        value1 = (total_time_taken_seconds / duration_seconds) * 100
+                        value_percentage = value1 - 100
+                        point = (float(task_data['TaskPoint']) * value_percentage) / 100
+                        Staff_details['TotalCompletedPoints'] += round(float(task_data['TaskPoint']) - point)
+                    else:
+                        Staff_details['TotalCompletedPoints'] += float(task_data['TaskPoint'])
+                        Staff_details['OnTimeCompletedTaskCount'] += 1
+            except:
+                Staff_details['TotalCompletedPoints'] =""
+                Staff_details['OnTimeCompletedTaskCount']=""
             if task_data['Status'] == '1' or task_data['Status'] == '2':
                 Staff_details['DueTaskCount'] += 1
             elif task_data['Status'] == '3' or task_data['Status'] == '7':
