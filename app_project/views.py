@@ -864,19 +864,61 @@ class UploadCommentFile(APIView):
 
 
 from django.utils import timezone
+
+
+from datetime import datetime
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give ProjectId to get task detail",)
-@api_view(['GET'])
-def ProjectTaskApiByDate(request,CreatedDate=""):
+@api_view(['POST'])
+def ProjectTaskApiFilteringforTaskAssignedTo(request,):
     try:
-        if request.method == 'GET': 
-            CreatedDate = timezone.datetime.strptime(CreatedDate, '%Y-%m-%d').date()
-            projectTask = ProjectTask.objects.filter(
-                    CreatedDate=CreatedDate)
+        if request.method == 'POST': 
+            taskData = JSONParser().parse(request)
+            if taskData['CreatedDate'] and taskData['Status']:
+                CreatedDate = timezone.datetime.strptime(taskData['CreatedDate'], '%Y-%m-%d').date()
+                projectTask = ProjectTask.objects.filter(
+                        CreatedDate=CreatedDate,Status=taskData['Status'],TaskAssignedTo=taskData['TaskAssignedTo'])
+            elif taskData['CreatedDate']:
+                CreatedDate = timezone.datetime.strptime(CreatedDate, '%Y-%m-%d').date()
+                projectTask = ProjectTask.objects.filter(
+                        CreatedDate=CreatedDate,TaskAssignedTo=taskData['TaskAssignedTo'])
+            elif taskData['Status']:
+                projectTask = ProjectTask.objects.filter(
+                        Status=taskData['Status'],TaskAssignedTo=taskData['TaskAssignedTo'])
+            else:
+                projectTask = ProjectTask.objects.filter(TaskAssignedTo=taskData['TaskAssignedTo'])
             projectTaskSerializer = ProjectTaskSerializer(
                     projectTask,many=True)
             taskStatusName=[]
             for row in projectTaskSerializer.data:
+                try:
+                    if row['StartDate'] and row['EndDate']:
+                        try:
+                            date_format = '%m/%d/%Y, %I:%M:%S %p' 
+                            start_date = datetime.strptime(row['StartDate'], date_format)
+                            end_date = datetime.strptime(row['EndDate'], date_format)
+                        except:
+                            date_format = '%d/%m/%Y, %I:%M:%S %p'
+                            start_date = datetime.strptime(row['StartDate'], date_format)
+                            end_date = datetime.strptime(row['EndDate'], date_format)
+
+                        try:
+                            duration_parts = row['Duration'].split(':')
+                            hours = int(duration_parts[0])*60
+                            minutes = int(duration_parts[1])
+                            duration_min=hours + minutes
+                            duration_seconds=duration_min*60
+                        except:
+                            duration_seconds=3600
+                        total_time_taken_seconds = (end_date - start_date).total_seconds()
+                        if total_time_taken_seconds > duration_seconds:
+                            value1 = (total_time_taken_seconds / duration_seconds) * 100
+                            value_percentage = value1-100
+                            point=(row['TaskPoint']*value_percentage)/100
+                            row['CompletedPoint'] = round(row['TaskPoint'] - point)
+                        else:
+                            row['CompletedPoint'] = row['TaskPoint']
+                except:
+                    row['CompletedPoint']=""                        
                 taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
                 taskStatusSerializer=TaskStatusSerializer(taskStatus)
                 row['StatusName']=taskStatusSerializer.data['Status']
@@ -886,25 +928,119 @@ def ProjectTaskApiByDate(request,CreatedDate=""):
                     row['ProjectName'] = projectSerializer.data['ProjectName']
                 except:
                     row['ProjectName'] = ""
+                staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
+                staffSerializer = StaffSerializer(staff)
+                row['StaffName'] = staffSerializer.data['StaffName']
+
                 try:
                     staff=Staff.objects.get(StaffId=row['VerifiedBy'])
                     staffSerializer=StaffSerializer(staff)
                     row['VerifiedByName']=staffSerializer.data['StaffName']
                 except:
                     row['VerifiedByName']= ""
-                
                 try:
                     projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
                     projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
                     row['ProjectTaskFiles']=projectTaskFileSerializer.data
                 except:
                     row['ProjectTaskFiles']=""
+                
+                
+                taskStatusName.append(row)
+            return JsonResponse(taskStatusName, safe=False)
+            
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
 
+
+
+
+
+@csrf_exempt
+@api_view(['POST'])
+def ProjectTaskApiFilteringforTaskAssignedBy(request,):
+    try:
+        if request.method == 'POST': 
+            taskData = JSONParser().parse(request)
+            if taskData['CreatedDate'] and taskData['Status']:
+                CreatedDate = timezone.datetime.strptime(taskData['CreatedDate'], '%Y-%m-%d').date()
+                projectTask = ProjectTask.objects.filter(
+                        CreatedDate=CreatedDate,Status=taskData['Status'],TaskAssignedBy=taskData['TaskAssignedBy'])
+            elif taskData['CreatedDate']:
+                CreatedDate = timezone.datetime.strptime(CreatedDate, '%Y-%m-%d').date()
+                projectTask = ProjectTask.objects.filter(
+                        CreatedDate=CreatedDate,TaskAssignedBy=taskData['TaskAssignedBy'])
+            elif taskData['Status']:
+                projectTask = ProjectTask.objects.filter(
+                        Status=taskData['Status'],TaskAssignedBy=taskData['TaskAssignedBy'])
+            else:
+                projectTask = ProjectTask.objects.filter(TaskAssignedBy=taskData['TaskAssignedBy'])
+            projectTaskSerializer = ProjectTaskSerializer(
+                    projectTask,many=True)
+            taskStatusName=[]
+            for row in projectTaskSerializer.data:
+                try:
+                    if row['StartDate'] and row['EndDate']:
+                        try:
+                            date_format = '%m/%d/%Y, %I:%M:%S %p' 
+                            start_date = datetime.strptime(row['StartDate'], date_format)
+                            end_date = datetime.strptime(row['EndDate'], date_format)
+                        except:
+                            date_format = '%d/%m/%Y, %I:%M:%S %p'
+                            start_date = datetime.strptime(row['StartDate'], date_format)
+                            end_date = datetime.strptime(row['EndDate'], date_format)
+
+                        try:
+                            duration_parts = row['Duration'].split(':')
+                            hours = int(duration_parts[0])*60
+                            minutes = int(duration_parts[1])
+                            duration_min=hours + minutes
+                            duration_seconds=duration_min*60
+                        except:
+                            duration_seconds=3600
+                        total_time_taken_seconds = (end_date - start_date).total_seconds()
+                        if total_time_taken_seconds > duration_seconds:
+                            value1 = (total_time_taken_seconds / duration_seconds) * 100
+                            value_percentage = value1-100
+                            point=(row['TaskPoint']*value_percentage)/100
+                            row['CompletedPoint'] = round(row['TaskPoint'] - point)
+                        else:
+                            row['CompletedPoint'] = row['TaskPoint']
+                except:
+                    row['CompletedPoint']=""                        
+                taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                row['StatusName']=taskStatusSerializer.data['Status']
+                try:
+                    project = Project.objects.get(ProjectId=row['ProjectId'])
+                    projectSerializer = ProjectSerializer(project)
+                    row['ProjectName'] = projectSerializer.data['ProjectName']
+                except:
+                    row['ProjectName'] = ""
                 staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
                 staffSerializer = StaffSerializer(staff)
                 row['StaffName'] = staffSerializer.data['StaffName']
+
+                try:
+                    staff=Staff.objects.get(StaffId=row['VerifiedBy'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['VerifiedByName']=staffSerializer.data['StaffName']
+                except:
+                    row['VerifiedByName']= ""
+                try:
+                    projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+                    projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
+                    row['ProjectTaskFiles']=projectTaskFileSerializer.data
+                except:
+                    row['ProjectTaskFiles']=""
+                
+                
                 taskStatusName.append(row)
             return JsonResponse(taskStatusName, safe=False)
+            
         else:
             return JsonResponse("", safe=False)
     except:
