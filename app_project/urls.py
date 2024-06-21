@@ -36,6 +36,7 @@ urlpatterns = [
     path('CommentFile/', views.CommentFileApi),
     url(r'^CURDCommentFileApiById/(?P<CommentFileId>[0-9a-zA-Z\-]+)$', views.CURDCommentFileApiById),
     path('UploadCommentFile/', views.UploadCommentFile.as_view()),
+    url(r'^ProjectTaskApiByDate/(?P<CreatedDate>[0-9a-zA-Z\-]+)$', views.ProjectTaskApiByDate),
 
 
     #  url(r'^send_notification/(?P<ProjectTaskId>[0-9a-zA-Z\-]+)$', views.send_notification_on_comment),

@@ -273,6 +273,8 @@ def ProjectTaskApiByProjectId(request, ProjectId=""):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
+    
+
 from datetime import datetime
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get projecttask by staff",)
@@ -860,3 +862,50 @@ class UploadCommentFile(APIView):
 #     message_body = "A new comment has been added to your task."
 #     send_notification(recipient_token, message_title, message_body)
 
+
+from django.utils import timezone
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give ProjectId to get task detail",)
+@api_view(['GET'])
+def ProjectTaskApiByDate(request,CreatedDate=""):
+    try:
+        if request.method == 'GET': 
+            CreatedDate = timezone.datetime.strptime(CreatedDate, '%Y-%m-%d').date()
+            projectTask = ProjectTask.objects.filter(
+                    CreatedDate=CreatedDate)
+            projectTaskSerializer = ProjectTaskSerializer(
+                    projectTask,many=True)
+            taskStatusName=[]
+            for row in projectTaskSerializer.data:
+                taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                row['StatusName']=taskStatusSerializer.data['Status']
+                try:
+                    project = Project.objects.get(ProjectId=row['ProjectId'])
+                    projectSerializer = ProjectSerializer(project)
+                    row['ProjectName'] = projectSerializer.data['ProjectName']
+                except:
+                    row['ProjectName'] = ""
+                try:
+                    staff=Staff.objects.get(StaffId=row['VerifiedBy'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['VerifiedByName']=staffSerializer.data['StaffName']
+                except:
+                    row['VerifiedByName']= ""
+                
+                try:
+                    projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+                    projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
+                    row['ProjectTaskFiles']=projectTaskFileSerializer.data
+                except:
+                    row['ProjectTaskFiles']=""
+
+                staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
+                staffSerializer = StaffSerializer(staff)
+                row['StaffName'] = staffSerializer.data['StaffName']
+                taskStatusName.append(row)
+            return JsonResponse(taskStatusName, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
