@@ -38,6 +38,7 @@ urlpatterns = [
     path('UploadCommentFile/', views.UploadCommentFile.as_view()),
     path('ProjectTaskApiFilteringforTaskAssignedTo/', views.ProjectTaskApiFilteringforTaskAssignedTo), #my task
     path('ProjectTaskApiFilteringforTaskAssignedBy/', views.ProjectTaskApiFilteringforTaskAssignedBy), #task assigned by me
+    path('GetALlProjectTaskApiByFiltering/', views.GetALlProjectTaskApiByFiltering), #Get all task filtering
 
     #  url(r'^send_notification/(?P<ProjectTaskId>[0-9a-zA-Z\-]+)$', views.send_notification_on_comment),
 
