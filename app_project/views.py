@@ -236,7 +236,7 @@ def ProjectTaskApiByProjectId(request, ProjectId=""):
     try:
         if request.method == 'GET': 
             projectTask = ProjectTask.objects.filter(
-                    ProjectId=ProjectId)
+                    ProjectId=ProjectId).order_by('-SortId')
             projectTaskSerializer = ProjectTaskSerializer(
                     projectTask,many=True)
             taskStatusName=[]
@@ -283,7 +283,7 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
     # try:
         if request.method == 'GET': 
             projectTask = ProjectTask.objects.filter(
-                    TaskAssignedTo=TaskAssignedTo)
+                    TaskAssignedTo=TaskAssignedTo).order_by('-SortId')
             projectTaskSerializer = ProjectTaskSerializer(
                     projectTask,many=True)
             taskStatusName=[]
@@ -383,7 +383,7 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
 def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
     # try:
         if request.method == 'GET': 
-            projectTask = ProjectTask.objects.filter(TaskAssignedBy=TaskAssignedBy)
+            projectTask = ProjectTask.objects.filter(TaskAssignedBy=TaskAssignedBy).order_by('-SortId')
             projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
             taskStatusName = []
             for row in projectTaskSerializer.data:
@@ -461,7 +461,7 @@ def ProjectTaskApiByUserIdAndProjectId(request):
         if request.method == 'POST': 
             projectTaskData = JSONParser().parse(request)
             projectTask = ProjectTask.objects.filter(
-                    ProjectId=projectTaskData['ProjectId'],TaskAssignedTo=projectTaskData['TaskAssignedTo'])
+                    ProjectId=projectTaskData['ProjectId'],TaskAssignedTo=projectTaskData['TaskAssignedTo']).order_by('-SortId')
             projectTaskSerializer = ProjectTaskSerializer(
                     projectTask,many=True)
             taskStatusName=[]
@@ -507,7 +507,7 @@ def ProjectTaskApiByTaskAssignedByAndProjectId(request):
         if request.method == 'POST': 
             projectTaskData = JSONParser().parse(request)
             projectTask = ProjectTask.objects.filter(
-                    ProjectId=projectTaskData['ProjectId'],TaskAssignedBy=projectTaskData['TaskAssignedBy'])
+                    ProjectId=projectTaskData['ProjectId'],TaskAssignedBy=projectTaskData['TaskAssignedBy']).order_by('-SortId')
             projectTaskSerializer = ProjectTaskSerializer(
                     projectTask,many=True)
             taskData=[]
@@ -613,7 +613,7 @@ def GetAllTasksStatus(request):
     # try:
         if request.method == 'POST':
             Statusdata = JSONParser().parse(request)
-            projectTask = ProjectTask.objects.filter(Status=Statusdata['StatusId'])
+            projectTask = ProjectTask.objects.filter(Status=Statusdata['StatusId']).order_by('-SortId')
             projectTaskSerializer = ProjectTaskSerializer(
                         projectTask,many=True)
             return JsonResponse(projectTaskSerializer.data, safe=False)
