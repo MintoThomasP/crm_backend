@@ -873,10 +873,21 @@ def ProjectTaskApiFilteringforTaskAssignedTo(request,):
     try:
         if request.method == 'POST': 
             taskData = JSONParser().parse(request)
-            if taskData['CreatedDate'] and taskData['Status']:
+            if taskData['CreatedDate'] and taskData['Status']  and taskData['ProjectId']:
+                CreatedDate = timezone.datetime.strptime(taskData['CreatedDate'], '%Y-%m-%d').date()
+                projectTask = ProjectTask.objects.filter(
+                        CreatedDate=CreatedDate,Status=taskData['Status'],TaskAssignedTo=taskData['TaskAssignedTo'],ProjectId=taskData['ProjectId']).order_by('-SortId')
+            elif taskData['CreatedDate'] and taskData['Status']:
                 CreatedDate = timezone.datetime.strptime(taskData['CreatedDate'], '%Y-%m-%d').date()
                 projectTask = ProjectTask.objects.filter(
                         CreatedDate=CreatedDate,Status=taskData['Status'],TaskAssignedTo=taskData['TaskAssignedTo']).order_by('-SortId')
+            elif taskData['CreatedDate'] and taskData['ProjectId']:
+                CreatedDate = timezone.datetime.strptime(taskData['CreatedDate'], '%Y-%m-%d').date()
+                projectTask = ProjectTask.objects.filter(
+                        CreatedDate=CreatedDate,ProjectId=taskData['ProjectId'],TaskAssignedTo=taskData['TaskAssignedTo']).order_by('-SortId')
+            elif taskData['Status']  and taskData['ProjectId']:
+                projectTask = ProjectTask.objects.filter(
+                        Status=taskData['Status'],TaskAssignedTo=taskData['TaskAssignedTo'],ProjectId=taskData['ProjectId']).order_by('-SortId')
             elif taskData['CreatedDate']:
                 CreatedDate = timezone.datetime.strptime(CreatedDate, '%Y-%m-%d').date()
                 projectTask = ProjectTask.objects.filter(
@@ -884,6 +895,9 @@ def ProjectTaskApiFilteringforTaskAssignedTo(request,):
             elif taskData['Status']:
                 projectTask = ProjectTask.objects.filter(
                         Status=taskData['Status'],TaskAssignedTo=taskData['TaskAssignedTo']).order_by('-SortId')
+            elif taskData['ProjectId']:
+                projectTask = ProjectTask.objects.filter(
+                        ProjectId=taskData['ProjectId'],TaskAssignedTo=taskData['TaskAssignedTo']).order_by('-SortId')
             else:
                 projectTask = ProjectTask.objects.filter(TaskAssignedTo=taskData['TaskAssignedTo']).order_by('-SortId')
             projectTaskSerializer = ProjectTaskSerializer(
@@ -965,10 +979,21 @@ def ProjectTaskApiFilteringforTaskAssignedBy(request,):
     try:
         if request.method == 'POST': 
             taskData = JSONParser().parse(request)
-            if taskData['CreatedDate'] and taskData['Status']:
+            if taskData['CreatedDate'] and taskData['Status']  and taskData['ProjectId']:
+                CreatedDate = timezone.datetime.strptime(taskData['CreatedDate'], '%Y-%m-%d').date()
+                projectTask = ProjectTask.objects.filter(
+                        CreatedDate=CreatedDate,Status=taskData['Status'],TaskAssignedBy=taskData['TaskAssignedBy'],ProjectId=taskData['ProjectId']).order_by('-SortId')
+            elif taskData['CreatedDate'] and taskData['Status']:
                 CreatedDate = timezone.datetime.strptime(taskData['CreatedDate'], '%Y-%m-%d').date()
                 projectTask = ProjectTask.objects.filter(
                         CreatedDate=CreatedDate,Status=taskData['Status'],TaskAssignedBy=taskData['TaskAssignedBy']).order_by('-SortId')
+            elif taskData['CreatedDate'] and taskData['ProjectId']:
+                CreatedDate = timezone.datetime.strptime(taskData['CreatedDate'], '%Y-%m-%d').date()
+                projectTask = ProjectTask.objects.filter(
+                        CreatedDate=CreatedDate,ProjectId=taskData['ProjectId'],TaskAssignedBy=taskData['TaskAssignedBy']).order_by('-SortId')
+            elif taskData['Status']  and taskData['ProjectId']:
+                projectTask = ProjectTask.objects.filter(
+                        Status=taskData['Status'],TaskAssignedBy=taskData['TaskAssignedBy'],ProjectId=taskData['ProjectId']).order_by('-SortId')
             elif taskData['CreatedDate']:
                 CreatedDate = timezone.datetime.strptime(CreatedDate, '%Y-%m-%d').date()
                 projectTask = ProjectTask.objects.filter(
@@ -976,10 +1001,12 @@ def ProjectTaskApiFilteringforTaskAssignedBy(request,):
             elif taskData['Status']:
                 projectTask = ProjectTask.objects.filter(
                         Status=taskData['Status'],TaskAssignedBy=taskData['TaskAssignedBy']).order_by('-SortId')
+            elif taskData['ProjectId']:
+                projectTask = ProjectTask.objects.filter(
+                        ProjectId=taskData['ProjectId'],TaskAssignedBy=taskData['TaskAssignedBy']).order_by('-SortId')
             else:
                 projectTask = ProjectTask.objects.filter(TaskAssignedBy=taskData['TaskAssignedBy']).order_by('-SortId')
-            projectTaskSerializer = ProjectTaskSerializer(
-                    projectTask,many=True)
+            projectTaskSerializer = ProjectTaskSerializer(projectTask,many=True)
             taskStatusName=[]
             for row in projectTaskSerializer.data:
                 try:
@@ -1050,11 +1077,26 @@ def ProjectTaskApiFilteringforTaskAssignedBy(request,):
 
 
 @api_view(['POST'])
-def GetALlProjectTaskApiByFiltering(request):
-    try:
+def GetAllProjectTaskApiByFiltering(request):
+    # try:
         if request.method == 'POST':
             taskData = JSONParser().parse(request)
-            if taskData['CreatedDate'] and taskData['Status'] and taskData['TaskAssignedTo']:
+           
+            
+            
+            
+            if taskData['CreatedDate'] and taskData['Status'] and taskData['TaskAssignedTo'] and taskData['ProjectId']:
+                CreatedDate = timezone.datetime.strptime(taskData['CreatedDate'], '%Y-%m-%d').date()
+                projectTask = ProjectTask.objects.filter(CreatedDate=CreatedDate,ProjectId=taskData['ProjectId'],Status=taskData['Status'],TaskAssignedTo=taskData['TaskAssignedTo']).order_by('-SortId')
+            elif taskData['CreatedDate'] and taskData['Status'] and taskData['ProjectId']:
+                CreatedDate = timezone.datetime.strptime(taskData['CreatedDate'], '%Y-%m-%d').date()
+                projectTask = ProjectTask.objects.filter(CreatedDate=CreatedDate,Status=taskData['Status'],ProjectId=taskData['ProjectId']).order_by('-SortId')
+            elif taskData['CreatedDate'] and  taskData['TaskAssignedTo'] and taskData['ProjectId']:
+                CreatedDate = timezone.datetime.strptime(taskData['CreatedDate'], '%Y-%m-%d').date()
+                projectTask = ProjectTask.objects.filter(CreatedDate=CreatedDate,TaskAssignedTo=taskData['TaskAssignedTo'],ProjectId=taskData['ProjectId']).order_by('-SortId')
+            elif taskData['Status'] and  taskData['TaskAssignedTo'] and taskData['ProjectId']:
+                projectTask = ProjectTask.objects.filter(Status=taskData['Status'],TaskAssignedTo=taskData['TaskAssignedTo'],ProjectId=taskData['ProjectId']).order_by('-SortId')
+            elif taskData['CreatedDate'] and taskData['Status'] and taskData['TaskAssignedTo']:
                 CreatedDate = timezone.datetime.strptime(taskData['CreatedDate'], '%Y-%m-%d').date()
                 projectTask = ProjectTask.objects.filter(CreatedDate=CreatedDate,Status=taskData['Status'],TaskAssignedTo=taskData['TaskAssignedTo']).order_by('-SortId')
             elif taskData['CreatedDate'] and taskData['Status']:
@@ -1063,8 +1105,16 @@ def GetALlProjectTaskApiByFiltering(request):
             elif taskData['CreatedDate'] and  taskData['TaskAssignedTo']:
                 CreatedDate = timezone.datetime.strptime(taskData['CreatedDate'], '%Y-%m-%d').date()
                 projectTask = ProjectTask.objects.filter(CreatedDate=CreatedDate,TaskAssignedTo=taskData['TaskAssignedTo']).order_by('-SortId')
+            elif taskData['CreatedDate'] and  taskData['ProjectId']:
+                CreatedDate = timezone.datetime.strptime(taskData['CreatedDate'], '%Y-%m-%d').date()
+                projectTask = ProjectTask.objects.filter(CreatedDate=CreatedDate,ProjectId=taskData['ProjectId']).order_by('-SortId')
+            elif taskData['TaskAssignedTo'] and taskData['ProjectId']:
+                projectTask = ProjectTask.objects.filter(TaskAssignedTo=taskData['TaskAssignedTo'],ProjectId=taskData['ProjectId']).order_by('-SortId')
+
             elif taskData['Status'] and  taskData['TaskAssignedTo']:
                 projectTask = ProjectTask.objects.filter(Status=taskData['Status'],TaskAssignedTo=taskData['TaskAssignedTo']).order_by('-SortId')
+            elif taskData['Status'] and  taskData['ProjectId']:
+                projectTask = ProjectTask.objects.filter(Status=taskData['Status'],ProjectId=taskData['ProjectId']).order_by('-SortId')
             elif taskData['Status']:
                 projectTask = ProjectTask.objects.filter(Status=taskData['Status']).order_by('-SortId')
             elif taskData['CreatedDate']:
@@ -1072,6 +1122,8 @@ def GetALlProjectTaskApiByFiltering(request):
                 projectTask = ProjectTask.objects.filter(CreatedDate=CreatedDate).order_by('-SortId')
             elif taskData['TaskAssignedTo']:
                 projectTask = ProjectTask.objects.filter(TaskAssignedTo=taskData['TaskAssignedTo']).order_by('-SortId')
+            elif taskData['ProjectId']:
+                projectTask = ProjectTask.objects.filter(ProjectId=taskData['ProjectId']).order_by('-SortId')
             else:
                 projectTask = ProjectTask.objects.all().order_by('-SortId')
             projectTaskSerializer = ProjectTaskSerializer(
@@ -1122,5 +1174,5 @@ def GetALlProjectTaskApiByFiltering(request):
             return JsonResponse(taskData, safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
