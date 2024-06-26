@@ -363,8 +363,17 @@ def StaffReportApiByStaffId(request):
         for task_data in project_task_serializer.data:
             project_details['TotalNumberofTask'] += 1
             if task_data['StartDate'] and task_data['EndDate']:
-                start_date = datetime.strptime(task_data['StartDate'], '%m/%d/%Y, %I:%M:%S %p')
-                end_date = datetime.strptime(task_data['EndDate'], '%m/%d/%Y, %I:%M:%S %p')
+                try:
+                    date_format = '%m/%d/%Y, %I:%M:%S %p' 
+                    start_date = datetime.strptime(task_data['StartDate'], date_format)
+                    end_date = datetime.strptime(task_data['EndDate'], date_format)
+                except:
+                    date_format = '%d/%m/%Y, %I:%M:%S %p'
+                    start_date = datetime.strptime(task_data['StartDate'], date_format)
+                    end_date = datetime.strptime(task_data['EndDate'], date_format)
+
+                # start_date = datetime.strptime(task_data['StartDate'], '%m/%d/%Y, %I:%M:%S %p')
+                # end_date = datetime.strptime(task_data['EndDate'], '%m/%d/%Y, %I:%M:%S %p')
                 # duration = float(task_data['Duration'])
                 # duration_min = duration * 60
                 # duration_seconds = duration_min * 60
