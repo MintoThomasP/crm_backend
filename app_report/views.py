@@ -364,13 +364,24 @@ def StaffReportApiByStaffId(request):
             project_details['TotalNumberofTask'] += 1
             if task_data['StartDate'] and task_data['EndDate']:
                 try:
-                    date_format = '%m/%d/%Y, %I:%M:%S %p' 
-                    start_date = datetime.strptime(task_data['StartDate'], date_format)
-                    end_date = datetime.strptime(task_data['EndDate'], date_format)
+                    try:
+                        date_format = '%m/%d/%Y, %I:%M:%S %p'
+                        start_date = datetime.strptime(task_data['StartDate'], date_format)
+                        end_date = datetime.strptime(task_data['EndDate'], date_format)
+                    except:
+                        date_format = '%m/%d/%Y, %I:%M:%S'
+                        start_date = datetime.strptime(task_data['StartDate'], date_format)
+                        end_date = datetime.strptime(task_data['EndDate'], date_format)
+
                 except:
-                    date_format = '%d/%m/%Y, %I:%M:%S %p'
-                    start_date = datetime.strptime(task_data['StartDate'], date_format)
-                    end_date = datetime.strptime(task_data['EndDate'], date_format)
+                    try:
+                        date_format = '%d/%m/%Y, %I:%M:%S %p'
+                        start_date = datetime.strptime(task_data['StartDate'], date_format)
+                        end_date = datetime.strptime(task_data['EndDate'], date_format)
+                    except:
+                        date_format = '%d/%m/%Y, %I:%M:%S'
+                        start_date = datetime.strptime(task_data['StartDate'], date_format)
+                        end_date = datetime.strptime(task_data['EndDate'], date_format)
 
                 # start_date = datetime.strptime(task_data['StartDate'], '%m/%d/%Y, %I:%M:%S %p')
                 # end_date = datetime.strptime(task_data['EndDate'], '%m/%d/%Y, %I:%M:%S %p')
