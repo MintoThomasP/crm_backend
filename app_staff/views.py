@@ -591,7 +591,7 @@ def leaveApplicationApiById(request, LeaveApplicationId=""):
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give StaffId to get one LeaveApplication",)
 @api_view(['GET'])
 def leaveApplicationApiByStaffId(request, StaffId=""):
-    try:
+    #try:
         if request.method == 'GET': 
             leaveApplication = LeaveApplication.objects.filter(
                     StaffId=StaffId)
@@ -610,5 +610,5 @@ def leaveApplicationApiByStaffId(request, StaffId=""):
         
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    #except:
+        #return JsonResponse("", safe=False)
