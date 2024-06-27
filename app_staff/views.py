@@ -453,72 +453,141 @@ def GetAllActiveStaffListApi(request):
     
 
 
+# @csrf_exempt
+# @api_view(['POST'])
+# def staffSalaryByPerformanceApi(request):
+#     # try:
+#         if request.method == 'POST':
+#             requestData = JSONParser().parse(request)
+#             month=requestData['Month']
+#             year=requestData['Year']
+#             # start_date=1-month-year
+#             # end_date=31-month-year
+
+#             start_date = datetime(year, month, 1)
+#             end_date = start_date.replace(day=1, month=start_date.month % 12 + 1) - timedelta(days=1)
+            
+        
+#             projectTask=ProjectTask.objects.filter(TaskAssignedTo=requestData['StaffId'],ScheduledDeadline__range=(start_date, end_date))
+#             projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
+           
+#             CompletedPoint=0
+#             TaskPoint=0
+#             for row in projectTaskSerializer.data:
+#                 TaskPoint+=row['TaskPoint']
+               
+#                 if row['StartDate'] and row['EndDate']:
+#                     try:
+#                         date_format = '%m/%d/%Y, %I:%M:%S %p' 
+#                         start_date = datetime.strptime(row['StartDate'], date_format)
+#                         end_date = datetime.strptime(row['EndDate'], date_format)
+#                     except:
+#                         date_format = '%d/%m/%Y, %I:%M:%S %p'
+#                         start_date = datetime.strptime(row['StartDate'], date_format)
+#                         end_date = datetime.strptime(row['EndDate'], date_format)
+#                     try:
+#                         duration_parts = row['Duration'].split(':')
+#                         hours = int(duration_parts[0])*60
+#                         minutes = int(duration_parts[1])
+#                         duration_min=hours + minutes
+#                         duration_seconds=duration_min*60
+#                     except:
+#                         duration_seconds=3600
+
+#                     total_time_taken_seconds = (end_date - start_date).total_seconds()
+#                     if total_time_taken_seconds > duration_seconds:
+#                         value1 = (total_time_taken_seconds / duration_seconds) * 100
+#                         value_percentage = value1-100
+#                         point=(row['TaskPoint']*value_percentage)/100
+                        
+#                         CompletedPoint += round(row['TaskPoint'] - point)
+                       
+#                     else:
+#                         CompletedPoint += row['TaskPoint']
+#                     print(CompletedPoint)
+#                     staff=Staff.objects.get(StaffId=requestData['StaffId'])
+#                     staffSerializer=StaffSerializer(staff)
+#                     try:
+#                         Salary=int(staffSerializer.data['Salary'])
+#                     except:
+#                         Salary=0
+                    
+                    
+#                     if CompletedPoint < 0 : 
+#                         Payment=Salary+((Salary*0.1)*(((CompletedPoint/TaskPoint)*100))/100)
+#                     elif CompletedPoint > TaskPoint:
+#                         Payment=Salary+((Salary*0.1)*(((CompletedPoint/TaskPoint)*100)-100)/100)
+#                     else:
+#                         Payment=Salary
+
+#             return JsonResponse(Payment,safe=False)
+
+
 @csrf_exempt
 @api_view(['POST'])
 def staffSalaryByPerformanceApi(request):
-    # try:
-        if request.method == 'POST':
-            requestData = JSONParser().parse(request)
-            month=requestData['Month']
-            year=requestData['Year']
-            # start_date=1-month-year
-            # end_date=31-month-year
-
-            start_date = datetime(year, month, 1)
-            end_date = start_date.replace(day=1, month=start_date.month % 12 + 1) - timedelta(days=1)
-            
+    if request.method == 'POST':
+        requestData = JSONParser().parse(request)
+        month = requestData['Month']
+        year = requestData['Year']
         
-            projectTask=ProjectTask.objects.filter(TaskAssignedTo=requestData['StaffId'],ScheduledDeadline__range=(start_date, end_date))
-            projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
-           
-            CompletedPoint=0
-            TaskPoint=0
-            for row in projectTaskSerializer.data:
-                TaskPoint+=row['TaskPoint']
-               
-                if row['StartDate'] and row['EndDate']:
-                    try:
-                        date_format = '%m/%d/%Y, %I:%M:%S %p' 
-                        start_date = datetime.strptime(row['StartDate'], date_format)
-                        end_date = datetime.strptime(row['EndDate'], date_format)
-                    except:
-                        date_format = '%d/%m/%Y, %I:%M:%S %p'
-                        start_date = datetime.strptime(row['StartDate'], date_format)
-                        end_date = datetime.strptime(row['EndDate'], date_format)
-                    try:
-                        duration_parts = row['Duration'].split(':')
-                        hours = int(duration_parts[0])*60
-                        minutes = int(duration_parts[1])
-                        duration_min=hours + minutes
-                        duration_seconds=duration_min*60
-                    except:
-                        duration_seconds=3600
+        start_date = datetime(year, month, 1)
+        end_date = start_date.replace(day=1, month=start_date.month % 12 + 1) - timedelta(days=1)
+        
+        projectTask = ProjectTask.objects.filter(TaskAssignedTo=requestData['StaffId'], ScheduledDeadline__range=(start_date, end_date))
+        projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
+        
+        CompletedPoint = 0
+        TaskPoint = 0
 
-                    total_time_taken_seconds = (end_date - start_date).total_seconds()
-                    if total_time_taken_seconds > duration_seconds:
-                        value1 = (total_time_taken_seconds / duration_seconds) * 100
-                        value_percentage = value1-100
-                        point=(row['TaskPoint']*value_percentage)/100
-                        
-                        CompletedPoint += round(row['TaskPoint'] - point)
-                       
-                    else:
-                        CompletedPoint += row['TaskPoint']
-                        staff=Staff.objects.get(StaffId=requestData['StaffId'])
-                        staffSerializer=StaffSerializer(staff)
-                        Salary=int(staffSerializer.data['Salary'])
-                       
-                        if CompletedPoint < 0 : 
-                            Payment=Salary+((Salary*0.1)*(((CompletedPoint/TaskPoint)*100))/100)
-                        elif CompletedPoint > TaskPoint:
-                            Payment=Salary+((Salary*0.1)*(((CompletedPoint/TaskPoint)*100)-100)/100)
-                        else:
-                            Payment=Salary
+        for row in projectTaskSerializer.data:
+            TaskPoint += row['TaskPoint']
 
-            return JsonResponse(Payment,safe=False)
+            if row['StartDate'] and row['EndDate']:
+                try:
+                    date_format = '%m/%d/%Y, %I:%M:%S %p'
+                    start_date = datetime.strptime(row['StartDate'], date_format)
+                    end_date = datetime.strptime(row['EndDate'], date_format)
+                except ValueError:
+                    date_format = '%d/%m/%Y, %I:%M:%S %p'
+                    start_date = datetime.strptime(row['StartDate'], date_format)
+                    end_date = datetime.strptime(row['EndDate'], date_format)
+                
+                try:
+                    duration_parts = row['Duration'].split(':')
+                    hours = int(duration_parts[0]) * 60
+                    minutes = int(duration_parts[1])
+                    duration_min = hours + minutes
+                    duration_seconds = duration_min * 60
+                except:
+                    duration_seconds = 3600
 
+                total_time_taken_seconds = (end_date - start_date).total_seconds()
+                if total_time_taken_seconds > duration_seconds:
+                    value_percentage = ((total_time_taken_seconds / duration_seconds) * 100) - 100
+                    point = (row['TaskPoint'] * value_percentage) / 100
+                    CompletedPoint += round(row['TaskPoint'] - point)
+                else:
+                    CompletedPoint += row['TaskPoint']
 
-
+        staff = Staff.objects.get(StaffId=requestData['StaffId'])
+        staffSerializer = StaffSerializer(staff)
+        
+        try:
+            Salary = int(staffSerializer.data['Salary'])
+        except:
+            Salary = 0
+        print(CompletedPoint)
+        print(TaskPoint)
+        
+        if CompletedPoint < 0:
+            Payment = Salary + ((Salary * 0.1) * ((CompletedPoint / TaskPoint) * 100) / 100)
+        elif CompletedPoint > TaskPoint:
+            Payment = Salary + ((Salary * 0.1) * (((CompletedPoint / TaskPoint) * 100) - 100) / 100)
+        else:
+            Payment = Salary
+        
+        return JsonResponse(Payment, safe=False)
 
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=LeaveApplicationSerializer)

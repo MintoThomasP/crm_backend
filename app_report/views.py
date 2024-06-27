@@ -327,111 +327,176 @@ from django.db.models import Sum
 
 
 
+# @csrf_exempt
+# @api_view(['POST'])
+# def StaffReportApiByStaffId(request):
+#     staffData = JSONParser().parse(request)
+#     staff = Staff.objects.get(StaffId=staffData['StaffId'])
+#     staffSerializer = StaffSerializer(staff)
+#     StaffDetails = staffSerializer.data
+
+#     # for staff_item in staffSerializer.data:
+#     staff_id = staffData['StaffId']
+#     staff_projects = []
+
+#     if staffData.get('StartDate') and staffData.get('EndDate'):
+#         start_date = timezone.datetime.strptime(staffData['StartDate'], '%Y-%m-%d').date()
+#         end_date = (timezone.datetime.strptime(staffData['EndDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
+#         projects = ProjectTask.objects.filter(TaskAssignedTo=staff_id, ScheduledDeadline__range=(start_date, end_date)).values('ProjectId').distinct()
+        
+#     else:
+#         projects = ProjectTask.objects.filter(TaskAssignedTo=staff_id).values('ProjectId').distinct()
+#     project_task_serializer = ProjectTaskSerializer(projects, many=True)
+
+#     for task_data in project_task_serializer.data:
+#         project_name = task_data['ProjectId']
+#         # project_tasks = ProjectTask.objects.filter(TaskAssignedTo=staff_id, ProjectId=project_name)
+        
+#         project=Project.objects.get(ProjectId=project_name)
+#         project_details = {
+#             'ProjectId': project_name,
+#             'ProjectName':project.ProjectName,
+#             'TotalCompletedPoints': 0,
+#             'TotalNumberofTask': 0,
+#             'DueTaskCount': 0,
+#             'CompletedTaskCount': 0,
+#             'OnTimeCompletedTaskCount': 0
+#         }
+        
+#         project_details['TotalNumberofTask'] += 1
+#         date_formats = [
+#             '%m/%d/%Y, %I:%M:%S %p',  
+#             '%m/%d/%Y, %I:%M:%S',     
+#             '%d/%m/%Y, %I:%M:%S %p',  
+#             '%d/%m/%Y, %I:%M:%S'     
+#         ]
+#         if task_data['StartDate'] and task_data['EndDate']:
+#             for date_format in date_formats:
+#                 try:
+#                     startDate = datetime.strptime(task_data['StartDate'], date_format)
+#                     endDate = datetime.strptime(task_data['EndDate'], date_format)
+#                     total_time_taken_seconds = (endDate - startDate).total_seconds()
+                    
+#                 except:
+#                     p=""
+            
+#             try:
+#                 duration_parts = task_data['Duration'].split(':')
+#                 hours = int(duration_parts[0])*60
+#                 minutes = int(duration_parts[1])
+#                 duration_min=hours + minutes
+#                 duration_seconds=duration_min*60
+#             except:
+#                 duration_seconds=3600
+            
+            
+#             if total_time_taken_seconds > duration_seconds:
+#                 value1 = (total_time_taken_seconds / duration_seconds) * 100
+#                 value_percentage = value1 - 100
+#                 point = (float(task_data['TaskPoint']) * value_percentage) / 100
+#                 project_details['TotalCompletedPoints'] += round(float(task_data['TaskPoint']) - point)
+#             else:
+#                 project_details['TotalCompletedPoints'] += float(task_data['TaskPoint'])
+#                 project_details['OnTimeCompletedTaskCount'] += 1
+#         if task_data['Status'] == '1' or task_data['Status'] == '2':
+#             project_details['DueTaskCount'] += 1
+#         elif task_data['Status'] == '3' or task_data['Status'] == '7':
+#             project_details['CompletedTaskCount'] += 1
+#     staff_projects.append(project_details)
+#     StaffDetails['Projects'] = staff_projects
+#     return JsonResponse(StaffDetails, safe=False)
 @csrf_exempt
 @api_view(['POST'])
 def StaffReportApiByStaffId(request):
     staffData = JSONParser().parse(request)
-    staff = Staff.objects.get(StaffId=staffData['StaffId'])
+    staff_id = staffData['StaffId']
+    start_date = staffData.get('StartDate')
+    end_date = staffData.get('EndDate')
+
+    try:
+        staff = Staff.objects.get(StaffId=staff_id)
+    except Staff.DoesNotExist:
+        return JsonResponse({'error': 'Staff not found'}, status=404)
+    
     staffSerializer = StaffSerializer(staff)
     StaffDetails = staffSerializer.data
 
-    # for staff_item in staffSerializer.data:
-    staff_id = staffData['StaffId']
+    if start_date and end_date:
+        start_date = timezone.datetime.strptime(start_date, '%Y-%m-%d').date()
+        end_date = (timezone.datetime.strptime(end_date, '%Y-%m-%d') + timezone.timedelta(days=1)).date()
+        project_tasks = ProjectTask.objects.filter(TaskAssignedTo=staff_id, ScheduledDeadline__range=(start_date, end_date))
+    else:
+        project_tasks = ProjectTask.objects.filter(TaskAssignedTo=staff_id)
+
+    project_ids = project_tasks.values_list('ProjectId', flat=True).distinct()
+    projects = Project.objects.filter(ProjectId__in=project_ids)
+
+    date_formats = [
+        '%m/%d/%Y, %I:%M:%S %p',  
+        '%m/%d/%Y, %I:%M:%S',     
+        '%d/%m/%Y, %I:%M:%S %p',  
+        '%d/%m/%Y, %I:%M:%S'     
+    ]
+
     staff_projects = []
 
-    if staffData.get('StartDate') and staffData.get('EndDate'):
-        start_date = timezone.datetime.strptime(staffData['StartDate'], '%Y-%m-%d').date()
-        end_date = (timezone.datetime.strptime(staffData['EndDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
-        projects = ProjectTask.objects.filter(TaskAssignedTo=staff_id, ScheduledDeadline__range=(start_date, end_date)).values('ProjectId').distinct()
-    else:
-        projects = ProjectTask.objects.filter(TaskAssignedTo=staff_id).values('ProjectId').distinct()
-
     for project in projects:
-        project_name = project['ProjectId']
-        project_tasks = ProjectTask.objects.filter(TaskAssignedTo=staff_id, ProjectId=project_name)
-        project_task_serializer = ProjectTaskSerializer(project_tasks, many=True)
-        project=Project.objects.get(ProjectId=project_name)
+        project_id = project.ProjectId
         project_details = {
-            'ProjectId': project_name,
-            'ProjectName':project.ProjectName,
+            'ProjectId': project_id,
+            'ProjectName': project.ProjectName,
             'TotalCompletedPoints': 0,
             'TotalNumberofTask': 0,
             'DueTaskCount': 0,
             'CompletedTaskCount': 0,
             'OnTimeCompletedTaskCount': 0
         }
-        for task_data in project_task_serializer.data:
+
+        project_tasks_filtered = project_tasks.filter(ProjectId=project_id)
+
+        for task in project_tasks_filtered:
             project_details['TotalNumberofTask'] += 1
-            date_formats = [
-                '%m/%d/%Y, %I:%M:%S %p',  
-                '%m/%d/%Y, %I:%M:%S',     
-                '%d/%m/%Y, %I:%M:%S %p',  
-                '%d/%m/%Y, %I:%M:%S'     
-            ]
-            if task_data['StartDate'] and task_data['EndDate']:
+
+            if task.StartDate and task.EndDate:
+                startDate, endDate = None, None
                 for date_format in date_formats:
                     try:
-                        start_date = datetime.strptime(task_data['StartDate'], date_format)
-                        end_date = datetime.strptime(task_data['EndDate'], date_format)
-                        
+                        startDate = datetime.strptime(task.StartDate, date_format)
+                        endDate = datetime.strptime(task.EndDate, date_format)  
+                        break
+                    except ValueError:
+                        continue
+
+                if startDate and endDate:
+                    total_time_taken_seconds = (endDate - startDate).total_seconds()
+
+                    try:
+                        duration_parts = task.Duration.split(':')
+                        hours = int(duration_parts[0]) * 60
+                        minutes = int(duration_parts[1])
+                        duration_min = hours + minutes
+                        duration_seconds = duration_min * 60
                     except:
-                       p=""
+                        duration_seconds = 3600  # Default to 1 hour if duration is invalid
 
-                # except:
-                #     try:
-                #         date_format = '%d/%m/%Y, %I:%M:%S %p'
-                #         start_date = datetime.strptime(task_data['StartDate'], date_format)
-                #         end_date = datetime.strptime(task_data['EndDate'], date_format)
-                #     except:
-                #         date_format = '%d/%m/%Y, %I:%M:%S'
-                #         start_date = datetime.strptime(task_data['StartDate'], date_format)
-                #         end_date = datetime.strptime(task_data['EndDate'], date_format)
+                    if total_time_taken_seconds > duration_seconds:
+                        value1 = (total_time_taken_seconds / duration_seconds) * 100
+                        value_percentage = value1 - 100
+                        point = (float(task.TaskPoint) * value_percentage) / 100
+                        project_details['TotalCompletedPoints'] += round(float(task.TaskPoint) - point)
+                    else:
+                        project_details['TotalCompletedPoints'] += round(float(task.TaskPoint))
+                        project_details['OnTimeCompletedTaskCount'] += 1
 
-                # start_date = datetime.strptime(task_data['StartDate'], '%m/%d/%Y, %I:%M:%S %p')
-                # end_date = datetime.strptime(task_data['EndDate'], '%m/%d/%Y, %I:%M:%S %p')
-                # duration = float(task_data['Duration'])
-                # duration_min = duration * 60
-                # duration_seconds = duration_min * 60
-                # total_time_taken_seconds = (end_date - start_date).total_seconds()
-                ##
-                # duration_str = task_data['Duration'] #10:00
-                # hours, minutes = map(int, duration_str.split(':'))
-                # duration_min=hours*60
-                # total_duration_min=duration_min + minutes
-                # duration_seconds=total_duration_min*60
-                ##
-                # duration_hours = hours + minutes / 60.0
-                # print(duration_hours)
-                # duration_seconds = duration_hours * 3600
-                try:
-                    duration_parts = task_data['Duration'].split(':')
-                    hours = int(duration_parts[0])*60
-                    minutes = int(duration_parts[1])
-                    duration_min=hours + minutes
-                    duration_seconds=duration_min*60
-                except:
-                    duration_seconds=3600
-                total_time_taken_seconds = (end_date - start_date).total_seconds()
-                if total_time_taken_seconds > duration_seconds:
-                    value1 = (total_time_taken_seconds / duration_seconds) * 100
-                    value_percentage = value1 - 100
-                    point = (float(task_data['TaskPoint']) * value_percentage) / 100
-                    project_details['TotalCompletedPoints'] += round(float(task_data['TaskPoint']) - point)
-                else:
-                    project_details['TotalCompletedPoints'] += float(task_data['TaskPoint'])
-                    project_details['OnTimeCompletedTaskCount'] += 1
-            if task_data['Status'] == '1' or task_data['Status'] == '2':
+            if task.Status in ['1', '2']:
                 project_details['DueTaskCount'] += 1
-            elif task_data['Status'] == '3' or task_data['Status'] == '7':
+            elif task.Status in ['3', '7']:
                 project_details['CompletedTaskCount'] += 1
+
         staff_projects.append(project_details)
+
     StaffDetails['Projects'] = staff_projects
-    # StaffDetails.append(staff_item)
-
     return JsonResponse(StaffDetails, safe=False)
-
-
-
 
 # @csrf_exempt
 # @api_view(['POST'])
@@ -542,7 +607,7 @@ def ProjectReportApiByProjectId(request):
                         point = (float(task_data['TaskPoint']) * value_percentage) / 100
                         Staff_details['TotalCompletedPoints'] += round(float(task_data['TaskPoint']) - point)
                     else:
-                        Staff_details['TotalCompletedPoints'] += float(task_data['TaskPoint'])
+                        Staff_details['TotalCompletedPoints'] += (float(task_data['TaskPoint']))
                         Staff_details['OnTimeCompletedTaskCount'] += 1
             except:
                 Staff_details['TotalCompletedPoints'] =""
