@@ -610,8 +610,8 @@ def ProjectReportApiByProjectId(request):
                         Staff_details['TotalCompletedPoints'] += (float(task_data['TaskPoint']))
                         Staff_details['OnTimeCompletedTaskCount'] += 1
             except:
-                Staff_details['TotalCompletedPoints'] =""
-                Staff_details['OnTimeCompletedTaskCount']=""
+                Staff_details['TotalCompletedPoints'] =0
+                Staff_details['OnTimeCompletedTaskCount']=0
             if task_data['Status'] == '1' or task_data['Status'] == '2':
                 Staff_details['DueTaskCount'] += 1
             elif task_data['Status'] == '3' or task_data['Status'] == '7':
