@@ -603,12 +603,24 @@ def leaveApplicationApi(request):
                     leaveApplication, many=True)
             leaveData=[]
             for row in leaveApplicationSerializer.data:
-                leaveStatus = LeaveStatus.objects.get(StatusId=row['Status'])
-                leaveStatus_serializer = LeaveStatusSerializer(leaveStatus)
-                row['StatusName']=leaveStatus_serializer.data['Status']
-                leaveType = LeaveType.objects.get(LeaveTypeId=row['LeaveType'])
-                leaveType_serializer = LeaveTypeSerializer(leaveType)
-                row['LeaveTypeName']=leaveType_serializer.data['LeaveType']
+                try:
+                    leaveStatus = LeaveStatus.objects.get(StatusId=row['Status'])
+                    leaveStatus_serializer = LeaveStatusSerializer(leaveStatus)
+                    row['StatusName']=leaveStatus_serializer.data['Status']
+                except:
+                    row['StatusName']=""
+                try:
+                    leaveType = LeaveType.objects.get(LeaveTypeId=row['LeaveType'])
+                    leaveType_serializer = LeaveTypeSerializer(leaveType)
+                    row['LeaveTypeName']=leaveType_serializer.data['LeaveType']
+                except:
+                    row['LeaveTypeName']=""
+                try:
+                    staff = Staff.objects.get(StaffId=row['StaffId'])
+                    staff_serializer = StaffSerializer(staff)
+                    row['StaffName']=staff_serializer.data['StaffName']
+                except:
+                    row['StaffName']=""
                 leaveData.append(row)
             return JsonResponse(leaveData, safe=False)
         elif request.method == 'POST':
