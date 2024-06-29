@@ -4,10 +4,10 @@ from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
 from app_default.models import UserType
 from app_default.serializers import UserTypeSerializer
-from app_login.models import Login
+from app_login.models import Login, LoginHistory
 from django.contrib.auth import logout
 from django.shortcuts import redirect
-from app_login.serializers import LoginAuthSerializer, LoginSaveSerializer, LoginSerializer, LoginUpdateSerializer
+from app_login.serializers import LoginAuthSerializer, LoginHistorySerializer, LoginSaveSerializer, LoginSerializer, LoginUpdateSerializer
 from app_staff.models import Staff
 from app_staff.serializers import StaffSerializer
 from drf_yasg.utils import swagger_auto_schema
@@ -142,3 +142,83 @@ def UpdateUserTypeApi(request, pk=""):
                 return JsonResponse("UserId not found", safe=False)
     except Exception as e:
         return JsonResponse(str(e), safe=False)
+    
+
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=LoginHistorySerializer)
+@swagger_auto_schema(method='PUT', request_body=LoginHistorySerializer)
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all LoginHistory Details",)
+@api_view(['GET','POST','PUT'])
+def LoginHistoryApi(request):
+    try:
+        if request.method == 'GET':
+            loginHistory = LoginHistory.objects.all().order_by('-SortId')
+            loginHistorySerializer = LoginHistorySerializer(
+                    loginHistory, many=True)
+            return JsonResponse(loginHistorySerializer.data, safe=False)
+        elif request.method == 'POST':
+            loginHistoryData = JSONParser().parse(request)
+            loginHistorySerializer = LoginHistorySerializer(
+                data=loginHistoryData)
+            if loginHistorySerializer.is_valid():
+                loginHistorySerializer.save()
+
+                return JsonResponse(loginHistorySerializer.data['LoginHistoryId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            loginHistoryData = JSONParser().parse(request)
+            loginHistory = LoginHistory.objects.get(
+                LoginHistoryId=loginHistoryData['LoginHistoryId'])
+            loginHistorySerializer = LoginHistorySerializer(
+                loginHistory, data=loginHistoryData)
+            if loginHistorySerializer.is_valid():
+                loginHistorySerializer.save()
+                return JsonResponse(loginHistorySerializer.data['LoginHistoryId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give LoginHistoryId to get one loginHistory detail",)
+@api_view(['GET','DELETE'])
+def LoginHistoryApiById(request, LoginHistoryId=""):
+    try:
+        if request.method == 'GET': 
+            loginHistory = LoginHistory.objects.get(
+                    LoginHistoryId=LoginHistoryId)
+            loginHistorySerializer = LoginHistorySerializer(
+                    loginHistory)
+            return JsonResponse(loginHistorySerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            loginHistory = LoginHistory.objects.get(LoginHistoryId=LoginHistoryId)
+            loginHistory.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give UserId to get one loginHistory detail",)
+@api_view(['GET','DELETE'])
+def LoginHistoryApiByUserId(request, UserId=""):
+    try:
+        if request.method == 'GET': 
+            loginHistory = LoginHistory.objects.filter(
+                    UserId=UserId)
+            loginHistorySerializer = LoginHistorySerializer(
+                    loginHistory,many=True)
+            return JsonResponse(loginHistorySerializer.data, safe=False)
+        
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)

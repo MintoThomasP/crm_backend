@@ -5,14 +5,16 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
-
+from django.http import HttpResponse
+from app_default.models import TaskStatus
+from app_default.serializers import TaskStatusSerializer
 from app_project.models import Project, ProjectTask
 from app_project.serializers import ProjectSerializer, ProjectTaskSerializer
 from app_staff.models import Staff
 from app_staff.serializers import StaffSerializer
 # Create your views here.
 from django.utils import timezone
-
+import openpyxl
 from datetime import datetime, timedelta
 
 
@@ -405,6 +407,9 @@ from django.db.models import Sum
 #     staff_projects.append(project_details)
 #     StaffDetails['Projects'] = staff_projects
 #     return JsonResponse(StaffDetails, safe=False)
+
+
+###############
 @csrf_exempt
 @api_view(['POST'])
 def StaffReportApiByStaffId(request):
@@ -424,12 +429,13 @@ def StaffReportApiByStaffId(request):
     if start_date and end_date:
         start_date = timezone.datetime.strptime(start_date, '%Y-%m-%d').date()
         end_date = (timezone.datetime.strptime(end_date, '%Y-%m-%d') + timezone.timedelta(days=1)).date()
-        project_tasks = ProjectTask.objects.filter(TaskAssignedTo=staff_id, ScheduledDeadline__range=(start_date, end_date))
+        project_tasks = ProjectTask.objects.filter(TaskAssignedTo=staff_id, CreatedDate__range=(start_date, end_date))
     else:
         project_tasks = ProjectTask.objects.filter(TaskAssignedTo=staff_id)
 
     project_ids = project_tasks.values_list('ProjectId', flat=True).distinct()
     projects = Project.objects.filter(ProjectId__in=project_ids)
+   
 
     date_formats = [
         '%m/%d/%Y, %I:%M:%S %p',  
@@ -456,19 +462,26 @@ def StaffReportApiByStaffId(request):
 
         for task in project_tasks_filtered:
             project_details['TotalNumberofTask'] += 1
-
+            
             if task.StartDate and task.EndDate:
                 startDate, endDate = None, None
                 for date_format in date_formats:
                     try:
                         startDate = datetime.strptime(task.StartDate, date_format)
-                        endDate = datetime.strptime(task.EndDate, date_format)  
-                        break
-                    except ValueError:
-                        continue
-
+                        endDate = datetime.strptime(task.EndDate, date_format)
+                    except:
+                        p=""
+                if task.ScheduledDeadline:
+                    ScheduledDeadline = datetime.strptime(task.ScheduledDeadline, '%Y-%m-%dT%H:%M')
+                   
+                else:
+                    p=""
                 if startDate and endDate:
-                    total_time_taken_seconds = (endDate - startDate).total_seconds()
+                    try:
+                        
+                        total_time_taken_seconds = (endDate - startDate).total_seconds()
+                    except:
+                        p=''
 
                     try:
                         duration_parts = task.Duration.split(':')
@@ -478,15 +491,20 @@ def StaffReportApiByStaffId(request):
                         duration_seconds = duration_min * 60
                     except:
                         duration_seconds = 3600  # Default to 1 hour if duration is invalid
-
-                    if total_time_taken_seconds > duration_seconds:
-                        value1 = (total_time_taken_seconds / duration_seconds) * 100
-                        value_percentage = value1 - 100
-                        point = (float(task.TaskPoint) * value_percentage) / 100
-                        project_details['TotalCompletedPoints'] += round(float(task.TaskPoint) - point)
-                    else:
-                        project_details['TotalCompletedPoints'] += round(float(task.TaskPoint))
-                        project_details['OnTimeCompletedTaskCount'] += 1
+                    try:
+                        # if ScheduledDeadline and (ScheduledDeadline < endDate or total_time_taken_seconds > duration_seconds):
+                        if ScheduledDeadline < endDate  or total_time_taken_seconds > duration_seconds:
+                            value_percentage = ((total_time_taken_seconds / duration_seconds) * 100) - 100
+                            
+                            point = ((task.TaskPoint) * value_percentage) / 100
+                            print("point",point)
+                            print(round((task.TaskPoint) - point))
+                            project_details['TotalCompletedPoints'] += round((task.TaskPoint) - point)
+                        else:
+                            project_details['TotalCompletedPoints'] += round((task.TaskPoint))
+                            project_details['OnTimeCompletedTaskCount'] += 1
+                    except:
+                        p=""
 
             if task.Status in ['1', '2']:
                 project_details['DueTaskCount'] += 1
@@ -497,6 +515,8 @@ def StaffReportApiByStaffId(request):
 
     StaffDetails['Projects'] = staff_projects
     return JsonResponse(StaffDetails, safe=False)
+
+
 
 # @csrf_exempt
 # @api_view(['POST'])
@@ -683,3 +703,105 @@ def getAllProjectReport(request):
         ProjectDetails.append(staff_item)
 
     return JsonResponse(ProjectDetails, safe=False)
+
+
+
+
+@csrf_exempt
+@api_view(['GET'])
+def StaffDailyReport(request,CurrentDate="",StaffId=""):
+    # staffData = JSONParser().parse(request)
+    Created_date = timezone.datetime.strptime(CurrentDate, '%Y-%m-%d').date()
+
+    projectTask = ProjectTask.objects.filter(CreatedDate=Created_date,TaskAssignedTo=StaffId)
+    projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
+    taskData=[]
+    for row in projectTaskSerializer.data:
+        try:
+            if row['StartDate'] and row['EndDate']:
+                try:
+                    date_format = '%m/%d/%Y, %I:%M:%S %p' 
+                    start_date = datetime.strptime(row['StartDate'], date_format)
+                    end_date = datetime.strptime(row['EndDate'], date_format)
+                except:
+                    date_format = '%d/%m/%Y, %I:%M:%S %p'
+                    start_date = datetime.strptime(row['StartDate'], date_format)
+                    end_date = datetime.strptime(row['EndDate'], date_format)
+
+                try:
+                    duration_parts = row['Duration'].split(':')
+                    hours = int(duration_parts[0])*60
+                    minutes = int(duration_parts[1])
+                    duration_min=hours + minutes
+                    duration_seconds=duration_min*60
+                except:
+                    duration_seconds=3600
+                total_time_taken_seconds = (end_date - start_date).total_seconds()
+                if total_time_taken_seconds > duration_seconds:
+                    value1 = (total_time_taken_seconds / duration_seconds) * 100
+                    value_percentage = value1-100
+                    point=(row['TaskPoint']*value_percentage)/100
+                    row['CompletedPoint'] = round(row['TaskPoint'] - point)
+                else:
+                    row['CompletedPoint'] = row['TaskPoint']
+        except:
+            row['CompletedPoint']=""                        
+        taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+        taskStatusSerializer=TaskStatusSerializer(taskStatus)
+        row['StatusName']=taskStatusSerializer.data['Status']
+        try:
+            project = Project.objects.get(ProjectId=row['ProjectId'])
+            projectSerializer = ProjectSerializer(project)
+            row['ProjectName'] = projectSerializer.data['ProjectName']
+        except:
+            row['ProjectName'] = ""
+        try:
+            staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
+            staffSerializer = StaffSerializer(staff)
+            row['StaffName'] = staffSerializer.data['StaffName']
+        except:
+            row['StaffName']=""
+        try:
+            staff = Staff.objects.get(StaffId=row['TaskAssignedBy'])
+            staffSerializer = StaffSerializer(staff)
+            row['TaskAssignedBY'] = staffSerializer.data['StaffName']
+        except:
+            row['TaskAssignedBY']=""
+
+       
+        
+        
+        
+        taskData.append(row)
+    exclude_fields = ["SortId", "ProjectTaskId", "ProjectId", "TaskAssignedTo", "TaskAssignedBy","CompletionPoint","VerifiedBy"]
+    column_order = [
+       "StaffName","TaskAssignedBY", "Title", "Description", "Duration",  "CreatedDate", 
+        "ScheduledDeadline", "StartDate", "EndDate", "Status","TaskPoint", 
+        "VerifiedBy", "CompletedPoint", "StatusName", "ProjectName", 
+         
+    ]
+
+    # Create Excel workbook
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = "Staff Daily Report"
+
+    # Add headers (excluding unwanted fields)
+    headers = [key for key in column_order if key not in exclude_fields]
+    sheet.append(headers)
+
+    # Add data rows (excluding unwanted fields and in the desired order)
+    for task in taskData:
+        filtered_task = {key: value for key, value in task.items() if key not in exclude_fields}
+        ordered_task = [filtered_task.get(key, "") for key in headers]
+        sheet.append(ordered_task)
+
+    # Create a response object
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    response['Content-Disposition'] = f'attachment; filename=StaffDailyReport_{CurrentDate}.xlsx'
+
+    # Save workbook to the response
+    workbook.save(response)
+
+    return response
+    

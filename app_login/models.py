@@ -16,3 +16,14 @@ class Login(models.Model):
     Password = models.CharField(max_length=300)
     Token = models.CharField(max_length=300, null=True, blank=True)
     Status = models.IntegerField(default=0)
+
+
+
+class LoginHistory(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    LoginHistoryId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    LoginId = models.CharField(max_length=50,null=True, blank=True)
+    UserId = models.CharField(max_length=50,null=True, blank=True)
+    LoginTime=models.CharField(max_length=300,null=True, blank=True)
+    LogoutTime=models.CharField(max_length=300,null=True, blank=True)
