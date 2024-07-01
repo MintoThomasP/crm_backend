@@ -172,6 +172,13 @@ def ProjectTaskApiById(request, ProjectTaskId=""):
                 ProjectTaskData['StatusName']=taskStatusSerializer.data['Status']
             except:
                 ProjectTaskData['StatusName']=""
+            try:
+                projectTask = ProjectTask.objects.get(
+                    RefId=ProjectTaskId)
+                projectTaskSerializer=TaskStatusSerializer(projectTask)
+                ProjectTaskData['Tickets']=taskStatusSerializer.data
+            except:
+                ProjectTaskData['Tickets']=[]
 
             try:
                 project = Project.objects.get(ProjectId=projectTaskSerializer.data['ProjectId'])
