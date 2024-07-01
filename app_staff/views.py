@@ -437,7 +437,7 @@ def staffDocumentsApiByStaffId(request, StaffId=""):
 @csrf_exempt
 
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all active Staff",)
-@api_view(['GET','POST','PUT'])
+@api_view(['GET'])
 def GetAllActiveStaffListApi(request):
     try:
         if request.method == 'GET':
@@ -445,7 +445,16 @@ def GetAllActiveStaffListApi(request):
             staff = Staff.objects.filter(Status=1)
             staffSerializer = StaffSerializer(
                     staff, many=True)
-            return JsonResponse(staffSerializer.data, safe=False)
+            staffData=[]
+            for row in staffSerializer.data:
+                try:
+                    designation=Designation.objects.get(DesignationId=row['Designation'])
+                    designationSerializer=DesignationSerializer(designation)
+                    row['DesignationName']=designationSerializer.data['Designation']
+                except:
+                    row['DesignationName']=""
+                staffData.append(row)
+            return JsonResponse(staffData, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:

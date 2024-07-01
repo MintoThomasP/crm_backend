@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from app_login.models import Login
+from app_login.models import Login, LoginHistory
 
 class LoginSerializer(serializers.ModelSerializer):
     class Meta:
@@ -48,3 +48,15 @@ class LoginUpdateSerializer(serializers.ModelSerializer):
             'UserType',
             'EmailId',
             'Password',)
+        
+
+
+class LoginHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LoginHistory
+        fields = ('SortId',
+                  'LoginHistoryId',
+                  'LoginId',
+                  'UserId',
+                  'LoginTime',
+                  'LogoutTime')
