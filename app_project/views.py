@@ -89,6 +89,7 @@ def ProjectTaskApi(request):
                     projectTask, many=True)
             taskData=[]
             for row in projectTaskSerializer.data:
+                row['Tickets']=[]
                 try:
                     projectTask = ProjectTask.objects.get(
                         RefId=row['ProjectTaskId'])
@@ -179,6 +180,7 @@ def ProjectTaskApiById(request, ProjectTaskId=""):
                 ProjectTaskData['StatusName']=taskStatusSerializer.data['Status']
             except:
                 ProjectTaskData['StatusName']=""
+            ProjectTaskData['Tickets']=[]
             try:
                 projectTask = ProjectTask.objects.get(
                     RefId=ProjectTaskId)
@@ -302,6 +304,7 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
                     projectTask,many=True)
             taskStatusName=[]
             for row in projectTaskSerializer.data:
+                row['Tickets']=[]
                 try:
                     projectTask = ProjectTask.objects.get(
                         RefId=row['ProjectTaskId'])
@@ -487,6 +490,7 @@ def ProjectTaskApiByUserIdAndProjectId(request):
                     projectTask,many=True)
             taskStatusName=[]
             for row in projectTaskSerializer.data:
+                row['Tickets']=[]
                 try:
                     projectTask = ProjectTask.objects.get(
                         RefId=row['ProjectTaskId'])
