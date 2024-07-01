@@ -90,6 +90,13 @@ def ProjectTaskApi(request):
             taskData=[]
             for row in projectTaskSerializer.data:
                 try:
+                    projectTask = ProjectTask.objects.get(
+                        RefId=row['ProjectTaskId'])
+                    projectTaskSerializer=TaskStatusSerializer(projectTask)
+                    row['Tickets']=taskStatusSerializer.data
+                except:
+                    row['Tickets']=[]
+                try:
                     project=Project.objects.get(ProjectId=row['ProjectId'])
                     projectSerializer=ProjectSerializer(project)
                     row['ProjectName']=projectSerializer.data['ProjectName']
