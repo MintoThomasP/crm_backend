@@ -303,6 +303,13 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
             taskStatusName=[]
             for row in projectTaskSerializer.data:
                 try:
+                    projectTask = ProjectTask.objects.get(
+                        RefId=row['ProjectTaskId'])
+                    projectTaskSerializer=TaskStatusSerializer(projectTask)
+                    row['Tickets']=taskStatusSerializer.data
+                except:
+                    row['Tickets']=[]
+                try:
                     if row['StartDate'] and row['EndDate']:
                         try:
                             date_format = '%m/%d/%Y, %I:%M:%S %p' 
@@ -480,6 +487,13 @@ def ProjectTaskApiByUserIdAndProjectId(request):
                     projectTask,many=True)
             taskStatusName=[]
             for row in projectTaskSerializer.data:
+                try:
+                    projectTask = ProjectTask.objects.get(
+                        RefId=row['ProjectTaskId'])
+                    projectTaskSerializer=TaskStatusSerializer(projectTask)
+                    row['Tickets']=taskStatusSerializer.data
+                except:
+                    row['Tickets']=[]
                 taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
                 taskStatusSerializer=TaskStatusSerializer(taskStatus)
                 row['StatusName']=taskStatusSerializer.data['Status']
