@@ -34,6 +34,7 @@ class ProjectTask(models.Model):
     EndDate=models.CharField(blank=True, null=True, max_length=100)
     TaskPoint=models.IntegerField(default=0)
     TaskType=models.CharField(blank=True, null=True, max_length=100)
+    RefId=models.CharField(blank=True, null=True, max_length=50)
     CompletionPoint=models.IntegerField(default=0)
     VerifiedBy=models.CharField(blank=True, null=True, max_length=50)
 

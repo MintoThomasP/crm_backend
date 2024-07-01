@@ -37,6 +37,7 @@ class ProjectTaskSerializer(serializers.ModelSerializer):
 'EndDate',
 'TaskPoint',
 'TaskType',
+'RefId',
 'CompletionPoint',
 'VerifiedBy')
 
