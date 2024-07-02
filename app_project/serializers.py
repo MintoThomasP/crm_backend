@@ -39,7 +39,10 @@ class ProjectTaskSerializer(serializers.ModelSerializer):
 'TaskType',
 'RefId',
 'CompletionPoint',
-'VerifiedBy')
+'VerifiedBy',
+'IsRepeated',
+'RepeatInterval',
+'LastAssigned')
 
 
 class ProjectTaskFileSerializer(serializers.ModelSerializer):

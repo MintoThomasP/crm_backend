@@ -1,9 +1,11 @@
 from django.db import models
 from datetime import datetime
 import uuid
-
+from django.utils import timezone
 # Create your models here.
-
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from firebase_admin import messaging
 
 class Project(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)
@@ -37,6 +39,24 @@ class ProjectTask(models.Model):
     RefId=models.CharField(blank=True, null=True, max_length=50)
     CompletionPoint=models.IntegerField(default=0)
     VerifiedBy=models.CharField(blank=True, null=True, max_length=50)
+    IsRepeated = models.BooleanField(default=False)
+    RepeatInterval = models.CharField(max_length=50, choices=[('daily', 'Daily'), ('weekly', 'Weekly'), ('monthly', 'Monthly')], blank=True, null=True)
+    LastAssigned = models.DateTimeField(default=timezone.now, blank=True, null=True)
+    
+# @receiver(post_save, sender=ProjectTask)
+# def send_task_notification(sender, instance, created, **kwargs):
+#     if created:
+       
+#         message = messaging.Message(
+#             notification=messaging.Notification(
+#                 title='New Task Added',
+#                 body=f'A new task "{instance.Title}" has been assigned to you.'
+#             ),
+#             topic='tasks'  
+#         )
+       
+#         response = messaging.send(message)
+#         print('Successfully sent message:', response)
 
 
 class ProjectTaskFile(models.Model):

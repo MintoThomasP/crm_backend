@@ -14,5 +14,6 @@ urlpatterns = [
 
     # path('StaffDailyReport/', views.StaffDailyReport),
 
+    path('ReportApiBytaskId/', views.ReportApiBytaskId),
 
 ]

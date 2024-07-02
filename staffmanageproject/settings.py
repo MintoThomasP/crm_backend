@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_swagger',
     'drf_yasg',
+  
     'app_staff',
     'app_default',
     'app_project',
@@ -166,8 +167,11 @@ MEDIA_ROOT = os.path.join(BASE_DIR,'media')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-
-
+Q_CLUSTER = {
+    'name': 'DjangORM',
+    'orm': 'default',  # Use Django's ORM + database for broker
+}
+GOOGLE_APPLICATION_CREDENTIALS='serviceAccountKey.json'
 # cred = credentials.Certificate("..\serviceAccountKey.json")
 # firebase_admin.initialize_app(cred)
 # import os

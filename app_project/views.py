@@ -8,7 +8,7 @@ from app_default.serializers import TaskStatusSerializer
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from app_staff.models import Staff
-
+from datetime import datetime, timedelta
 from app_staff.serializers import StaffSerializer
 
 from app_project.models import CommentFile, Comments, Project, ProjectTask, ProjectTaskFile, TaskReviews
@@ -1208,3 +1208,153 @@ def GetAllProjectTaskApiByFiltering(request):
             return JsonResponse("", safe=False)
     # except:
     #     return JsonResponse("", safe=False)
+        
+
+
+
+
+@api_view(['GET'])
+def schedule_repeated_tasks(request):
+    now = timezone.now()
+    repeated_tasks = ProjectTask.objects.filter(IsRepeated=True)
+    print(repeated_tasks)
+
+    for task in repeated_tasks:
+        next_due_date = None
+# 
+        if task.RepeatInterval == 'daily':
+            next_due_date = task.LastAssigned + timedelta(days=1)
+            
+        elif task.RepeatInterval == 'weekly':
+            next_due_date = task.LastAssigned + timedelta(weeks=1)
+        elif task.RepeatInterval == 'monthly':
+            next_due_date = task.LastAssigned + timedelta(days=30)
+
+        if next_due_date and now >= next_due_date:
+            scheduled_deadline = next_due_date.strftime("%Y-%m-%dT%H:%M")
+            new_task = {
+                "ProjectId":task.ProjectId,
+                "TaskAssignedTo":task.TaskAssignedTo,
+                "TaskAssignedBy":task.TaskAssignedBy,
+                "Title":task.Title,
+                "Description":task.Description,
+                "Duration":task.Duration,
+                "Status":task.Status,
+                "CreatedDate":now.strftime("%Y-%m-%d"),
+                "ScheduledDeadline":scheduled_deadline,
+                "TaskPoint":task.TaskPoint,
+                "TaskType":task.TaskType,
+                "RefId":task.RefId,
+                "IsRepeated":task.IsRepeated,
+                'RepeatInterval':task.RepeatInterval,
+                "LastAssigned":now
+            }
+            print(new_task)
+            new_taskserializer = ProjectTaskSerializer(data=new_task)
+           
+            if new_taskserializer.is_valid():
+                new_taskserializer.save()
+               
+
+    return JsonResponse({"message": "Repeated tasks scheduled successfully."})
+
+
+
+# from django_q.tasks import schedule
+# from django_q.models import Schedule
+# from datetime import timedelta
+# from django.utils import timezone
+
+# schedule('app_project.views.schedule_repeated_tasks', 
+#          schedule_type=Schedule.MINUTES, 
+#          minutes=2,  # Adjust as necessary
+#          next_run=timezone.now() + timedelta(seconds=10))
+
+
+
+
+
+
+import logging
+from typing import Any, Dict
+from uuid import uuid4
+from django.conf import settings
+from django.core.cache import cache
+import firebase_admin
+from firebase_admin import credentials, auth, firestore
+from app_staff.models import Staff
+
+cred = credentials.Certificate(settings.GOOGLE_APPLICATION_CREDENTIALS) # path to credentials.json file
+
+
+firebase_app = firebase_admin.initialize_app(cred, name='app_project')
+
+
+# auth_client = auth.Client(app=firebase_app)
+# firestore_client = firestore.client(app=firebase_app)
+
+# logger = logging.getLogger(__name__)
+
+
+# def cached(func):
+#     def wrapper(*args, **kwargs):
+#         user = kwargs.get('user')
+#         key = 'token_' + str(user.StaffId)
+#         token = cache.get(key)
+#         if token is None:
+#             token = func(*args, **kwargs)
+#             cache.set(key, token, timeout=60 * 60) # 1 hour
+#         return token
+
+#     return wrapper
+
+# class FirebaseService:
+#     @staticmethod
+#     @cached
+#     def get_custom_token_for_user(user: Staff):
+#         auth_claims = {
+#             'uid': user.StaffId,
+#         }
+#         return auth_client.create_custom_token(uid=user.StaffId, developer_claims=auth_claims)
+  
+#     @staticmethod
+#     def send_notification_to_user(user: Staff, message: Dict[str, Any]):
+#         msg_id = str(uuid4())
+#         notification_ref = firestore_client.collection(u'app-notifications') \
+#             .document(u'{}'.format(user.StaffId)).collection("user-notifications").document(u'{}'.format(msg_id))
+      
+#         notification_ref.set({
+#             u'message': message,
+#             'id': msg_id
+#         })
+#         logger.info(u'Notification sent to user {}'.format(user.StaffId))
+
+
+
+
+from django.http import JsonResponse
+from firebase_admin import messaging, initialize_app, credentials
+import firebase_admin
+
+# Initialize the Firebase app (you only need to do this once)
+cred = credentials.Certificate(settings.GOOGLE_APPLICATION_CREDENTIALS)
+initialize_app(cred)
+
+def send_notification(request):
+    token = request.GET.get('token')
+    if not token:
+        return JsonResponse({'error': 'Token is required'}, status=400)
+    
+    message = messaging.Message(
+        notification=messaging.Notification(
+            title='New Task!!',
+            body='A new task added',
+        ),
+        token=token,
+    )
+
+    try:
+        response = messaging.send(message)
+        return JsonResponse({'message': 'Notification sent', 'response': response})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)

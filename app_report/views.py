@@ -420,8 +420,8 @@ def StaffReportApiByStaffId(request):
 
     try:
         staff = Staff.objects.get(StaffId=staff_id)
-    except Staff.DoesNotExist:
-        return JsonResponse({'error': 'Staff not found'}, status=404)
+    except:
+        return JsonResponse("", status=404)
     
     staffSerializer = StaffSerializer(staff)
     StaffDetails = staffSerializer.data
@@ -492,13 +492,11 @@ def StaffReportApiByStaffId(request):
                     except:
                         duration_seconds = 3600  # Default to 1 hour if duration is invalid
                     try:
-                        # if ScheduledDeadline and (ScheduledDeadline < endDate or total_time_taken_seconds > duration_seconds):
-                        if ScheduledDeadline < endDate  or total_time_taken_seconds > duration_seconds:
+                        if total_time_taken_seconds > duration_seconds:
                             value_percentage = ((total_time_taken_seconds / duration_seconds) * 100) - 100
                             
                             point = ((task.TaskPoint) * value_percentage) / 100
-                            print("point",point)
-                            print(round((task.TaskPoint) - point))
+                            
                             project_details['TotalCompletedPoints'] += round((task.TaskPoint) - point)
                         else:
                             project_details['TotalCompletedPoints'] += round((task.TaskPoint))
@@ -805,3 +803,93 @@ def StaffDailyReport(request,CurrentDate="",StaffId=""):
 
     return response
     
+
+
+
+
+@csrf_exempt
+@api_view(['POST'])
+def ReportApiBytaskId(request):
+    staffData = JSONParser().parse(request)
+    ProjectId = staffData['ProjectId']
+    start_date = staffData.get('StartDate')
+    end_date = staffData.get('EndDate')
+
+    if start_date and end_date:
+        start_date = timezone.datetime.strptime(start_date, '%Y-%m-%d').date()
+        end_date = (timezone.datetime.strptime(end_date, '%Y-%m-%d') + timezone.timedelta(days=1)).date()
+        project_tasks = ProjectTask.objects.filter(ProjectId=ProjectId, CreatedDate__range=(start_date, end_date))
+    else:
+        project_tasks = ProjectTask.objects.filter(ProjectId=ProjectId)
+
+    project_details = {
+        'TotalCompletedPoints': 0,
+        'OnTimeCompletedTaskCount': 0,
+        'DueTaskCount': 0,
+        'CompletedTaskCount': 0
+    }
+
+    date_formats = [
+        '%m/%d/%Y, %I:%M:%S %p',
+        '%m/%d/%Y, %I:%M:%S',
+        '%d/%m/%Y, %I:%M:%S %p',
+        '%d/%m/%Y, %I:%M:%S'
+    ]
+
+    for task in project_tasks:
+        projectTaskserializer = ProjectTaskSerializer(task)
+        project_data = projectTaskserializer.data
+
+        if task.StartDate and task.EndDate:
+            startDate, endDate = None, None
+            for date_format in date_formats:
+                try:
+                    startDate = datetime.strptime(task.StartDate, date_format)
+                    endDate = datetime.strptime(task.EndDate, date_format)
+                    break
+                except ValueError:
+                    continue
+
+            if startDate and endDate:
+                total_time_taken_seconds = (endDate - startDate).total_seconds()
+
+                duration_seconds = 3600  # Default to 1 hour if duration is invalid
+                try:
+                    duration_parts = task.Duration.split(':')
+                    hours = int(duration_parts[0]) * 60
+                    minutes = int(duration_parts[1])
+                    duration_min = hours + minutes
+                    duration_seconds = duration_min * 60
+                except (ValueError, IndexError):
+                    pass
+
+                ScheduledDeadline = None
+                try:
+                    ScheduledDeadline = datetime.strptime(task.ScheduledDeadline, '%Y-%m-%dT%H:%M')
+                except (ValueError, TypeError):
+                    pass
+
+                try:
+                    if ScheduledDeadline and (ScheduledDeadline < endDate or total_time_taken_seconds > duration_seconds):
+                        value_percentage = ((total_time_taken_seconds / duration_seconds) * 100) - 100
+                        point = ((task.TaskPoint) * value_percentage) / 100
+                        project_details['TotalCompletedPoints'] += round((task.TaskPoint) - point)
+                        print(task)
+                        print(project_details['TotalCompletedPoints'])
+                    else:
+                        project_details['TotalCompletedPoints'] += round((task.TaskPoint))
+                        print(task)
+                        print(project_details['TotalCompletedPoints'])
+                        project_details['OnTimeCompletedTaskCount'] += 1
+                except:
+                    pass
+
+            if task.Status in ['1', '2']:
+                project_details['DueTaskCount'] += 1
+            elif task.Status in ['3', '7']:
+                project_details['CompletedTaskCount'] += 1
+
+    return JsonResponse(project_details, safe=False)
+
+
+
