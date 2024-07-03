@@ -4,8 +4,8 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
 
-from app_default.models import Country, Currency, DepositTo, Designation, DocumentType, InvoiceStatus, LeaveStatus, LeaveType, PaymentMode, StaffStatus, State, TaskStatus, UserGroup, UserType
-from app_default.serializers import CountrySerializer, CurrencySerializer, DepositToSerializer, DesignationSerializer, DocumentTypeSerializer, InvoiceStatusSerializer, LeaveStatusSerializer, LeaveTypeSerializer, PaymentModeSerializer, StaffStatusSerializer, StateSerializer, TaskStatusSerializer, UserGroupSerializer, UserTypeSerializer
+from app_default.models import CompanyDocumentType, Country, Currency, DepositTo, Designation, InvoiceStatus, LeaveStatus, LeaveType, PaymentMode, StaffStatus, State, TaskStatus, UserGroup, UserType
+from app_default.serializers import CompanyDocumentTypeSerializer, CountrySerializer, CurrencySerializer, DepositToSerializer, DesignationSerializer,InvoiceStatusSerializer, LeaveStatusSerializer, LeaveTypeSerializer, PaymentModeSerializer, StaffStatusSerializer, StateSerializer, TaskStatusSerializer, UserGroupSerializer, UserTypeSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 
@@ -474,13 +474,13 @@ def LeaveStatusApi(request):
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all DocumentType Details",)
 @api_view(['GET'])
 def DocumentTypeApi(request):
-    try:
+    # try:
         if request.method == 'GET':
-            documentType = DocumentType.objects.all()
-            documentType_serializer = DocumentTypeSerializer(
+            documentType = CompanyDocumentType.objects.all()
+            documentType_serializer = CompanyDocumentTypeSerializer(
                 documentType, many=True)  
             return JsonResponse(documentType_serializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("Invalid", safe=False)
+    # except:
+    #     return JsonResponse("Invalid", safe=False)

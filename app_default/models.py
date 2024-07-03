@@ -93,6 +93,6 @@ class LeaveStatus(models.Model):
     Status=models.CharField(max_length=300, blank=True, null=True)
 
 
-class DocumentType(models.Model):
+class CompanyDocumentType(models.Model):
     DocumentTypeId=models.AutoField(primary_key=True, editable=False)
     DocumentType=models.CharField(max_length=300, blank=True, null=True)

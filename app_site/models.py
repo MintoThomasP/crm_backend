@@ -2,7 +2,8 @@ from django.db import models
 
 # Create your models here.
 class SiteSettings(models.Model):
-    SiteSettingsId=models.AutoField(primary_key=True, editable=False)       
+    SiteSettingsId=models.AutoField(primary_key=True, editable=False)
+    CompanyId=models.CharField(blank=True, null=True, max_length=50) 
     Address=models.TextField(null=True,blank=True)
     Email1=models.CharField(blank=True, null=True, max_length=150) 
     Email2=models.CharField(blank=True, null=True, max_length=150) 

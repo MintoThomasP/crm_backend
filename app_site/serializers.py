@@ -7,6 +7,7 @@ class SiteSettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = SiteSettings
         fields = ('SiteSettingsId',
+                  'CompanyId',
                   'Address',
                   'Email1',
                   'Email2',
