@@ -8,7 +8,7 @@ from app_default.serializers import TaskStatusSerializer
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from app_staff.models import Staff
-from datetime import datetime, timedelta
+from datetime import datetime, time, timedelta
 from app_staff.serializers import StaffSerializer
 
 from app_project.models import CommentFile, Comments, Project, ProjectTask, ProjectTaskFile, TaskReviews
@@ -1262,8 +1262,7 @@ def schedule_repeated_tasks(request):
 
             return JsonResponse({"message": "Repeated tasks scheduled successfully."})
         except NotImplementedError as e:
-            # logger.error("NotImplementedError: %s", e)
-            return JsonResponse({"error": "NotImplementedError occurred"}, status=500)
+            time.sleep(1)
         except Exception as e:
             # logger.error("Error: %s", e)
             return JsonResponse({"error": str(e)}, status=500)
