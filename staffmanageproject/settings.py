@@ -44,7 +44,6 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_swagger',
     'drf_yasg',
-  
     'app_staff',
     'app_default',
     'app_project',
@@ -52,7 +51,8 @@ INSTALLED_APPS = [
     'app_login',
     'app_sale',
     'app_site',
-    'app_report'
+    'app_report',
+    'app_company'
     
     
 ]

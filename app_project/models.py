@@ -40,7 +40,7 @@ class ProjectTask(models.Model):
     CompletionPoint=models.IntegerField(default=0)
     VerifiedBy=models.CharField(blank=True, null=True, max_length=50)
     IsRepeated = models.BooleanField(default=False)
-    RepeatInterval = models.CharField(max_length=50, choices=[('daily', 'Daily'), ('weekly', 'Weekly'), ('monthly', 'Monthly')], blank=True, null=True)
+    RepeatInterval = models.CharField(max_length=50, blank=True, null=True)
     LastAssigned = models.DateTimeField(default=timezone.now, blank=True, null=True)
     
 # @receiver(post_save, sender=ProjectTask)
