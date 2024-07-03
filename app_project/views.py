@@ -1221,7 +1221,9 @@ def schedule_repeated_tasks(request):
         try:
             now = timezone.now()
             repeated_tasks = ProjectTask.objects.filter(IsRepeated=True)
-            print(repeated_tasks)
+            projectTaskSerializer = ProjectTaskSerializer(
+                    repeated_tasks, many=True)
+            return JsonResponse(projectTaskSerializer.data, safe=False)
 
             for task in repeated_tasks:
                 next_due_date = None
@@ -1253,7 +1255,6 @@ def schedule_repeated_tasks(request):
                         'RepeatInterval':task.RepeatInterval,
                         "LastAssigned":now
                     }
-                    print(new_task)
                     new_taskserializer = ProjectTaskSerializer(data=new_task)
                 
                     if new_taskserializer.is_valid():
