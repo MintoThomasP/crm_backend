@@ -46,3 +46,24 @@ def CURDSiteSettingsApi(request, pk=""):
             return JsonResponse("", safe=False)
     # except:
     #     return JsonResponse("Invalid", safe=False)
+        
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all site Settingss",)
+@api_view(['GET'])
+def CURDSiteSettingsApiCompanyId(request, CompanyId=""):
+    try:
+        if request.method == 'GET':
+           
+            siteSettings = SiteSettings.objects.get(
+                    CompanyId=CompanyId)
+            siteSettingsSerializer = SiteSettingsSerializer(
+                    siteSettings)
+            return JsonResponse(siteSettingsSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("Invalid", safe=False)
+        
