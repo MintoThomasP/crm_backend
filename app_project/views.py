@@ -1260,7 +1260,7 @@ def schedule_repeated_tasks(request):
                 
                     if new_taskserializer.is_valid():
                         new_taskserializer.save()
-                        data.append(new_taskserializer.data)
+                    data.append(new_taskserializer.data)
                     
 
             return JsonResponse({"message": "Repeated tasks scheduled successfully.","data":data,"projectTaskSerializer":projectTaskSerializer.data,"count":i},safe=False)
