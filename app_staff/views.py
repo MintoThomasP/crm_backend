@@ -156,9 +156,6 @@ def StaffApiById(request, StaffId=""):
                     work_status_count['Finished'] += 1
 
             designationData['WorkStatusCount'] = work_status_count
-           
-            
-           
             return JsonResponse(designationData, safe=False)
         elif request.method == 'DELETE':
             staff = Staff.objects.get(StaffId=StaffId)
@@ -702,3 +699,22 @@ def leaveApplicationApiByStaffId(request, StaffId=""):
             return JsonResponse("", safe=False)
     #except:
         #return JsonResponse("", safe=False)
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give StaffId to get one staffdetail",)
+@api_view(['GET'])
+def StaffApiByCompanyId(request, CompanyId=""):
+    try:
+        if request.method == 'GET': 
+            staff = Staff.objects.filter(
+                    CompanyId=CompanyId)
+            staffSerializer = StaffSerializer(
+                    staff,many=True)
+
+            return JsonResponse(staffSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)

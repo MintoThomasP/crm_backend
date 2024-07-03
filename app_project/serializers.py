@@ -9,6 +9,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = (
 'SortId',
 'ProjectId',
+'CompanyId',
 'ProjectName',
 'Description',
 'StartDate',

@@ -12,7 +12,7 @@ urlpatterns = [
 
     path('StaffDailyReport/<str:CurrentDate>/<str:StaffId>/', views.StaffDailyReport),
 
-    # path('StaffDailyReport/', views.StaffDailyReport),
+    
 
     path('ReportApiBytaskId/', views.ReportApiBytaskId),
 

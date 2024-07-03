@@ -74,7 +74,23 @@ def ProjectApiById(request, ProjectId=""):
     except:
         return JsonResponse("", safe=False)
     
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give ProjectId to get one project detail",)
+@api_view(['GET','DELETE'])
+def ProjectApiByCompanyId(request, CompanyId=""):
+    try:
+        if request.method == 'GET': 
+            project = Project.objects.filter(
+                    CompanyId=CompanyId)
+            projectSerializer = ProjectSerializer(
+                    project,many=True)
+            return JsonResponse(projectSerializer.data, safe=False)
 
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
 
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=ProjectTaskSerializer)

@@ -5,6 +5,7 @@ from app_project import views
 urlpatterns = [
     path('Project/', views.ProjectApi),
     url(r'^ProjectById/(?P<ProjectId>[0-9a-zA-Z\-]+)$', views.ProjectApiById),
+    url(r'^ProjectApiByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.ProjectApiByCompanyId),
 
     path('ProjectTask/', views.ProjectTaskApi),
     url(r'^ProjectTaskById/(?P<ProjectTaskId>[0-9a-zA-Z\-]+)$', views.ProjectTaskApiById),

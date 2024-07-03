@@ -129,7 +129,40 @@ def QuotationApiById(request, QuotationId=""):
     except:
         return JsonResponse("", safe=False)
     
-
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Quotation Details by CompanyId",)
+@api_view(['GET'])
+def QuotationApiByCompanyId(request,CompanyId=""):
+    try:
+        if request.method == 'GET':
+            quotation = Quotation.objects.filter(CompanyId=CompanyId)
+            quotationSerializer = QuotationSerializer(
+                    quotation, many=True)
+            quoteData=[]
+            for row in quotationSerializer.data:
+                try:
+                    client=Client.objects.get(ClientId=row['ClientId'])
+                    clientSerializer=ClientSerializer(client)
+                    row['ClientName']=clientSerializer.data['CustomerDisplayName']
+                except:
+                    row['ClientName']=[]
+                try:
+                    project=Project.objects.get(ProjectId=row['ProjectId'])
+                    projectSerializer=ProjectSerializer(project)
+                    row['ProjectName']=projectSerializer.data['ProjectName']
+                except:
+                    row['ProjectName']=[]
+                try:
+                    staff=Staff.objects.get(StaffId=row['SalesPerson'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['StaffName']=staffSerializer.data['StaffName']
+                except:
+                    row['StaffName']=[]
+                quoteData.append(row)
+            return JsonResponse(quoteData, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
 
 
 @csrf_exempt
@@ -313,7 +346,42 @@ def InvoiceApiById(request, InvoiceId=""):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
+
+
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Invoice Details",)
+@api_view(['GET'])
+def InvoiceApiByCompanyId(request,CompanyId=""):
+    try:
+        if request.method == 'GET':
+            invoice = Invoice.objects.filter(CompanyId=CompanyId).order_by('-SortId')
+            invoiceSerializer = InvoiceSerializer(
+                    invoice, many=True)
+            invoiceData=[]
+            for row in invoiceSerializer.data:
+                try:
+                    client=Client.objects.get(ClientId=row['ClientId'])
+                    clientSerializer=ClientSerializer(client)
+                    row['ClientName']=clientSerializer.data['CustomerDisplayName']
+                except:
+                    row['ClientName']=[]
+                try:
+                    invoiceStatus = InvoiceStatus.objects.get(InvoiceStatusId=row['Status'])
+                    invoiceStatusSerializer = InvoiceStatusSerializer(invoiceStatus)
+                    row['StatusName']=invoiceStatusSerializer.data['InvoiceStatus']
+                except:
+                    row['StatusName']=[]
+                try:
+                    staff=Staff.objects.get(StaffId=row['SalesPerson'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['StaffName']=staffSerializer.data['StaffName']
+                except:
+                    row['StaffName']=[]
+                invoiceData.append(row)
+            return JsonResponse(invoiceData, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
 
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=InvoiceItemSerializer)
@@ -495,7 +563,39 @@ def PaymentReceivedApiById(request, PaymentReceivedId=""):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
+
+
+
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all InvoiceDocument Details",)
+@api_view(['GET'])
+def PaymentReceivedApiCompanyId(request,CompanyId=""):
+    try:
+        if request.method == 'GET':
+            paymentReceived = PaymentReceived.objects.filter(CompanyId=CompanyId).order_by('-SortId')
+            paymentReceivedSerializer = PaymentReceivedSerializer(
+                    paymentReceived, many=True)
+            paymentData=[]
+            for row in paymentReceivedSerializer.data:
+                try:
+                    client=Client.objects.get(ClientId=row['ClientId'])
+                    clientSerializer=ClientSerializer(client)
+                    row['ClientName']=clientSerializer.data['CustomerDisplayName']
+                except:
+                    row['ClientName']=[]
+                try:
+                    staff=Staff.objects.get(StaffId=row['StaffId'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['StaffName']=staffSerializer.data['StaffName']
+                except:
+                    row['StaffName']=[]
+                paymentData.append(row)
+            
+            return JsonResponse(paymentData, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+        
 
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give QuotationFileId to get one quotationItem detail",)
@@ -550,10 +650,9 @@ class DownloadPDF(View):
         billingAddress=json.loads(invoice.BillingAddress)
         totalAmount=Decimal(invoice.TotalAmount)
         amountinwords=decimal_number_to_words(totalAmount)
-        last_id = SiteSettings.objects.aggregate(
-                Max('SiteSettingsId'))['SiteSettingsId__max']
+        
         siteSettings = SiteSettings.objects.get(
-                    SiteSettingsId=last_id)
+                    CompanyId=invoice.CompanyId)
         context = {'invoice': invoice,
                    'invoiceItems': invoiceItems,
                    'clientadrress':clientadrress,

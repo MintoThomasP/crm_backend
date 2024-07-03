@@ -9,6 +9,7 @@ class Staff(models.Model):
     StaffId = models.CharField(
         max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
     StaffCode=models.CharField(max_length=15, unique=True, editable=False)
+    CompanyId=models.CharField(blank=True, null=True, max_length=50)
     StaffName = models.CharField(blank=True, null=True, max_length=300)
     PhoneNumber = models.CharField(blank=True, null=True, max_length=30)
     Gender = models.CharField(blank=True, null=True, max_length=30)

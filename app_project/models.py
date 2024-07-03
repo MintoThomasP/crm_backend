@@ -11,6 +11,7 @@ class Project(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)
     ProjectId = models.CharField(
         max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    CompanyId = models.CharField(blank=True, null=True, max_length=50)
     ProjectName = models.CharField(blank=True, null=True, max_length=300)
     Description=models.TextField(blank=True, null=True)
     StartDate=models.DateTimeField(default=datetime.now)

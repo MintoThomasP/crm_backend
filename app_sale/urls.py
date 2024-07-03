@@ -10,6 +10,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('Quotation/', views.QuotationApi),
     url(r'^QuotationApiById/(?P<QuotationId>[0-9a-zA-Z\-]+)$', views.QuotationApiById),
+    url(r'^QuotationApiByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.QuotationApiByCompanyId),
 
     path('QuotationItem/', views.QuotationItemApi),
     url(r'^QuotationItemApiById/(?P<QuotationItemId>[0-9a-zA-Z\-]+)$', views.QuotationItemApiById),
@@ -19,6 +20,7 @@ urlpatterns = [
 
     path('Invoice/', views.InvoiceApi),
     url(r'^InvoiceApiById/(?P<InvoiceId>[0-9a-zA-Z\-]+)$', views.InvoiceApiById),
+    url(r'^InvoiceApiByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.InvoiceApiByCompanyId),
 
     path('InvoiceItem/', views.InvoiceItemApi),
     url(r'^InvoiceItemApiById/(?P<InvoiceItemId>[0-9a-zA-Z\-]+)$', views.InvoiceItemApiById),
@@ -30,6 +32,7 @@ urlpatterns = [
     url(r'^PaymentReceivedApiById/(?P<PaymentReceivedId>[0-9a-zA-Z\-]+)$', views.PaymentReceivedApiById),
     path('UploadPaymentDocument/', views.UploadPaymentDocument.as_view()),
     url(r'^PaymentDocumentApiById/(?P<PaymentDocumentId>[0-9a-zA-Z\-]+)$', views.PaymentDocumentApiById),
+    url(r'^PaymentReceivedApiCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.PaymentReceivedApiCompanyId),
 
     path('PaymentReceivedDetail/', views.PaymentReceivedDetailApi),
     url(r'^PaymentReceivedDetailApiById/(?P<PaymentReceivedDetailId>[0-9a-zA-Z\-]+)$', views.PaymentReceivedDetailApiById),

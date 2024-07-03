@@ -10,6 +10,7 @@ class Quotation(models.Model):
     QuotationId = models.CharField(
         max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
     ClientId=models.CharField(blank=True, null=True, max_length=50)
+    CompanyId = models.CharField(blank=True, null=True, max_length=50)
     QuotationNumber=models.CharField(blank=True, null=True, max_length=50)
     ReferenceNumber=models.CharField(blank=True, null=True, max_length=50)
     QuoteDate = models.DateTimeField(default=datetime.now)
@@ -51,6 +52,7 @@ class Invoice(models.Model):
         max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
     InvoiceNumber=models.CharField(blank=True, null=True, max_length=50)
     OrderNumber=models.CharField(blank=True, null=True, max_length=50)
+    CompanyId = models.CharField(blank=True, null=True, max_length=50)
     ClientId=models.CharField(blank=True, null=True, max_length=50)
     InvoiceDate = models.DateTimeField(default=datetime.now)
     DueDate = models.DateTimeField(default=datetime.now)
@@ -96,6 +98,7 @@ class PaymentReceived(models.Model):
     PaymentReceivedId = models.CharField(
         max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
     ClientId=models.CharField(blank=True, null=True, max_length=50)
+    CompanyId = models.CharField(blank=True, null=True, max_length=50)
     AmountReceived=models.CharField(blank=True, null=True, max_length=15)
     IsFullAmount=models.BooleanField(default=False)
     BankCharges=models.CharField(blank=True, null=True, max_length=15)
