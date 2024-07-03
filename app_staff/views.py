@@ -435,11 +435,11 @@ def staffDocumentsApiByStaffId(request, StaffId=""):
 
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all active Staff",)
 @api_view(['GET'])
-def GetAllActiveStaffListApi(request):
+def GetAllActiveStaffListApi(request,CompanyId=""):
     try:
         if request.method == 'GET':
            
-            staff = Staff.objects.filter(Status=1)
+            staff = Staff.objects.filter(Status=1,CompanyId=CompanyId)
             staffSerializer = StaffSerializer(
                     staff, many=True)
             staffData=[]
