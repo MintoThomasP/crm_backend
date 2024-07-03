@@ -1224,34 +1224,34 @@ def schedule_repeated_tasks(request):
             projectTaskSerializer = ProjectTaskSerializer(
                     repeated_tasks, many=True)
             data=[]
-            for task in projectTaskSerializer.data:
+            for task in repeated_tasks:
                 next_due_date = None
-                LastAssigned=task['LastAssigned']
-                if task['RepeatInterval'] == 'daily':
-                    next_due_date = LastAssigned + timedelta(days=1)
+        # 
+                if task.RepeatInterval == 'daily':
+                    next_due_date = task.LastAssigned + timedelta(days=1)
                     
-                elif task['RepeatInterval'] == 'weekly':
-                    next_due_date = LastAssigned + timedelta(weeks=1)
-                elif task['RepeatInterval'] == 'monthly':
-                    next_due_date = LastAssigned + timedelta(days=30)
+                elif task.RepeatInterval == 'weekly':
+                    next_due_date = task.LastAssigned + timedelta(weeks=1)
+                elif task.RepeatInterval == 'monthly':
+                    next_due_date = task.LastAssigned + timedelta(days=30)
 
                 if next_due_date and now >= next_due_date:
                     scheduled_deadline = next_due_date.strftime("%Y-%m-%dT%H:%M")
                     new_task = {
-                        "ProjectId":task['ProjectId'],
-                        "TaskAssignedTo":task['TaskAssignedTo'],
-                        "TaskAssignedBy":task['TaskAssignedBy'],
-                        "Title":task['Title'],
-                        "Description":task['Description'],
-                        "Duration":task['Duration'],
-                        "Status":task['Status'],
+                        "ProjectId":task.ProjectId,
+                        "TaskAssignedTo":task.TaskAssignedTo,
+                        "TaskAssignedBy":task.TaskAssignedBy,
+                        "Title":task.Title,
+                        "Description":task.Description,
+                        "Duration":task.Duration,
+                        "Status":task.Status,
                         "CreatedDate":now.strftime("%Y-%m-%d"),
                         "ScheduledDeadline":scheduled_deadline,
-                        "TaskPoint":task['TaskPoint'],
-                        "TaskType":task['TaskType'],
-                        "RefId":task['RefId'],
-                        "IsRepeated":task['IsRepeated'],
-                        'RepeatInterval':task['RepeatInterval'],
+                        "TaskPoint":task.TaskPoint,
+                        "TaskType":task.TaskType,
+                        "RefId":task.RefId,
+                        "IsRepeated":task.IsRepeated,
+                        'RepeatInterval':task.RepeatInterval,
                         "LastAssigned":now
                     }
                     new_taskserializer = ProjectTaskSerializer(data=new_task)
