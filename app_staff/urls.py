@@ -33,7 +33,7 @@ urlpatterns = [
     url(r'^leaveApplicationApiByStaffId/(?P<StaffId>[0-9a-zA-Z\-]+)$', views.leaveApplicationApiByStaffId),
 
 # path('GetAllActiveStaffList/', views.GetAllActiveStaffListApi),
-url(r'^GetAllActiveStaffList/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.GetAllActiveStaffList),
+url(r'^GetAllActiveStaffList/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.GetAllActiveStaffListApi),
 
 
 path('staffSalaryByPerformance/', views.staffSalaryByPerformanceApi),
