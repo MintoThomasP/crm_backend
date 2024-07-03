@@ -1223,7 +1223,7 @@ def schedule_repeated_tasks(request):
             repeated_tasks = ProjectTask.objects.filter(IsRepeated=True)
             projectTaskSerializer = ProjectTaskSerializer(
                     repeated_tasks, many=True)
-
+            data=[]
             for task in projectTaskSerializer.data:
                 next_due_date = None
         # 
@@ -1258,10 +1258,10 @@ def schedule_repeated_tasks(request):
                 
                     if new_taskserializer.is_valid():
                         new_taskserializer.save()
-                    return JsonResponse(new_taskserializer.data, safe=False)
+                    data.append(new_taskserializer.data)
                     
 
-            return JsonResponse({"message": "Repeated tasks scheduled successfully."})
+            return JsonResponse({"message": "Repeated tasks scheduled successfully.","data":data},safe=False)
         except NotImplementedError as e:
             time.sleep(1)
         except Exception as e:
