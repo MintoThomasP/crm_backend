@@ -44,5 +44,10 @@ urlpatterns = [
  path('schedule_repeated_tasks/', views.schedule_repeated_tasks),
   path('send_notification/', views.send_notification),
 
+    path('ProjectTaskTimingApi/', views.ProjectTaskTimingApi),
+    url(r'^CURDprojectTaskTimingApiById/(?P<ProjectTaskTimingId>[0-9a-zA-Z\-]+)$', views.CURDprojectTaskTimingApiById),
+    url(r'^ProjectTaskTimingApiByProjectTaskId/(?P<ProjectTaskId>[0-9a-zA-Z\-]+)$', views.ProjectTaskTimingApiByProjectTaskId),
+    url(r'^ProjectTaskTimingCalculationById/(?P<ProjectTaskTimingId>[0-9a-zA-Z\-]+)$', views.ProjectTaskTimingCalculationById),
+    url(r'^ProjectTaskTotalCalculation/(?P<ProjectTaskId>[0-9a-zA-Z\-]+)$', views.ProjectTaskTotalCalculation),
 
 ]

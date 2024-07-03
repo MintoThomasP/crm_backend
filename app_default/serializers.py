@@ -1,4 +1,5 @@
 
+from xml.dom.minidom import DocumentType
 from app_default.models import Country, Currency, DepositTo, Designation, InvoiceStatus, LeaveStatus, LeaveType, PaymentMode, StaffStatus, State, TaskStatus, UserGroup, UserType
 from rest_framework import serializers
 
@@ -124,4 +125,15 @@ class LeaveStatusSerializer(serializers.ModelSerializer):
         fields = (
 'StatusId',
 'Status'
+)
+        
+
+
+
+class DocumentTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DocumentType
+        fields = (
+'DocumentTypeId',
+'DocumentType'
 )

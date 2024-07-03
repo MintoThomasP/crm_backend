@@ -29,6 +29,7 @@ class ProjectTask(models.Model):
     Title=models.CharField(blank=True, null=True, max_length=300)
     Description=models.TextField(blank=True, null=True)
     Duration=models.CharField(blank=True, null=True, max_length=50)
+    TotalDuration=models.CharField(blank=True, null=True, max_length=50)
     Status=models.CharField(blank=True, null=True, max_length=300)
     CreatedDate=models.CharField(blank=True, null=True, max_length=15)
     ScheduledDeadline=models.CharField(blank=True, null=True, max_length=100)
@@ -43,20 +44,15 @@ class ProjectTask(models.Model):
     RepeatInterval = models.CharField(max_length=50, blank=True, null=True)
     LastAssigned = models.DateTimeField(default=timezone.now, blank=True, null=True)
     
-# @receiver(post_save, sender=ProjectTask)
-# def send_task_notification(sender, instance, created, **kwargs):
-#     if created:
-       
-#         message = messaging.Message(
-#             notification=messaging.Notification(
-#                 title='New Task Added',
-#                 body=f'A new task "{instance.Title}" has been assigned to you.'
-#             ),
-#             topic='tasks'  
-#         )
-       
-#         response = messaging.send(message)
-#         print('Successfully sent message:', response)
+class ProjectTaskTiming(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    ProjectTaskTimingId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    ProjectTaskId=models.CharField(blank=True, null=True, max_length=50)
+    StartDate=models.CharField(blank=True, null=True, max_length=100)
+    EndDate=models.CharField(blank=True, null=True, max_length=100)
+    Duration=models.CharField(blank=True, null=True, max_length=50)
+    Note=models.TextField(blank=True, null=True)
 
 
 class ProjectTaskFile(models.Model):

@@ -21,7 +21,20 @@ def CompanyApi(request):
             company = Company.objects.all()
             companySerializer = CompanySerializer(
                     company, many=True)
-            return JsonResponse(companySerializer.data, safe=False)
+            companyData=[]
+            for row in companySerializer.data:
+                try:
+                    companyDocuments = CompanyDocuments.objects.filter(
+                        CompanyId=row['CompanyId'])
+                    companyDocumentsSerializer = CompanyDocumentsSerializer(
+                        companyDocuments,many=True)
+                    row['DocumentDetails']=companyDocumentsSerializer.data
+                except:
+                    row['DocumentDetails']=""
+                companyData.append(row)
+              
+
+            return JsonResponse(companyData, safe=False)
         elif request.method == 'POST':
             companyData = JSONParser().parse(request)
             companySerializer = CompanySerializer(
@@ -56,6 +69,14 @@ def CompanyApiById(request, CompanyId=""):
             companySerializer = CompanySerializer(
                     company)
             companyData=companySerializer.data
+            try:
+                companyDocuments = CompanyDocuments.objects.filter(
+                    CompanyId=CompanyId)
+                companyDocumentsSerializer = CompanyDocumentsSerializer(
+                    companyDocuments,many=True)
+                companyData['DocumentDetails']=companyDocumentsSerializer.data
+            except:
+                companyData['DocumentDetails']=""
             
             return JsonResponse(companyData, safe=False)
         elif request.method == 'DELETE':

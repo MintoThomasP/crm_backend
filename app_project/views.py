@@ -11,8 +11,8 @@ from app_staff.models import Staff
 from datetime import datetime, time, timedelta
 from app_staff.serializers import StaffSerializer
 
-from app_project.models import CommentFile, Comments, Project, ProjectTask, ProjectTaskFile, TaskReviews
-from app_project.serializers import CommentFileSerializer, CommentsSerializer, ProjectSerializer, ProjectTaskFileSerializer, ProjectTaskSerializer,  SaveProjectTaskFileSerializer, TaskReviewsSerializer, UploadProjectTaskFileSerializer
+from app_project.models import CommentFile, Comments, Project, ProjectTask, ProjectTaskFile, ProjectTaskTiming, TaskReviews
+from app_project.serializers import CommentFileSerializer, CommentsSerializer, ProjectSerializer, ProjectTaskFileSerializer, ProjectTaskSerializer, ProjectTaskTimingSerializer,  SaveProjectTaskFileSerializer, TaskReviewsSerializer, UploadProjectTaskFileSerializer
 
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
@@ -1370,3 +1370,150 @@ def send_notification(request):
         return JsonResponse({'message': 'Notification sent', 'response': response})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all project Task file",)
+@swagger_auto_schema(method='PUT', request_body=ProjectTaskTimingSerializer)
+@swagger_auto_schema(method='POST', request_body=ProjectTaskTimingSerializer)
+@api_view(['GET','POST','PUT'])
+def ProjectTaskTimingApi(request, pk=""):
+    try:
+        if request.method == 'GET':
+            projectTaskTiming = ProjectTaskTiming.objects.all()
+            projectTaskTimingSerializer = ProjectTaskTimingSerializer(
+                projectTaskTiming,many=True)
+            return JsonResponse(projectTaskTimingSerializer.data, safe=False)
+        elif request.method == 'POST':
+            projectTaskTiming = JSONParser().parse(request)
+            projectTaskTimingSerializer = ProjectTaskTimingSerializer(
+                data=projectTaskTiming)
+            if projectTaskTimingSerializer.is_valid():
+                projectTaskTimingSerializer.save()
+                return JsonResponse(projectTaskTimingSerializer.data['ProjectTaskTimingId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            projectTaskTimingdata = JSONParser().parse(request)
+            projectTaskTiming = ProjectTaskTiming.objects.get(
+                ProjectTaskTimingId=projectTaskTimingdata['ProjectTaskTimingId'])
+            projectTaskTimingSerializer = ProjectTaskTimingSerializer(
+                projectTaskTiming, data=projectTaskTimingdata)
+            if projectTaskTimingSerializer.is_valid():
+                projectTaskTimingSerializer.save()
+                return JsonResponse(projectTaskTimingSerializer.data['ProjectTaskTimingId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="",)
+@api_view(['GET','DELETE'])
+def CURDprojectTaskTimingApiById(request, ProjectTaskTimingId=""):
+    try:
+        if request.method == 'GET':
+            projectTaskTiming = ProjectTaskTiming.objects.get(
+                ProjectTaskTimingId=ProjectTaskTimingId)
+            projectTaskTimingSerializer = ProjectTaskTimingSerializer(
+                projectTaskTiming)
+            return JsonResponse(projectTaskTimingSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            projectTaskTiming = ProjectTaskTiming.objects.get(ProjectTaskTimingId=ProjectTaskTimingId)
+            projectTaskTiming.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="",)
+@api_view(['GET'])
+def ProjectTaskTimingApiByProjectTaskId(request, ProjectTaskId=""):
+    try:
+        if request.method == 'GET':
+            projectTaskTiming = ProjectTaskTiming.objects.filter(
+                ProjectTaskId=ProjectTaskId)
+            projectTaskTimingSerializer = ProjectTaskTimingSerializer(
+                projectTaskTiming,many=True)
+            return JsonResponse(projectTaskTimingSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="",)
+@api_view(['GET','DELETE'])
+def ProjectTaskTimingCalculationById(request, ProjectTaskTimingId=""):
+    try:
+        if request.method == 'GET':
+            projectTaskTiming = ProjectTaskTiming.objects.get(
+                ProjectTaskTimingId=ProjectTaskTimingId)
+            projectTaskTimingSerializer = ProjectTaskTimingSerializer(
+                projectTaskTiming)
+            try:
+                date_format = '%m/%d/%Y, %I:%M:%S %p' 
+                start_date = datetime.strptime(projectTaskTimingSerializer.data['StartDate'], date_format)
+                end_date = datetime.strptime(projectTaskTimingSerializer.data['EndDate'], date_format)
+            except:
+                date_format = '%d/%m/%Y, %I:%M:%S %p'
+                start_date = datetime.strptime(projectTaskTimingSerializer.data['StartDate'], date_format)
+                end_date = datetime.strptime(projectTaskTimingSerializer.data['EndDate'], date_format)
+            total_time_taken = end_date - start_date
+            total_time_taken_in_seconds = total_time_taken.total_seconds()
+            total_time_taken_data = {
+                
+                'hours': round(total_time_taken_in_seconds // 3600),
+                'minutes': round((total_time_taken_in_seconds % 3600) // 60)
+            }
+            duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
+            projectTaskTiming.Duration = duration
+            projectTaskTiming.save()
+
+           
+            
+            return JsonResponse("Updated", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="",)
+@api_view(['GET'])
+def ProjectTaskTotalCalculation(request, ProjectTaskId=""):
+    try:
+        if request.method == 'GET':
+            projectTaskTiming = ProjectTaskTiming.objects.filter(
+                ProjectTaskId=ProjectTaskId)
+            projectTaskTimingSerializer = ProjectTaskTimingSerializer(
+                projectTaskTiming,many=True)
+            total_duration_minutes = 0
+            for row in projectTaskTimingSerializer.data:
+                duration = row['Duration']
+                hours, minutes = map(int, duration.split(':'))
+                total_duration_minutes += hours * 60 + minutes
+
+            total_duration_hours = total_duration_minutes // 60
+            total_duration_remaining_minutes = total_duration_minutes % 60
+            total_duration = f"{total_duration_hours}:{total_duration_remaining_minutes}"
+            projectTask=ProjectTask.objects.get(ProjectTaskId=ProjectTaskId)
+            projectTask.TotalDuration=total_duration
+            projectTask.save()
+
+            return JsonResponse("Updated", safe=False)
+
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    

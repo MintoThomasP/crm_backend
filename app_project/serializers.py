@@ -1,5 +1,5 @@
 
-from app_project.models import CommentFile, Comments, Project, ProjectTask, ProjectTaskFile, TaskReviews
+from app_project.models import CommentFile, Comments, Project, ProjectTask, ProjectTaskFile, ProjectTaskTiming, TaskReviews
 from rest_framework import serializers
 
 
@@ -30,6 +30,7 @@ class ProjectTaskSerializer(serializers.ModelSerializer):
 'Title',
 'Description',
 'Duration',
+'TotalDuration',
 'Status',
 'CreatedDate',
 'ScheduledDeadline',
@@ -44,6 +45,19 @@ class ProjectTaskSerializer(serializers.ModelSerializer):
 'RepeatInterval',
 'LastAssigned')
 
+
+class ProjectTaskTimingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectTaskTiming
+        fields = (
+'SortId',
+'ProjectTaskTimingId',
+'ProjectTaskId',
+'StartDate',
+'EndDate',
+'Duration',
+'Note'
+        )
 
 class ProjectTaskFileSerializer(serializers.ModelSerializer):
     class Meta:
