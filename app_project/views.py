@@ -1258,15 +1258,15 @@ def schedule_repeated_tasks(request):
                 
                     if new_taskserializer.is_valid():
                         new_taskserializer.save()
-                    data.append(new_taskserializer.data)
+                        data.append(new_taskserializer.data)
                     
 
             return JsonResponse({"message": "Repeated tasks scheduled successfully.","data":data},safe=False)
         except NotImplementedError as e:
             time.sleep(1)
-        except Exception as e:
-            # logger.error("Error: %s", e)
-            return JsonResponse({"error": str(e)}, status=500)
+        # except Exception as e:
+        #     # logger.error("Error: %s", e)
+        #     return JsonResponse({"error": str(e)}, status=500)
 
 
 # from django_q.tasks import schedule
