@@ -167,7 +167,7 @@ def ProjectTaskApi(request):
             if projectTaskSerializer.is_valid():
                 projectTaskSerializer.save()
 
-                login = Login.objects.get(UserId=projectTaskSerializer.data['UserId'])
+                login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedTo'])
                 if login.Token:
                     sendNotification({
                         "title":"New task added",

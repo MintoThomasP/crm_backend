@@ -166,7 +166,8 @@ def LoginHistoryApi(request):
                 login = Login.objects.get(UserId=loginHistoryData['UserId'])
                 login.Token = loginHistoryData['Token']
                 login.save()
-                return JsonResponse("Failed to add", safe=False)
+                return JsonResponse(loginHistorySerializer.data['LoginHistoryId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
         elif request.method == 'PUT':
             loginHistoryData = JSONParser().parse(request)
             loginHistory = LoginHistory.objects.get(
