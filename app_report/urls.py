@@ -3,7 +3,7 @@ from app_report import views
 
 
 urlpatterns = [
-    path('StaffReportApiByStaffId/', views.StaffReportApiByStaffId),
+    # path('StaffReportApiByStaffId/', views.StaffReportApiByStaffId),
     # path('AllStaffReport/', views.AllStaffReportApi),
     path('ProjectReportApiByProjectId/', views.ProjectReportApiByProjectId),
 
@@ -14,6 +14,10 @@ urlpatterns = [
 
     
 
-    path('ReportApiBytaskId/', views.ReportApiBytaskId),
+    # path('ReportApiBytaskId/', views.ReportApiBytaskId),
+
+
+        path('StaffReportApiByStaffId/', views.StaffReportApiByStaffId),
+
 
 ]

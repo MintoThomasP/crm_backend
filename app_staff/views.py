@@ -10,6 +10,7 @@ from io import BytesIO
 from app_default.models import Designation, LeaveStatus, LeaveType
 from app_default.serializers import DesignationSerializer, LeaveStatusSerializer, LeaveTypeSerializer
 from app_login.serializers import LoginSerializer
+from app_report.views import durationCalculation
 from app_staff.models import LeaveApplication, Staff, StaffDocuments, StaffGuardian
 import os
 from app_staff.serializers import LeaveApplicationSerializer, SaveStaffSerializer, StaffDocumentsSerializer, StaffGuardianSerializer, StaffSerializer, UpdateStaffSerializer, UploadStaffDocumentsSerializer
@@ -549,28 +550,33 @@ def staffSalaryByPerformanceApi(request):
         for row in projectTaskSerializer.data:
             TaskPoint += row['TaskPoint']
 
-            if row['StartDate'] and row['EndDate']:
-                try:
-                    date_format = '%m/%d/%Y, %I:%M:%S %p'
-                    start_date = datetime.strptime(row['StartDate'], date_format)
-                    end_date = datetime.strptime(row['EndDate'], date_format)
-                except ValueError:
-                    date_format = '%d/%m/%Y, %I:%M:%S %p'
-                    start_date = datetime.strptime(row['StartDate'], date_format)
-                    end_date = datetime.strptime(row['EndDate'], date_format)
-                
-                try:
-                    duration_parts = row['Duration'].split(':')
-                    hours = int(duration_parts[0]) * 60
-                    minutes = int(duration_parts[1])
-                    duration_min = hours + minutes
-                    duration_seconds = duration_min * 60
-                except:
-                    duration_seconds = 3600
+            # if row['StartDate'] and row['EndDate']:
+            #     try:
+            #         date_format = '%m/%d/%Y, %I:%M:%S %p'
+            #         start_date = datetime.strptime(row['StartDate'], date_format)
+            #         end_date = datetime.strptime(row['EndDate'], date_format)
+            #     except ValueError:
+            #         date_format = '%d/%m/%Y, %I:%M:%S %p'
+            #         start_date = datetime.strptime(row['StartDate'], date_format)
+            #         end_date = datetime.strptime(row['EndDate'], date_format)
+            if row['TotalDuration']: 
+                # try:
+                #     duration_parts = row['Duration'].split(':')
+                #     hours = int(duration_parts[0]) * 60
+                #     minutes = int(duration_parts[1])
+                #     duration_min = hours + minutes
+                #     duration_seconds = duration_min * 60
+                # except:
+                #     duration_seconds = 3600
+                Duration = row['Duration']
+                duration_seconds=durationCalculation(Duration)
+                TotalDuration = row['TotalDuration']
+                TotalDuration_seconds=durationCalculation(TotalDuration)
 
-                total_time_taken_seconds = (end_date - start_date).total_seconds()
-                if total_time_taken_seconds > duration_seconds:
-                    value_percentage = ((total_time_taken_seconds / duration_seconds) * 100) - 100
+
+                # total_time_taken_seconds = (end_date - start_date).total_seconds()
+                if TotalDuration_seconds > duration_seconds:
+                    value_percentage = ((TotalDuration_seconds / duration_seconds) * 100) - 100
                     point = (row['TaskPoint'] * value_percentage) / 100
                     CompletedPoint += round(row['TaskPoint'] - point)
                 else:
@@ -583,8 +589,7 @@ def staffSalaryByPerformanceApi(request):
             Salary = int(staffSerializer.data['Salary'])
         except:
             Salary = 0
-        print(CompletedPoint)
-        print(TaskPoint)
+      
         
         if CompletedPoint < 0:
             Payment = Salary + ((Salary * 0.1) * ((CompletedPoint / TaskPoint) * 100) / 100)

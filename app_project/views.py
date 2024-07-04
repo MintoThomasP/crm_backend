@@ -7,6 +7,7 @@ from app_default.models import TaskStatus
 from app_default.serializers import TaskStatusSerializer
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
+from app_report.views import durationCalculation, pointCalculation
 from app_staff.models import Staff
 from datetime import datetime, time, timedelta
 from app_staff.serializers import StaffSerializer
@@ -336,32 +337,41 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
                 except:
                     row['Tickets']=[]
                 try:
-                    if row['StartDate'] and row['EndDate']:
-                        try:
-                            date_format = '%m/%d/%Y, %I:%M:%S %p' 
-                            start_date = datetime.strptime(row['StartDate'], date_format)
-                            end_date = datetime.strptime(row['EndDate'], date_format)
-                        except:
-                            date_format = '%d/%m/%Y, %I:%M:%S %p'
-                            start_date = datetime.strptime(row['StartDate'], date_format)
-                            end_date = datetime.strptime(row['EndDate'], date_format)
+                    # if row['StartDate'] and row['EndDate']:
+                    #     try:
+                    #         date_format = '%m/%d/%Y, %I:%M:%S %p' 
+                    #         start_date = datetime.strptime(row['StartDate'], date_format)
+                    #         end_date = datetime.strptime(row['EndDate'], date_format)
+                    #     except:
+                    #         date_format = '%d/%m/%Y, %I:%M:%S %p'
+                    #         start_date = datetime.strptime(row['StartDate'], date_format)
+                    #         end_date = datetime.strptime(row['EndDate'], date_format)
 
-                        try:
-                            duration_parts = row['Duration'].split(':')
-                            hours = int(duration_parts[0])*60
-                            minutes = int(duration_parts[1])
-                            duration_min=hours + minutes
-                            duration_seconds=duration_min*60
-                        except:
-                            duration_seconds=3600
-                        total_time_taken_seconds = (end_date - start_date).total_seconds()
-                        if total_time_taken_seconds > duration_seconds:
-                            value1 = (total_time_taken_seconds / duration_seconds) * 100
-                            value_percentage = value1-100
-                            point=(row['TaskPoint']*value_percentage)/100
-                            row['CompletedPoint'] = round(row['TaskPoint'] - point)
-                        else:
-                            row['CompletedPoint'] = row['TaskPoint']
+                    if row['TotalDuration']:
+                        Duration = row['Duration']
+                        duration_seconds=durationCalculation(Duration)
+                        TotalDuration = row['TotalDuration']
+                        TotalDuration_seconds=durationCalculation(TotalDuration)
+                        point = row['TaskPoint']
+                        point = pointCalculation(duration_seconds, TotalDuration_seconds, point)
+                        row['CompletedPoint'] += round((row['TaskPoint']) - point, 2)
+                            
+                        # try:
+                        #     duration_parts = row['Duration'].split(':')
+                        #     hours = int(duration_parts[0])*60
+                        #     minutes = int(duration_parts[1])
+                        #     duration_min=hours + minutes
+                        #     duration_seconds=duration_min*60
+                        # except:
+                        #     duration_seconds=3600
+                        # total_time_taken_seconds = (end_date - start_date).total_seconds()
+                        # if total_time_taken_seconds > duration_seconds:
+                        #     value1 = (total_time_taken_seconds / duration_seconds) * 100
+                        #     value_percentage = value1-100
+                        #     point=(row['TaskPoint']*value_percentage)/100
+                        #     row['CompletedPoint'] = round(row['TaskPoint'] - point)
+                        # else:
+                        #     row['CompletedPoint'] = row['TaskPoint']
                 except:
                     row['CompletedPoint']=""
                 try:                      
@@ -439,32 +449,42 @@ def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
             taskStatusName = []
             for row in projectTaskSerializer.data:
                 try:
-                    if row['StartDate'] and row['EndDate']:
-                        try:
-                            date_format = '%m/%d/%Y, %I:%M:%S %p' 
-                            start_date = datetime.strptime(row['StartDate'], date_format)
-                            end_date = datetime.strptime(row['EndDate'], date_format)
-                        except:
-                            date_format = '%d/%m/%Y, %I:%M:%S %p'
-                            start_date = datetime.strptime(row['StartDate'], date_format)
-                            end_date = datetime.strptime(row['EndDate'], date_format)
-                        try:
-                            duration_parts = row['Duration'].split(':')
-                            hours = int(duration_parts[0])*60
-                            minutes = int(duration_parts[1])
-                            duration_min=hours + minutes
-                            duration_seconds=duration_min*60
-                        except:
-                            duration_seconds=3600
-                        total_time_taken_seconds = (end_date - start_date).total_seconds()
-                        if total_time_taken_seconds > duration_seconds:
-                            value1 = (total_time_taken_seconds / duration_seconds) * 100
-                            value_percentage = value1-100
+                    if row['TotalDuration']:
+                        Duration = row['Duration']
+                        duration_seconds=durationCalculation(Duration)
+                        TotalDuration = row['TotalDuration']
+                        TotalDuration_seconds=durationCalculation(TotalDuration)
+                        point = row['TaskPoint']
+                        point = pointCalculation(duration_seconds, TotalDuration_seconds, point)
+                        row['CompletedPoint'] += round((row['TaskPoint']) - point, 2)
+                        
 
-                            point=(row['TaskPoint']*value_percentage)/100
-                            row['CompletedPoint'] = round(row['TaskPoint'] - point)
-                        else:
-                            row['CompletedPoint'] = row['TaskPoint']
+                    # if row['StartDate'] and row['EndDate']:
+                    #     try:
+                    #         date_format = '%m/%d/%Y, %I:%M:%S %p' 
+                    #         start_date = datetime.strptime(row['StartDate'], date_format)
+                    #         end_date = datetime.strptime(row['EndDate'], date_format)
+                    #     except:
+                    #         date_format = '%d/%m/%Y, %I:%M:%S %p'
+                    #         start_date = datetime.strptime(row['StartDate'], date_format)
+                    #         end_date = datetime.strptime(row['EndDate'], date_format)
+                    #     try:
+                    #         duration_parts = row['Duration'].split(':')
+                    #         hours = int(duration_parts[0])*60
+                    #         minutes = int(duration_parts[1])
+                    #         duration_min=hours + minutes
+                    #         duration_seconds=duration_min*60
+                    #     except:
+                    #         duration_seconds=3600
+                    #     total_time_taken_seconds = (end_date - start_date).total_seconds()
+                    #     if total_time_taken_seconds > duration_seconds:
+                    #         value1 = (total_time_taken_seconds / duration_seconds) * 100
+                    #         value_percentage = value1-100
+
+                    #         point=(row['TaskPoint']*value_percentage)/100
+                    #         row['CompletedPoint'] = round(row['TaskPoint'] - point)
+                    #     else:
+                    #         row['CompletedPoint'] = row['TaskPoint']
                 except:
                     row['CompletedPoint']=""
                 try:
@@ -976,32 +996,42 @@ def ProjectTaskApiFilteringforTaskAssignedTo(request,):
             taskStatusName=[]
             for row in projectTaskSerializer.data:
                 try:
-                    if row['StartDate'] and row['EndDate']:
-                        try:
-                            date_format = '%m/%d/%Y, %I:%M:%S %p' 
-                            start_date = datetime.strptime(row['StartDate'], date_format)
-                            end_date = datetime.strptime(row['EndDate'], date_format)
-                        except:
-                            date_format = '%d/%m/%Y, %I:%M:%S %p'
-                            start_date = datetime.strptime(row['StartDate'], date_format)
-                            end_date = datetime.strptime(row['EndDate'], date_format)
+                    if row['TotalDuration']:
+                        Duration = row['Duration']
+                        duration_seconds=durationCalculation(Duration)
+                        TotalDuration = row['TotalDuration']
+                        TotalDuration_seconds=durationCalculation(TotalDuration)
+                        point = row['TaskPoint']
+                        point = pointCalculation(duration_seconds, TotalDuration_seconds, point)
+                        row['CompletedPoint'] += round((row['TaskPoint']) - point, 2)
+                        
 
-                        try:
-                            duration_parts = row['Duration'].split(':')
-                            hours = int(duration_parts[0])*60
-                            minutes = int(duration_parts[1])
-                            duration_min=hours + minutes
-                            duration_seconds=duration_min*60
-                        except:
-                            duration_seconds=3600
-                        total_time_taken_seconds = (end_date - start_date).total_seconds()
-                        if total_time_taken_seconds > duration_seconds:
-                            value1 = (total_time_taken_seconds / duration_seconds) * 100
-                            value_percentage = value1-100
-                            point=(row['TaskPoint']*value_percentage)/100
-                            row['CompletedPoint'] = round(row['TaskPoint'] - point)
-                        else:
-                            row['CompletedPoint'] = row['TaskPoint']
+                    # if row['StartDate'] and row['EndDate']:
+                    #     try:
+                    #         date_format = '%m/%d/%Y, %I:%M:%S %p' 
+                    #         start_date = datetime.strptime(row['StartDate'], date_format)
+                    #         end_date = datetime.strptime(row['EndDate'], date_format)
+                    #     except:
+                    #         date_format = '%d/%m/%Y, %I:%M:%S %p'
+                    #         start_date = datetime.strptime(row['StartDate'], date_format)
+                    #         end_date = datetime.strptime(row['EndDate'], date_format)
+
+                    #     try:
+                    #         duration_parts = row['Duration'].split(':')
+                    #         hours = int(duration_parts[0])*60
+                    #         minutes = int(duration_parts[1])
+                    #         duration_min=hours + minutes
+                    #         duration_seconds=duration_min*60
+                    #     except:
+                    #         duration_seconds=3600
+                    #     total_time_taken_seconds = (end_date - start_date).total_seconds()
+                    #     if total_time_taken_seconds > duration_seconds:
+                    #         value1 = (total_time_taken_seconds / duration_seconds) * 100
+                    #         value_percentage = value1-100
+                    #         point=(row['TaskPoint']*value_percentage)/100
+                    #         row['CompletedPoint'] = round(row['TaskPoint'] - point)
+                    #     else:
+                    #         row['CompletedPoint'] = row['TaskPoint']
                 except:
                     row['CompletedPoint']=""
                 try:                     
@@ -1085,32 +1115,42 @@ def ProjectTaskApiFilteringforTaskAssignedBy(request,):
             taskStatusName=[]
             for row in projectTaskSerializer.data:
                 try:
-                    if row['StartDate'] and row['EndDate']:
-                        try:
-                            date_format = '%m/%d/%Y, %I:%M:%S %p' 
-                            start_date = datetime.strptime(row['StartDate'], date_format)
-                            end_date = datetime.strptime(row['EndDate'], date_format)
-                        except:
-                            date_format = '%d/%m/%Y, %I:%M:%S %p'
-                            start_date = datetime.strptime(row['StartDate'], date_format)
-                            end_date = datetime.strptime(row['EndDate'], date_format)
+                    if row['TotalDuration']:
+                        Duration = row['Duration']
+                        duration_seconds=durationCalculation(Duration)
+                        TotalDuration = row['TotalDuration']
+                        TotalDuration_seconds=durationCalculation(TotalDuration)
+                        point = row['TaskPoint']
+                        point = pointCalculation(duration_seconds, TotalDuration_seconds, point)
+                        row['CompletedPoint'] += round((row['TaskPoint']) - point, 2)
+                        
 
-                        try:
-                            duration_parts = row['Duration'].split(':')
-                            hours = int(duration_parts[0])*60
-                            minutes = int(duration_parts[1])
-                            duration_min=hours + minutes
-                            duration_seconds=duration_min*60
-                        except:
-                            duration_seconds=3600
-                        total_time_taken_seconds = (end_date - start_date).total_seconds()
-                        if total_time_taken_seconds > duration_seconds:
-                            value1 = (total_time_taken_seconds / duration_seconds) * 100
-                            value_percentage = value1-100
-                            point=(row['TaskPoint']*value_percentage)/100
-                            row['CompletedPoint'] = round(row['TaskPoint'] - point)
-                        else:
-                            row['CompletedPoint'] = row['TaskPoint']
+                    # if row['StartDate'] and row['EndDate']:
+                    #     try:
+                    #         date_format = '%m/%d/%Y, %I:%M:%S %p' 
+                    #         start_date = datetime.strptime(row['StartDate'], date_format)
+                    #         end_date = datetime.strptime(row['EndDate'], date_format)
+                    #     except:
+                    #         date_format = '%d/%m/%Y, %I:%M:%S %p'
+                    #         start_date = datetime.strptime(row['StartDate'], date_format)
+                    #         end_date = datetime.strptime(row['EndDate'], date_format)
+
+                    #     try:
+                    #         duration_parts = row['Duration'].split(':')
+                    #         hours = int(duration_parts[0])*60
+                    #         minutes = int(duration_parts[1])
+                    #         duration_min=hours + minutes
+                    #         duration_seconds=duration_min*60
+                    #     except:
+                    #         duration_seconds=3600
+                    #     total_time_taken_seconds = (end_date - start_date).total_seconds()
+                    #     if total_time_taken_seconds > duration_seconds:
+                    #         value1 = (total_time_taken_seconds / duration_seconds) * 100
+                    #         value_percentage = value1-100
+                    #         point=(row['TaskPoint']*value_percentage)/100
+                    #         row['CompletedPoint'] = round(row['TaskPoint'] - point)
+                    #     else:
+                    #         row['CompletedPoint'] = row['TaskPoint']
                 except:
                     row['CompletedPoint']=""
                 try:                        
