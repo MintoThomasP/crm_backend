@@ -1441,16 +1441,19 @@ import firebase_admin
 # Initialize the Firebase app (you only need to do this once)
 cred = credentials.Certificate(settings.GOOGLE_APPLICATION_CREDENTIALS)
 initialize_app(cred)
-
+@csrf_exempt
+@api_view(['POST'])
 def send_notification(request):
-    token = request.GET.get('token')
+    notifyData = JSONParser().parse(request)
+    token = notifyData['token']
+    
     if not token:
         return JsonResponse({'error': 'Token is required'}, status=400)
     
     message = messaging.Message(
         notification=messaging.Notification(
-            title='New Task!!',
-            body='A new task added',
+            title=notifyData['title'],
+            body=notifyData['body'],
         ),
         token=token,
     )
