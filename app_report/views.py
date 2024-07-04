@@ -1039,9 +1039,13 @@ def StaffDailyReport(request, StaffId=""):
     taskData = []
     
     for row in projectTaskSerializer.data:
-        taskStatus = TaskStatus.objects.get(StatusId=row['Status'])
-        taskStatusSerializer = TaskStatusSerializer(taskStatus)
-        row['StatusName'] = taskStatusSerializer.data['Status']
+        try:
+            taskStatus = TaskStatus.objects.get(StatusId=row['Status'])
+            taskStatusSerializer = TaskStatusSerializer(taskStatus)
+            row['StatusName'] = taskStatusSerializer.data['Status']
+        except:
+            row['StatusName'] =""
+
         try:
             project = Project.objects.get(ProjectId=row['ProjectId'])
             projectSerializer = ProjectSerializer(project)

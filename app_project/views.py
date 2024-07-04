@@ -140,10 +140,13 @@ def ProjectTaskApi(request):
                     row['VerifiedByName']=staffSerializer.data['StaffName']
                 except:
                     row['VerifiedByName']= ""
+                try:
+                    taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                    taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                    row['StatusName']=taskStatusSerializer.data['Status']
+                except:
+                    row['StatusName']=""
 
-                taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
-                taskStatusSerializer=TaskStatusSerializer(taskStatus)
-                row['StatusName']=taskStatusSerializer.data['Status']
 
                 try:
                     projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
@@ -273,9 +276,13 @@ def ProjectTaskApiByProjectId(request, ProjectId=""):
                     projectTask,many=True)
             taskStatusName=[]
             for row in projectTaskSerializer.data:
-                taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
-                taskStatusSerializer=TaskStatusSerializer(taskStatus)
-                row['StatusName']=taskStatusSerializer.data['Status']
+                try:
+                    taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                    taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                    row['StatusName']=taskStatusSerializer.data['Status']
+                except:
+                    row['StatusName']=""
+
                 try:
                     project = Project.objects.get(ProjectId=row['ProjectId'])
                     projectSerializer = ProjectSerializer(project)
@@ -356,10 +363,14 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
                         else:
                             row['CompletedPoint'] = row['TaskPoint']
                 except:
-                    row['CompletedPoint']=""                        
-                taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
-                taskStatusSerializer=TaskStatusSerializer(taskStatus)
-                row['StatusName']=taskStatusSerializer.data['Status']
+                    row['CompletedPoint']=""
+                try:                      
+                    taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                    taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                    row['StatusName']=taskStatusSerializer.data['Status']
+                except:
+                    row['StatusName']=""
+
                 try:
                     project = Project.objects.get(ProjectId=row['ProjectId'])
                     projectSerializer = ProjectSerializer(project)
@@ -456,9 +467,13 @@ def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
                             row['CompletedPoint'] = row['TaskPoint']
                 except:
                     row['CompletedPoint']=""
-                taskStatus = TaskStatus.objects.get(StatusId=row['Status'])
-                taskStatusSerializer = TaskStatusSerializer(taskStatus)
-                row['StatusName'] = taskStatusSerializer.data['Status']
+                try:
+                    taskStatus = TaskStatus.objects.get(StatusId=row['Status'])
+                    taskStatusSerializer = TaskStatusSerializer(taskStatus)
+                    row['StatusName'] = taskStatusSerializer.data['Status']
+                except:
+                    row['StatusName'] =""
+
                 try:
                     project = Project.objects.get(ProjectId=row['ProjectId'])
                     projectSerializer = ProjectSerializer(project)
@@ -514,9 +529,13 @@ def ProjectTaskApiByUserIdAndProjectId(request):
                     row['Tickets']=projectTaskSerializer.data
                 except:
                     row['Tickets']=[]
-                taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
-                taskStatusSerializer=TaskStatusSerializer(taskStatus)
-                row['StatusName']=taskStatusSerializer.data['Status']
+                try:
+                    taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                    taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                    row['StatusName']=taskStatusSerializer.data['Status']
+                except:
+                    row['StatusName']=""
+
                 try:
                     project = Project.objects.get(ProjectId=row['ProjectId'])
                     projectSerializer = ProjectSerializer(project)
@@ -560,9 +579,13 @@ def ProjectTaskApiByTaskAssignedByAndProjectId(request):
                     projectTask,many=True)
             taskData=[]
             for row in projectTaskSerializer.data:
-                taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
-                taskStatusSerializer=TaskStatusSerializer(taskStatus)
-                row['StatusName']=taskStatusSerializer.data['Status']
+                try:
+                    taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                    taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                    row['StatusName']=taskStatusSerializer.data['Status']
+                except:
+                    row['StatusName']=""
+
                 try:
                     project = Project.objects.get(ProjectId=row['ProjectId'])
                     projectSerializer = ProjectSerializer(project)
@@ -980,10 +1003,14 @@ def ProjectTaskApiFilteringforTaskAssignedTo(request,):
                         else:
                             row['CompletedPoint'] = row['TaskPoint']
                 except:
-                    row['CompletedPoint']=""                        
-                taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
-                taskStatusSerializer=TaskStatusSerializer(taskStatus)
-                row['StatusName']=taskStatusSerializer.data['Status']
+                    row['CompletedPoint']=""
+                try:                     
+                    taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                    taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                    row['StatusName']=taskStatusSerializer.data['Status']
+                except:
+                    row['StatusName']=""
+
                 try:
                     project = Project.objects.get(ProjectId=row['ProjectId'])
                     projectSerializer = ProjectSerializer(project)
@@ -1085,10 +1112,14 @@ def ProjectTaskApiFilteringforTaskAssignedBy(request,):
                         else:
                             row['CompletedPoint'] = row['TaskPoint']
                 except:
-                    row['CompletedPoint']=""                        
-                taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
-                taskStatusSerializer=TaskStatusSerializer(taskStatus)
-                row['StatusName']=taskStatusSerializer.data['Status']
+                    row['CompletedPoint']=""
+                try:                        
+                    taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                    taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                    row['StatusName']=taskStatusSerializer.data['Status']
+                except:
+                    row['StatusName']=""
+
                 try:
                     project = Project.objects.get(ProjectId=row['ProjectId'])
                     projectSerializer = ProjectSerializer(project)
@@ -1205,10 +1236,13 @@ def GetAllProjectTaskApiByFiltering(request):
                     row['VerifiedByName']=staffSerializer.data['StaffName']
                 except:
                     row['VerifiedByName']= ""
+                try:
+                    taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                    taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                    row['StatusName']=taskStatusSerializer.data['Status']
+                except:
+                    row['StatusName']=""
 
-                taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
-                taskStatusSerializer=TaskStatusSerializer(taskStatus)
-                row['StatusName']=taskStatusSerializer.data['Status']
 
                 try:
                     projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
