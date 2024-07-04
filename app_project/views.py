@@ -1,6 +1,7 @@
 from django.dispatch import receiver
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from app_login.models import Login
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
 from app_default.models import TaskStatus
@@ -165,6 +166,15 @@ def ProjectTaskApi(request):
                 data=projectTaskData)
             if projectTaskSerializer.is_valid():
                 projectTaskSerializer.save()
+
+                login = Login.objects.get(UserId=projectTaskSerializer.data['UserId'])
+                if login.Token:
+                    sendNotification({
+                        "title":"New task added",
+                        "body":projectTaskSerializer.data['Title'],
+                        "token":login.Token
+                    })
+
 
                 return JsonResponse(projectTaskSerializer.data['ProjectTaskId'], safe=False)
             return JsonResponse("Failed to add", safe=False)
@@ -818,6 +828,16 @@ def CommentApi(request, pk=""):
            
             if commentSerializer.is_valid():
                 commentSerializer.save()
+                task = ProjectTask.objects.get(ProjectTaskId=commentSerializer.data['ProjectTaskId'])
+
+                login = Login.objects.get(UserId=task.TaskAssignedTo)
+                if login.Token:
+                    sendNotification({
+                        "title":"Comments",
+                        "body":commentSerializer.data['Comment'],
+                        "token":login.Token
+                    })
+
                
                 return JsonResponse(commentSerializer.data['CommentId'], safe=False)
             return JsonResponse("Failed to add", safe=False)
@@ -1445,6 +1465,10 @@ initialize_app(cred)
 @api_view(['POST'])
 def send_notification(request):
     notifyData = JSONParser().parse(request)
+    sendNotification(notifyData)
+
+def sendNotification(notifyData):
+
     token = notifyData['token']
     
     if not token:
@@ -1463,8 +1487,6 @@ def send_notification(request):
         return JsonResponse({'message': 'Notification sent', 'response': response})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
-
-
 
 
 @csrf_exempt

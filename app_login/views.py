@@ -144,9 +144,6 @@ def UpdateUserTypeApi(request, pk=""):
         return JsonResponse(str(e), safe=False)
     
 
-
-
-
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=LoginHistorySerializer)
 @swagger_auto_schema(method='PUT', request_body=LoginHistorySerializer)
@@ -165,9 +162,11 @@ def LoginHistoryApi(request):
                 data=loginHistoryData)
             if loginHistorySerializer.is_valid():
                 loginHistorySerializer.save()
-
-                return JsonResponse(loginHistorySerializer.data['LoginHistoryId'], safe=False)
-            return JsonResponse("Failed to add", safe=False)
+                
+                login = Login.objects.get(UserId=loginHistoryData['UserId'])
+                login.Token = loginHistoryData['Token']
+                login.save()
+                return JsonResponse("Failed to add", safe=False)
         elif request.method == 'PUT':
             loginHistoryData = JSONParser().parse(request)
             loginHistory = LoginHistory.objects.get(

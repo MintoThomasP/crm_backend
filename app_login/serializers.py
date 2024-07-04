@@ -13,6 +13,13 @@ class LoginSerializer(serializers.ModelSerializer):
                   'Password',
                   'Token',
                   'Status')
+class SaveTokenSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Login
+        fields = (
+                  'LoginId',
+                  'UserId',
+                  'Token')
         
 
 class LoginSaveSerializer(serializers.ModelSerializer):
