@@ -10,7 +10,7 @@ urlpatterns = [
    
     path('getAllProjectReport/', views.getAllProjectReport),
 
-    path('StaffDailyReport/<str:CurrentDate>/<str:StaffId>/', views.StaffDailyReport),
+    path('StaffDailyReport/<str:StaffId>/', views.StaffDailyReport),
 
     
 

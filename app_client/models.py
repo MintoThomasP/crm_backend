@@ -9,6 +9,7 @@ class Client(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)
     ClientId=models.CharField(
         max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    CompanyId=models.CharField(max_length=50, blank=True, null=True)
     Salutation=models.CharField(max_length=5, blank=True, null=True)
     FirstName=models.CharField(max_length=300, blank=True, null=True)
     LastName=models.CharField(max_length=300, blank=True, null=True)

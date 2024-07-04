@@ -8,6 +8,7 @@ class ClientSerializer(serializers.ModelSerializer):
         fields = (
             'SortId',
 'ClientId',
+'CompanyId',
 'Salutation',
 'FirstName',
 'LastName',

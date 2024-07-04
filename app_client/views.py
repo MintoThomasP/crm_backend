@@ -92,7 +92,19 @@ def ClientApiById(request, ClientId=""):
     #     return JsonResponse("", safe=False)
     
 
-
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all client details",)
+@api_view(['GET'])
+def ClientApiByCompanyId(request,CompanyId=""):
+    try:
+        if request.method == 'GET':
+            client = Client.objects.filter(CompanyId=CompanyId)
+            clientSerializer = ClientSerializer(
+                    client, many=True)
+            return JsonResponse(clientSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("Invalid", safe=False)
 
 
 @csrf_exempt

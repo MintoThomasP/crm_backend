@@ -8,8 +8,8 @@ from django.http.response import JsonResponse
 from django.http import HttpResponse
 from app_default.models import TaskStatus
 from app_default.serializers import TaskStatusSerializer
-from app_project.models import Project, ProjectTask
-from app_project.serializers import ProjectSerializer, ProjectTaskSerializer
+from app_project.models import Project, ProjectTask, ProjectTaskTiming
+from app_project.serializers import ProjectSerializer, ProjectTaskSerializer, ProjectTaskTimingSerializer
 from app_staff.models import Staff
 from app_staff.serializers import StaffSerializer
 # Create your views here.
@@ -903,44 +903,142 @@ from PIL import Image as PILImage, ImageDraw, ImageFont
 import io
 from datetime import datetime
 
+# @csrf_exempt
+# @api_view(['GET'])
+# def StaffDailyReport(request, CurrentDate="", StaffId=""):
+#     Created_date = timezone.datetime.strptime(CurrentDate, '%Y-%m-%d').date()
+
+#     projectTask = ProjectTask.objects.filter(CreatedDate=Created_date, TaskAssignedTo=StaffId)
+#     projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
+#     taskData = []
+#     for row in projectTaskSerializer.data:
+#         try:
+#             if row['StartDate'] and row['EndDate']:
+#                 try:
+#                     date_format = '%m/%d/%Y, %I:%M:%S %p'
+#                     start_date = datetime.strptime(row['StartDate'], date_format)
+#                     end_date = datetime.strptime(row['EndDate'], date_format)
+#                 except:
+#                     date_format = '%d/%m/%Y, %I:%M:%S %p'
+#                     start_date = datetime.strptime(row['StartDate'], date_format)
+#                     end_date = datetime.strptime(row['EndDate'], date_format)
+
+#                 try:
+#                     duration_parts = row['Duration'].split(':')
+#                     hours = int(duration_parts[0]) * 60
+#                     minutes = int(duration_parts[1])
+#                     duration_min = hours + minutes
+#                     duration_seconds = duration_min * 60
+#                 except:
+#                     duration_seconds = 3600
+#                 total_time_taken_seconds = (end_date - start_date).total_seconds()
+#                 if total_time_taken_seconds > duration_seconds:
+#                     value1 = (total_time_taken_seconds / duration_seconds) * 100
+#                     value_percentage = value1 - 100
+#                     point = (row['TaskPoint'] * value_percentage) / 100
+#                     row['CompletedPoint'] = round(row['TaskPoint'] - point)
+#                 else:
+#                     row['CompletedPoint'] = row['TaskPoint']
+#         except:
+#             row['CompletedPoint'] = ""
+#         taskStatus = TaskStatus.objects.get(StatusId=row['Status'])
+#         taskStatusSerializer = TaskStatusSerializer(taskStatus)
+#         row['StatusName'] = taskStatusSerializer.data['Status']
+#         try:
+#             project = Project.objects.get(ProjectId=row['ProjectId'])
+#             projectSerializer = ProjectSerializer(project)
+#             row['ProjectName'] = projectSerializer.data['ProjectName']
+#         except:
+#             row['ProjectName'] = ""
+#         try:
+#             staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
+#             staffSerializer = StaffSerializer(staff)
+#             row['StaffName'] = staffSerializer.data['StaffName']
+#         except:
+#             row['StaffName'] = ""
+#         try:
+#             staff = Staff.objects.get(StaffId=row['TaskAssignedBy'])
+#             staffSerializer = StaffSerializer(staff)
+#             row['TaskAssignedBY'] = staffSerializer.data['StaffName']
+#         except:
+#             row['TaskAssignedBY'] = ""
+#         taskData.append(row)
+
+#     exclude_fields = ["SortId", "ProjectTaskId", "ProjectId", "TaskAssignedTo","CreatedDate", "Description", "TaskAssignedBy", "CompletionPoint", "VerifiedBy"]
+#     column_order = [
+#         "StaffName", "TaskAssignedBY","ProjectName", "Title", "Duration", 
+#         "ScheduledDeadline", "StartDate", "EndDate", "Status", "TaskPoint",
+#         "VerifiedBy", "CompletedPoint", "StatusName", 
+#     ]
+
+    
+#     workbook = openpyxl.Workbook()
+#     sheet = workbook.active
+#     sheet.title = "Staff Daily Report"
+
+  
+#     headers = [key for key in column_order if key not in exclude_fields]
+#     sheet.append(headers)
+
+    
+#     for task in taskData:
+#         filtered_task = {key: value for key, value in task.items() if key not in exclude_fields}
+#         ordered_task = [filtered_task.get(key, "") for key in headers]
+#         sheet.append(ordered_task)
+
+   
+#     max_col_widths = [len(header) for header in headers]
+#     for task in taskData:
+#         for i, header in enumerate(headers):
+#             max_col_widths[i] = max(max_col_widths[i], len(str(task.get(header, ""))))
+
+   
+#     col_width = 12  # approximate width of each character in pixels
+#     image_width = sum([w * col_width for w in max_col_widths]) + 20  # extra padding
+
+    
+#     img = PILImage.new('RGB', (image_width, 50 * (len(taskData) + 1)), 'white')
+#     draw = ImageDraw.Draw(img)
+#     font = ImageFont.load_default()
+
+#     row_pos = 10
+#     col_pos = 10
+#     for col, header in enumerate(headers):
+#         draw.text((col_pos, row_pos), header, fill='black', font=font)
+#         col_pos += max_col_widths[col] * col_width
+
+#     row_pos += 30
+#     for task in taskData:
+#         col_pos = 10
+#         for col, header in enumerate(headers):
+#             draw.text((col_pos, row_pos), str(task.get(header, "")), fill='black', font=font)
+#             col_pos += max_col_widths[col] * col_width
+#         row_pos += 30
+
+   
+#     img_stream = io.BytesIO()
+#     img.save(img_stream, format='PNG')
+#     img_stream.seek(0)
+
+   
+#     response = HttpResponse(img_stream, content_type='image/png')
+#     response['Content-Disposition'] = f'attachment; filename=StaffDailyReport_{CurrentDate}.png'
+
+#     return response
+
+
+
 @csrf_exempt
 @api_view(['GET'])
-def StaffDailyReport(request, CurrentDate="", StaffId=""):
-    Created_date = timezone.datetime.strptime(CurrentDate, '%Y-%m-%d').date()
-
-    projectTask = ProjectTask.objects.filter(CreatedDate=Created_date, TaskAssignedTo=StaffId)
+def StaffDailyReport(request, StaffId=""):
+    
+    current_date = timezone.now().date()
+    
+    projectTask = ProjectTask.objects.filter(TaskAssignedTo=StaffId)
     projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
     taskData = []
+    
     for row in projectTaskSerializer.data:
-        try:
-            if row['StartDate'] and row['EndDate']:
-                try:
-                    date_format = '%m/%d/%Y, %I:%M:%S %p'
-                    start_date = datetime.strptime(row['StartDate'], date_format)
-                    end_date = datetime.strptime(row['EndDate'], date_format)
-                except:
-                    date_format = '%d/%m/%Y, %I:%M:%S %p'
-                    start_date = datetime.strptime(row['StartDate'], date_format)
-                    end_date = datetime.strptime(row['EndDate'], date_format)
-
-                try:
-                    duration_parts = row['Duration'].split(':')
-                    hours = int(duration_parts[0]) * 60
-                    minutes = int(duration_parts[1])
-                    duration_min = hours + minutes
-                    duration_seconds = duration_min * 60
-                except:
-                    duration_seconds = 3600
-                total_time_taken_seconds = (end_date - start_date).total_seconds()
-                if total_time_taken_seconds > duration_seconds:
-                    value1 = (total_time_taken_seconds / duration_seconds) * 100
-                    value_percentage = value1 - 100
-                    point = (row['TaskPoint'] * value_percentage) / 100
-                    row['CompletedPoint'] = round(row['TaskPoint'] - point)
-                else:
-                    row['CompletedPoint'] = row['TaskPoint']
-        except:
-            row['CompletedPoint'] = ""
         taskStatus = TaskStatus.objects.get(StatusId=row['Status'])
         taskStatusSerializer = TaskStatusSerializer(taskStatus)
         row['StatusName'] = taskStatusSerializer.data['Status']
@@ -962,66 +1060,19 @@ def StaffDailyReport(request, CurrentDate="", StaffId=""):
             row['TaskAssignedBY'] = staffSerializer.data['StaffName']
         except:
             row['TaskAssignedBY'] = ""
-        taskData.append(row)
-
-    exclude_fields = ["SortId", "ProjectTaskId", "ProjectId", "TaskAssignedTo","CreatedDate", "Description", "TaskAssignedBy", "CompletionPoint", "VerifiedBy"]
-    column_order = [
-        "StaffName", "TaskAssignedBY","ProjectName", "Title", "Duration", 
-        "ScheduledDeadline", "StartDate", "EndDate", "Status", "TaskPoint",
-        "VerifiedBy", "CompletedPoint", "StatusName", 
-    ]
-
+       
+        taskTimings = ProjectTaskTiming.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+        taskTimingSerializer = ProjectTaskTimingSerializer(taskTimings, many=True)
+        
+        timing_data = []
+        for timing in taskTimingSerializer.data:
+            
+            start_date = datetime.strptime(timing['StartDate'], '%m/%d/%Y, %I:%M:%S %p').date()
+           
+            if start_date == current_date:
+                timing_data.append(timing)
+        if timing_data:
+            row['timing'] = timing_data
+            taskData.append(row)
     
-    workbook = openpyxl.Workbook()
-    sheet = workbook.active
-    sheet.title = "Staff Daily Report"
-
-  
-    headers = [key for key in column_order if key not in exclude_fields]
-    sheet.append(headers)
-
-    
-    for task in taskData:
-        filtered_task = {key: value for key, value in task.items() if key not in exclude_fields}
-        ordered_task = [filtered_task.get(key, "") for key in headers]
-        sheet.append(ordered_task)
-
-   
-    max_col_widths = [len(header) for header in headers]
-    for task in taskData:
-        for i, header in enumerate(headers):
-            max_col_widths[i] = max(max_col_widths[i], len(str(task.get(header, ""))))
-
-   
-    col_width = 12  # approximate width of each character in pixels
-    image_width = sum([w * col_width for w in max_col_widths]) + 20  # extra padding
-
-    
-    img = PILImage.new('RGB', (image_width, 50 * (len(taskData) + 1)), 'white')
-    draw = ImageDraw.Draw(img)
-    font = ImageFont.load_default()
-
-    row_pos = 10
-    col_pos = 10
-    for col, header in enumerate(headers):
-        draw.text((col_pos, row_pos), header, fill='black', font=font)
-        col_pos += max_col_widths[col] * col_width
-
-    row_pos += 30
-    for task in taskData:
-        col_pos = 10
-        for col, header in enumerate(headers):
-            draw.text((col_pos, row_pos), str(task.get(header, "")), fill='black', font=font)
-            col_pos += max_col_widths[col] * col_width
-        row_pos += 30
-
-   
-    img_stream = io.BytesIO()
-    img.save(img_stream, format='PNG')
-    img_stream.seek(0)
-
-   
-    response = HttpResponse(img_stream, content_type='image/png')
-    response['Content-Disposition'] = f'attachment; filename=StaffDailyReport_{CurrentDate}.png'
-
-    return response
+    return JsonResponse(taskData, safe=False)

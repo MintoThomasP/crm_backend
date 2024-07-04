@@ -1539,3 +1539,44 @@ def ProjectTaskTimingCalculationById(request, ProjectTaskId=""):
 #     except:
 #         return JsonResponse("", safe=False)
     
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="",)
+@api_view(['GET'])
+def ProjectTaskTotalDurationCalculation(request):
+    if request.method == 'GET':
+        projectTask = ProjectTask.objects.all()
+        projectTaskTimingSerializer = ProjectTaskSerializer(projectTask, many=True)
+        total_duration_minutes = 0
+
+        for row in projectTask:
+            if row.StartDate and row.EndDate:
+                date_formats = [
+                    '%m/%d/%Y, %I:%M:%S %p',  # Example: 04/07/2024, 10:06:38 AM
+                    '%m/%d/%Y, %H:%M:%S',     # Example: 04/07/2024, 10:06:38
+                    '%d/%m/%Y, %I:%M:%S %p',  # Example: 07/04/2024, 10:06:38 AM
+                    '%d/%m/%Y, %H:%M:%S'      # Example: 07/04/2024, 10:06:38
+                ]
+
+                start_date = end_date = None
+                for date_format in date_formats:
+                    try:
+                        start_date = datetime.strptime(row.StartDate, date_format)
+                        end_date = datetime.strptime(row.EndDate, date_format)
+                        break
+                    except ValueError:
+                        continue
+
+                if start_date and end_date:
+                    total_time_taken = end_date - start_date
+                    total_time_taken_in_seconds = total_time_taken.total_seconds()
+                    total_time_taken_data = {
+                        'hours': int(total_time_taken_in_seconds // 3600),
+                        'minutes': int((total_time_taken_in_seconds % 3600) // 60)
+                    }
+                    duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']:02}"
+                    row.TotalDuration = duration
+                    row.save()
+
+        return JsonResponse("Updated", safe=False)
