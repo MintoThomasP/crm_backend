@@ -31,7 +31,7 @@ class ProjectTask(models.Model):
     Description=models.TextField(blank=True, null=True)
     Duration=models.CharField(blank=True, null=True, max_length=50)
     TotalDuration=models.CharField(blank=True, null=True, max_length=50)
-    Status=models.CharField(blank=True, null=True, max_length=300)
+    Status=models.CharField(max_length=50)
     CreatedDate=models.CharField(blank=True, null=True, max_length=15)
     ScheduledDeadline=models.CharField(blank=True, null=True, max_length=100)
     StartDate=models.CharField(blank=True, null=True, max_length=100)

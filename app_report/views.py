@@ -437,12 +437,12 @@ def StaffReportApiByStaffId(request):
     projects = Project.objects.filter(ProjectId__in=project_ids)
    
 
-    date_formats = [
-        '%m/%d/%Y, %I:%M:%S %p',  
-        '%m/%d/%Y, %I:%M:%S',     
-        '%d/%m/%Y, %I:%M:%S %p',  
-        '%d/%m/%Y, %I:%M:%S'     
-    ]
+    # date_formats = [
+    #     '%m/%d/%Y, %I:%M:%S %p',  
+    #     '%m/%d/%Y, %I:%M:%S',     
+    #     '%d/%m/%Y, %I:%M:%S %p',  
+    #     '%d/%m/%Y, %I:%M:%S'     
+    # ]
 
     staff_projects = []
 
@@ -463,46 +463,62 @@ def StaffReportApiByStaffId(request):
         for task in project_tasks_filtered:
             project_details['TotalNumberofTask'] += 1
             
-            if task.StartDate and task.EndDate:
-                startDate, endDate = None, None
-                for date_format in date_formats:
-                    try:
-                        startDate = datetime.strptime(task.StartDate, date_format)
-                        endDate = datetime.strptime(task.EndDate, date_format)
-                    except:
-                        p=""
-                if task.ScheduledDeadline:
-                    ScheduledDeadline = datetime.strptime(task.ScheduledDeadline, '%Y-%m-%dT%H:%M')
-                   
-                else:
-                    p=""
-                if startDate and endDate:
-                    try:
-                        
-                        total_time_taken_seconds = (endDate - startDate).total_seconds()
-                    except:
-                        p=''
+           
+                
+            # if task.ScheduledDeadline:
+            #     ScheduledDeadline = datetime.strptime(task.ScheduledDeadline, '%Y-%m-%dT%H:%M')
+                
+            # else:
+            #     p=""
+                
 
-                    try:
-                        duration_parts = task.Duration.split(':')
-                        hours = int(duration_parts[0]) * 60
-                        minutes = int(duration_parts[1])
-                        duration_min = hours + minutes
-                        duration_seconds = duration_min * 60
-                    except:
-                        duration_seconds = 3600  # Default to 1 hour if duration is invalid
-                    try:
-                        if total_time_taken_seconds > duration_seconds:
-                            value_percentage = ((total_time_taken_seconds / duration_seconds) * 100) - 100
-                            
-                            point = ((task.TaskPoint) * value_percentage) / 100
-                            
-                            project_details['TotalCompletedPoints'] += round((task.TaskPoint) - point)
-                        else:
-                            project_details['TotalCompletedPoints'] += round((task.TaskPoint))
-                            project_details['OnTimeCompletedTaskCount'] += 1
-                    except:
-                        p=""
+            try:
+                duration_parts = task.Duration.split(':')
+                hours = int(duration_parts[0]) * 60
+                minutes = int(duration_parts[1])
+                duration_min = hours + minutes
+                duration_seconds = duration_min * 60
+                print("duration_seconds",duration_seconds)
+            except:
+                duration_seconds = 3600
+            try:
+                duration_parts = task.TotalDuration.split(':')
+                hours = int(duration_parts[0]) * 60
+                minutes = int(duration_parts[1])
+                duration_min = hours + minutes
+                TotalDuration_seconds = duration_min * 60
+                print("TotalDuration_seconds",TotalDuration_seconds)
+            except:
+                TotalDuration_seconds = 3600
+            # try:
+            #     if TotalDuration_seconds > duration_seconds:
+            #         value_percentage = ((TotalDuration_seconds / duration_seconds) * 100) - 100
+            #         print("value_percentage/", value_percentage)
+            #         point = ((task.TaskPoint) * value_percentage) / 100
+            #         print("point",point)
+            #         print("=======")
+                    
+            #         project_details['TotalCompletedPoints'] += round((task.TaskPoint) - point)
+            #     else:
+            #         project_details['TotalCompletedPoints'] += round((task.TaskPoint))
+            #         project_details['OnTimeCompletedTaskCount'] += 1
+            # except:
+            #     p=""
+            try:
+                if TotalDuration_seconds > duration_seconds:
+                    value_percentage = ((TotalDuration_seconds / duration_seconds) * 100) - 100
+                    print("value_percentage:", value_percentage)
+                    
+                    point = ((task.TaskPoint) * value_percentage) / 100
+                    print("point:", point)
+                    print("=======")
+                    
+                    project_details['TotalCompletedPoints'] += round((task.TaskPoint) - point)
+                else:
+                    project_details['TotalCompletedPoints'] += round(task.TaskPoint)
+                    project_details['OnTimeCompletedTaskCount'] += 1
+            except:
+                p = ""
 
             if task.Status in ['1', '2']:
                 project_details['DueTaskCount'] += 1
@@ -1079,4 +1095,65 @@ def StaffDailyReport(request, StaffId=""):
             row['timing'] = timing_data
             taskData.append(row)
     
-    return JsonResponse(taskData, safe=False)
+    
+    exclude_fields = ["SortId", "ProjectTaskId", "ProjectId","StartDate", "EndDate", "TaskAssignedTo","CreatedDate", "Description", "TaskAssignedBy", "CompletionPoint", "VerifiedBy"]
+    column_order = [
+        "StaffName", "TaskAssignedBY","ProjectName", "Title", "Duration", 
+        "ScheduledDeadline", "TotalDuration","Status", "TaskPoint",
+        "VerifiedBy", "CompletedPoint", "StatusName", 
+    ]
+
+    
+    workbook = openpyxl.Workbook()
+    sheet = workbook.active
+    sheet.title = "Staff Daily Report"
+
+  
+    headers = [key for key in column_order if key not in exclude_fields]
+    sheet.append(headers)
+
+    
+    for task in taskData:
+        filtered_task = {key: value for key, value in task.items() if key not in exclude_fields}
+        ordered_task = [filtered_task.get(key, "") for key in headers]
+        sheet.append(ordered_task)
+
+   
+    max_col_widths = [len(header) for header in headers]
+    for task in taskData:
+        for i, header in enumerate(headers):
+            max_col_widths[i] = max(max_col_widths[i], len(str(task.get(header, ""))))
+
+   
+    col_width = 12  # approximate width of each character in pixels
+    image_width = sum([w * col_width for w in max_col_widths]) + 20  # extra padding
+
+    
+    img = PILImage.new('RGB', (image_width, 50 * (len(taskData) + 1)), 'white')
+    draw = ImageDraw.Draw(img)
+    font = ImageFont.load_default()
+
+    row_pos = 10
+    col_pos = 10
+    for col, header in enumerate(headers):
+        draw.text((col_pos, row_pos), header, fill='black', font=font)
+        col_pos += max_col_widths[col] * col_width
+
+    row_pos += 30
+    for task in taskData:
+        col_pos = 10
+        for col, header in enumerate(headers):
+            draw.text((col_pos, row_pos), str(task.get(header, "")), fill='black', font=font)
+            col_pos += max_col_widths[col] * col_width
+        row_pos += 30
+
+   
+    img_stream = io.BytesIO()
+    img.save(img_stream, format='PNG')
+    img_stream.seek(0)
+
+   
+    response = HttpResponse(img_stream, content_type='image/png')
+    response['Content-Disposition'] = f'attachment; filename=StaffDailyReport_{current_date}.png'
+
+    return response

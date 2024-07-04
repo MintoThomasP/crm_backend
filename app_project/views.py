@@ -329,10 +329,10 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
             for row in projectTaskSerializer.data:
                 row['Tickets']=[]
                 try:
-                    projectTask = ProjectTask.objects.get(
-                        RefId=row['ProjectTaskId'])
-                    projectTaskSerializer=ProjectTaskSerializer(projectTask)
-                    row['Tickets']=projectTaskSerializer.data
+                    projectTask = ProjectTask.objects.filter(
+                        RefId=row['ProjectTaskId']).order_by('-SortId')
+                    projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
+                    row['Tickets']=projectTaskSerializer.data[0]
                 except:
                     row['Tickets']=[]
                 try:
