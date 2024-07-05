@@ -815,7 +815,7 @@ class UploadProjectTaskFile(APIView):
 @swagger_auto_schema(method='POST', request_body=CommentsSerializer)
 @api_view(['GET','POST','PUT'])
 def CommentApi(request, pk=""):
-    # try:
+    try:
         if request.method == 'GET':
             comment = Comments.objects.all()
             commentSerializer = CommentsSerializer(
@@ -829,15 +829,17 @@ def CommentApi(request, pk=""):
             if commentSerializer.is_valid():
                 commentSerializer.save()
                 task = ProjectTask.objects.get(ProjectTaskId=commentSerializer.data['ProjectTaskId'])
-
-                login = Login.objects.get(UserId=task.TaskAssignedTo)
-                if login.Token:
-                    sendNotification({
-                        "title":"Comments",
-                        "body":commentSerializer.data['Comment'],
-                        "token":login.Token
-                    })
-
+                try:
+                    if comment['ShowNotification']:
+                        login = Login.objects.get(UserId=task.TaskAssignedTo)
+                        if login.Token :
+                            sendNotification({
+                                "title":"Comments",
+                                "body":commentSerializer.data['Comment'],
+                                "token":login.Token
+                            })
+                except:
+                    p=""
                
                 return JsonResponse(commentSerializer.data['CommentId'], safe=False)
             return JsonResponse("Failed to add", safe=False)
@@ -853,8 +855,8 @@ def CommentApi(request, pk=""):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="",)
