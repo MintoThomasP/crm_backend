@@ -19,6 +19,8 @@ from app_project.serializers import CommentFileSerializer, CommentsSerializer, P
 
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
+from django.utils import timezone
+from datetime import datetime
 
 
 @csrf_exempt
@@ -105,7 +107,7 @@ def ProjectApiByCompanyId(request, CompanyId=""):
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def ProjectTaskApi(request):
-    # try:
+    try:
         if request.method == 'GET':
             projectTask = ProjectTask.objects.all().order_by('-SortId')
             projectTaskSerializer = ProjectTaskSerializer(
@@ -195,8 +197,8 @@ def ProjectTaskApi(request):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give ProjectTaskId to get one task detail",)
@@ -332,13 +334,13 @@ def ProjectTaskApiByProjectId(request, ProjectId=""):
         return JsonResponse("", safe=False)
     
 
-from datetime import datetime
+
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get projecttask by staff",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
-    # try:
+    try:
         if request.method == 'GET': 
             projectTask = ProjectTask.objects.filter(
                     TaskAssignedTo=TaskAssignedTo).order_by('-SortId')
@@ -432,8 +434,8 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
             
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 
 # @csrf_exempt
@@ -465,7 +467,7 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
-    # try:
+    try:
         if request.method == 'GET': 
             projectTask = ProjectTask.objects.filter(TaskAssignedBy=TaskAssignedBy).order_by('-SortId')
             projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
@@ -548,8 +550,8 @@ def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
             return JsonResponse(taskStatusName, safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
 
 @csrf_exempt
 @swagger_auto_schema(method='POST',request_body=ProjectTaskSerializer,operation_description="Give ProjectId and TaskAssignedTo in payload",)
@@ -729,7 +731,7 @@ def TaskReviewsApiById(request, TaskReviewId=""):
 @api_view(['POST'])
 @retry(retries=3, delay=2)
 def GetAllTasksStatus(request):
-    # try:
+    try:
         if request.method == 'POST':
             Statusdata = JSONParser().parse(request)
             projectTask = ProjectTask.objects.filter(Status=Statusdata['StatusId']).order_by('-SortId')
@@ -738,8 +740,8 @@ def GetAllTasksStatus(request):
             return JsonResponse(projectTaskSerializer.data, safe=False)
         else:
                 return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
         
 
 
@@ -959,52 +961,10 @@ class UploadCommentFile(APIView):
         
 
 
-# from django.http import JsonResponse
-# from django.views.decorators.csrf import csrf_exempt
-# from django.db.models.signals import post_save
-# import json
-
-# # Initialize Firebase Admin SDK with credentials
-# # cred = credentials.Certificate('serviceAccountKey.json')
-# # initialize_app(cred)
-
-# import firebase_admin
-# from firebase_admin import auth
-# from firebase_admin import credentials, messaging
-# firebase_cred = credentials.Certificate('serviceAccountKey.json')
-# firebase_app = firebase_admin.initialize_app(firebase_cred)
-# uid = 'uuid.uuid4'
-# custom_token = auth.create_custom_token(uid)
 
 
-# def send_notification(token, message_title, message_body):
-#     message = messaging.Message(
-#         notification=messaging.Notification(
-#             title=message_title,
-#             body=message_body,
-#         ),
-#         token=token,
-#     )
-#     response = messaging.send(message)
-#     # response = messaging.send_multicast(message)
-#     print('Notification sent:', response)   
 
 
-# @receiver(post_save, sender=Comments)
-# def send_notification_on_comment(sender, ProjectTaskId="", **kwargs):
-#     projectTask=ProjectTask.objects.get(ProjectTaskId=ProjectTaskId)
-        
-#     recipient_token = projectTask.TaskAssignedTo  
-#     message_title = "New Comment Added"
-#     message_body = "A new comment has been added to your task."
-#     send_notification(recipient_token, message_title, message_body)
-
-
-from django.utils import timezone
-
-
-from datetime import datetime
-@csrf_exempt
 @api_view(['POST'])
 @retry(retries=3, delay=2)
 def ProjectTaskApiFilteringforTaskAssignedTo(request,):

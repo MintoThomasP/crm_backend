@@ -5,6 +5,7 @@ from django.http.response import JsonResponse
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 
+from app_default.views import retry
 from app_site.models import SiteSettings
 from app_site.serializers import SiteSettingsSerializer
 from django.db.models import Max
@@ -14,6 +15,7 @@ from django.db.models import Max
 @swagger_auto_schema(method='PUT', request_body=SiteSettingsSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all site Settingss",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def CURDSiteSettingsApi(request, pk=""):
     # try:
         if request.method == 'GET':
@@ -53,6 +55,7 @@ def CURDSiteSettingsApi(request, pk=""):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all site Settingss",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def CURDSiteSettingsApiCompanyId(request, CompanyId=""):
     try:
         if request.method == 'GET':

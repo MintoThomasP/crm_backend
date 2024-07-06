@@ -4,6 +4,7 @@ from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
 from app_default.models import UserType
 from app_default.serializers import UserTypeSerializer
+from app_default.views import retry
 from app_login.models import Login, LoginHistory
 from django.contrib.auth import logout
 from django.shortcuts import redirect
@@ -21,6 +22,7 @@ from rest_framework.decorators import api_view
 @swagger_auto_schema(method='PUT', request_body=LoginSaveSerializer)
 @swagger_auto_schema(method='POST', request_body=LoginSaveSerializer)
 @api_view(['POST','PUT'])
+@retry(retries=3, delay=2)
 def CreateLoginApi(request):
     if request.method == 'POST':
         userLogin_data = JSONParser().parse(request)
@@ -43,6 +45,7 @@ def CreateLoginApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: get login details by UserId",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def UserLoginApiById(request, UserId=""):
     try:
         if request.method == 'GET':
@@ -62,8 +65,9 @@ def UserLoginApiById(request, UserId=""):
 @swagger_auto_schema(method='POST', request_body=LoginAuthSerializer)
 @swagger_auto_schema(method='PUT', request_body=LoginUpdateSerializer)
 @api_view(['POST','PUT'])
+@retry(retries=3, delay=2)
 def loginApi(request):
-    # try:
+    try:
         if request.method == 'POST':
             login_data = JSONParser().parse(request)
             login = Login.objects.get(
@@ -117,13 +121,14 @@ def loginApi(request):
                 login_serializer.save()
                 return JsonResponse("Update successfully", safe=False)
             return JsonResponse("Failed to Update", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
         
 
 
 @csrf_exempt
 @api_view(['POST'])
+@retry(retries=3, delay=2)
 def UpdateUserTypeApi(request, pk=""):
     try:
         if request.method == 'POST':
@@ -149,6 +154,7 @@ def UpdateUserTypeApi(request, pk=""):
 @swagger_auto_schema(method='PUT', request_body=LoginHistorySerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all LoginHistory Details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def LoginHistoryApi(request):
     try:
         if request.method == 'GET':
@@ -186,6 +192,7 @@ def LoginHistoryApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give LoginHistoryId to get one loginHistory detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def LoginHistoryApiById(request, LoginHistoryId=""):
     try:
         if request.method == 'GET': 
@@ -209,6 +216,7 @@ def LoginHistoryApiById(request, LoginHistoryId=""):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give UserId to get one loginHistory detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def LoginHistoryApiByUserId(request, UserId=""):
     try:
         if request.method == 'GET': 

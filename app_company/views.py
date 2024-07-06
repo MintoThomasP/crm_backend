@@ -10,11 +10,13 @@ from rest_framework.parsers import MultiPartParser, FormParser
 
 from app_company.models import Company, CompanyDocuments
 from app_company.serializers import CompanyDocumentsSerializer, CompanySerializer, SaveCompanyDocumentsSerializer, UploadCompanyDocumentsSerializer
+from app_default.views import retry
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=CompanySerializer)
 @swagger_auto_schema(method='PUT', request_body=CompanySerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all company details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def CompanyApi(request):
     try:
         if request.method == 'GET':
@@ -61,6 +63,7 @@ def CompanyApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give CompanyId to get one companydetail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def CompanyApiById(request, CompanyId=""):
     try:
         if request.method == 'GET': 
@@ -96,6 +99,7 @@ def CompanyApiById(request, CompanyId=""):
 @swagger_auto_schema(method='PUT', request_body=CompanyDocumentsSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all company details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def CompanyDocumentsApi(request):
     try:
         if request.method == 'GET':
@@ -129,6 +133,7 @@ def CompanyDocumentsApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give CompanyDocumentId to get one companyDocumentsdetail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def CompanyDocumentsApiById(request, CompanyDocumentId=""):
     try:
         if request.method == 'GET': 

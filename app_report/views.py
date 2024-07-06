@@ -8,6 +8,7 @@ from django.http.response import JsonResponse
 from django.http import HttpResponse
 from app_default.models import TaskStatus
 from app_default.serializers import TaskStatusSerializer
+from app_default.views import retry
 from app_login.models import LoginHistory
 from app_login.serializers import LoginHistorySerializer
 from app_project.models import Project, ProjectTask, ProjectTaskTiming
@@ -209,6 +210,7 @@ from django.db.models import Sum
 
 @csrf_exempt
 @api_view(['POST'])
+@retry(retries=3, delay=2)
 def ProjectReportApiByProjectId(request):
     staffData = JSONParser().parse(request)
     project = Project.objects.get(ProjectId=staffData['ProjectId'])
@@ -299,6 +301,7 @@ def ProjectReportApiByProjectId(request):
 
 @csrf_exempt
 @api_view(['POST'])
+@retry(retries=3, delay=2)
 def getAllProjectReport(request):
     staffData = JSONParser().parse(request)
     project = Project.objects.all()
@@ -502,6 +505,7 @@ def getAllProjectReport(request):
 
 @csrf_exempt
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def StaffDailyReport(request, StaffId=""):
     
     current_date = timezone.now().date()
@@ -625,6 +629,7 @@ def StaffDailyReport(request, StaffId=""):
 
 @csrf_exempt
 @api_view(['POST'])
+@retry(retries=3, delay=2)
 def StaffReportApiByStaffId(request):
     staffData = JSONParser().parse(request)
     staff_id = staffData['StaffId']
@@ -660,7 +665,7 @@ def StaffReportApiByStaffId(request):
             project_tasks_filtered = project_tasks.filter(ProjectId=project.ProjectId,CreatedDate__range=(start_date, end_date))
         else:
             project_tasks_filtered = project_tasks.filter(ProjectId=project.ProjectId)
-            print(project_tasks_filtered)
+           
         for task in project_tasks_filtered:
             project_details['TotalNumberofTask'] += 1
             if task.Status in ['1', '2']:

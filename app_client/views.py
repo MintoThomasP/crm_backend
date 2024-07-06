@@ -2,16 +2,15 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
-
 from app_client.models import Client, ClientAddress, ClientDocuments, ClientOtherDetails, ContactPerson
 from app_client.serializers import ClientAddressSerializer, ClientDocumentsSerializer, ClientOtherDetailsSerializer, ClientSerializer, ContactPersonSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
-
 from app_default.models import Country, State
 from app_default.serializers import CountrySerializer, StateSerializer
+from app_default.views import retry
 
 
 
@@ -20,6 +19,7 @@ from app_default.serializers import CountrySerializer, StateSerializer
 @swagger_auto_schema(method='PUT', request_body=ClientSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all client details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def clientApi(request):
     try:
         if request.method == 'GET':
@@ -53,8 +53,9 @@ def clientApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give ClientId to get one clientdetail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def ClientApiById(request, ClientId=""):
-    # try:
+    try:
         if request.method == 'GET': 
             client = Client.objects.get(
                     ClientId=ClientId)
@@ -88,12 +89,13 @@ def ClientApiById(request, ClientId=""):
             return JsonResponse("Deleted successfully", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all client details",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def ClientApiByCompanyId(request,CompanyId=""):
     try:
         if request.method == 'GET':
@@ -112,6 +114,7 @@ def ClientApiByCompanyId(request,CompanyId=""):
 @swagger_auto_schema(method='PUT', request_body=ClientOtherDetailsSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all client details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def ClientOtherDetailsApi(request):
     try:
         if request.method == 'GET':
@@ -145,6 +148,7 @@ def ClientOtherDetailsApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give ClientOtherDetailsId to get one clientOtherDetailsdetail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def ClientOtherDetailsApiById(request, ClientOtherDetailId=""):
     try:
         if request.method == 'GET': 
@@ -183,6 +187,7 @@ class UploadClientDocument(APIView):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give ClientDocumentId to get one ClientDocument detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def QuotationFileApiById(request, ClientDocumentId=""):
     try:
         if request.method == 'GET': 
@@ -206,6 +211,7 @@ def QuotationFileApiById(request, ClientDocumentId=""):
 @swagger_auto_schema(method='PUT', request_body=ClientAddressSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all client details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def ClientAddressApi(request):
     try:
         if request.method == 'GET':
@@ -239,6 +245,7 @@ def ClientAddressApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give ClientAddressId to get one clientAddressdetail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def ClientAddressApiById(request, ClientAddressId=""):
     try:
         if request.method == 'GET': 
@@ -259,6 +266,7 @@ def ClientAddressApiById(request, ClientAddressId=""):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give ClientId to get clientAddressdetail",)
 @api_view(['GET',])
+@retry(retries=3, delay=2)
 def ClientAddressApiByClientId(request, ClientId=""):
     try:
         if request.method == 'GET': 
@@ -293,6 +301,7 @@ def ClientAddressApiByClientId(request, ClientId=""):
 @swagger_auto_schema(method='PUT', request_body=ContactPersonSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all client details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def ContactPersonApi(request):
     try:
         if request.method == 'GET':
@@ -326,6 +335,7 @@ def ContactPersonApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give ContactPersonId to get one contactPersondetail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def ContactPersonApiById(request, ContactPersonId=""):
     try:
         if request.method == 'GET': 

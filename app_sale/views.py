@@ -20,6 +20,7 @@ from app_client.models import Client, ClientAddress
 from app_client.serializers import ClientSerializer
 from app_default.models import InvoiceStatus, PaymentMode
 from app_default.serializers import InvoiceStatusSerializer
+from app_default.views import retry
 from app_project.models import Project
 from app_project.serializers import ProjectSerializer
 from app_sale.models import Invoice, InvoiceDocument, InvoiceItem, PaymentReceived, Quotation, QuotationFile, QuotationItem
@@ -47,6 +48,7 @@ def sendCubexizsoftMail(msg=""):
 @swagger_auto_schema(method='PUT', request_body=QuotationSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all Quotation Details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def QuotationApi(request):
     # try:
         if request.method == 'GET':
@@ -102,6 +104,7 @@ def QuotationApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give QuotationId to get one quotation detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def QuotationApiById(request, QuotationId=""):
     try:
         if request.method == 'GET': 
@@ -131,6 +134,7 @@ def QuotationApiById(request, QuotationId=""):
     
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all Quotation Details by CompanyId",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def QuotationApiByCompanyId(request,CompanyId=""):
     try:
         if request.method == 'GET':
@@ -170,6 +174,7 @@ def QuotationApiByCompanyId(request,CompanyId=""):
 @swagger_auto_schema(method='PUT', request_body=QuotationItemSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all QuotationItem Details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def QuotationItemApi(request):
     try:
         if request.method == 'GET':
@@ -203,6 +208,7 @@ def QuotationItemApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give QuotationItemId to get one quotationItem detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def QuotationItemApiById(request, QuotationItemId=""):
     try:
         if request.method == 'GET': 
@@ -240,6 +246,7 @@ class UploadQuotationFile(APIView):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give QuotationFileId to get one quotationItem detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def QuotationFileApiById(request, QuotationFileId=""):
     try:
         if request.method == 'GET': 
@@ -265,6 +272,7 @@ def QuotationFileApiById(request, QuotationFileId=""):
 @swagger_auto_schema(method='PUT', request_body=InvoiceSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all Invoice Details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def InvoiceApi(request):
     # try:
         if request.method == 'GET':
@@ -319,6 +327,7 @@ def InvoiceApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give InvoiceId to get one invoice detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def InvoiceApiById(request, InvoiceId=""):
     try:
         if request.method == 'GET': 
@@ -350,6 +359,7 @@ def InvoiceApiById(request, InvoiceId=""):
 
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all Invoice Details",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def InvoiceApiByCompanyId(request,CompanyId=""):
     try:
         if request.method == 'GET':
@@ -388,6 +398,7 @@ def InvoiceApiByCompanyId(request,CompanyId=""):
 @swagger_auto_schema(method='PUT', request_body=InvoiceItemSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all InvoiceItem Details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def InvoiceItemApi(request):
     try:
         if request.method == 'GET':
@@ -421,6 +432,7 @@ def InvoiceItemApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give InvoiceItemId to get one invoiceItem detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def InvoiceItemApiById(request, InvoiceItemId=""):
     try:
         if request.method == 'GET': 
@@ -460,6 +472,7 @@ class UploadInvoiceDocument(APIView):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give QuotationFileId to get one quotationItem detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def InvoiceDocumentApiById(request, InvoiceDocumentId=""):
     try:
         if request.method == 'GET': 
@@ -486,6 +499,7 @@ def InvoiceDocumentApiById(request, InvoiceDocumentId=""):
 @swagger_auto_schema(method='PUT', request_body=PaymentReceivedSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all InvoiceDocument Details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def PaymentReceivedApi(request):
     try:
         if request.method == 'GET':
@@ -535,6 +549,7 @@ def PaymentReceivedApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give PaymentReceivedId to get one paymentReceived detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def PaymentReceivedApiById(request, PaymentReceivedId=""):
     try:
         if request.method == 'GET':
@@ -568,6 +583,7 @@ def PaymentReceivedApiById(request, PaymentReceivedId=""):
 
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all InvoiceDocument Details",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def PaymentReceivedApiCompanyId(request,CompanyId=""):
     try:
         if request.method == 'GET':
@@ -600,6 +616,7 @@ def PaymentReceivedApiCompanyId(request,CompanyId=""):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give QuotationFileId to get one quotationItem detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def PaymentDocumentApiById(request, PaymentDocumentId=""):
     try:
         if request.method == 'GET': 
@@ -781,6 +798,7 @@ def ViewPDF(request, InvoiceId=""):
 import json
 @csrf_exempt
 @api_view(['POST'])
+@retry(retries=3, delay=2)
 def SendInvoice(request):
 
     # try:
@@ -889,6 +907,7 @@ def SendInvoice(request):
 @swagger_auto_schema(method='PUT', request_body=PaymentReceivedDetailSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all InvoiceDocument Details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def PaymentReceivedDetailApi(request):
     try:
         if request.method == 'GET':
@@ -922,6 +941,7 @@ def PaymentReceivedDetailApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give PaymentReceivedDetailId to get one paymentReceivedDetail detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def PaymentReceivedDetailApiById(request, PaymentReceivedDetailId=""):
     try:
         if request.method == 'GET':
@@ -976,8 +996,9 @@ from django.db.models import Sum
 @csrf_exempt
 @swagger_auto_schema(method='GET', operation_description="NOTE: Get All Unpaid Invoice By ClientId")
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def GetAllUnpaidInvoiceByClientIdApi(request, ClientId=""):
-    # try:
+    try:
         if request.method == 'GET':
             invoices = Invoice.objects.filter(Q(Status=2) | Q(Status=3), ClientId=ClientId).order_by('SortId')
             invoice_serializer = InvoiceSerializer(invoices, many=True)
@@ -996,8 +1017,8 @@ def GetAllUnpaidInvoiceByClientIdApi(request, ClientId=""):
             return JsonResponse(invoiceData, safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
 
 
 
@@ -1121,6 +1142,7 @@ def fetch_resources(uri, rel):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all InvoiceDocument Details",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def PaymentReceivedApClientId(request,ClientId=""):
     try:
         if request.method == 'GET':

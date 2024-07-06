@@ -1,5 +1,6 @@
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from app_default.views import retry
 from app_project.models import ProjectTask
 from app_project.serializers import ProjectTaskSerializer
 from rest_framework.parsers import JSONParser
@@ -24,6 +25,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 @swagger_auto_schema(method='PUT', request_body=SaveStaffSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all Staff",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def staffApi(request):
     # try:
         if request.method == 'GET':
@@ -119,6 +121,7 @@ from datetime import datetime,date, timedelta
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give StaffId to get one staffdetail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def StaffApiById(request, StaffId=""):
     # try:
         if request.method == 'GET': 
@@ -173,6 +176,7 @@ def StaffApiById(request, StaffId=""):
 @swagger_auto_schema(method='PUT', request_body=StaffGuardianSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all Staff's guardian details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def staffGuardianApi(request):
     # try:
         if request.method == 'GET':
@@ -206,6 +210,7 @@ def staffGuardianApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give staffGuardianId to get one Guardian detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def staffGuardianApiById(request, StaffGuardianId=""):
     # try:
         if request.method == 'GET': 
@@ -227,6 +232,7 @@ def staffGuardianApiById(request, StaffGuardianId=""):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give staffId to get all guardian details",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def staffGuardianApiByStaffId(request, StaffId=""):
     try:
         if request.method == 'GET': 
@@ -279,6 +285,7 @@ class  uploadStaffProfileImage(APIView):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give staffId to get all guardian details",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def staffApiByStaffCode(request, StaffCode=""):
     # try:
         if request.method == 'GET': 
@@ -336,6 +343,7 @@ def staffApiByStaffCode(request, StaffCode=""):
 @swagger_auto_schema(method='PUT', request_body=StaffDocumentsSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all Staff's Documents details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def staffDocumentsApi(request):
     # try:
         if request.method == 'GET':
@@ -370,6 +378,7 @@ def staffDocumentsApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give staffDocumentsId to get one Documents detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def staffDocumentsApiById(request, StaffDocumentId=""):
     # try:
         if request.method == 'GET': 
@@ -418,6 +427,7 @@ class  uploadStaffDocuments(APIView):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give staffId to get all StaffDocuments details",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def staffDocumentsApiByStaffId(request, StaffId=""):
     try:
         if request.method == 'GET': 
@@ -436,6 +446,7 @@ def staffDocumentsApiByStaffId(request, StaffId=""):
 
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all active Staff",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def GetAllActiveStaffListApi(request,CompanyId=""):
     try:
         if request.method == 'GET':
@@ -532,6 +543,7 @@ def GetAllActiveStaffListApi(request,CompanyId=""):
 
 @csrf_exempt
 @api_view(['POST'])
+@retry(retries=3, delay=2)
 def staffSalaryByPerformanceApi(request):
     if request.method == 'POST':
         requestData = JSONParser().parse(request)
@@ -605,6 +617,7 @@ def staffSalaryByPerformanceApi(request):
 @swagger_auto_schema(method='PUT', request_body=LeaveApplicationSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all Staff's Documents details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def leaveApplicationApi(request):
     try:
         if request.method == 'GET':
@@ -660,6 +673,7 @@ def leaveApplicationApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give leaveApplicationId to get one Documents detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def leaveApplicationApiById(request, LeaveApplicationId=""):
     try:
         if request.method == 'GET': 
@@ -682,8 +696,9 @@ def leaveApplicationApiById(request, LeaveApplicationId=""):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give StaffId to get one LeaveApplication",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def leaveApplicationApiByStaffId(request, StaffId=""):
-    #try:
+    try:
         if request.method == 'GET': 
             leaveApplication = LeaveApplication.objects.filter(
                     StaffId=StaffId)
@@ -702,14 +717,15 @@ def leaveApplicationApiByStaffId(request, StaffId=""):
         
         else:
             return JsonResponse("", safe=False)
-    #except:
-        #return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
 
 
 
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give StaffId to get one staffdetail",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def StaffApiByCompanyId(request, CompanyId=""):
     try:
         if request.method == 'GET': 
