@@ -547,6 +547,7 @@ def StaffDailyReport(request, StaffId=""):
             row['StaffName'] = ""
         try:
             login_histories = LoginHistory.objects.filter(UserId=StaffId)
+            first_login=False
             for login_history in login_histories:
                 for date_format in date_formats:
                     try:
@@ -559,8 +560,9 @@ def StaffDailyReport(request, StaffId=""):
                     logout_time = login_history.LogoutTime if login_history.LogoutTime else ""
                     loginHistorySerializer = LoginHistorySerializer(login_history)
                     row['LoginDetails'] = loginHistorySerializer.data
+                    first_login = True
                     break
-            else:
+            if not first_login:
                 row['LoginDetails'] = ""
         except:
             row['LoginDetails'] = ""
