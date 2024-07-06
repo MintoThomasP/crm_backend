@@ -595,64 +595,64 @@ def StaffDailyReport(request, StaffId=""):
                 serial_number += 1
                 taskData.append(row)
 
-        return JsonResponse(taskData, safe=False)
+        # return JsonResponse(taskData, safe=False)
     
-    # exclude_fields = ["SortId", "ProjectTaskId", "ProjectId","StartDate", "EndDate", "TaskAssignedTo","CreatedDate", "Description",  "CompletionPoint", "VerifiedBy"]
-    # column_order = ["SerialNumber", "StaffName","TaskType", "ProjectName", "Title", "TotalDuration", "StatusName"]
+        exclude_fields = ["SortId", "ProjectTaskId", "ProjectId","StartDate", "EndDate", "TaskAssignedTo","CreatedDate", "Description",  "CompletionPoint", "VerifiedBy"]
+        column_order = ["SerialNumber", "StaffName","TaskType", "ProjectName", "Title", "TotalDuration", "StatusName"]
 
-    # workbook = openpyxl.Workbook()
-    # sheet = workbook.active
-    # sheet.title = "Staff Daily Report"
-    
-    # headers = [key for key in column_order if key not in exclude_fields]
-    # sheet.append(headers)
-    
-    # for task in taskData:
-    #     filtered_task = {key: value for key, value in task.items() if key not in exclude_fields}
-    #     ordered_task = [filtered_task.get(key, "") for key in headers]
-    #     sheet.append(ordered_task)
-    
-    # max_col_widths = [len(header) for header in headers]
-    # for task in taskData:
-    #     for i, header in enumerate(headers):
-    #         max_col_widths[i] = max(max_col_widths[i], len(str(task.get(header, ""))))
-    
-    # col_width = 12  # approximate width of each character in pixels
-    # image_width = sum([w * col_width for w in max_col_widths]) + 20  # extra padding
-    
-    # img = PILImage.new('RGB', (image_width, 50 * (len(taskData) + 3)), 'white')  # increased height for login details
-    # draw = ImageDraw.Draw(img)
-    # font = ImageFont.load_default()
-    
-    # row_pos = 10
-    # col_pos = 10
-    
-    # # Draw login details
-    # login_details = f"Login Time: {login_time},             Logout Time: {logout_time}"
-    # draw.text((col_pos, row_pos), login_details, fill='black', font=font)
-    # row_pos += 30  # space for next row
-    
-    # # Draw headers
-    # for col, header in enumerate(headers):
-    #     draw.text((col_pos, row_pos), header, fill='black', font=font)
-    #     col_pos += max_col_widths[col] * col_width
-    
-    # row_pos += 30  # space for next row
-    # for task in taskData:
-    #     col_pos = 10
-    #     for col, header in enumerate(headers):
-    #         draw.text((col_pos, row_pos), str(task.get(header, "")), fill='black', font=font)
-    #         col_pos += max_col_widths[col] * col_width
-    #     row_pos += 30
-    
-    # img_stream = io.BytesIO()
-    # img.save(img_stream, format='PNG')
-    # img_stream.seek(0)
-    
-    # response = HttpResponse(img_stream, content_type='image/png')
-    # response['Content-Disposition'] = f'attachment; filename={StaffName}DailyReport_{current_date}.png'
-    
-    # return response
+        workbook = openpyxl.Workbook()
+        sheet = workbook.active
+        sheet.title = "Staff Daily Report"
+        
+        headers = [key for key in column_order if key not in exclude_fields]
+        sheet.append(headers)
+        
+        for task in taskData:
+            filtered_task = {key: value for key, value in task.items() if key not in exclude_fields}
+            ordered_task = [filtered_task.get(key, "") for key in headers]
+            sheet.append(ordered_task)
+        
+        max_col_widths = [len(header) for header in headers]
+        for task in taskData:
+            for i, header in enumerate(headers):
+                max_col_widths[i] = max(max_col_widths[i], len(str(task.get(header, ""))))
+        
+        col_width = 12  # approximate width of each character in pixels
+        image_width = sum([w * col_width for w in max_col_widths]) + 20  # extra padding
+        
+        img = PILImage.new('RGB', (image_width, 50 * (len(taskData) + 3)), 'white')  # increased height for login details
+        draw = ImageDraw.Draw(img)
+        font = ImageFont.load_default()
+        
+        row_pos = 10
+        col_pos = 10
+        
+        # Draw login details
+        login_details = f"Login Time: {login_time},             Logout Time: {logout_time}"
+        draw.text((col_pos, row_pos), login_details, fill='black', font=font)
+        row_pos += 30  # space for next row
+        
+        # Draw headers
+        for col, header in enumerate(headers):
+            draw.text((col_pos, row_pos), header, fill='black', font=font)
+            col_pos += max_col_widths[col] * col_width
+        
+        row_pos += 30  # space for next row
+        for task in taskData:
+            col_pos = 10
+            for col, header in enumerate(headers):
+                draw.text((col_pos, row_pos), str(task.get(header, "")), fill='black', font=font)
+                col_pos += max_col_widths[col] * col_width
+            row_pos += 30
+        
+        img_stream = io.BytesIO()
+        img.save(img_stream, format='PNG')
+        img_stream.seek(0)
+        
+        response = HttpResponse(img_stream, content_type='image/png')
+        response['Content-Disposition'] = f'attachment; filename={StaffName}DailyReport_{current_date}.png'
+        
+        return response
 
 
 @csrf_exempt
