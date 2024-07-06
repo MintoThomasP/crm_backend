@@ -557,18 +557,18 @@ def StaffDailyReport(request, StaffId=""):
                     for date_format in date_formats:
                         try:
                             login_time_dt = datetime.strptime(login_history.LoginTime, date_format)
-                            
-                            break
-                        except ValueError:
+                            if login_time_dt and login_time_dt.date() == current_date:
+                                login_time = login_history.LoginTime
+                                logout_time = login_history.LogoutTime if login_history.LogoutTime else ""
+                                loginHistorySerializer = LoginHistorySerializer(login_history)
+                                row['LoginDetails'] = loginHistorySerializer.data
+                                first_login = True
+                                break
+
+                        except:
                             continue
 
-                    if login_time_dt and login_time_dt.date() == current_date:
-                        login_time = login_history.LoginTime
-                        logout_time = login_history.LogoutTime if login_history.LogoutTime else ""
-                        loginHistorySerializer = LoginHistorySerializer(login_history)
-                        row['LoginDetails'] = loginHistorySerializer.data
-                        first_login = True
-                        break
+                    
 
                 if not first_login:
 
