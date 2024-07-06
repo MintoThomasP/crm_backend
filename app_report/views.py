@@ -546,7 +546,7 @@ def StaffDailyReport(request, StaffId=""):
                 row['StaffName'] = ""
 
             try:
-                login_histories = LoginHistory.objects.filter(UserId=StaffId)
+                login_histories = LoginHistory.objects.filter(UserId=StaffId).order_by('-SortId')
                 
                 login_time = ""
                 logout_time = ""
