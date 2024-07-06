@@ -547,6 +547,7 @@ def StaffDailyReport(request, StaffId=""):
 
             try:
                 login_histories = LoginHistory.objects.filter(UserId=StaffId)
+                
                 login_time = ""
                 logout_time = ""
                 first_login = False
@@ -556,11 +557,12 @@ def StaffDailyReport(request, StaffId=""):
                     for date_format in date_formats:
                         try:
                             login_time_dt = datetime.strptime(login_history.LoginTime, date_format)
+                            
                             break
-                        except:
+                        except ValueError:
                             continue
 
-                    if login_time_dt == current_date:
+                    if login_time_dt and login_time_dt.date() == current_date:
                         login_time = login_history.LoginTime
                         logout_time = login_history.LogoutTime if login_history.LogoutTime else ""
                         loginHistorySerializer = LoginHistorySerializer(login_history)
@@ -569,6 +571,7 @@ def StaffDailyReport(request, StaffId=""):
                         break
 
                 if not first_login:
+
                     row['LoginDetails'] = ""
             except LoginHistory.DoesNotExist:
                 row['LoginDetails'] = ""
@@ -595,7 +598,7 @@ def StaffDailyReport(request, StaffId=""):
                 serial_number += 1
                 taskData.append(row)
 
-        # return JsonResponse(taskData, safe=False)
+        return JsonResponse(taskData, safe=False)
     
         exclude_fields = ["SortId", "ProjectTaskId", "ProjectId","StartDate", "EndDate", "TaskAssignedTo","CreatedDate", "Description",  "CompletionPoint", "VerifiedBy"]
         column_order = ["SerialNumber", "StaffName","TaskType", "ProjectName", "Title", "TotalDuration", "StatusName"]
