@@ -518,6 +518,12 @@ def StaffDailyReport(request, StaffId=""):
     serial_number = 1
     login_time = ""
     logout_time = ""
+    date_formats = [
+                    '%m/%d/%Y, %I:%M:%S %p',  # Example: 04/07/2024, 10:06:38 AM
+                    '%m/%d/%Y, %H:%M:%S',     # Example: 04/07/2024, 10:06:38
+                    '%d/%m/%Y, %I:%M:%S %p',  # Example: 07/04/2024, 10:06:38 AM
+                    '%d/%m/%Y, %H:%M:%S'      # Example: 07/04/2024, 10:06:38
+                ]
     
     for row in projectTaskSerializer.data:
         try:
@@ -542,13 +548,14 @@ def StaffDailyReport(request, StaffId=""):
         try:
             login_histories = LoginHistory.objects.filter(UserId=StaffId)
             for login_history in login_histories:
-                login_time_dt = datetime.strptime(login_history.LoginTime, '%m/%d/%Y, %I:%M:%S %p').date()
-                if login_time_dt == current_date:
-                    login_time = login_history.LoginTime
-                    logout_time = login_history.LogoutTime if login_history.LogoutTime else ""
-                    loginHistorySerializer = LoginHistorySerializer(login_history)
-                    row['LoginDetails'] = loginHistorySerializer.data
-                    break
+                for date_format in date_formats:
+                    login_time_dt = datetime.strptime(login_history.LoginTime, date_format)
+                    if login_time_dt == current_date:
+                        login_time = login_history.LoginTime
+                        logout_time = login_history.LogoutTime if login_history.LogoutTime else ""
+                        loginHistorySerializer = LoginHistorySerializer(login_history)
+                        row['LoginDetails'] = loginHistorySerializer.data
+                        break
             else:
                 row['LoginDetails'] = ""
         except:
@@ -559,9 +566,11 @@ def StaffDailyReport(request, StaffId=""):
         
         timing_data = []
         for timing in taskTimingSerializer.data:
-            start_date = datetime.strptime(timing['StartDate'], '%m/%d/%Y, %I:%M:%S %p').date()
-            if start_date == current_date:
-                timing_data.append(timing)
+            for date_format in date_formats:
+                
+                start_date = datetime.strptime(timing['StartDate'], date_format)
+                if start_date == current_date:
+                    timing_data.append(timing)
         if timing_data:
             row['timing'] = timing_data
             row['SerialNumber'] = serial_number  # Add serial number to the row
