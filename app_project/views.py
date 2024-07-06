@@ -346,7 +346,7 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
                     row['Tickets']=projectTaskSerializer.data[0]
                 except:
                     row['Tickets']=[]
-                # try:
+                try:
                     # if row['StartDate'] and row['EndDate']:
                     #     try:
                     #         date_format = '%m/%d/%Y, %I:%M:%S %p' 
@@ -357,18 +357,18 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
                     #         start_date = datetime.strptime(row['StartDate'], date_format)
                     #         end_date = datetime.strptime(row['EndDate'], date_format)
 
-                if row['TotalDuration']:
-                    row['CompletedPoint']=0
-                    Duration = row['Duration']
-                    duration_seconds=durationCalculation(Duration)
-                    TotalDuration = row['TotalDuration']
-                    TotalDuration_seconds=durationCalculation(TotalDuration)
-                    try:
-                        point = row['TaskPoint']
-                    except:
-                        point=1
-                    point = pointCalculation(duration_seconds, TotalDuration_seconds, point)
-                    row['CompletedPoint'] += round((row['TaskPoint']) - point)
+                    if row['TotalDuration']:
+                        row['CompletedPoint']=0
+                        Duration = row['Duration']
+                        duration_seconds=durationCalculation(Duration)
+                        TotalDuration = row['TotalDuration']
+                        TotalDuration_seconds=durationCalculation(TotalDuration)
+                        try:
+                            point = row['TaskPoint']
+                        except:
+                            point=1
+                        point = pointCalculation(duration_seconds, TotalDuration_seconds, point)
+                        row['CompletedPoint'] += round((row['TaskPoint']) - point)
                             
                         # try:
                         #     duration_parts = row['Duration'].split(':')
@@ -386,8 +386,8 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
                         #     row['CompletedPoint'] = round(row['TaskPoint'] - point)
                         # else:
                         #     row['CompletedPoint'] = row['TaskPoint']
-                # except:
-                #     row['CompletedPoint']=""
+                except:
+                    row['CompletedPoint']=""
                 try:                      
                     taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
                     taskStatusSerializer=TaskStatusSerializer(taskStatus)
