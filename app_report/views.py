@@ -8,6 +8,8 @@ from django.http.response import JsonResponse
 from django.http import HttpResponse
 from app_default.models import TaskStatus
 from app_default.serializers import TaskStatusSerializer
+from app_login.models import LoginHistory
+from app_login.serializers import LoginHistorySerializer
 from app_project.models import Project, ProjectTask, ProjectTaskTiming
 from app_project.serializers import ProjectSerializer, ProjectTaskSerializer, ProjectTaskTimingSerializer
 from app_staff.models import Staff
@@ -17,7 +19,8 @@ from django.utils import timezone
 import openpyxl
 from datetime import datetime, timedelta
 
-
+from PIL import Image as PILImage, ImageDraw, ImageFont
+import io
 from django.db.models import Sum
 
 
@@ -379,55 +382,27 @@ def getAllProjectReport(request):
 
 
 
-import openpyxl
-from django.http import HttpResponse
-from rest_framework.decorators import api_view
-from django.utils import timezone
-from PIL import Image as PILImage, ImageDraw, ImageFont
-import io
-from datetime import datetime
+
+
 
 # @csrf_exempt
 # @api_view(['GET'])
-# def StaffDailyReport(request, CurrentDate="", StaffId=""):
-#     Created_date = timezone.datetime.strptime(CurrentDate, '%Y-%m-%d').date()
-
-#     projectTask = ProjectTask.objects.filter(CreatedDate=Created_date, TaskAssignedTo=StaffId)
+# def StaffDailyReport(request, StaffId=""):
+    
+#     current_date = timezone.now().date()
+    
+#     projectTask = ProjectTask.objects.filter(TaskAssignedTo=StaffId)
 #     projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
 #     taskData = []
+#     serial_number = 1
 #     for row in projectTaskSerializer.data:
 #         try:
-#             if row['StartDate'] and row['EndDate']:
-#                 try:
-#                     date_format = '%m/%d/%Y, %I:%M:%S %p'
-#                     start_date = datetime.strptime(row['StartDate'], date_format)
-#                     end_date = datetime.strptime(row['EndDate'], date_format)
-#                 except:
-#                     date_format = '%d/%m/%Y, %I:%M:%S %p'
-#                     start_date = datetime.strptime(row['StartDate'], date_format)
-#                     end_date = datetime.strptime(row['EndDate'], date_format)
-
-#                 try:
-#                     duration_parts = row['Duration'].split(':')
-#                     hours = int(duration_parts[0]) * 60
-#                     minutes = int(duration_parts[1])
-#                     duration_min = hours + minutes
-#                     duration_seconds = duration_min * 60
-#                 except:
-#                     duration_seconds = 3600
-#                 total_time_taken_seconds = (end_date - start_date).total_seconds()
-#                 if total_time_taken_seconds > duration_seconds:
-#                     value1 = (total_time_taken_seconds / duration_seconds) * 100
-#                     value_percentage = value1 - 100
-#                     point = (row['TaskPoint'] * value_percentage) / 100
-#                     row['CompletedPoint'] = round(row['TaskPoint'] - point)
-#                 else:
-#                     row['CompletedPoint'] = row['TaskPoint']
+#             taskStatus = TaskStatus.objects.get(StatusId=row['Status'])
+#             taskStatusSerializer = TaskStatusSerializer(taskStatus)
+#             row['StatusName'] = taskStatusSerializer.data['Status']
 #         except:
-#             row['CompletedPoint'] = ""
-#         taskStatus = TaskStatus.objects.get(StatusId=row['Status'])
-#         taskStatusSerializer = TaskStatusSerializer(taskStatus)
-#         row['StatusName'] = taskStatusSerializer.data['Status']
+#             row['StatusName'] =""
+
 #         try:
 #             project = Project.objects.get(ProjectId=row['ProjectId'])
 #             projectSerializer = ProjectSerializer(project)
@@ -441,19 +416,33 @@ from datetime import datetime
 #         except:
 #             row['StaffName'] = ""
 #         try:
-#             staff = Staff.objects.get(StaffId=row['TaskAssignedBy'])
-#             staffSerializer = StaffSerializer(staff)
-#             row['TaskAssignedBY'] = staffSerializer.data['StaffName']
+#             loginHistory=LoginHistory.objects.get(UserId=StaffId,LoginTime=current_date)
+#             loginHistorySerializer=LoginHistorySerializer(loginHistory)
+#             row['LoginDetails']=loginHistorySerializer.data
 #         except:
-#             row['TaskAssignedBY'] = ""
-#         taskData.append(row)
-
-#     exclude_fields = ["SortId", "ProjectTaskId", "ProjectId", "TaskAssignedTo","CreatedDate", "Description", "TaskAssignedBy", "CompletionPoint", "VerifiedBy"]
-#     column_order = [
-#         "StaffName", "TaskAssignedBY","ProjectName", "Title", "Duration", 
-#         "ScheduledDeadline", "StartDate", "EndDate", "Status", "TaskPoint",
-#         "VerifiedBy", "CompletedPoint", "StatusName", 
-#     ]
+#             row['LoginDetails']=""
+        
+       
+#         taskTimings = ProjectTaskTiming.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+#         taskTimingSerializer = ProjectTaskTimingSerializer(taskTimings, many=True)
+        
+#         timing_data = []
+#         for timing in taskTimingSerializer.data:
+            
+#             start_date = datetime.strptime(timing['StartDate'], '%m/%d/%Y, %I:%M:%S %p').date()
+           
+#             if start_date == current_date:
+#                 timing_data.append(timing)
+#         if timing_data:
+#             row['timing'] = timing_data
+#             row['SerialNumber'] = serial_number  # Add serial number to the row
+#             serial_number += 1
+#             taskData.append(row)
+    
+    
+#     exclude_fields = ["SortId", "ProjectTaskId", "ProjectId","StartDate", "EndDate", "TaskAssignedTo","CreatedDate", "Description",  "CompletionPoint", "VerifiedBy"]
+#     column_order = ["SerialNumber",
+#         "StaffName","TaskType", "ProjectName", "Title", "TotalDuration", "StatusName", ]
 
     
 #     workbook = openpyxl.Workbook()
@@ -506,10 +495,9 @@ from datetime import datetime
 
    
 #     response = HttpResponse(img_stream, content_type='image/png')
-#     response['Content-Disposition'] = f'attachment; filename=StaffDailyReport_{CurrentDate}.png'
+#     response['Content-Disposition'] = f'attachment; filename=StaffDailyReport_{current_date}.png'
 
 #     return response
-
 
 
 @csrf_exempt
@@ -517,11 +505,16 @@ from datetime import datetime
 def StaffDailyReport(request, StaffId=""):
     
     current_date = timezone.now().date()
+    staff=Staff.objects.get(StaffId=StaffId)
+    StaffName=staff.StaffName
     
     projectTask = ProjectTask.objects.filter(TaskAssignedTo=StaffId)
     projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
     taskData = []
     serial_number = 1
+    login_time = ""
+    logout_time = ""
+    
     for row in projectTaskSerializer.data:
         try:
             taskStatus = TaskStatus.objects.get(StatusId=row['Status'])
@@ -542,16 +535,27 @@ def StaffDailyReport(request, StaffId=""):
             row['StaffName'] = staffSerializer.data['StaffName']
         except:
             row['StaffName'] = ""
+        try:
+            login_histories = LoginHistory.objects.filter(UserId=StaffId)
+            for login_history in login_histories:
+                login_time_dt = datetime.strptime(login_history.LoginTime, '%m/%d/%Y, %I:%M:%S %p').date()
+                if login_time_dt == current_date:
+                    login_time = login_history.LoginTime
+                    logout_time = login_history.LogoutTime if login_history.LogoutTime else ""
+                    loginHistorySerializer = LoginHistorySerializer(login_history)
+                    row['LoginDetails'] = loginHistorySerializer.data
+                    break
+            else:
+                row['LoginDetails'] = ""
+        except:
+            row['LoginDetails'] = ""
         
-       
         taskTimings = ProjectTaskTiming.objects.filter(ProjectTaskId=row['ProjectTaskId'])
         taskTimingSerializer = ProjectTaskTimingSerializer(taskTimings, many=True)
         
         timing_data = []
         for timing in taskTimingSerializer.data:
-            
             start_date = datetime.strptime(timing['StartDate'], '%m/%d/%Y, %I:%M:%S %p').date()
-           
             if start_date == current_date:
                 timing_data.append(timing)
         if timing_data:
@@ -559,69 +563,64 @@ def StaffDailyReport(request, StaffId=""):
             row['SerialNumber'] = serial_number  # Add serial number to the row
             serial_number += 1
             taskData.append(row)
-    
+    # return JsonResponse(taskData,safe=False)
     
     exclude_fields = ["SortId", "ProjectTaskId", "ProjectId","StartDate", "EndDate", "TaskAssignedTo","CreatedDate", "Description",  "CompletionPoint", "VerifiedBy"]
-    column_order = ["SerialNumber",
-        "StaffName","TaskType", "ProjectName", "Title", "TotalDuration", "StatusName", ]
+    column_order = ["SerialNumber", "StaffName","TaskType", "ProjectName", "Title", "TotalDuration", "StatusName"]
 
-    
     workbook = openpyxl.Workbook()
     sheet = workbook.active
     sheet.title = "Staff Daily Report"
-
-  
+    
     headers = [key for key in column_order if key not in exclude_fields]
     sheet.append(headers)
-
     
     for task in taskData:
         filtered_task = {key: value for key, value in task.items() if key not in exclude_fields}
         ordered_task = [filtered_task.get(key, "") for key in headers]
         sheet.append(ordered_task)
-
-   
+    
     max_col_widths = [len(header) for header in headers]
     for task in taskData:
         for i, header in enumerate(headers):
             max_col_widths[i] = max(max_col_widths[i], len(str(task.get(header, ""))))
-
-   
+    
     col_width = 12  # approximate width of each character in pixels
     image_width = sum([w * col_width for w in max_col_widths]) + 20  # extra padding
-
     
-    img = PILImage.new('RGB', (image_width, 50 * (len(taskData) + 1)), 'white')
+    img = PILImage.new('RGB', (image_width, 50 * (len(taskData) + 3)), 'white')  # increased height for login details
     draw = ImageDraw.Draw(img)
     font = ImageFont.load_default()
-
+    
     row_pos = 10
     col_pos = 10
+    
+    # Draw login details
+    login_details = f"Login Time: {login_time},             Logout Time: {logout_time}"
+    draw.text((col_pos, row_pos), login_details, fill='black', font=font)
+    row_pos += 30  # space for next row
+    
+    # Draw headers
     for col, header in enumerate(headers):
         draw.text((col_pos, row_pos), header, fill='black', font=font)
         col_pos += max_col_widths[col] * col_width
-
-    row_pos += 30
+    
+    row_pos += 30  # space for next row
     for task in taskData:
         col_pos = 10
         for col, header in enumerate(headers):
             draw.text((col_pos, row_pos), str(task.get(header, "")), fill='black', font=font)
             col_pos += max_col_widths[col] * col_width
         row_pos += 30
-
-   
+    
     img_stream = io.BytesIO()
     img.save(img_stream, format='PNG')
     img_stream.seek(0)
-
-   
+    
     response = HttpResponse(img_stream, content_type='image/png')
-    response['Content-Disposition'] = f'attachment; filename=StaffDailyReport_{current_date}.png'
-
+    response['Content-Disposition'] = f'attachment; filename={StaffName}DailyReport_{current_date}.png'
+    
     return response
-
-
-
 
 
 @csrf_exempt
