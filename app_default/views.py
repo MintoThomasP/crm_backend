@@ -1,6 +1,7 @@
 
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+import requests
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
 
@@ -10,12 +11,34 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 
 
+import time
+from functools import wraps
+from django.db import DatabaseError
+
+def retry(retries=3, delay=2):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            for attempt in range(retries):
+                try:
+                    return func(*args, **kwargs)
+                except (DatabaseError, requests.ConnectionError, requests.Timeout) as e:
+                    if attempt < retries - 1:
+                        time.sleep(delay)
+                    else:
+                        raise e
+        return wrapper
+    return decorator
+
+
+
 
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=TaskStatusSerializer)
 @swagger_auto_schema(method='PUT', request_body=TaskStatusSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all task status",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def TaskStatusApi(request):
     try:
         if request.method == 'GET':
@@ -49,6 +72,7 @@ def TaskStatusApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give StatusId to get one status",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def TaskStatusApiById(request, StatusId=""):
     try:
         if request.method == 'GET': 
@@ -70,6 +94,7 @@ def TaskStatusApiById(request, StatusId=""):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: get all Usertypes",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def UserTypeApi(request):
     try:
         if request.method == 'GET':
@@ -110,6 +135,7 @@ def get_permissions(request):
 @swagger_auto_schema(method='PUT', request_body=UserGroupSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all Usergroup Details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def UserGroupApi(request):
     try:
         if request.method == 'GET':
@@ -145,6 +171,7 @@ def UserGroupApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give UserGroupId to get one detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def UserGroupApiById(request, UserGroupId=""):
     try:
         if request.method == 'GET':
@@ -168,6 +195,7 @@ def UserGroupApiById(request, UserGroupId=""):
 @swagger_auto_schema(method='PUT', request_body=DesignationSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all Designation Details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def DesignationApi(request):
     try:
         if request.method == 'GET':
@@ -204,6 +232,7 @@ def DesignationApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give DesignationId to get one detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def DesignationApiById(request, DesignationId=""):
     try:
         if request.method == 'GET':
@@ -226,6 +255,7 @@ def DesignationApiById(request, DesignationId=""):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all Currency Details",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def CurrencyApi(request):
     try:
         if request.method == 'GET':
@@ -242,6 +272,7 @@ def CurrencyApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all PaymentMode Details",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def PaymentModeApi(request):
     try:
         if request.method == 'GET':
@@ -258,6 +289,7 @@ def PaymentModeApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all DepositTo Details",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def DepositToApi(request):
     try:
         if request.method == 'GET':
@@ -274,6 +306,7 @@ def DepositToApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all InvoiceStatus Details",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def InvoiceStatusApi(request):
     try:
         if request.method == 'GET':
@@ -293,6 +326,7 @@ def InvoiceStatusApi(request):
 @swagger_auto_schema(method='PUT', request_body=CountrySerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all Country Details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def CountryApi(request):
     try:
         if request.method == 'GET':
@@ -328,6 +362,7 @@ def CountryApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give CountryId to get one detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def CountryApiById(request, CountryId=""):
     try:
         if request.method == 'GET':
@@ -351,6 +386,7 @@ def CountryApiById(request, CountryId=""):
 @swagger_auto_schema(method='PUT', request_body=StateSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all State Details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def StateApi(request):
     try:
         if request.method == 'GET':
@@ -386,6 +422,7 @@ def StateApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give StateId to get one detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def StateApiById(request, StateId=""):
     try:
         if request.method == 'GET':
@@ -406,6 +443,7 @@ def StateApiById(request, StateId=""):
 
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all State by CountryId",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def StateApiByCountryId(request,CountryId=""):
     try:
         if request.method == 'GET':
@@ -424,6 +462,7 @@ def StateApiByCountryId(request,CountryId=""):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all StaffStatus Details",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def StaffStatusApi(request):
     try:
         if request.method == 'GET':
@@ -441,6 +480,7 @@ def StaffStatusApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all LeaveType Details",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def LeaveTypeApi(request):
     try:
         if request.method == 'GET':
@@ -457,6 +497,7 @@ def LeaveTypeApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all LeaveStatus Details",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def LeaveStatusApi(request):
     try:
         if request.method == 'GET':
@@ -473,6 +514,7 @@ def LeaveStatusApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all DocumentType Details",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def DocumentTypeApi(request):
     # try:
         if request.method == 'GET':

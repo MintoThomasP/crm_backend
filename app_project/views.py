@@ -1,6 +1,7 @@
 from django.dispatch import receiver
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from app_default.views import retry
 from app_login.models import Login
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
@@ -25,6 +26,7 @@ from rest_framework.decorators import api_view
 @swagger_auto_schema(method='PUT', request_body=ProjectSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all Project Details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def ProjectApi(request):
     try:
         if request.method == 'GET':
@@ -59,6 +61,7 @@ def ProjectApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give ProjectId to get one project detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def ProjectApiById(request, ProjectId=""):
     try:
         if request.method == 'GET': 
@@ -79,6 +82,7 @@ def ProjectApiById(request, ProjectId=""):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give ProjectId to get one project detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def ProjectApiByCompanyId(request, CompanyId=""):
     try:
         if request.method == 'GET': 
@@ -99,6 +103,7 @@ def ProjectApiByCompanyId(request, CompanyId=""):
 @swagger_auto_schema(method='PUT', request_body=ProjectTaskSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all ProjectTask Details",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def ProjectTaskApi(request):
     # try:
         if request.method == 'GET':
@@ -196,6 +201,7 @@ def ProjectTaskApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give ProjectTaskId to get one task detail",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def ProjectTaskApiById(request, ProjectTaskId=""):
     try:
         if request.method == 'GET': 
@@ -278,6 +284,7 @@ def ProjectTaskApiById(request, ProjectTaskId=""):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give ProjectId to get task detail",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def ProjectTaskApiByProjectId(request, ProjectId=""):
     try:
         if request.method == 'GET': 
@@ -329,6 +336,7 @@ from datetime import datetime
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get projecttask by staff",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
     # try:
         if request.method == 'GET': 
@@ -455,6 +463,7 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get projecttask by staff",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
     # try:
         if request.method == 'GET': 
@@ -545,6 +554,7 @@ def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
 @csrf_exempt
 @swagger_auto_schema(method='POST',request_body=ProjectTaskSerializer,operation_description="Give ProjectId and TaskAssignedTo in payload",)
 @api_view(['POST'])
+@retry(retries=3, delay=2)
 def ProjectTaskApiByUserIdAndProjectId(request):
     try:
         if request.method == 'POST': 
@@ -603,6 +613,7 @@ def ProjectTaskApiByUserIdAndProjectId(request):
 @csrf_exempt
 @swagger_auto_schema(method='POST',request_body=ProjectTaskSerializer,operation_description="Give ProjectId and TaskAssignedTo in payload",)
 @api_view(['POST'])
+@retry(retries=3, delay=2)
 def ProjectTaskApiByTaskAssignedByAndProjectId(request):
     try:
         if request.method == 'POST': 
@@ -659,6 +670,7 @@ def ProjectTaskApiByTaskAssignedByAndProjectId(request):
 @swagger_auto_schema(method='PUT', request_body=TaskReviewsSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get task reviews",)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def TaskReviewsApi(request):
     try:
         if request.method == 'GET':
@@ -693,6 +705,7 @@ def TaskReviewsApi(request):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give TaskReviewId to get one review",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def TaskReviewsApiById(request, TaskReviewId=""):
     try:
         if request.method == 'GET': 
@@ -714,6 +727,7 @@ def TaskReviewsApiById(request, TaskReviewId=""):
     
 @csrf_exempt
 @api_view(['POST'])
+@retry(retries=3, delay=2)
 def GetAllTasksStatus(request):
     # try:
         if request.method == 'POST':
@@ -735,6 +749,7 @@ def GetAllTasksStatus(request):
 @swagger_auto_schema(method='PUT', request_body=SaveProjectTaskFileSerializer)
 @swagger_auto_schema(method='POST', request_body=SaveProjectTaskFileSerializer)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def ProjectTaskFileApi(request, pk=""):
     try:
         if request.method == 'GET':
@@ -768,6 +783,7 @@ def ProjectTaskFileApi(request, pk=""):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def CURDprojectTaskFileApiById(request, ProjectTaskFileId=""):
     try:
         if request.method == 'GET':
@@ -818,6 +834,7 @@ class UploadProjectTaskFile(APIView):
 @swagger_auto_schema(method='PUT', request_body=CommentsSerializer)
 @swagger_auto_schema(method='POST', request_body=CommentsSerializer)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def CommentApi(request, pk=""):
     try:
         if request.method == 'GET':
@@ -865,6 +882,7 @@ def CommentApi(request, pk=""):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def CURDCommentApiById(request, CommentId=""):
     try:
         if request.method == 'GET':
@@ -889,6 +907,7 @@ def CURDCommentApiById(request, CommentId=""):
 @swagger_auto_schema(method='PUT', request_body=CommentFileSerializer)
 @swagger_auto_schema(method='POST', request_body=CommentFileSerializer)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def CommentFileApi(request, pk=""):
     try:
         if request.method == 'GET':
@@ -904,6 +923,7 @@ def CommentFileApi(request, pk=""):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def CURDCommentFileApiById(request, CommentFileId=""):
     try:
         if request.method == 'GET':
@@ -986,6 +1006,7 @@ from django.utils import timezone
 from datetime import datetime
 @csrf_exempt
 @api_view(['POST'])
+@retry(retries=3, delay=2)
 def ProjectTaskApiFilteringforTaskAssignedTo(request,):
     try:
         if request.method == 'POST': 
@@ -1106,6 +1127,7 @@ def ProjectTaskApiFilteringforTaskAssignedTo(request,):
 
 @csrf_exempt
 @api_view(['POST'])
+@retry(retries=3, delay=2)
 def ProjectTaskApiFilteringforTaskAssignedBy(request,):
     try:
         if request.method == 'POST': 
@@ -1222,6 +1244,7 @@ def ProjectTaskApiFilteringforTaskAssignedBy(request,):
 
 
 @api_view(['POST'])
+@retry(retries=3, delay=2)
 def GetAllProjectTaskApiByFiltering(request):
     # try:
         if request.method == 'POST':
@@ -1500,6 +1523,7 @@ def sendNotification(notifyData):
 @swagger_auto_schema(method='PUT', request_body=ProjectTaskTimingSerializer)
 @swagger_auto_schema(method='POST', request_body=ProjectTaskTimingSerializer)
 @api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
 def ProjectTaskTimingApi(request, pk=""):
     try:
         if request.method == 'GET':
@@ -1533,6 +1557,7 @@ def ProjectTaskTimingApi(request, pk=""):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="",)
 @api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
 def CURDprojectTaskTimingApiById(request, ProjectTaskTimingId=""):
     try:
         if request.method == 'GET':
@@ -1554,6 +1579,7 @@ def CURDprojectTaskTimingApiById(request, ProjectTaskTimingId=""):
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def ProjectTaskTimingApiByProjectTaskId(request, ProjectTaskId=""):
     try:
         if request.method == 'GET':
@@ -1571,45 +1597,49 @@ def ProjectTaskTimingApiByProjectTaskId(request, ProjectTaskId=""):
 @csrf_exempt
 @swagger_auto_schema(method='GET', operation_description="",)
 @api_view(['GET', 'DELETE'])
+@retry(retries=3, delay=2)
 def ProjectTaskTimingCalculationById(request, ProjectTaskId=""):
-    if request.method == 'GET':
-        projectTaskTiming = ProjectTaskTiming.objects.filter(ProjectTaskId=ProjectTaskId)
-        projectTaskTimingSerializer = ProjectTaskTimingSerializer(projectTaskTiming, many=True)
-        total_duration_minutes = 0
+    try:
+        if request.method == 'GET':
+            projectTaskTiming = ProjectTaskTiming.objects.filter(ProjectTaskId=ProjectTaskId)
+            projectTaskTimingSerializer = ProjectTaskTimingSerializer(projectTaskTiming, many=True)
+            total_duration_minutes = 0
 
-        for row in projectTaskTiming:
-            try:
-                date_format = '%m/%d/%Y, %I:%M:%S %p'
-                start_date = datetime.strptime(row.StartDate, date_format)
-                end_date = datetime.strptime(row.EndDate, date_format)
-            except:
-                date_format = '%d/%m/%Y, %I:%M:%S %p'
-                start_date = datetime.strptime(row.StartDate, date_format)
-                end_date = datetime.strptime(row.EndDate, date_format)
+            for row in projectTaskTiming:
+                try:
+                    date_format = '%m/%d/%Y, %I:%M:%S %p'
+                    start_date = datetime.strptime(row.StartDate, date_format)
+                    end_date = datetime.strptime(row.EndDate, date_format)
+                except:
+                    date_format = '%d/%m/%Y, %I:%M:%S %p'
+                    start_date = datetime.strptime(row.StartDate, date_format)
+                    end_date = datetime.strptime(row.EndDate, date_format)
 
-            total_time_taken = end_date - start_date
-            total_time_taken_in_seconds = total_time_taken.total_seconds()
-            total_time_taken_data = {
-                'hours': round(total_time_taken_in_seconds // 3600),
-                'minutes': round((total_time_taken_in_seconds % 3600) // 60)
-            }
-            duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
-            row.Duration = duration
-            row.save()
+                total_time_taken = end_date - start_date
+                total_time_taken_in_seconds = total_time_taken.total_seconds()
+                total_time_taken_data = {
+                    'hours': round(total_time_taken_in_seconds // 3600),
+                    'minutes': round((total_time_taken_in_seconds % 3600) // 60)
+                }
+                duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
+                row.Duration = duration
+                row.save()
 
-            hours, minutes = map(int, duration.split(':'))
-            total_duration_minutes += hours * 60 + minutes
+                hours, minutes = map(int, duration.split(':'))
+                total_duration_minutes += hours * 60 + minutes
 
-        total_duration_hours = total_duration_minutes // 60
-        total_duration_remaining_minutes = total_duration_minutes % 60
-        total_duration = f"{total_duration_hours}:{total_duration_remaining_minutes}"
+            total_duration_hours = total_duration_minutes // 60
+            total_duration_remaining_minutes = total_duration_minutes % 60
+            total_duration = f"{total_duration_hours}:{total_duration_remaining_minutes}"
 
-        projectTask = ProjectTask.objects.get(ProjectTaskId=ProjectTaskId)
-        projectTask.TotalDuration = total_duration
-        projectTask.save()
+            projectTask = ProjectTask.objects.get(ProjectTaskId=ProjectTaskId)
+            projectTask.TotalDuration = total_duration
+            projectTask.save()
 
-        return JsonResponse("Updated", safe=False)
-    else:
+            return JsonResponse("Updated", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
         return JsonResponse("", safe=False)
 
 
@@ -1649,6 +1679,7 @@ def ProjectTaskTimingCalculationById(request, ProjectTaskId=""):
 @csrf_exempt
 @swagger_auto_schema(method='GET', operation_description="",)
 @api_view(['GET'])
+@retry(retries=3, delay=2)
 def ProjectTaskTotalDurationCalculation(request):
     if request.method == 'GET':
         projectTask = ProjectTask.objects.all()
