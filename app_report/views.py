@@ -582,11 +582,11 @@ def StaffDailyReport(request, StaffId=""):
 
             if start_date == current_date:
                 timing_data.append(timing)
-        if timing_data:
-            row['timing'] = timing_data
-            row['SerialNumber'] = serial_number  # Add serial number to the row
-            serial_number += 1
-            taskData.append(row)
+            if timing_data:
+                row['timing'] = timing_data
+                row['SerialNumber'] = serial_number  # Add serial number to the row
+                serial_number += 1
+                taskData.append(row)
     return JsonResponse(taskData,safe=False)
     
     # exclude_fields = ["SortId", "ProjectTaskId", "ProjectId","StartDate", "EndDate", "TaskAssignedTo","CreatedDate", "Description",  "CompletionPoint", "VerifiedBy"]
