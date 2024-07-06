@@ -717,8 +717,43 @@ def StaffApiByCompanyId(request, CompanyId=""):
                     CompanyId=CompanyId)
             staffSerializer = StaffSerializer(
                     staff,many=True)
+            StaffData=[]
+            for row in staffSerializer.data:
+                designation=Designation.objects.get(DesignationId=row['Designation'])
+                designationSerializer=DesignationSerializer(designation)
+                row['DesignationName']=designationSerializer.data['Designation']
 
-            return JsonResponse(staffSerializer.data, safe=False)
+                projectTask=ProjectTask.objects.filter(TaskAssignedTo=row['StaffId'])
+                projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
+                work_status_count = {'Pending': 0, 'Completed': 0, 'Due': 0, 'Not Completed': 0, 'Finished': 0, 'Delay Finished': 0}
+                current_date = str(date.today())
+            
+                for task in projectTaskSerializer.data:
+                    if task['Status'] == '1' or task['Status'] == '2':
+                        work_status_count['Pending'] += 1
+                
+                    if task['Status'] == '3':
+                        work_status_count['Completed'] += 1
+            
+                    if task['CreatedDate'] < current_date and task['Status'] == '1':
+                        work_status_count['Due'] += 1
+
+                    if task['Status'] == '8' or task['Status'] == '9':
+                        work_status_count['Delay Finished'] += 1
+
+                    if task['Status'] == '4' or task['Status'] == '5' or task['Status'] == '6':
+                        work_status_count['Not Completed'] += 1   
+
+                    if task['Status'] == '7':
+                        work_status_count['Finished'] += 1
+
+                row['WorkStatusCount'] = work_status_count
+                StaffData.append(row)
+            
+                
+            return JsonResponse(StaffData, safe=False)
+
+           
         else:
             return JsonResponse("", safe=False)
     except:
