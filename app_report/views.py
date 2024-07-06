@@ -505,89 +505,97 @@ def getAllProjectReport(request):
 
 @csrf_exempt
 @api_view(['GET'])
-@retry(retries=3, delay=2)
 def StaffDailyReport(request, StaffId=""):
-    
-    current_date = timezone.now().date()
-    staff=Staff.objects.get(StaffId=StaffId)
-    StaffName=staff.StaffName
-    
-    projectTask = ProjectTask.objects.filter(TaskAssignedTo=StaffId)
-    projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
-    taskData = []
-    serial_number = 1
-    login_time = ""
-    logout_time = ""
-    date_formats = [
-                    '%m/%d/%Y, %I:%M:%S %p',  # Example: 04/07/2024, 10:06:38 AM
-                    '%m/%d/%Y, %H:%M:%S',     # Example: 04/07/2024, 10:06:38
-                    '%d/%m/%Y, %I:%M:%S %p',  # Example: 07/04/2024, 10:06:38 AM
-                    '%d/%m/%Y, %H:%M:%S'      # Example: 07/04/2024, 10:06:38
-                ]
-    
-    for row in projectTaskSerializer.data:
-        try:
-            taskStatus = TaskStatus.objects.get(StatusId=row['Status'])
-            taskStatusSerializer = TaskStatusSerializer(taskStatus)
-            row['StatusName'] = taskStatusSerializer.data['Status']
-        except:
-            row['StatusName'] =""
+    # try:
+        current_date = timezone.now().date()
+        staff = Staff.objects.get(StaffId=StaffId)
+        StaffName = staff.StaffName
+        
 
-        try:
-            project = Project.objects.get(ProjectId=row['ProjectId'])
-            projectSerializer = ProjectSerializer(project)
-            row['ProjectName'] = projectSerializer.data['ProjectName']
-        except:
-            row['ProjectName'] = ""
-        try:
-            staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
-            staffSerializer = StaffSerializer(staff)
-            row['StaffName'] = staffSerializer.data['StaffName']
-        except:
-            row['StaffName'] = ""
-        try:
-            login_histories = LoginHistory.objects.filter(UserId=StaffId)
-            first_login=False
-            for login_history in login_histories:
+        projectTasks = ProjectTask.objects.filter(TaskAssignedTo=StaffId)
+        projectTaskSerializer = ProjectTaskSerializer(projectTasks, many=True)
+        taskData = []
+        serial_number = 1
+        date_formats = [
+            '%m/%d/%Y, %I:%M:%S %p',  # Example: 04/07/2024, 10:06:38 AM
+            '%m/%d/%Y, %H:%M:%S',     # Example: 04/07/2024, 10:06:38
+            '%d/%m/%Y, %I:%M:%S %p',  # Example: 07/04/2024, 10:06:38 AM
+            '%d/%m/%Y, %H:%M:%S'      # Example: 07/04/2024, 10:06:38
+        ]
+
+        for row in projectTaskSerializer.data:
+            try:
+                taskStatus = TaskStatus.objects.get(StatusId=row['Status'])
+                taskStatusSerializer = TaskStatusSerializer(taskStatus)
+                row['StatusName'] = taskStatusSerializer.data['Status']
+            except TaskStatus.DoesNotExist:
+                row['StatusName'] = ""
+
+            try:
+                project = Project.objects.get(ProjectId=row['ProjectId'])
+                projectSerializer = ProjectSerializer(project)
+                row['ProjectName'] = projectSerializer.data['ProjectName']
+            except Project.DoesNotExist:
+                row['ProjectName'] = ""
+
+            try:
+                assigned_staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
+                staffSerializer = StaffSerializer(assigned_staff)
+                row['StaffName'] = staffSerializer.data['StaffName']
+            except Staff.DoesNotExist:
+                row['StaffName'] = ""
+
+            try:
+                login_histories = LoginHistory.objects.filter(UserId=StaffId)
+                login_time = ""
+                logout_time = ""
+                first_login = False
+
+                for login_history in login_histories:
+                    login_time_dt = None
+                    for date_format in date_formats:
+                        try:
+                            login_time_dt = datetime.strptime(login_history.LoginTime, date_format)
+                            break
+                        except ValueError:
+                            continue
+
+                    if login_time_dt and login_time_dt.date() == current_date:
+                        login_time = login_history.LoginTime
+                        logout_time = login_history.LogoutTime if login_history.LogoutTime else ""
+                        loginHistorySerializer = LoginHistorySerializer(login_history)
+                        row['LoginDetails'] = loginHistorySerializer.data
+                        first_login = True
+                        break
+
+                if not first_login:
+                    row['LoginDetails'] = ""
+            except LoginHistory.DoesNotExist:
+                row['LoginDetails'] = ""
+
+            taskTimings = ProjectTaskTiming.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+            taskTimingSerializer = ProjectTaskTimingSerializer(taskTimings, many=True)
+
+            timing_data = []
+            for timing in taskTimingSerializer.data:
+                start_date = None
                 for date_format in date_formats:
                     try:
-                        login_time_dt = datetime.strptime(login_history.LoginTime, date_format)
+                        start_date = datetime.strptime(timing['StartDate'], date_format)
                         break
-                    except:
+                    except ValueError:
                         continue
-                if login_time_dt == current_date:
-                    login_time = login_history.LoginTime
-                    logout_time = login_history.LogoutTime if login_history.LogoutTime else ""
-                    loginHistorySerializer = LoginHistorySerializer(login_history)
-                    row['LoginDetails'] = loginHistorySerializer.data
-                    first_login = True
-                    break
-            if not first_login:
-                row['LoginDetails'] = ""
-        except:
-            row['LoginDetails'] = ""
-        
-        taskTimings = ProjectTaskTiming.objects.filter(ProjectTaskId=row['ProjectTaskId'])
-        taskTimingSerializer = ProjectTaskTimingSerializer(taskTimings, many=True)
-        
-        timing_data = []
-        for timing in taskTimingSerializer.data:
-            for date_format in date_formats:
-                try:
-                    start_date = datetime.strptime(timing['StartDate'], date_format)
-                    break
-                except:
-                    continue
 
+                if start_date and start_date.date() == current_date:
+                    timing_data.append(timing)
 
-            if start_date == current_date:
-                timing_data.append(timing)
             if timing_data:
                 row['timing'] = timing_data
                 row['SerialNumber'] = serial_number  # Add serial number to the row
                 serial_number += 1
                 taskData.append(row)
-    return JsonResponse(taskData,safe=False)
+
+        return JsonResponse(taskData, safe=False)
     
     # exclude_fields = ["SortId", "ProjectTaskId", "ProjectId","StartDate", "EndDate", "TaskAssignedTo","CreatedDate", "Description",  "CompletionPoint", "VerifiedBy"]
     # column_order = ["SerialNumber", "StaffName","TaskType", "ProjectName", "Title", "TotalDuration", "StatusName"]
