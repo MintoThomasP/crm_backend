@@ -598,7 +598,7 @@ def StaffDailyReport(request, StaffId=""):
                 serial_number += 1
                 taskData.append(row)
 
-        return JsonResponse(taskData, safe=False)
+        # return JsonResponse(taskData, safe=False)
     
         exclude_fields = ["SortId", "ProjectTaskId", "ProjectId","StartDate", "EndDate", "TaskAssignedTo","CreatedDate", "Description",  "CompletionPoint", "VerifiedBy"]
         column_order = ["SerialNumber", "StaffName","TaskType", "ProjectName", "Title", "TotalDuration", "StatusName"]
