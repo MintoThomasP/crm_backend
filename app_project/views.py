@@ -430,7 +430,14 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
                 
                 
                 taskStatusName.append(row)
-            return JsonResponse(taskStatusName, safe=False)
+            MediaViewData = []
+            batch_size = 50
+            for start in range(0, len(taskStatusName), batch_size):
+                batch = taskStatusName[start:start + batch_size]
+                for media in batch:
+                    MediaViewData.append(media)
+
+            return JsonResponse(MediaViewData, safe=False)
             
         else:
             return JsonResponse("", safe=False)
