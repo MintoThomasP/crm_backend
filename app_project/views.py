@@ -1340,8 +1340,8 @@ def schedule_repeated_tasks(request):
                     
                 elif task.RepeatInterval == 'weekly':
                     next_due_date = task.LastAssigned + timedelta(weeks=1)
-                # elif task.RepeatInterval == 'monthly':
-                #     next_due_date = task.LastAssigned + relativedelta(months=1)
+                elif task.RepeatInterval == 'monthly':
+                    next_due_date = task.LastAssigned + relativedelta(months=1)
 
                 if next_due_date and now <= next_due_date:
                     scheduled_deadline = next_due_date.strftime("%Y-%m-%dT%H:%M")
