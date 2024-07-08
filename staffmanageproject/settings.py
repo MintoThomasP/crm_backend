@@ -97,7 +97,7 @@ DATABASES = {
     #     'ENGINE': 'django.db.backends.sqlite3',
     #     'NAME': BASE_DIR / 'db.sqlite3',
     # }
-    
+
      'default': {
         'ENGINE': 'dj_db_conn_pool.backends.mysql',
         'NAME': 'staffmanage_db',
