@@ -1334,7 +1334,7 @@ def schedule_repeated_tasks(request):
             for task in repeated_tasks:
                 i=i+1
                 next_due_date = None
-        # 
+        
                 if task.RepeatInterval == 'daily':
                     next_due_date = task.LastAssigned + timedelta(days=1)
                     
