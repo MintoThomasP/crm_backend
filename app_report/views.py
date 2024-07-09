@@ -1076,10 +1076,10 @@ def StaffDailyReport(request, StaffId=""):
 
 
 
-    col_pos = 30
-    login_details_str = "\n".join(login_details)
-    draw.text((col_pos, row_pos), login_details_str, fill='black', font=font)
-    row_pos += 30 + len(login_details) * 20
+    # col_pos = 30
+    # login_details_str = "\n".join(login_details)
+    # draw.text((col_pos, row_pos), login_details_str, fill='black', font=font)
+    # row_pos += 30 + len(login_details) * 20
 
     # login_details = f"Logout Time: {logout_time}"
     # draw.text((col_pos, row_pos), login_details, fill='black', font=font)
