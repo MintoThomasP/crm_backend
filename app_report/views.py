@@ -1191,46 +1191,47 @@ def StaffDailyReport(request, StaffId=""):
 
             for date_format in date_formats:
                 try:
-                    login_time_dt = datetime.strptime(login_history.LoginTime, date_format)
-                    if login_time_dt and login_time_dt.date() == current_date:
-                        login_time = login_history.LoginTime
-                        logout_time = login_history.LogoutTime if login_history.LogoutTime else ""
+                    if login_history.LoginTime and login_history.LogoutTime:
+                        login_time_dt = datetime.strptime(login_history.LoginTime, date_format)
+                        if login_time_dt and login_time_dt.date() == current_date:
+                            login_time = login_history.LoginTime
+                            logout_time = login_history.LogoutTime if login_history.LogoutTime else ""
 
-                        if login_time:
-                            login_details = {
-                                "LoginTime": login_time,
-                                "LogoutTime": logout_time,
-                                "Tasks": []
-                            }
+                            if login_time:
+                                login_details = {
+                                    "LoginTime": login_time,
+                                    "LogoutTime": logout_time,
+                                    "Tasks": []
+                                }
 
-                            for task in taskData:
-                                task_timings = ProjectTaskTiming.objects.filter(
-                                    ProjectTaskId=task['ProjectTaskId'],
-                                    StartDate__range=(login_time, logout_time)
-                                )
-                                task_timing_serializer = ProjectTaskTimingSerializer(task_timings, many=True)
+                                for task in taskData:
+                                    task_timings = ProjectTaskTiming.objects.filter(
+                                        ProjectTaskId=task['ProjectTaskId'],
+                                        StartDate__range=(login_time, logout_time)
+                                    )
+                                    task_timing_serializer = ProjectTaskTimingSerializer(task_timings, many=True)
 
-                                timing_data = []
-                                for timing in task_timing_serializer.data:
-                                    start_date = None
-                                    for date_format in date_formats:
-                                        try:
-                                            start_date = datetime.strptime(timing['StartDate'], date_format)
-                                            break
-                                        except ValueError:
-                                            continue
+                                    timing_data = []
+                                    for timing in task_timing_serializer.data:
+                                        start_date = None
+                                        for date_format in date_formats:
+                                            try:
+                                                start_date = datetime.strptime(timing['StartDate'], date_format)
+                                                break
+                                            except ValueError:
+                                                continue
 
-                                    if start_date and start_date.date() == current_date:
-                                        timing_data.append(timing)
+                                        if start_date and start_date.date() == current_date:
+                                            timing_data.append(timing)
 
-                                if timing_data:
-                                    task['timing'] = timing_data
-                                    task['SlNo'] = serial_number  # Add serial number to the task
-                                    serial_number += 1
-                                    login_details['Tasks'].append(task)
+                                    if timing_data:
+                                        task['timing'] = timing_data
+                                        task['SlNo'] = serial_number  # Add serial number to the task
+                                        serial_number += 1
+                                        login_details['Tasks'].append(task)
 
-                            response_data.append(login_details)
-                            break  # Stop checking other date formats once a match is found
+                                response_data.append(login_details)
+                                break  # Stop checking other date formats once a match is found
                 except ValueError:
                     continue
 
@@ -1249,9 +1250,9 @@ def StaffDailyReport(request, StaffId=""):
     exclude_fields = ["SortId", "ProjectTaskId", "ProjectId", "StartDate", "EndDate", "StaffName", "TaskAssignedTo", "CreatedDate", "Description", "CompletionPoint", "VerifiedBy"]
     column_order = ["SlNo", "TaskType", "ProjectName", "Title", "TotalDuration", "StatusName"]
 
-    # Calculate maximum content widths for each column based on taskData
+    
     max_widths = {}
-    min_column_width = 100  # Minimum width for each column
+    min_column_width = 100  
 
     for task in response_data:
         for key in column_order:
@@ -1259,7 +1260,7 @@ def StaffDailyReport(request, StaffId=""):
                 value = str(task.get(key, ""))
                 max_widths[key] = max(max_widths.get(key, 0), len(value))
 
-    # Adjust column widths based on maximum content lengths
+    
     adjusted_widths = {}
     for key in column_order:
         if key not in exclude_fields:
