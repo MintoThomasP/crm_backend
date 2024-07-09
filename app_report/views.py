@@ -1100,8 +1100,9 @@ def StaffDailyReport(request, StaffId=""):
             x0 = x1
 
     row_pos += cell_height  # Move to the next row
-
-    # Draw task data
+    y_bottom = row_pos + (num_rows * cell_height)
+    # draw.line([(0, y_bottom), (image_width, y_bottom)], fill='black')
+    
     for row_num, task in enumerate(taskData):
         x0 =20
         for col_num, key in enumerate(column_order):
@@ -1116,8 +1117,7 @@ def StaffDailyReport(request, StaffId=""):
                 x0 = x1
 
     # Draw bottom border for the table
-    y_bottom = row_pos + (num_rows * cell_height)
-    draw.line([(0, y_bottom), (image_width, y_bottom)], fill='black')
+    
 
     img_stream = io.BytesIO()
     img.save(img_stream, format='PNG')
