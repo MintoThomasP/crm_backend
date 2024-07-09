@@ -999,7 +999,7 @@ def StaffDailyReport(request, StaffId=""):
 
     # Define the font and size for the text
     font = ImageFont.load_default()
-    heading_font = ImageFont.truetype('arial.ttf', 28) 
+    heading_font = ImageFont.load_default(28)
 
     # Define the cell height
     padding = 20
