@@ -108,8 +108,8 @@ DATABASES = {
         'HOST': 'localhost',
         'PORT': '3306',
         'POOL_OPTIONS' : {
-            'POOL_SIZE': 18,
-            'MAX_OVERFLOW': 20,
+            'POOL_SIZE': 40,
+            'MAX_OVERFLOW': 60,
             'RECYCLE': 3 * 60 * 60
         },
         'OPTIONS': {
