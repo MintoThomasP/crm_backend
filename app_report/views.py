@@ -877,6 +877,259 @@ def pointCalculation(duration_seconds="", TotalDuration_seconds="", point=""):
 
 
 
+# from datetime import datetime
+# import io
+# from django.http import HttpResponse
+# from django.utils import timezone
+# from rest_framework.decorators import api_view
+# from PIL import Image as PILImage, ImageDraw, ImageFont
+# from django.views.decorators.csrf import csrf_exempt
+
+# @csrf_exempt
+# @api_view(['GET'])
+# def StaffDailyReport(request, StaffId=""):
+#     current_date = timezone.now().date()
+#     staff = Staff.objects.get(StaffId=StaffId)
+#     StaffName = staff.StaffName
+
+#     projectTasks = ProjectTask.objects.filter(TaskAssignedTo=StaffId)
+#     projectTaskSerializer = ProjectTaskSerializer(projectTasks, many=True)
+#     taskData = []
+#     serial_number = 1
+#     date_formats = [
+#         '%m/%d/%Y, %I:%M:%S %p',  # Example: 04/07/2024, 10:06:38 AM
+#         '%m/%d/%Y, %H:%M:%S',     # Example: 04/07/2024, 10:06:38
+#         '%d/%m/%Y, %I:%M:%S %p',  # Example: 07/04/2024, 10:06:38 AM
+#         '%d/%m/%Y, %H:%M:%S'      # Example: 07/04/2024, 10:06:38
+#     ]
+
+#     for row in projectTaskSerializer.data:
+#         try:
+#             taskStatus = TaskStatus.objects.get(StatusId=row['Status'])
+#             taskStatusSerializer = TaskStatusSerializer(taskStatus)
+#             row['StatusName'] = taskStatusSerializer.data['Status']
+#         except TaskStatus.DoesNotExist:
+#             row['StatusName'] = ""
+
+#         try:
+#             project = Project.objects.get(ProjectId=row['ProjectId'])
+#             projectSerializer = ProjectSerializer(project)
+#             row['ProjectName'] = projectSerializer.data['ProjectName']
+#         except Project.DoesNotExist:
+#             row['ProjectName'] = ""
+
+#         try:
+#             assigned_staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
+#             staffSerializer = StaffSerializer(assigned_staff)
+#             row['StaffName'] = staffSerializer.data['StaffName']
+#         except Staff.DoesNotExist:
+#             row['StaffName'] = ""
+
+#         try:
+#             login_histories = LoginHistory.objects.filter(UserId=StaffId).order_by('SortId')
+            
+#             login_details = []
+#             for login_history in login_histories:
+#                 login_time = ""
+#                 logout_time = ""
+
+#                 for date_format in date_formats:
+#                     try:
+#                         login_time_dt = datetime.strptime(login_history.LoginTime, date_format)
+#                         if login_time_dt and login_time_dt.date() == current_date:
+#                             login_time = login_history.LoginTime
+#                             logout_time = login_history.LogoutTime if login_history.LogoutTime else ""
+#                             login_details.append(f"Login Time: {login_time},         Logout Time: {logout_time}\n")
+#                     except:
+#                         continue
+
+           
+#         except LoginHistory.DoesNotExist:
+#             pass
+
+#         taskTimings = ProjectTaskTiming.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+#         taskTimingSerializer = ProjectTaskTimingSerializer(taskTimings, many=True)
+
+#         timing_data = []
+#         for timing in taskTimingSerializer.data:
+#             start_date = None
+#             for date_format in date_formats:
+#                 try:
+#                     start_date = datetime.strptime(timing['StartDate'], date_format)
+#                     break
+#                 except:
+#                     continue
+
+#             if start_date and start_date.date() == current_date:
+#                 timing_data.append(timing)
+
+#         if timing_data:
+#             row['timing'] = timing_data
+#             row['SlNo'] = serial_number  # Add serial number to the row
+#             serial_number += 1
+#             taskData.append(row)
+
+#     rename_mapping = {
+#         "SlNo": "SlNo",
+#         "TaskType": "Task Type",
+#         "ProjectName": "Project",
+#         "Title": "Task",
+#         "TotalDuration": "Duration",
+#         "StatusName": "Status"
+#     }
+
+#     exclude_fields = ["SortId", "ProjectTaskId", "ProjectId", "StartDate", "EndDate", "StaffName", "TaskAssignedTo", "CreatedDate", "Description", "CompletionPoint", "VerifiedBy"]
+#     column_order = ["SlNo", "TaskType", "ProjectName", "Title", "TotalDuration", "StatusName"]
+
+#     # Calculate maximum content widths for each column based on taskData
+#     max_widths = {}
+#     min_column_width = 100  # Minimum width for each column
+
+#     for task in taskData:
+#         for key in column_order:
+#             if key not in exclude_fields:
+#                 value = str(task.get(key, ""))
+#                 max_widths[key] = max(max_widths.get(key, 0), len(value))
+
+#     # Adjust column widths based on maximum content lengths
+#     adjusted_widths = {}
+#     for key in column_order:
+#         if key not in exclude_fields:
+#             adjusted_widths[key] = max(min_column_width, max_widths.get(key, 0) * 10)  # Adjust multiplier as needed
+
+#     # Define the font and size for the text
+#     font = ImageFont.load_default()
+#     heading_font = ImageFont.load_default(28)
+
+#     # Define the cell height
+#     padding = 20
+#     cell_height = 40
+
+#     # Calculate image size
+#     num_columns = len([key for key in column_order if key not in exclude_fields])
+#     num_rows = len(taskData) + 1  # Including header row
+#     content_width = sum(adjusted_widths.values())
+#     content_height = num_rows * cell_height + 200  # +100 for logo and login/logout details
+
+#     # Calculate total image dimensions including padding
+#     image_width = content_width + 2 * padding
+#     image_height = content_height + 2 * padding
+
+#     # image_width = sum(adjusted_widths.values())
+#     # image_height = num_rows * cell_height + 200  # +100 for logo and login/logout details
+
+#     if image_width <= 0 or image_height <= 0:
+#         raise ValueError("Calculated image dimensions are invalid. Ensure there is data to display.")
+
+#     img = PILImage.new('RGB', (image_width, image_height), 'white')
+#     draw = ImageDraw.Draw(img)
+
+#     # Load and resize the left logo
+#     logo_path_left = './static/images/logocubex.png'  
+#     logo_left = PILImage.open(logo_path_left)
+#     logo_left_width, logo_left_height = logo_left.size
+#     max_logo_height = 25  
+
+#     if logo_left_height > max_logo_height:
+#         scaling_factor = max_logo_height / logo_left_height
+#         new_logo_left_width = int(logo_left_width * scaling_factor)
+#         new_logo_left_height = int(logo_left_height * scaling_factor)
+#         logo_left = logo_left.resize((new_logo_left_width, new_logo_left_height), PILImage.LANCZOS)
+
+#     # Load and resize the right logo
+#     logo_path_right = './static/images/logo.png'  
+#     logo_right = PILImage.open(logo_path_right)
+#     logo_right_width, logo_right_height = logo_right.size
+
+#     if logo_right_height > max_logo_height:
+#         scaling_factor = max_logo_height / logo_right_height
+#         new_logo_right_width = int(logo_right_width * scaling_factor)
+#         new_logo_right_height = int(logo_right_height * scaling_factor)
+#         logo_right = logo_right.resize((new_logo_right_width, new_logo_right_height), PILImage.LANCZOS)
+
+#     # Calculate positions for logos at the center of the top line
+#     total_logo_width = logo_left.width + logo_right.width
+#     spacing = (image_width - total_logo_width-20) // 2  # Divide the remaining space into four parts for reduced spacing
+
+#     logo_left_x = spacing
+#     logo_left_y = (100 - logo_left.height) // 3
+#     img.paste(logo_left, (logo_left_x, logo_left_y), logo_left)
+
+#     logo_right_x = 1 * spacing + logo_left.width+20
+#     logo_right_y = (100 - logo_right.height) // 3
+#     img.paste(logo_right, (logo_right_x, logo_right_y), logo_right)
+
+#     row_pos = max(logo_left_y + logo_left.height, logo_right_y + logo_right.height) + 20  
+
+#     heading_text = f"{StaffName} - Daily Report"
+#     bbox = heading_font.getbbox(heading_text)
+
+#     heading_width = bbox[2] - bbox[0]
+#     heading_height = bbox[3] - bbox[1]
+
+#     heading_x = (image_width - heading_width) // 2
+#     heading_y = row_pos  
+
+#     # Draw the heading text on the image
+#     draw.text((heading_x, heading_y), heading_text, fill='black', font=heading_font)
+#     row_pos += 40
+
+
+
+#     # col_pos = 30
+#     # login_details_str = "\n".join(login_details)
+#     # draw.text((col_pos, row_pos), login_details_str, fill='black', font=font)
+#     # row_pos += 30 + len(login_details) * 20
+
+#     # login_details = f"Logout Time: {logout_time}"
+#     # draw.text((col_pos, row_pos), login_details, fill='black', font=font)
+#     # row_pos += 30
+
+#     # Draw headers
+    
+#     x0 = 20
+#     for col_num, key in enumerate(column_order):
+#         if key not in exclude_fields:
+#             header = rename_mapping[key]
+#             header_width = adjusted_widths[key]
+#             x1 = x0 + header_width
+#             y0 = row_pos
+#             y1 = y0 + cell_height
+#             draw.rectangle([x0, y0, x1, y1], outline='black')
+#             draw.text((x0 + 10, y0 + 10), header, fill='black', font=font)
+#             x0 = x1
+
+#     row_pos += cell_height  # Move to the next row
+#     y_bottom = row_pos + (num_rows * cell_height)
+#     # draw.line([(0, y_bottom), (image_width, y_bottom)], fill='black')
+    
+#     for row_num, task in enumerate(taskData):
+#         x0 =20
+#         for col_num, key in enumerate(column_order):
+#             if key not in exclude_fields:
+#                 value = str(task.get(key, ""))
+#                 column_width = adjusted_widths[key]
+#                 x1 = x0 + column_width
+#                 y0 = row_pos + (row_num * cell_height)
+#                 y1 = y0 + cell_height
+#                 draw.rectangle([x0, y0, x1, y1], outline='black')
+#                 draw.text((x0 + 10, y0 + 10), value, fill='black', font=font)
+#                 x0 = x1
+
+#     # Draw bottom border for the table
+    
+
+#     img_stream = io.BytesIO()
+#     img.save(img_stream, format='PNG')
+#     img_stream.seek(0)
+
+#     response = HttpResponse(img_stream, content_type='image/png')
+#     response['Content-Disposition'] = f'attachment; filename={StaffName}DailyReport_{current_date}.png'
+
+#     return response
+
+
+
 from datetime import datetime
 import io
 from django.http import HttpResponse
@@ -925,49 +1178,64 @@ def StaffDailyReport(request, StaffId=""):
         except Staff.DoesNotExist:
             row['StaffName'] = ""
 
-        try:
-            login_histories = LoginHistory.objects.filter(UserId=StaffId).order_by('SortId')
-            
-            login_details = []
-            for login_history in login_histories:
-                login_time = ""
-                logout_time = ""
+        taskData.append(row)  # Add task data to the list
 
-                for date_format in date_formats:
-                    try:
-                        login_time_dt = datetime.strptime(login_history.LoginTime, date_format)
-                        if login_time_dt and login_time_dt.date() == current_date:
-                            login_time = login_history.LoginTime
-                            logout_time = login_history.LogoutTime if login_history.LogoutTime else ""
-                            login_details.append(f"Login Time: {login_time},         Logout Time: {logout_time}\n")
-                    except:
-                        continue
+    response_data = []
 
-           
-        except LoginHistory.DoesNotExist:
-            pass
+    try:
+        login_histories = LoginHistory.objects.filter(UserId=StaffId).order_by('SortId')
 
-        taskTimings = ProjectTaskTiming.objects.filter(ProjectTaskId=row['ProjectTaskId'])
-        taskTimingSerializer = ProjectTaskTimingSerializer(taskTimings, many=True)
+        for login_history in login_histories:
+            login_time = ""
+            logout_time = ""
 
-        timing_data = []
-        for timing in taskTimingSerializer.data:
-            start_date = None
             for date_format in date_formats:
                 try:
-                    start_date = datetime.strptime(timing['StartDate'], date_format)
-                    break
-                except:
+                    login_time_dt = datetime.strptime(login_history.LoginTime, date_format)
+                    if login_time_dt and login_time_dt.date() == current_date:
+                        login_time = login_history.LoginTime
+                        logout_time = login_history.LogoutTime if login_history.LogoutTime else ""
+
+                        if login_time:
+                            login_details = {
+                                "LoginTime": login_time,
+                                "LogoutTime": logout_time,
+                                "Tasks": []
+                            }
+
+                            for task in taskData:
+                                task_timings = ProjectTaskTiming.objects.filter(
+                                    ProjectTaskId=task['ProjectTaskId'],
+                                    StartDate__range=(login_time, logout_time)
+                                )
+                                task_timing_serializer = ProjectTaskTimingSerializer(task_timings, many=True)
+
+                                timing_data = []
+                                for timing in task_timing_serializer.data:
+                                    start_date = None
+                                    for date_format in date_formats:
+                                        try:
+                                            start_date = datetime.strptime(timing['StartDate'], date_format)
+                                            break
+                                        except ValueError:
+                                            continue
+
+                                    if start_date and start_date.date() == current_date:
+                                        timing_data.append(timing)
+
+                                if timing_data:
+                                    task['timing'] = timing_data
+                                    task['SlNo'] = serial_number  # Add serial number to the task
+                                    serial_number += 1
+                                    login_details['Tasks'].append(task)
+
+                            response_data.append(login_details)
+                            break  # Stop checking other date formats once a match is found
+                except ValueError:
                     continue
 
-            if start_date and start_date.date() == current_date:
-                timing_data.append(timing)
-
-        if timing_data:
-            row['timing'] = timing_data
-            row['SlNo'] = serial_number  # Add serial number to the row
-            serial_number += 1
-            taskData.append(row)
+    except LoginHistory.DoesNotExist:
+        pass
 
     rename_mapping = {
         "SlNo": "SlNo",
@@ -985,7 +1253,7 @@ def StaffDailyReport(request, StaffId=""):
     max_widths = {}
     min_column_width = 100  # Minimum width for each column
 
-    for task in taskData:
+    for task in response_data:
         for key in column_order:
             if key not in exclude_fields:
                 value = str(task.get(key, ""))
@@ -1007,7 +1275,7 @@ def StaffDailyReport(request, StaffId=""):
 
     # Calculate image size
     num_columns = len([key for key in column_order if key not in exclude_fields])
-    num_rows = len(taskData) + 1  # Including header row
+    num_rows = len(response_data) + 1  # Including header row
     content_width = sum(adjusted_widths.values())
     content_height = num_rows * cell_height + 200  # +100 for logo and login/logout details
 
@@ -1074,50 +1342,52 @@ def StaffDailyReport(request, StaffId=""):
     draw.text((heading_x, heading_y), heading_text, fill='black', font=heading_font)
     row_pos += 40
 
-
-
-    # col_pos = 30
-    # login_details_str = "\n".join(login_details)
-    # draw.text((col_pos, row_pos), login_details_str, fill='black', font=font)
-    # row_pos += 30 + len(login_details) * 20
-
-    # login_details = f"Logout Time: {logout_time}"
-    # draw.text((col_pos, row_pos), login_details, fill='black', font=font)
-    # row_pos += 30
-
-    # Draw headers
     
-    x0 = 20
-    for col_num, key in enumerate(column_order):
-        if key not in exclude_fields:
-            header = rename_mapping[key]
-            header_width = adjusted_widths[key]
-            x1 = x0 + header_width
-            y0 = row_pos
-            y1 = y0 + cell_height
-            draw.rectangle([x0, y0, x1, y1], outline='black')
-            draw.text((x0 + 10, y0 + 10), header, fill='black', font=font)
-            x0 = x1
+      # Move to the next row
 
-    row_pos += cell_height  # Move to the next row
-    y_bottom = row_pos + (num_rows * cell_height)
-    # draw.line([(0, y_bottom), (image_width, y_bottom)], fill='black')
     
-    for row_num, task in enumerate(taskData):
-        x0 =20
-        for col_num, key in enumerate(column_order):
-            if key not in exclude_fields:
-                value = str(task.get(key, ""))
-                column_width = adjusted_widths[key]
-                x1 = x0 + column_width
-                y0 = row_pos + (row_num * cell_height)
-                y1 = y0 + cell_height
-                draw.rectangle([x0, y0, x1, y1], outline='black')
-                draw.text((x0 + 10, y0 + 10), value, fill='black', font=font)
-                x0 = x1
+    for login_details in response_data:
+        # Draw login details
+        login_time = login_details["LoginTime"]
+        logout_time = login_details["LogoutTime"]
 
-    # Draw bottom border for the table
-    
+        # Draw login details section
+        login_details_str = f"Login Time: {login_time}     Logout Time: {logout_time}"
+        draw.text((20, row_pos), login_details_str, fill='black', font=font)
+        row_pos += 30
+        if login_details["Tasks"]:
+            x0 = 20  # Initial X position
+            for col_num, key in enumerate(column_order):
+                if key not in exclude_fields:
+                    header = rename_mapping[key]
+                    header_width = adjusted_widths[key]
+                    x1 = x0 + header_width
+                    y0 = row_pos
+                    y1 = y0 + cell_height
+                    draw.rectangle([x0, y0, x1, y1], outline='black')
+                    draw.text((x0 + 10, y0 + 10), header, fill='black', font=font)
+                    x0 = x1
+
+            row_pos += cell_height
+
+        # Draw tasks
+        for task in login_details["Tasks"]:
+            x0 = 20
+            for col_num, key in enumerate(column_order):
+                if key not in exclude_fields:
+                    value = str(task.get(key, ""))
+                    column_width = adjusted_widths[key]
+                    x1 = x0 + column_width
+                    y0 = row_pos
+                    y1 = y0 + cell_height
+                    draw.rectangle([x0, y0, x1, y1], outline='black')
+                    draw.text((x0 + 10, y0 + 10), value, fill='black', font=font)
+                    x0 = x1
+            row_pos += cell_height  # Move to the next row within tasks
+
+        row_pos += 10 
+        # Draw bottom border for the table
+        
 
     img_stream = io.BytesIO()
     img.save(img_stream, format='PNG')

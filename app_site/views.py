@@ -78,7 +78,7 @@ def CURDSiteSettingsApiCompanyId(request, CompanyId=""):
 class UploadSiteSettingsImage(APIView):
     parser_classes = (MultiPartParser, FormParser)
     def post(self, request, SiteSettingsId="", *args, **kwargs):
-        try:
+        # try:
             site = SiteSettings.objects.get(
                 SiteSettingsId=SiteSettingsId)
             try:
@@ -98,8 +98,8 @@ class UploadSiteSettingsImage(APIView):
                 return JsonResponse("Uploaded", safe=False)
             else:
                 return JsonResponse("", safe=False)
-        except:
-            return JsonResponse("", safe=False)
+        # except:
+        #     return JsonResponse("", safe=False)
 
 
 
