@@ -117,7 +117,7 @@ class PermissionSerializer(serializers.ModelSerializer):
         model = Permission
         fields = ['id', 'name', 'codename', 'content_type']
 
-# Example of usage in a view or API endpoint
+@retry(retries=3, delay=2)
 def get_permissions(request):
     permissions = Permission.objects.all()
     serializer = PermissionSerializer(permissions, many=True)
