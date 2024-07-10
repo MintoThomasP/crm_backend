@@ -1332,7 +1332,6 @@ def schedule_repeated_tasks(request):
             data=[]
             i=0
             for task in repeated_tasks:
-                i=i+1
                 next_due_date = None
         
                 if task.RepeatInterval == 'daily':
@@ -1366,7 +1365,8 @@ def schedule_repeated_tasks(request):
                 
                     if new_taskserializer.is_valid():
                         new_taskserializer.save()
-                    data.append(new_taskserializer.data)
+                        i=i+1
+                        data.append(new_taskserializer.data)
                     
 
             return JsonResponse({"message": "Repeated tasks scheduled successfully.","data":data,"projectTaskSerializer":projectTaskSerializer.data,"count":i},safe=False)
