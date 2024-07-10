@@ -176,8 +176,11 @@ def ProjectTaskApi(request):
 
                 login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedTo'])
                 if login.Token:
+                    title="New task added"
+                    if projectTaskSerializer.data['TaskType']=="Ticket":
+                        title="New ticket raised"
                     sendNotification({
-                        "title":"New task added",
+                        "title":title,
                         "body":projectTaskSerializer.data['Title'],
                         "token":login.Token
                     })
@@ -193,6 +196,33 @@ def ProjectTaskApi(request):
                 projectTask, data=projectTaskData)
             if projectTaskSerializer.is_valid():
                 projectTaskSerializer.save()
+                if projectTaskSerializer.data['Status']=='3':
+                    login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedBy'])
+                    title="Need verification"
+                    if projectTaskSerializer.data['TaskType']=="Ticket":
+                        title="Ticket closed"
+                    if login.Token :
+                        sendNotification({
+                            "title":title,
+                            "body":projectTaskSerializer.data['Title'],
+                            "token":login.Token
+                        })
+                elif projectTaskSerializer.data['Status']=='4' or  projectTaskSerializer.data['Status']=='5' or  projectTaskSerializer.data['Status']=='6':
+                    login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedBy'])
+                    if login.Token :
+                        sendNotification({
+                            "title":"Not verified",
+                            "body":projectTaskSerializer.data['Title'],
+                            "token":login.Token
+                        })
+                elif projectTaskSerializer.data['Status']=='7' or  projectTaskSerializer.data['Status']=='8' or  projectTaskSerializer.data['Status']=='9':
+                    login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedBy'])
+                    if login.Token :
+                        sendNotification({
+                            "title":"Verified",
+                            "body":projectTaskSerializer.data['Title'],
+                            "token":login.Token
+                        })
                 return JsonResponse(projectTaskSerializer.data['ProjectTaskId'], safe=False)
             return JsonResponse("Failed to Update", safe=False)
         else:
