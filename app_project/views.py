@@ -1351,7 +1351,7 @@ def schedule_repeated_tasks(request):
                         "Title":task.Title,
                         "Description":task.Description,
                         "Duration":task.Duration,
-                        "Status":task.Status,
+                        "Status":1,
                         "CreatedDate":now.strftime("%Y-%m-%d"),
                         "ScheduledDeadline":scheduled_deadline,
                         "TaskPoint":task.TaskPoint,
