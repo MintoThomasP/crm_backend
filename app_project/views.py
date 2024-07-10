@@ -216,7 +216,7 @@ def ProjectTaskApi(request):
                             "token":login.Token
                         })
                 elif projectTaskSerializer.data['Status']=='7' or  projectTaskSerializer.data['Status']=='8' or  projectTaskSerializer.data['Status']=='9':
-                    login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedBy'])
+                    login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedTo'])
                     if login.Token :
                         sendNotification({
                             "title":"Verified",
