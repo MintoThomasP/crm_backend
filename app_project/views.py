@@ -2000,4 +2000,4 @@ def UpdateEndDate(request):
                 projectTask.EndDate=end_date
                 projectTask.save()
                 count=count+1
-    return JsonResponse("Updated"+count, safe=False)
+    return JsonResponse("Updated"+str(count), safe=False)
