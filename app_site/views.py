@@ -10,6 +10,9 @@ from app_default.views import retry
 from app_site.models import Notification, SiteSettings
 from app_site.serializers import NotificationSerializer, SaveSiteSettingsSerializer, SiteSettingsSerializer, UploadSiteSettingsSerializer
 from django.db.models import Max
+
+from app_staff.models import Staff
+from app_staff.serializers import StaffSerializer
 # Create your views here.
 
 @csrf_exempt
@@ -165,7 +168,23 @@ def GetNotificationByToUser(request, ToUser=""):
                     ToUser=ToUser)
             notificationSerializer = NotificationSerializer(
                     notification,many=True)
-            return JsonResponse(notificationSerializer.data, safe=False)
+            notificationData=[]
+            for row in notificationSerializer.data:
+                try:
+                    staff=Staff.objects.get(StaffId=row['ToUser'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['ToUserName']=staffSerializer.data['StaffName']
+                except:
+                     row['ToUserName']=""
+                try:
+                    fromstaff=Staff.objects.get(StaffId=row['ToUser'])
+                    fromstaffSerializer=StaffSerializer(fromstaff)
+                    row['FromUserName']=fromstaffSerializer.data['StaffName']
+                except:
+                     row['FromUserName']=""
+                notificationData.append(row)
+                     
+            return JsonResponse(notificationData, safe=False)
         else:
                 return JsonResponse("", safe=False)
     except:

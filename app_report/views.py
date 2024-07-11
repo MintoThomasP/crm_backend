@@ -25,7 +25,7 @@ from datetime import datetime
 from PyPDF2 import PdfReader, PdfWriter
 from io import BytesIO
 from reportlab.pdfgen import canvas
-from reportlab.lib.pagesizes import letter
+from reportlab.lib.pagesizes import A4
 
 
 
@@ -351,7 +351,8 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
         '%m/%d/%Y, %I:%M:%S %p',
         '%m/%d/%Y, %H:%M:%S',
         '%d/%m/%Y, %I:%M:%S %p',
-        '%d/%m/%Y, %H:%M:%S'
+        '%d/%m/%Y, %H:%M:%S',
+        "%Y-%m-%dT%H:%M"
     ]
 
     for row in projectTaskSerializer.data:
@@ -480,6 +481,31 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
             col['ProjectName'] = projectSerializer.data['ProjectName']
         except Project.DoesNotExist:
             col['ProjectName'] = ""
+        for date_format in date_formats:
+            try:
+               
+                deadline = col['ScheduledDeadline']
+                scheduled_deadline = datetime.strptime(deadline, date_format).date()
+                print(scheduled_deadline)
+                print(current_date)
+                break
+            except ValueError:
+                continue
+        else:
+           
+            print("Error: Unable to parse deadline date with any of the provided formats")
+            scheduled_deadline = None
+
+
+        if scheduled_deadline:
+            if current_date < scheduled_deadline:
+                col['StatusName'] = "Incoming"
+                print("Status set to Incoming")
+            elif current_date > scheduled_deadline:
+                col['StatusName'] = "Due"
+                print("Status set to Due")
+            
+
 
         pendingDetails.append(col)
     total_duration_hours = total_work_time // 60
@@ -496,17 +522,32 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
         "totalPoint":round(totalPoint,2),
         'pagesize':'A4',
     }
+    pdf = render_to_pdf('dailyreport.html', context)
+    
+    
+    watermark_pdf = create_watermark("CRM")
 
-    pdf = generate_pdf_with_watermark('dailyreport.html', context)
-    invoice_file_name = f'{StaffName}.pdf'
+    
+    input_pdf = PdfReader(BytesIO(pdf.content))
+
+    
+    output_pdf_stream = add_watermark(input_pdf, watermark_pdf)
+
+   
+    response = HttpResponse(output_pdf_stream.read(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename={context["StaffName"]}.pdf'
     return HttpResponse(pdf.content, content_type='application/pdf')
+
+    # pdf = generate_pdf_with_watermark('dailyreport.html', context)
+    # invoice_file_name = f'{StaffName}.pdf'
+    # return HttpResponse(pdf.content, content_type='application/pdf')
 
 
 
 def create_watermark(text):
     # Create a PDF file with the watermark text
     packet = BytesIO()
-    can = canvas.Canvas(packet, pagesize=letter)
+    can = canvas.Canvas(packet, pagesize=A4)
     can.setFont("Helvetica", 50)
     can.setFillColorRGB(0, 0, 0, 0.1)
     can.saveState()
@@ -531,20 +572,37 @@ def add_watermark(input_pdf, watermark_pdf):
     output_stream.seek(0)
     return output_stream
 
-def generate_pdf_with_watermark(request, context):
+# def generate_pdf_with_watermark(request, context):
    
-    pdf = render_to_pdf('dailyreport.html', context)
+#     pdf = render_to_pdf('dailyreport.html', context)
     
     
-    watermark_pdf = create_watermark("CRM")
+#     watermark_pdf = create_watermark("CRM")
 
     
-    input_pdf = PdfReader(BytesIO(pdf.content))
+#     input_pdf = PdfReader(BytesIO(pdf.content))
 
     
-    output_pdf_stream = add_watermark(input_pdf, watermark_pdf)
+#     output_pdf_stream = add_watermark(input_pdf, watermark_pdf)
 
    
-    response = HttpResponse(output_pdf_stream.read(), content_type='application/pdf')
-    response['Content-Disposition'] = f'attachment; filename={context["StaffName"]}.pdf'
-    return response
+#     response = HttpResponse(output_pdf_stream.read(), content_type='application/pdf')
+#     response['Content-Disposition'] = f'attachment; filename={context["StaffName"]}.pdf'
+#     return response
+
+
+def dateConversion(Date):
+    date_formats = [
+        '%m/%d/%Y, %I:%M:%S %p',
+        '%m/%d/%Y, %H:%M:%S',
+        '%d/%m/%Y, %I:%M:%S %p',
+        '%d/%m/%Y, %H:%M:%S'
+    ]
+    for date_format in date_formats:
+        try:
+            ConvertedDate = datetime.strptime(Date, date_format)
+            break
+        except:
+            p=""
+        return ConvertedDate
+
