@@ -199,8 +199,9 @@ def LoginHistoryApi(request):
                             taskTiming.EndDate = loginHistoryData['LogoutTime']
                             taskTiming.save()
                         projectTask = ProjectTask.objects.get(ProjectTaskId=row['ProjectTaskId'])
-                        projectTask.Status = 10
-                        projectTask.save()
+                        if projectTask.Status=='2':
+                            projectTask.Status = 10
+                            projectTask.save()
                 except:
                     p=""
                 return JsonResponse(loginHistorySerializer.data['LoginHistoryId'], safe=False)

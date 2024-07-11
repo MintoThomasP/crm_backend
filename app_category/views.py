@@ -9,6 +9,8 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from django.db.models import Q
 from app_category.models import Category
 from app_category.serializers import CategorySerializer
+from app_default.models import CategoryType
+from app_default.serializers import CategoryTypeSerializer
 # Create your views here.
 
 
@@ -67,7 +69,7 @@ def CategoryApiById(request, CategoryId=""):
             categorySerializer = CategorySerializer(
                 category)
             categoryData=categorySerializer.data
-            subcategory = Category.objects.filter(RefId=CategoryId)
+            subcategory = Category.objects.filter(RefId=CategoryId,ActiveStatus=1)
             subcategorySerializer=CategorySerializer(subcategory, many=True)
             categoryData['Subcategory']=subcategorySerializer.data
            
@@ -95,12 +97,15 @@ def GetAllCategoryBySectionTypeApi(request):
                 Q(RefId__isnull=True) | Q(RefId=""),ActiveStatus=1,SectionType=categoryData['SectionType']).order_by('-SortId')
             categorySerializer = CategorySerializer(
                 category, many=True)
-            # categoryData=[]
-            # for row in categorySerializer.data:
-            #     subcategory = Category.objects.filter(RefId=row['CategoryId'])
-            #     subcategorySerializer=CategorySerializer(subcategory, many=True)
-            #     row['Subcategory']=subcategorySerializer.data
-            #     categoryData.append(row)
+            categoryData=[]
+            for row in categorySerializer.data:
+                try:
+                    categoryType=CategoryType.objects.get(CategoryTypeId=row['CategoryType'])
+                    categoryTypeSerializer=CategoryTypeSerializer(categoryType)
+                    row['CategoryTypeName']=categoryTypeSerializer.data['CategoryType']
+                except:
+                    row['CategoryTypeName']=""
+                categoryData.append(row)
             return JsonResponse(categorySerializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)

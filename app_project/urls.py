@@ -52,5 +52,8 @@ urlpatterns = [
 
 
     path('ProjectTaskTotalDurationCalculation/', views.ProjectTaskTotalDurationCalculation),
+    path('GetAllTicketsApi/', views.GetAllTicketsApi),
+
+    url(r'^TicketsByTaskAssignedTo/(?P<TaskAssignedTo>[0-9a-zA-Z\-]+)$', views.TicketsByTaskAssignedTo),
 
 ]
