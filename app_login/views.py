@@ -201,6 +201,7 @@ def LoginHistoryApi(request):
                         projectTask = ProjectTask.objects.get(ProjectTaskId=row['ProjectTaskId'])
                         if projectTask.Status=='2':
                             projectTask.Status = 10
+                            projectTask.EndDate = loginHistoryData['LogoutTime']
                             projectTask.save()
                 except:
                     p=""

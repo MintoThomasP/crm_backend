@@ -1595,6 +1595,9 @@ def ProjectTaskTimingApi(request, pk=""):
                 projectTaskTimingSerializer.save()
                 ProjectTaskTimingId=projectTaskTimingSerializer.data['ProjectTaskTimingId']
                 ProjectTaskTimingCalculationById(ProjectTaskTimingId)
+                projectTask=ProjectTask.objects.get(ProjectTaskId=projectTaskTiming.ProjectTaskId)
+                projectTask.EndDate = projectTaskTimingdata['EndDate']
+                projectTask.save()
 
                 return JsonResponse(projectTaskTimingSerializer.data['ProjectTaskTimingId'], safe=False)
             return JsonResponse("Failed to Update", safe=False)
@@ -1974,3 +1977,26 @@ def TicketsByTaskAssignedTo(request, TaskAssignedTo=""):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
+    
+
+
+from django.db.models import Q
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give LoginHistoryId to get one loginHistory detail",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def UpdateEndDate(request):
+    project_tasks = ProjectTask.objects.filter(Q(EndDate__isnull=True) | Q(EndDate=""))
+    project_task_serializer = ProjectTaskSerializer(project_tasks, many=True)
+    timing_data = []
+
+    for row in project_task_serializer.data:
+        if row['StartDate'] and row['Status'] != '1':
+            task_timings = ProjectTaskTiming.objects.filter(ProjectTaskId=row['ProjectTaskId']).order_by('-SortId')
+            if task_timings.exists():
+                task_timings_serializer = ProjectTaskTimingSerializer(task_timings, many=True)
+                end_date = task_timings_serializer.data[0]['EndDate']
+                projectTask=ProjectTask.objects.get(ProjectTaskId=row['ProjectTaskId'])
+                projectTask.EndDate=end_date
+                projectTask.save()
+    return JsonResponse("Updated", safe=False)

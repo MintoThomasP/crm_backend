@@ -56,4 +56,7 @@ urlpatterns = [
 
     url(r'^TicketsByTaskAssignedTo/(?P<TaskAssignedTo>[0-9a-zA-Z\-]+)$', views.TicketsByTaskAssignedTo),
 
+    path('UpdateEndDate/', views.UpdateEndDate),
+
+
 ]

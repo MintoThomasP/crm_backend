@@ -177,7 +177,7 @@ def GetNotificationByToUser(request, ToUser=""):
                 except:
                      row['ToUserName']=""
                 try:
-                    fromstaff=Staff.objects.get(StaffId=row['ToUser'])
+                    fromstaff=Staff.objects.get(StaffId=row['FromUser'])
                     fromstaffSerializer=StaffSerializer(fromstaff)
                     row['FromUserName']=fromstaffSerializer.data['StaffName']
                 except:
