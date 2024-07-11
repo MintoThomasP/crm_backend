@@ -1989,7 +1989,7 @@ def UpdateEndDate(request):
     project_tasks = ProjectTask.objects.filter(Q(EndDate__isnull=True) | Q(EndDate=""))
     project_task_serializer = ProjectTaskSerializer(project_tasks, many=True)
     timing_data = []
-
+    count=0
     for row in project_task_serializer.data:
         if row['StartDate'] and row['Status'] != '1':
             task_timings = ProjectTaskTiming.objects.filter(ProjectTaskId=row['ProjectTaskId']).order_by('-SortId')
@@ -1999,4 +1999,5 @@ def UpdateEndDate(request):
                 projectTask=ProjectTask.objects.get(ProjectTaskId=row['ProjectTaskId'])
                 projectTask.EndDate=end_date
                 projectTask.save()
-    return JsonResponse("Updated", safe=False)
+                count=count+1
+    return JsonResponse("Updated"+count, safe=False)
