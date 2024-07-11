@@ -38,6 +38,8 @@ urlpatterns = [
     url(r'^CountryApiById/(?P<CountryId>[0-9a-zA-Z\-]+)$', views.CountryApiById),
 
 
-       path('DocumentTypeApi/', views.DocumentTypeApi),
+    path('DocumentTypeApi/', views.DocumentTypeApi),
+    path('SectionTypeApi/', views.SectionTypeApi),
+    path('CategoryTypeApi/', views.CategoryTypeApi),
 
 ]

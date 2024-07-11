@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from app_site.models import SiteSettings
+from app_site.models import Notification, SiteSettings
 
 
 class SiteSettingsSerializer(serializers.ModelSerializer):
@@ -65,4 +65,16 @@ class UploadSiteSettingsSerializer(serializers.ModelSerializer):
         fields = ('SiteSettingsId',
                   'Logo',
                   'FavIcon'
+        )
+
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notification
+        fields = ('NotificationId',
+                  'Title',
+                  'Message',
+                  'FromUser',
+                  'ToUser',
+                  'CreatedDate'
         )

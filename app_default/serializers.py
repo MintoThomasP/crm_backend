@@ -1,6 +1,6 @@
 
 from xml.dom.minidom import DocumentType
-from app_default.models import CompanyDocumentType, Country, Currency, DepositTo, Designation, InvoiceStatus, LeaveStatus, LeaveType, PaymentMode, StaffStatus, State, TaskStatus, UserGroup, UserType
+from app_default.models import CategoryType, CompanyDocumentType, Country, Currency, DepositTo, Designation, InvoiceStatus, LeaveStatus, LeaveType, PaymentMode, SectionType, StaffStatus, State, TaskStatus, UserGroup, UserType
 from rest_framework import serializers
 
 
@@ -136,4 +136,23 @@ class CompanyDocumentTypeSerializer(serializers.ModelSerializer):
         fields = (
 'DocumentTypeId',
 'DocumentType'
+)
+        
+
+
+
+class SectionTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SectionType
+        fields = (
+'SectionTypeId',
+'SectionType'
+)
+        
+class CategoryTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CategoryType
+        fields = (
+'CategoryTypeId',
+'CategoryType'
 )

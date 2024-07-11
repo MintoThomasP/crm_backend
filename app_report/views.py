@@ -394,14 +394,16 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
                 try:
                     if login_history.LoginTime and login_history.LogoutTime:
                         login_time_dt = datetime.strptime(login_history.LoginTime, date_format)
+                        logout_time_dt = datetime.strptime(login_history.LogoutTime, date_format)
                         if login_time_dt and login_time_dt.date() == current_date:
                             login_time = login_history.LoginTime
                             logout_time = login_history.LogoutTime if login_history.LogoutTime else ""
+                            
 
                             if login_time:
                                 login_details = {
-                                    "LoginTime": login_time,
-                                    "LogoutTime": logout_time,
+                                    "LoginTime": login_time_dt.strftime('%B %d, %Y, %I:%M:%S %p'),
+                                    "LogoutTime": logout_time_dt.strftime('%B %d, %Y, %I:%M:%S %p'),
                                     "Tasks": [],
                                     "TotalWorkTime": 0  # Initialize total work time for this login period
                                 }
@@ -491,7 +493,8 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
         "current_date": current_date,
         "pendingDetails": pendingDetails,
         "total_work_time": total_duration, 
-        "totalPoint":round(totalPoint,2)
+        "totalPoint":round(totalPoint,2),
+        'pagesize':'A4',
     }
 
     pdf = generate_pdf_with_watermark('dailyreport.html', context)

@@ -182,7 +182,9 @@ def ProjectTaskApi(request):
                     sendNotification({
                         "title":title,
                         "body":projectTaskSerializer.data['Title'],
-                        "token":login.Token
+                        "token":login.Token,
+                        "fromuser":projectTaskSerializer.data['TaskAssignedBy'],
+                        "touser":projectTaskSerializer.data['TaskAssignedTo']
                     })
 
 
@@ -205,23 +207,30 @@ def ProjectTaskApi(request):
                         sendNotification({
                             "title":title,
                             "body":projectTaskSerializer.data['Title'],
-                            "token":login.Token
+                            "token":login.Token,
+                            "fromuser":projectTaskSerializer.data['TaskAssignedBy'],
+                            "touser":projectTaskSerializer.data['TaskAssignedTo']
                         })
                 elif projectTaskSerializer.data['Status']=='4' or  projectTaskSerializer.data['Status']=='5' or  projectTaskSerializer.data['Status']=='6':
-                    login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedTo'])
+                    login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedBy'])
                     if login.Token :
                         sendNotification({
                             "title":"Not verified",
                             "body":projectTaskSerializer.data['Title'],
-                            "token":login.Token
+                            "token":login.Token,
+                            "fromuser":projectTaskSerializer.data['TaskAssignedBy'],
+                            "touser":projectTaskSerializer.data['TaskAssignedTo']
+
                         })
                 elif projectTaskSerializer.data['Status']=='7' or  projectTaskSerializer.data['Status']=='8' or  projectTaskSerializer.data['Status']=='9':
-                    login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedTo'])
+                    login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedBy'])
                     if login.Token :
                         sendNotification({
                             "title":"Verified",
                             "body":projectTaskSerializer.data['Title'],
-                            "token":login.Token
+                            "token":login.Token,
+                            "fromuser":projectTaskSerializer.data['TaskAssignedBy'],
+                            "touser":projectTaskSerializer.data['TaskAssignedTo']
                         })
                 return JsonResponse(projectTaskSerializer.data['ProjectTaskId'], safe=False)
             return JsonResponse("Failed to Update", safe=False)
@@ -441,9 +450,19 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
                     row['ProjectName'] = projectSerializer.data['ProjectName']
                 except:
                     row['ProjectName'] = ""
-                staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
-                staffSerializer = StaffSerializer(staff)
-                row['StaffName'] = staffSerializer.data['StaffName']
+                try:
+                    staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
+                    staffSerializer = StaffSerializer(staff)
+                    row['StaffName'] = staffSerializer.data['StaffName']
+                except:
+                    row['StaffName'] =""
+                try:
+                    staff = Staff.objects.get(StaffId=row['TaskAssignedBy'])
+                    staffSerializer = StaffSerializer(staff)
+                    row['TaskAssignedByName'] = staffSerializer.data['StaffName']
+                except:
+                    row['TaskAssignedByName'] =""
+
 
                 try:
                     staff=Staff.objects.get(StaffId=row['VerifiedBy'])
@@ -891,13 +910,26 @@ def CommentApi(request, pk=""):
                 task = ProjectTask.objects.get(ProjectTaskId=commentSerializer.data['ProjectTaskId'])
                 try:
                     if comment['ShowNotification']:
-                        login = Login.objects.get(UserId=task.TaskAssignedTo)
-                        if login.Token :
-                            sendNotification({
-                                "title":"Comments",
-                                "body":commentSerializer.data['Comment'],
-                                "token":login.Token
-                            })
+                        if task.TaskAssignedBy != commentSerializer.data['CommentedBy'] and task.TaskAssignedTo == commentSerializer.data['CommentedBy']:
+                            login = Login.objects.get(UserId=task.TaskAssignedBy)
+                            if login.Token :
+                                sendNotification({
+                                    "title":"Comments",
+                                    "body":commentSerializer.data['Comment'],
+                                    "token":login.Token,
+                                    "fromuser":commentSerializer.data['CommentedBy'],
+                                    "touser":task.TaskAssignedBy
+                                })
+                        if task.TaskAssignedBy == commentSerializer.data['CommentedBy'] and task.TaskAssignedTo != commentSerializer.data['CommentedBy']:
+                            login = Login.objects.get(UserId=task.TaskAssignedTo)
+                            if login.Token :
+                                sendNotification({
+                                    "title":"Comments",
+                                    "body":commentSerializer.data['Comment'],
+                                    "token":login.Token,
+                                    "fromuser":commentSerializer.data['CommentedBy'],
+                                    "touser":task.TaskAssignedTo
+                                })
                 except:
                     p=""
                
@@ -1492,6 +1524,21 @@ initialize_app(cred)
 def send_notification(request):
     notifyData = JSONParser().parse(request)
     sendNotification(notifyData)
+    notificationdata={
+        "Title":notifyData['title'],
+        "Message":notifyData['body'],
+        "FromUser":notifyData['fromuser'],
+        "ToUser":notifyData['touser'],
+    }
+    notificationSerializer = ProjectTaskSerializer(
+                data=notificationdata)
+    if notificationSerializer.is_valid():
+        notificationSerializer.save()
+
+
+
+
+    
 
 def sendNotification(notifyData):
 

@@ -96,3 +96,15 @@ class LeaveStatus(models.Model):
 class CompanyDocumentType(models.Model):
     DocumentTypeId=models.AutoField(primary_key=True, editable=False)
     DocumentType=models.CharField(max_length=300, blank=True, null=True)
+
+
+
+class SectionType(models.Model):
+    SectionTypeId=models.AutoField(primary_key=True, editable=False)
+    SectionType=models.CharField(max_length=300, blank=True, null=True)
+
+
+
+class CategoryType(models.Model):
+    CategoryTypeId=models.AutoField(primary_key=True, editable=False)
+    CategoryType=models.CharField(max_length=300, blank=True, null=True)

@@ -7,8 +7,8 @@ from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from app_default.views import retry
-from app_site.models import SiteSettings
-from app_site.serializers import SaveSiteSettingsSerializer, SiteSettingsSerializer, UploadSiteSettingsSerializer
+from app_site.models import Notification, SiteSettings
+from app_site.serializers import NotificationSerializer, SaveSiteSettingsSerializer, SiteSettingsSerializer, UploadSiteSettingsSerializer
 from django.db.models import Max
 # Create your views here.
 
@@ -72,35 +72,63 @@ def CURDSiteSettingsApiCompanyId(request, CompanyId=""):
         return JsonResponse("Invalid", safe=False)
         
 
-
-
-
 class UploadSiteSettingsImage(APIView):
     parser_classes = (MultiPartParser, FormParser)
-    @retry(retries=3, delay=2)
+
     def post(self, request, SiteSettingsId="", *args, **kwargs):
-        try:
-            site = SiteSettings.objects.get(
-                SiteSettingsId=SiteSettingsId)
-            try:
-                if request.data['Logo']:
-                    SiteSettings.objects.get(
-                        SiteSettingsId=SiteSettingsId).Logo.delete(save=True)
-                if request.data['FavIcon']:
-                    SiteSettings.objects.get(
-                        SiteSettingsId=SiteSettingsId).FavIcon.delete(save=True)
+        # try:
+
+                projectTaskFile = SiteSettings.objects.get(
+                    SiteSettingsId=SiteSettingsId)
+                try:
+                    if request.data['Logo']:
+                        SiteSettings.objects.get(
+                            SiteSettingsId=SiteSettingsId).Logo.delete(save=True)
+                    if request.data['FavIcon']:
+                         SiteSettings.objects.get(
+                            SiteSettingsId=SiteSettingsId).FavIcon.delete(save=True)
+                    
+                except:
+                    p = ""
+                Serializer = UploadSiteSettingsSerializer(
+                    projectTaskFile, data=request.data)
+                if Serializer.is_valid():
+                    Serializer.save()
+                    return JsonResponse("Uploaded", safe=False)
+                else:
+                    return JsonResponse("", safe=False)
+        # except:
+        #     return JsonResponse("Invalid", safe=False)
+        
+
+
+
+# class UploadSiteSettingsImage(APIView):
+#     parser_classes = (MultiPartParser, FormParser)
+#     @retry(retries=3, delay=2)
+#     def post(self, request, SiteSettingsId="", *args, **kwargs):
+#         try:
+#             site = SiteSettings.objects.get(
+#                 SiteSettingsId=SiteSettingsId)
+#             try:
+#                 if request.data['Logo']:
+#                     SiteSettings.objects.get(
+#                         SiteSettingsId=SiteSettingsId).Logo.delete(save=True)
+#                 if request.data['FavIcon']:
+#                     SiteSettings.objects.get(
+#                         SiteSettingsId=SiteSettingsId).FavIcon.delete(save=True)
                 
-            except:
-                p=""
-            siteSerializer = UploadSiteSettingsSerializer(
-                site, data=request.data)
-            if siteSerializer.is_valid():
-                siteSerializer.save()
-                return JsonResponse("Uploaded", safe=False)
-            else:
-                return JsonResponse("", safe=False)
-        except:
-            return JsonResponse("", safe=False)
+#             except:
+#                 p=""
+#             siteSerializer = UploadSiteSettingsSerializer(
+#                 site, data=request.data)
+#             if siteSerializer.is_valid():
+#                 siteSerializer.save()
+#                 return JsonResponse("Uploaded", safe=False)
+#             else:
+#                 return JsonResponse("", safe=False)
+#         except:
+#             return JsonResponse("", safe=False)
 
 
 
@@ -117,6 +145,27 @@ def CURDSiteSettingsApiById(request, SiteSettingsId=""):
             siteSettingsSerializer = SiteSettingsSerializer(
                     siteSettings)
             return JsonResponse(siteSettingsSerializer.data, safe=False)
+        else:
+                return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+
+
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all notifications",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def GetNotificationByToUser(request, ToUser=""):
+    try:
+        if request.method == 'GET':
+           
+            notification = Notification.objects.filter(
+                    ToUser=ToUser)
+            notificationSerializer = NotificationSerializer(
+                    notification,many=True)
+            return JsonResponse(notificationSerializer.data, safe=False)
         else:
                 return JsonResponse("", safe=False)
     except:

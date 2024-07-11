@@ -9,10 +9,13 @@ from app_login.models import Login, LoginHistory
 from django.contrib.auth import logout
 from django.shortcuts import redirect
 from app_login.serializers import LoginAuthSerializer, LoginHistorySerializer, LoginSaveSerializer, LoginSerializer, LoginUpdateSerializer
+from app_project.models import ProjectTask, ProjectTaskTiming
+from app_project.serializers import ProjectTaskSerializer, ProjectTaskTimingSerializer
 from app_staff.models import Staff
 from app_staff.serializers import StaffSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
+from django.db.models import Q
 # Create your views here.
 
 
@@ -39,6 +42,7 @@ def CreateLoginApi(request):
             userLogin, data=userLoginData)
         if logSerializer.is_valid():
             logSerializer.save()
+            
             return JsonResponse("Update successfully", safe=False)
         return JsonResponse("Failed to Update", safe=False)
     
@@ -182,6 +186,23 @@ def LoginHistoryApi(request):
                 loginHistory, data=loginHistoryData)
             if loginHistorySerializer.is_valid():
                 loginHistorySerializer.save()
+                try:
+                    projectTask=ProjectTask.objects.filter(TaskAssignedTo=loginHistoryData['UserId'])
+                    projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
+                    for row in projectTaskSerializer.data:
+                        taskTimings = ProjectTaskTiming.objects.filter(
+                            Q(EndDate__isnull=True) | Q(EndDate=""),
+                            ProjectTaskId=row['ProjectTaskId']
+                        )
+                        
+                        for taskTiming in taskTimings:
+                            taskTiming.EndDate = loginHistoryData['LogoutTime']
+                            taskTiming.save()
+                        projectTask = ProjectTask.objects.get(ProjectTaskId=row['ProjectTaskId'])
+                        projectTask.Status = 10
+                        projectTask.save()
+                except:
+                    p=""
                 return JsonResponse(loginHistorySerializer.data['LoginHistoryId'], safe=False)
             return JsonResponse("Failed to Update", safe=False)
         else:

@@ -52,7 +52,8 @@ INSTALLED_APPS = [
     'app_sale',
     'app_site',
     'app_report',
-    'app_company'
+    'app_company',
+    'app_category'
     
     
 ]
@@ -66,6 +67,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'django.middleware.gzip.GZipMiddleware',
 ]
 
 ROOT_URLCONF = 'staffmanageproject.urls'

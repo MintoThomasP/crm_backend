@@ -4,8 +4,8 @@ from django.views.decorators.csrf import csrf_exempt
 import requests
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
-from app_default.models import CompanyDocumentType, Country, Currency, DepositTo, Designation, InvoiceStatus, LeaveStatus, LeaveType, PaymentMode, StaffStatus, State, TaskStatus, UserGroup, UserType
-from app_default.serializers import CompanyDocumentTypeSerializer, CountrySerializer, CurrencySerializer, DepositToSerializer, DesignationSerializer,InvoiceStatusSerializer, LeaveStatusSerializer, LeaveTypeSerializer, PaymentModeSerializer, StaffStatusSerializer, StateSerializer, TaskStatusSerializer, UserGroupSerializer, UserTypeSerializer
+from app_default.models import CategoryType, CompanyDocumentType, Country, Currency, DepositTo, Designation, InvoiceStatus, LeaveStatus, LeaveType, PaymentMode, SectionType, StaffStatus, State, TaskStatus, UserGroup, UserType
+from app_default.serializers import CategoryTypeSerializer, CompanyDocumentTypeSerializer, CountrySerializer, CurrencySerializer, DepositToSerializer, DesignationSerializer,InvoiceStatusSerializer, LeaveStatusSerializer, LeaveTypeSerializer, PaymentModeSerializer, SectionTypeSerializer, StaffStatusSerializer, StateSerializer, TaskStatusSerializer, UserGroupSerializer, UserTypeSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 import time
@@ -521,6 +521,45 @@ def DocumentTypeApi(request):
             documentType_serializer = CompanyDocumentTypeSerializer(
                 documentType, many=True)  
             return JsonResponse(documentType_serializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("Invalid", safe=False)
+    
+
+
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all SectionType Details",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def SectionTypeApi(request):
+    try:
+        if request.method == 'GET':
+            sectionType = SectionType.objects.all()
+            sectionType_serializer = SectionTypeSerializer(
+                sectionType, many=True)  
+            return JsonResponse(sectionType_serializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("Invalid", safe=False)
+    
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all CategoryType Details",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def CategoryTypeApi(request):
+    try:
+        if request.method == 'GET':
+            categoryType = CategoryType.objects.all()
+            categoryType_serializer = CategoryTypeSerializer(
+                categoryType, many=True)  
+            return JsonResponse(categoryType_serializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
