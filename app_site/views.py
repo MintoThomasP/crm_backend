@@ -182,7 +182,7 @@ def GetNotificationByToUser(request, ToUser=""):
                     fromstaff=Staff.objects.get(StaffId=row['FromUser'])
                     fromstaffSerializer=StaffSerializer(fromstaff)
                     row['FromUserName']=fromstaffSerializer.data['StaffName']
-                    row['FromUserImage']=staffSerializer.data['ProfilePhoto']
+                    row['FromUserImage']=fromstaffSerializer.data['ProfilePhoto']
                 except:
                      row['FromUserImage']=""
                      row['FromUserName']=""
