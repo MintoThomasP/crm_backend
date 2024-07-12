@@ -123,7 +123,7 @@ from datetime import datetime,date, timedelta
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def StaffApiById(request, StaffId=""):
-    # try:
+    try:
         if request.method == 'GET': 
             staff = Staff.objects.get(
                     StaffId=StaffId)
@@ -183,8 +183,8 @@ def StaffApiById(request, StaffId=""):
             return JsonResponse("Deleted successfully", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 
 @csrf_exempt
