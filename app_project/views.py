@@ -383,7 +383,11 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
     try:
         if request.method == 'GET': 
             projectTask = ProjectTask.objects.filter(
-                    TaskAssignedTo=TaskAssignedTo).order_by('-SortId')
+        Q(TaskAssignedTo=TaskAssignedTo) & 
+        Q(TaskType='Task') | 
+        (Q(TaskType='Ticket') & Q(TaskAssignedTo=TaskAssignedTo) & (Q(Status='2') | Q(Status='1')))
+    ).order_by('-SortId')
+           
             projectTaskSerializer = ProjectTaskSerializer(
                     projectTask,many=True)
             taskStatusName=[]
@@ -417,8 +421,8 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
                             point = row['TaskPoint']
                         except:
                             point=1
-                        point = pointCalculation(duration_seconds, TotalDuration_seconds, point)
-                        row['CompletedPoint'] += round((row['TaskPoint']) - point)
+                        row['CompletedPoint'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
+                        # row['CompletedPoint'] += round((row['TaskPoint']) - point)
                             
                         # try:
                         #     duration_parts = row['Duration'].split(':')
@@ -526,7 +530,7 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
 def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
     try:
         if request.method == 'GET': 
-            projectTask = ProjectTask.objects.filter(TaskAssignedBy=TaskAssignedBy).order_by('-SortId')
+            projectTask = ProjectTask.objects.filter(TaskAssignedBy=TaskAssignedBy,TaskType='Task').order_by('-SortId')
             projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
             taskStatusName = []
             for row in projectTaskSerializer.data:
@@ -537,8 +541,8 @@ def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
                         TotalDuration = row['TotalDuration']
                         TotalDuration_seconds=durationCalculation(TotalDuration)
                         point = row['TaskPoint']
-                        point = pointCalculation(duration_seconds, TotalDuration_seconds, point)
-                        row['CompletedPoint'] += round((row['TaskPoint']) - point, 2)
+                        row['CompletedPoint'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
+                        # row['CompletedPoint'] += round((row['TaskPoint']) - point, 2)
                         
 
                     # if row['StartDate'] and row['EndDate']:
@@ -1079,8 +1083,8 @@ def ProjectTaskApiFilteringforTaskAssignedTo(request,):
                         TotalDuration = row['TotalDuration']
                         TotalDuration_seconds=durationCalculation(TotalDuration)
                         point = row['TaskPoint']
-                        point = pointCalculation(duration_seconds, TotalDuration_seconds, point)
-                        row['CompletedPoint'] += round((row['TaskPoint']) - point, 2)
+                        row['CompletedPoint'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
+                        # row['CompletedPoint'] += round((row['TaskPoint']) - point, 2)
                         
 
                     # if row['StartDate'] and row['EndDate']:
@@ -1199,8 +1203,8 @@ def ProjectTaskApiFilteringforTaskAssignedBy(request,):
                         TotalDuration = row['TotalDuration']
                         TotalDuration_seconds=durationCalculation(TotalDuration)
                         point = row['TaskPoint']
-                        point = pointCalculation(duration_seconds, TotalDuration_seconds, point)
-                        row['CompletedPoint'] += round((row['TaskPoint']) - point, 2)
+                        row['CompletedPoint'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
+                        # row['CompletedPoint'] += round((row['TaskPoint']) - point, 2)
                         
 
                     # if row['StartDate'] and row['EndDate']:
@@ -1692,50 +1696,44 @@ def ProjectTaskTimingApiByProjectTaskId(request, ProjectTaskId=""):
 #         return JsonResponse("", safe=False)
 
 
-def ProjectTaskTimingCalculationById(request, ProjectTaskTimingId=""):
-    try:
-        if request.method == 'GET':
-            TaskTiming = ProjectTaskTiming.objects.get(ProjectTaskTimingId=ProjectTaskTimingId)
-            projectTaskTiming = ProjectTaskTiming.objects.filter(ProjectTaskId=TaskTiming.ProjectTaskId)
-            projectTaskTimingSerializer = ProjectTaskTimingSerializer(projectTaskTiming, many=True)
-            total_duration_minutes = 0
+def ProjectTaskTimingCalculationById(ProjectTaskTimingId=""):
+        TaskTiming = ProjectTaskTiming.objects.get(ProjectTaskTimingId=ProjectTaskTimingId)
+        projectTaskTiming = ProjectTaskTiming.objects.filter(ProjectTaskId=TaskTiming.ProjectTaskId)
+        projectTaskTimingSerializer = ProjectTaskTimingSerializer(projectTaskTiming, many=True)
+        total_duration_minutes = 0
 
-            for row in projectTaskTiming:
-                try:
-                    date_format = '%m/%d/%Y, %I:%M:%S %p'
-                    start_date = datetime.strptime(row.StartDate, date_format)
-                    end_date = datetime.strptime(row.EndDate, date_format)
-                except:
-                    date_format = '%d/%m/%Y, %I:%M:%S %p'
-                    start_date = datetime.strptime(row.StartDate, date_format)
-                    end_date = datetime.strptime(row.EndDate, date_format)
+        for row in projectTaskTiming:
+            try:
+                date_format = '%m/%d/%Y, %I:%M:%S %p'
+                start_date = datetime.strptime(row.StartDate, date_format)
+                end_date = datetime.strptime(row.EndDate, date_format)
+            except:
+                date_format = '%d/%m/%Y, %I:%M:%S %p'
+                start_date = datetime.strptime(row.StartDate, date_format)
+                end_date = datetime.strptime(row.EndDate, date_format)
 
-                total_time_taken = end_date - start_date
-                total_time_taken_in_seconds = total_time_taken.total_seconds()
-                total_time_taken_data = {
-                    'hours': round(total_time_taken_in_seconds // 3600),
-                    'minutes': round((total_time_taken_in_seconds % 3600) // 60)
-                }
-                duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
-                row.Duration = duration
-                row.save()
+            total_time_taken = end_date - start_date
+            total_time_taken_in_seconds = total_time_taken.total_seconds()
+            total_time_taken_data = {
+                'hours': round(total_time_taken_in_seconds // 3600),
+                'minutes': round((total_time_taken_in_seconds % 3600) // 60)
+            }
+            duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
+            row.Duration = duration
+            row.save()
 
-                hours, minutes = map(int, duration.split(':'))
-                total_duration_minutes += hours * 60 + minutes
+            hours, minutes = map(int, duration.split(':'))
+            total_duration_minutes += hours * 60 + minutes
 
-            total_duration_hours = total_duration_minutes // 60
-            total_duration_remaining_minutes = total_duration_minutes % 60
-            total_duration = f"{total_duration_hours}:{total_duration_remaining_minutes}"
+        total_duration_hours = total_duration_minutes // 60
+        total_duration_remaining_minutes = total_duration_minutes % 60
+        total_duration = f"{total_duration_hours}:{total_duration_remaining_minutes}"
 
-            projectTask = ProjectTask.objects.get(ProjectTaskId=TaskTiming.ProjectTaskId)
-            projectTask.TotalDuration = total_duration
-            projectTask.save()
+        projectTask = ProjectTask.objects.get(ProjectTaskId=TaskTiming.ProjectTaskId)
+        projectTask.TotalDuration = total_duration
+        projectTask.save()
 
-    #         return JsonResponse("Updated", safe=False)
-        else:
-            return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+
 
     
 
@@ -1880,48 +1878,7 @@ def TicketsByTaskAssignedTo(request, TaskAssignedTo=""):
                     row['Tickets']=projectTaskSerializer.data[0]
                 except:
                     row['Tickets']=[]
-                # try:
-                    # if row['StartDate'] and row['EndDate']:
-                    #     try:
-                    #         date_format = '%m/%d/%Y, %I:%M:%S %p' 
-                    #         start_date = datetime.strptime(row['StartDate'], date_format)
-                    #         end_date = datetime.strptime(row['EndDate'], date_format)
-                    #     except:
-                    #         date_format = '%d/%m/%Y, %I:%M:%S %p'
-                    #         start_date = datetime.strptime(row['StartDate'], date_format)
-                    #         end_date = datetime.strptime(row['EndDate'], date_format)
-
-                    # if row['TotalDuration']:
-                    #     row['CompletedPoint']=0
-                    #     Duration = row['Duration']
-                    #     duration_seconds=durationCalculation(Duration)
-                    #     TotalDuration = row['TotalDuration']
-                    #     TotalDuration_seconds=durationCalculation(TotalDuration)
-                    #     try:
-                    #         point = row['TaskPoint']
-                    #     except:
-                    #         point=1
-                    #     point = pointCalculation(duration_seconds, TotalDuration_seconds, point)
-                    #     row['CompletedPoint'] += round((row['TaskPoint']) - point)
-                            
-                        # try:
-                        #     duration_parts = row['Duration'].split(':')
-                        #     hours = int(duration_parts[0])*60
-                        #     minutes = int(duration_parts[1])
-                        #     duration_min=hours + minutes
-                        #     duration_seconds=duration_min*60
-                        # except:
-                        #     duration_seconds=3600
-                        # total_time_taken_seconds = (end_date - start_date).total_seconds()
-                        # if total_time_taken_seconds > duration_seconds:
-                        #     value1 = (total_time_taken_seconds / duration_seconds) * 100
-                        #     value_percentage = value1-100
-                        #     point=(row['TaskPoint']*value_percentage)/100
-                        #     row['CompletedPoint'] = round(row['TaskPoint'] - point)
-                        # else:
-                        #     row['CompletedPoint'] = row['TaskPoint']
-                # except:
-                #     row['CompletedPoint']=""
+                
                 try:                      
                     taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
                     taskStatusSerializer=TaskStatusSerializer(taskStatus)
@@ -1980,6 +1937,84 @@ def TicketsByTaskAssignedTo(request, TaskAssignedTo=""):
     
 
 
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get projecttask by staff",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def TicketsByTaskAssignedBy(request, TaskAssignedBy=""):
+    try:
+        if request.method == 'GET': 
+            projectTask = ProjectTask.objects.filter(
+                    TaskAssignedBy=TaskAssignedBy,TaskType='Ticket').order_by('-SortId')
+            projectTaskSerializer = ProjectTaskSerializer(
+                    projectTask,many=True)
+            taskStatusName=[]
+            for row in projectTaskSerializer.data:
+                row['Tickets']=[]
+                try:
+                    projectTask = ProjectTask.objects.filter(
+                        RefId=row['ProjectTaskId']).order_by('-SortId')
+                    projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
+                    row['Tickets']=projectTaskSerializer.data[0]
+                except:
+                    row['Tickets']=[]
+                
+                try:                      
+                    taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                    taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                    row['StatusName']=taskStatusSerializer.data['Status']
+                except:
+                    row['StatusName']=""
+
+                try:
+                    project = Project.objects.get(ProjectId=row['ProjectId'])
+                    projectSerializer = ProjectSerializer(project)
+                    row['ProjectName'] = projectSerializer.data['ProjectName']
+                except:
+                    row['ProjectName'] = ""
+                try:
+                    staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
+                    staffSerializer = StaffSerializer(staff)
+                    row['StaffName'] = staffSerializer.data['StaffName']
+                except:
+                    row['StaffName'] =""
+                try:
+                    staff = Staff.objects.get(StaffId=row['TaskAssignedBy'])
+                    staffSerializer = StaffSerializer(staff)
+                    row['TaskAssignedByName'] = staffSerializer.data['StaffName']
+                except:
+                    row['TaskAssignedByName'] =""
+
+
+                try:
+                    staff=Staff.objects.get(StaffId=row['VerifiedBy'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['VerifiedByName']=staffSerializer.data['StaffName']
+                except:
+                    row['VerifiedByName']= ""
+                try:
+                    projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+                    projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
+                    row['ProjectTaskFiles']=projectTaskFileSerializer.data
+                except:
+                    row['ProjectTaskFiles']=""
+                
+                
+                taskStatusName.append(row)
+            MediaViewData = []
+            batch_size = 50
+            for start in range(0, len(taskStatusName), batch_size):
+                batch = taskStatusName[start:start + batch_size]
+                for media in batch:
+                    MediaViewData.append(media)
+
+            return JsonResponse(MediaViewData, safe=False)
+            
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+
 from django.db.models import Q
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give LoginHistoryId to get one loginHistory detail",)
@@ -1989,7 +2024,7 @@ def UpdateEndDate(request):
     project_tasks = ProjectTask.objects.filter(Q(EndDate__isnull=True) | Q(EndDate=""))
     project_task_serializer = ProjectTaskSerializer(project_tasks, many=True)
     timing_data = []
-    count=0
+
     for row in project_task_serializer.data:
         if row['StartDate'] and row['Status'] != '1':
             task_timings = ProjectTaskTiming.objects.filter(ProjectTaskId=row['ProjectTaskId']).order_by('-SortId')
@@ -1999,5 +2034,58 @@ def UpdateEndDate(request):
                 projectTask=ProjectTask.objects.get(ProjectTaskId=row['ProjectTaskId'])
                 projectTask.EndDate=end_date
                 projectTask.save()
-                count=count+1
-    return JsonResponse("Updated"+str(count), safe=False)
+    return JsonResponse("Updated", safe=False)
+
+
+from django.db.models import Q
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give LoginHistoryId to get one loginHistory detail",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def UpdateStatus(request):
+    project_tasks = ProjectTask.objects.filter(Q(Status='8') | Q(Status='9'),TaskType='Task')
+    project_task_serializer = ProjectTaskSerializer(project_tasks, many=True)
+    timing_data = []
+
+    for row in project_task_serializer.data:
+        if row['StartDate'] and row['EndDate']:
+            date_formats = [
+                    '%m/%d/%Y, %I:%M:%S %p',  # Example: 04/07/2024, 10:06:38 AM
+                    '%m/%d/%Y, %H:%M:%S',     # Example: 04/07/2024, 10:06:38
+                    '%d/%m/%Y, %I:%M:%S %p',  # Example: 07/04/2024, 10:06:38 AM
+                    '%d/%m/%Y, %H:%M:%S'      # Example: 07/04/2024, 10:06:38
+                ]
+
+            end_date = scheduled_deadline = None
+            for date_format in date_formats:
+                try:
+                    
+                    end_date = datetime.strptime(row['EndDate'], date_format)
+                    scheduled_deadline = datetime.strptime(row['ScheduledDeadline'], date_format)
+                    break
+                except ValueError:
+                    continue
+            if row['TotalDuration']:
+               
+                Duration = row['Duration']
+                duration_seconds=durationCalculation(Duration)
+                TotalDuration = row['TotalDuration']
+                TotalDuration_seconds=durationCalculation(TotalDuration)
+
+                    
+            task = ProjectTask.objects.get(ProjectTaskId=row['ProjectTaskId'])
+            if end_date and scheduled_deadline:
+
+                if end_date < scheduled_deadline and TotalDuration_seconds < duration_seconds:
+                    task.Status = '7'
+                    task.save()
+                elif end_date > scheduled_deadline:
+                    task.Status = '8'
+                    task.save()
+                elif TotalDuration_seconds > scheduled_deadline:
+                    task.Status = '9'
+                    task.save()
+    return JsonResponse("updated", safe=False)
+
+
+    

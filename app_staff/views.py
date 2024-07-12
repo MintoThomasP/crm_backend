@@ -123,7 +123,7 @@ from datetime import datetime,date, timedelta
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def StaffApiById(request, StaffId=""):
-    # try:
+    try:
         if request.method == 'GET': 
             staff = Staff.objects.get(
                     StaffId=StaffId)
@@ -137,9 +137,24 @@ def StaffApiById(request, StaffId=""):
             projectTask=ProjectTask.objects.filter(TaskAssignedTo=staffSerializer.data['StaffId'])
             projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
             work_status_count = {'Pending': 0, 'Completed': 0, 'Due': 0, 'Not Completed': 0, 'Finished': 0, 'Delay Finished': 0}
-            current_date = str(date.today())
+            current_date = datetime.today()
+           
+            date_formats = [
+        '%m/%d/%Y, %I:%M:%S %p',
+        '%m/%d/%Y, %H:%M:%S',
+        '%d/%m/%Y, %I:%M:%S %p',
+        '%d/%m/%Y, %H:%M:%S',
+        "%Y-%m-%dT%H:%M"
+    ]
           
             for task in projectTaskSerializer.data:
+                for date_format in date_formats:
+                    try:
+                        deadline = task['ScheduledDeadline']
+                        scheduled_deadline = datetime.strptime(deadline, date_format)
+                        break
+                    except ValueError:
+                        continue
               
                 if task['Status'] == '1' or task['Status'] == '2':
                         work_status_count['Pending'] += 1
@@ -147,7 +162,7 @@ def StaffApiById(request, StaffId=""):
                 if task['Status'] == '3':
                     work_status_count['Completed'] += 1
         
-                if task['CreatedDate'] < current_date and task['Status'] == '1':
+                if scheduled_deadline < current_date and task['Status'] == '1' or task['Status'] == '2' or task['Status'] == '10':
                     work_status_count['Due'] += 1
 
                 if task['Status'] == '8' or task['Status'] == '9':
@@ -167,8 +182,8 @@ def StaffApiById(request, StaffId=""):
             return JsonResponse("Deleted successfully", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 
 @csrf_exempt
@@ -304,16 +319,31 @@ def staffApiByStaffCode(request, StaffCode=""):
             projectTask=ProjectTask.objects.filter(TaskAssignedTo=staffSerializer.data['StaffId'])
             projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
             work_status_count = {'Pending': 0, 'Completed': 0, 'Due': 0, 'Not Completed': 0, 'Finished': 0, 'Delay Finished': 0}
-            current_date = str(date.today())
+            current_date = datetime.today()
+           
+            date_formats = [
+        '%m/%d/%Y, %I:%M:%S %p',
+        '%m/%d/%Y, %H:%M:%S',
+        '%d/%m/%Y, %I:%M:%S %p',
+        '%d/%m/%Y, %H:%M:%S',
+        "%Y-%m-%dT%H:%M"
+    ]
           
             for task in projectTaskSerializer.data:
+                for date_format in date_formats:
+                    try:
+                        deadline = task['ScheduledDeadline']
+                        scheduled_deadline = datetime.strptime(deadline, date_format)
+                        break
+                    except ValueError:
+                        continue
                 if task['Status'] == '1' or task['Status'] == '2':
                         work_status_count['Pending'] += 1
                 
                 if task['Status'] == '3':
                     work_status_count['Completed'] += 1
         
-                if task['CreatedDate'] < current_date and task['Status'] == '1':
+                if scheduled_deadline < current_date and task['Status'] == '1' or task['Status'] == '2' or task['Status'] == '10':
                     work_status_count['Due'] += 1
 
                 if task['Status'] == '8' or task['Status'] == '9':
@@ -551,45 +581,31 @@ def staffSalaryByPerformanceApi(request):
         year = requestData['Year']
         
         start_date = datetime(year, month, 1)
+       
         end_date = start_date.replace(day=1, month=start_date.month % 12 + 1) - timedelta(days=1)
         
-        projectTask = ProjectTask.objects.filter(TaskAssignedTo=requestData['StaffId'], ScheduledDeadline__range=(start_date, end_date))
+        
+        projectTask = ProjectTask.objects.filter(TaskAssignedTo=requestData['StaffId'],TaskType='Task', ScheduledDeadline__range=(start_date, end_date))
         projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
+        
         
         CompletedPoint = 0
         TaskPoint = 0
 
         for row in projectTaskSerializer.data:
+            
             TaskPoint += row['TaskPoint']
+           
 
-            # if row['StartDate'] and row['EndDate']:
-            #     try:
-            #         date_format = '%m/%d/%Y, %I:%M:%S %p'
-            #         start_date = datetime.strptime(row['StartDate'], date_format)
-            #         end_date = datetime.strptime(row['EndDate'], date_format)
-            #     except ValueError:
-            #         date_format = '%d/%m/%Y, %I:%M:%S %p'
-            #         start_date = datetime.strptime(row['StartDate'], date_format)
-            #         end_date = datetime.strptime(row['EndDate'], date_format)
             if row['TotalDuration']: 
-                # try:
-                #     duration_parts = row['Duration'].split(':')
-                #     hours = int(duration_parts[0]) * 60
-                #     minutes = int(duration_parts[1])
-                #     duration_min = hours + minutes
-                #     duration_seconds = duration_min * 60
-                # except:
-                #     duration_seconds = 3600
                 Duration = row['Duration']
                 duration_seconds=durationCalculation(Duration)
                 TotalDuration = row['TotalDuration']
                 TotalDuration_seconds=durationCalculation(TotalDuration)
-
-
-                # total_time_taken_seconds = (end_date - start_date).total_seconds()
                 if TotalDuration_seconds > duration_seconds:
                     value_percentage = ((TotalDuration_seconds / duration_seconds) * 100) - 100
                     point = (row['TaskPoint'] * value_percentage) / 100
+                    
                     CompletedPoint += round(row['TaskPoint'] - point)
                 else:
                     CompletedPoint += row['TaskPoint']
@@ -602,7 +618,8 @@ def staffSalaryByPerformanceApi(request):
         except:
             Salary = 0
       
-        
+        print("CompletedPoint",CompletedPoint)
+        print(TaskPoint)
         if CompletedPoint < 0:
             Payment = Salary + ((Salary * 0.1) * ((CompletedPoint / TaskPoint) * 100) / 100)
         elif CompletedPoint > TaskPoint:
@@ -706,12 +723,27 @@ def leaveApplicationApiByStaffId(request, StaffId=""):
                     leaveApplication,many=True)
             leaveData=[]
             for row in leaveApplicationSerializer.data:
-                leaveStatus = LeaveStatus.objects.get(StatusId=row['Status'])
-                leaveStatus_serializer = LeaveStatusSerializer(leaveStatus)
-                row['StatusName']=leaveStatus_serializer.data['Status']
-                leaveType = LeaveType.objects.get(LeaveTypeId=row['LeaveType'])
-                leaveType_serializer = LeaveTypeSerializer(leaveType)
-                row['LeaveTypeName']=leaveType_serializer.data['LeaveType']
+                try:
+                    leaveStatus = LeaveStatus.objects.get(StatusId=row['Status'])
+                    leaveStatus_serializer = LeaveStatusSerializer(leaveStatus)
+                    row['StatusName']=leaveStatus_serializer.data['Status']
+                except:
+                    row['StatusName']=""
+                try:
+
+                    leaveType = LeaveType.objects.get(LeaveTypeId=row['LeaveType'])
+                    leaveType_serializer = LeaveTypeSerializer(leaveType)
+                    row['LeaveTypeName']=leaveType_serializer.data['LeaveType']
+                except:
+                    row['LeaveTypeName']=""
+                try:
+
+                    staff = Staff.objects.get(StaffId=row['StaffId'])
+                    staff_serializer = StaffSerializer(staff)
+                    row['StaffName']=staff_serializer.data['StaffName']
+                except:
+                    row['StaffName']=""
+
                 leaveData.append(row)
             return JsonResponse(leaveData, safe=False)
         

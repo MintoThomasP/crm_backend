@@ -48,15 +48,17 @@ urlpatterns = [
     path('ProjectTaskTimingApi/', views.ProjectTaskTimingApi),
     url(r'^CURDprojectTaskTimingApiById/(?P<ProjectTaskTimingId>[0-9a-zA-Z\-]+)$', views.CURDprojectTaskTimingApiById),
     url(r'^ProjectTaskTimingApiByProjectTaskId/(?P<ProjectTaskId>[0-9a-zA-Z\-]+)$', views.ProjectTaskTimingApiByProjectTaskId),
-    # url(r'^ProjectTaskTimingCalculationById/(?P<ProjectTaskId>[0-9a-zA-Z\-]+)$', views.ProjectTaskTimingCalculationById),
+    url(r'^ProjectTaskTimingCalculationById/(?P<ProjectTaskTimingId>[0-9a-zA-Z\-]+)$', views.ProjectTaskTimingCalculationById),
 
 
     path('ProjectTaskTotalDurationCalculation/', views.ProjectTaskTotalDurationCalculation),
     path('GetAllTicketsApi/', views.GetAllTicketsApi),
 
     url(r'^TicketsByTaskAssignedTo/(?P<TaskAssignedTo>[0-9a-zA-Z\-]+)$', views.TicketsByTaskAssignedTo),
+    url(r'^TicketsByTaskAssignedBy/(?P<TaskAssignedBy>[0-9a-zA-Z\-]+)$', views.TicketsByTaskAssignedBy),
 
     path('UpdateEndDate/', views.UpdateEndDate),
+    path('UpdateStatus/', views.UpdateStatus),
 
 
 ]

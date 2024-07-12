@@ -37,6 +37,7 @@ def ProjectReportApiByProjectId(request):
     project = Project.objects.get(ProjectId=staffData['ProjectId'])
     projectSerializer = ProjectSerializer(project)
     ProjectDetails = projectSerializer.data
+    
 
     # for staff_item in staffSerializer.data:
     Project_id = staffData['ProjectId']
@@ -52,7 +53,10 @@ def ProjectReportApiByProjectId(request):
 
     for project in projects:
         staff_name = project['TaskAssignedTo']
-        project_tasks = ProjectTask.objects.filter(ProjectId=Project_id, TaskAssignedTo=staff_name)
+        if staffData.get('StartDate') and staffData.get('EndDate'):
+            project_tasks = ProjectTask.objects.filter(ProjectId=Project_id, TaskAssignedTo=staff_name,ScheduledDeadline__range=(start_date, end_date))
+        else:
+            project_tasks = ProjectTask.objects.filter(ProjectId=Project_id, TaskAssignedTo=staff_name)
         project_task_serializer = ProjectTaskSerializer(project_tasks, many=True)
         staff=Staff.objects.get(StaffId=staff_name)
         Staff_details = {
@@ -64,47 +68,26 @@ def ProjectReportApiByProjectId(request):
             'CompletedTaskCount': 0,
             'OnTimeCompletedTaskCount': 0
         }
+        print(project_task_serializer.data)
         for task_data in project_task_serializer.data:
             Staff_details['TotalNumberofTask'] += 1
+            
+                
             try:
-                # if task_data['StartDate'] and task_data['EndDate']:
-                #     try:
-                #         date_format = '%m/%d/%Y, %I:%M:%S %p' 
-                #         start_date = datetime.strptime(task_data['StartDate'], date_format)
-                #         end_date = datetime.strptime(task_data['EndDate'], date_format)
-                #     except:
-                #         date_format = '%d/%m/%Y, %I:%M:%S %p'
-                #         start_date = datetime.strptime(task_data['StartDate'], date_format)
-                #         end_date = datetime.strptime(task_data['EndDate'], date_format)
-                if task_data['TotalDuration']:
-                    Duration = task_data['Duration']
-                    duration_seconds=durationCalculation(Duration)
-                    TotalDuration = task_data['TotalDuration']
-                    TotalDuration_seconds=durationCalculation(TotalDuration)
-                    point = task_data['TaskPoint']
-                    point = pointCalculation(duration_seconds, TotalDuration_seconds, point)
+                if task_data['TaskType']=='Task' and task_data['Status'] != '1':
+                    if task_data['TotalDuration']:
+                        Duration = task_data['Duration']
+                        duration_seconds=durationCalculation(Duration)
+                        
+                        TotalDuration = task_data['TotalDuration']
+                        TotalDuration_seconds=durationCalculation(TotalDuration)
+                        point = task_data['TaskPoint']
+                    
+                        Staff_details['TotalCompletedPoints'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
 
-                    Staff_details['TotalCompletedPoints'] += round((task_data['TaskPoint']) - point, 2)
-                    if TotalDuration_seconds < duration_seconds:
-                        Staff_details['OnTimeCompletedTaskCount'] += 1
-
-                    # try:
-                    #     duration_parts = task_data['Duration'].split(':')
-                    #     hours = int(duration_parts[0])*60
-                    #     minutes = int(duration_parts[1])
-                    #     duration_min=hours + minutes
-                    #     duration_seconds=duration_min*60
-                    # except:
-                    #     duration_seconds=3600
-                    # total_time_taken_seconds = (end_date - start_date).total_seconds()
-                    # if total_time_taken_seconds > duration_seconds:
-                    #     value1 = (total_time_taken_seconds / duration_seconds) * 100
-                    #     value_percentage = value1 - 100
-                    #     point = (float(task_data['TaskPoint']) * value_percentage) / 100
-                    #     Staff_details['TotalCompletedPoints'] += round(float(task_data['TaskPoint']) - point)
-                    # else:
-                    #     Staff_details['TotalCompletedPoints'] += (float(task_data['TaskPoint']))
-                    #     Staff_details['OnTimeCompletedTaskCount'] += 1
+                        # Staff_details['TotalCompletedPoints'] += round((task_data['TaskPoint']) - point, 2)
+                        if TotalDuration_seconds < duration_seconds:
+                            Staff_details['OnTimeCompletedTaskCount'] += 1
             except:
                 Staff_details['TotalCompletedPoints'] =0
                 Staff_details['OnTimeCompletedTaskCount']=0
@@ -165,8 +148,8 @@ def getAllProjectReport(request):
                         TotalDuration = task_data['TotalDuration']
                         TotalDuration_seconds=durationCalculation(TotalDuration)
                         point = task_data['TaskPoint']
-                        point = pointCalculation(duration_seconds, TotalDuration_seconds, point)
-                        Staff_details['CompletedPoint'] += round((task_data['TaskPoint']) - point, 2)
+                        Staff_details['CompletedPoint'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
+                        # Staff_details['CompletedPoint'] += round((task_data['TaskPoint']) - point, 2)
                         if TotalDuration_seconds < duration_seconds:
                             Staff_details['OnTimeCompletedTaskCount'] += 1
 
@@ -288,8 +271,8 @@ def StaffReportApiByStaffId(request):
                 TotalDuration = task.TotalDuration
                 TotalDuration_seconds=durationCalculation(TotalDuration)
                 point = task.TaskPoint
-                point = pointCalculation(duration_seconds, TotalDuration_seconds, point)
-                project_details['TotalCompletedPoints'] += round((task.TaskPoint) - point, 2)
+                project_details['TotalCompletedPoints'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
+                #  round((task.TaskPoint) - point, 2)
                 if TotalDuration_seconds < duration_seconds:
                     project_details['OnTimeCompletedTaskCount'] += 1
 
@@ -318,14 +301,16 @@ def durationCalculation(Duration=""):
 def pointCalculation(duration_seconds="", TotalDuration_seconds="", point=""):
     
     value_percentage = ((TotalDuration_seconds / duration_seconds) * 100) - 100
-   
     try:
         if TotalDuration_seconds == duration_seconds:
             point=point
         else:
-            point = ((point) * value_percentage) / 100
+            pointPercent = ((point) * value_percentage) / 100
+            point=point-pointPercent
+
     except:
-        point = ((1) * value_percentage) / 100
+        pointPercent = ((1) * value_percentage) / 100
+        point=point-pointPercent
     
     return point
 
@@ -406,10 +391,10 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
                                     "LoginTime": login_time_dt.strftime('%B %d, %Y, %I:%M:%S %p'),
                                     "LogoutTime": logout_time_dt.strftime('%B %d, %Y, %I:%M:%S %p'),
                                     "Tasks": [],
-                                    "TotalWorkTime": 0  # Initialize total work time for this login period
+                                    "TotalWorkTime": 0  
                                 }
 
-                                total_login_work_time = 0  # Initialize total work time for this login period
+                                total_login_work_time = 0  
                                 
                                 for task in taskData:
 
@@ -433,22 +418,29 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
                                                 break
                                             except ValueError:
                                                 continue
+                                        try:      
+                                            if start_date and start_date.date() == current_date and task['TaskType']=='Task':
+                                                hours, minutes = map(int, timing['Duration'].split(':'))
+                                                total_duration_minutes = hours * 60 + minutes
+                                                total_login_work_time += total_duration_minutes
+                                            
+                                            
+                                                if task['TotalDuration']:
+                                                    Duration = task['Duration']
                                                 
-                                        if start_date and start_date.date() == current_date:
-                                            hours, minutes = map(int, timing['Duration'].split(':'))
-                                            total_duration_minutes = hours * 60 + minutes
-                                            total_login_work_time += total_duration_minutes
-                                           
-                                            if task['TotalDuration']:
-                                                Duration = task['Duration']
-                                                duration_seconds=durationCalculation(Duration)
-                                                TotalDuration = task['TotalDuration']
-                                                TotalDuration_seconds=durationCalculation(TotalDuration)
-                                                point = task['TaskPoint']
-                                                point = task['TaskPoint']
-                                                totalPoint += pointCalculation(duration_seconds, TotalDuration_seconds, point)
-                                                
+                                                    duration_seconds=durationCalculation(Duration)
+                                                    
+                                                    TotalDuration = task['TotalDuration']
+                                                    TotalDuration_seconds=durationCalculation(TotalDuration)
+                                                    
+                                                    point = task['TaskPoint']
+                                                    totalPoint += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
                                             timing_data.append(timing)
+                                        except:
+                                            totalPoint +=0
+
+                                                
+                                            
 
                                     if timing_data:
                                         task['timing'] = timing_data
@@ -486,8 +478,7 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
                
                 deadline = col['ScheduledDeadline']
                 scheduled_deadline = datetime.strptime(deadline, date_format).date()
-                print(scheduled_deadline)
-                print(current_date)
+               
                 break
             except ValueError:
                 continue
