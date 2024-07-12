@@ -151,7 +151,8 @@ def StaffApiById(request, StaffId=""):
                 for date_format in date_formats:
                     try:
                         deadline = task['ScheduledDeadline']
-                        scheduled_deadline = datetime.strptime(deadline, date_format)
+                        if deadline:
+                            scheduled_deadline = datetime.strptime(deadline, date_format)
                         break
                     except ValueError:
                         continue
