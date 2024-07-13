@@ -164,7 +164,7 @@ def StaffApiById(request, StaffId=""):
                 if task['Status'] == '3':
                     work_status_count['Completed'] += 1
         
-                if scheduled_deadline < current_date and task['Status'] == '1' or task['Status'] == '2' or task['Status'] == '10':
+                if scheduled_deadline and scheduled_deadline < current_date and task['Status'] == '1' or task['Status'] == '2' or task['Status'] == '10':
                     work_status_count['Due'] += 1
 
                 if task['Status'] == '8' or task['Status'] == '9':
