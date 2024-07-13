@@ -148,6 +148,7 @@ def StaffApiById(request, StaffId=""):
     ]
           
             for task in projectTaskSerializer.data:
+                scheduled_deadline=0
                 for date_format in date_formats:
                     try:
                         deadline = task['ScheduledDeadline']
