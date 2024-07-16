@@ -4,8 +4,8 @@ from django.views.decorators.csrf import csrf_exempt
 import requests
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
-from app_default.models import CategoryType, CompanyDocumentType, Country, Currency, DepositTo, Designation, InvoiceStatus, LeaveStatus, LeaveType, PaymentMode, SectionType, StaffStatus, State, TaskStatus, UserGroup, UserType
-from app_default.serializers import CategoryTypeSerializer, CompanyDocumentTypeSerializer, CountrySerializer, CurrencySerializer, DepositToSerializer, DesignationSerializer,InvoiceStatusSerializer, LeaveStatusSerializer, LeaveTypeSerializer, PaymentModeSerializer, SectionTypeSerializer, StaffStatusSerializer, StateSerializer, TaskStatusSerializer, UserGroupSerializer, UserTypeSerializer
+from app_default.models import CategoryType, CompanyDocumentType, Country, Currency, DepositTo, Designation, InvoiceStatus, LeaveStatus, LeaveType, PaymentMode, ReportType, SectionType, StaffStatus, State, TaskStatus, UserGroup, UserType
+from app_default.serializers import CategoryTypeSerializer, CompanyDocumentTypeSerializer, CountrySerializer, CurrencySerializer, DepositToSerializer, DesignationSerializer,InvoiceStatusSerializer, LeaveStatusSerializer, LeaveTypeSerializer, PaymentModeSerializer, ReportTypeSerializer, SectionTypeSerializer, StaffStatusSerializer, StateSerializer, TaskStatusSerializer, UserGroupSerializer, UserTypeSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 import time
@@ -560,6 +560,24 @@ def CategoryTypeApi(request):
             categoryType_serializer = CategoryTypeSerializer(
                 categoryType, many=True)  
             return JsonResponse(categoryType_serializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("Invalid", safe=False)
+    
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all ReportType Details",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def ReportTypeApi(request):
+    try:
+        if request.method == 'GET':
+            reportType = ReportType.objects.all()
+            reportType_serializer = ReportTypeSerializer(
+                reportType, many=True)  
+            return JsonResponse(reportType_serializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:

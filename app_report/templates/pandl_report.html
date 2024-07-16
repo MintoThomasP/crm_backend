@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Profit and Loss Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        th, td {
+            font-size: 12px;
+            vertical-align: middle;
+            padding: 5px;
+        }
+
+        .sub_table1 {
+            border: 1px solid #131212;
+            border-collapse: collapse;
+            padding: 5px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+
+        .table-striped tbody tr:nth-child(odd) {
+            background-color: #f2f2f2; /* Light gray background for odd rows */
+        }
+
+        .subcategory,
+        .report {
+            margin-left: 20px;
+        }
+
+        .month-year {
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+<div>
+    <table>
+        {% for row in category_data %}
+        <tr>
+            <td colspan="2">
+                {{ row.categoryname }}
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                {% if row.subcategory %}
+                {% include "subcategory.html" with subcategories=row.subcategory only %}
+                {% else %}
+                <table>
+                    <tr>
+                        
+                        {% for key, value in row.items %}
+                            {% if key != 'categoryname' and key != 'subcategory' %}
+                            <td>{{ key }}: {{ value }}</td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                </table>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+
+</body>
+</html>

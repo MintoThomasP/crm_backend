@@ -144,7 +144,8 @@ def StaffApiById(request, StaffId=""):
         '%m/%d/%Y, %H:%M:%S',
         '%d/%m/%Y, %I:%M:%S %p',
         '%d/%m/%Y, %H:%M:%S',
-        "%Y-%m-%dT%H:%M"
+        "%Y-%m-%dT%H:%M",
+        "%Y-%m-%dT%H:%M:%S%z"
     ]
           
             for task in projectTaskSerializer.data:
@@ -328,7 +329,8 @@ def staffApiByStaffCode(request, StaffCode=""):
         '%m/%d/%Y, %H:%M:%S',
         '%d/%m/%Y, %I:%M:%S %p',
         '%d/%m/%Y, %H:%M:%S',
-        "%Y-%m-%dT%H:%M"
+        "%Y-%m-%dT%H:%M",
+        "%Y-%m-%dT%H:%M:%S%z"
     ]
           
             for task in projectTaskSerializer.data:

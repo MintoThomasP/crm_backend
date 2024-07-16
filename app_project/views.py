@@ -110,7 +110,7 @@ def ProjectApiByCompanyId(request, CompanyId=""):
 def ProjectTaskApi(request):
     try:
         if request.method == 'GET':
-            projectTask = ProjectTask.objects.all().order_by('-SortId')
+            projectTask = ProjectTask.objects.filter(Q(RefId__isnull=True) | Q(RefId=""),TaskType='Task').order_by('-SortId')
             projectTaskSerializer = ProjectTaskSerializer(
                     projectTask, many=True)
             taskData=[]
@@ -174,19 +174,20 @@ def ProjectTaskApi(request):
                 data=projectTaskData)
             if projectTaskSerializer.is_valid():
                 projectTaskSerializer.save()
+                if projectTaskSerializer.data['TaskType']=="Task" or projectTaskSerializer.data['TaskType']=="Ticket":
 
-                login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedTo'])
-                if login.Token:
-                    title="New task added"
-                    if projectTaskSerializer.data['TaskType']=="Ticket":
-                        title="New ticket raised"
-                    sendNotification({
-                        "title":title,
-                        "body":projectTaskSerializer.data['Title'],
-                        "token":login.Token,
-                        "fromuser":projectTaskSerializer.data['TaskAssignedBy'],
-                        "touser":projectTaskSerializer.data['TaskAssignedTo']
-                    })
+                    login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedTo'])
+                    if login.Token:
+                        title="New task added"
+                        if projectTaskSerializer.data['TaskType']=="Ticket":
+                            title="New ticket raised"
+                        sendNotification({
+                            "title":title,
+                            "body":projectTaskSerializer.data['Title'],
+                            "token":login.Token,
+                            "fromuser":projectTaskSerializer.data['TaskAssignedBy'],
+                            "touser":projectTaskSerializer.data['TaskAssignedTo']
+                        })
 
 
                 return JsonResponse(projectTaskSerializer.data['ProjectTaskId'], safe=False)
@@ -252,6 +253,12 @@ def ProjectTaskApiById(request, ProjectTaskId=""):
             projectTaskSerializer = ProjectTaskSerializer(
                     projectTask)
             ProjectTaskData=projectTaskSerializer.data
+            try:
+                projectTask = ProjectTask.objects.filter(RefId=ProjectTaskId).order_by('-SortId')
+                projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
+                ProjectTaskData['SubTask'] = projectTaskSerializer.data
+            except:
+                ProjectTaskData['SubTask'] =[]
             try:
                 taskStatus=TaskStatus.objects.get(StatusId=projectTaskSerializer.data['Status'])
                 taskStatusSerializer=TaskStatusSerializer(taskStatus)
@@ -337,6 +344,12 @@ def ProjectTaskApiByProjectId(request, ProjectId=""):
             taskStatusName=[]
             for row in projectTaskSerializer.data:
                 try:
+                    projectTask = ProjectTask.objects.filter(RefId=row['ProjectTaskId']).order_by('-SortId')
+                    projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
+                    row['SubTask'] = projectTaskSerializer.data
+                except:
+                    row['SubTask'] =[]
+                try:
                     taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
                     taskStatusSerializer=TaskStatusSerializer(taskStatus)
                     row['StatusName']=taskStatusSerializer.data['Status']
@@ -392,6 +405,24 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
                     projectTask,many=True)
             taskStatusName=[]
             for row in projectTaskSerializer.data:
+                
+                try:
+                    projectTask = ProjectTask.objects.filter(RefId=row['ProjectTaskId']).order_by('-SortId')
+                    projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
+                    subTasks=[]
+                    for subtask in projectTaskSerializer.data:
+                        try:                      
+                            taskStatus=TaskStatus.objects.get(StatusId=subtask['Status'])
+                            taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                            subtask['StatusName']=taskStatusSerializer.data['Status']
+                        except:
+                            subtask['StatusName']=""
+                        subTasks.append(subtask)
+
+                    row['SubTask'] = subTasks
+                except:
+                    row['SubTask'] =[]
+
                 row['Tickets']=[]
                 try:
                     projectTask = ProjectTask.objects.filter(
@@ -542,37 +573,26 @@ def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
                         TotalDuration_seconds=durationCalculation(TotalDuration)
                         point = row['TaskPoint']
                         row['CompletedPoint'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
-                        # row['CompletedPoint'] += round((row['TaskPoint']) - point, 2)
-                        
-
-                    # if row['StartDate'] and row['EndDate']:
-                    #     try:
-                    #         date_format = '%m/%d/%Y, %I:%M:%S %p' 
-                    #         start_date = datetime.strptime(row['StartDate'], date_format)
-                    #         end_date = datetime.strptime(row['EndDate'], date_format)
-                    #     except:
-                    #         date_format = '%d/%m/%Y, %I:%M:%S %p'
-                    #         start_date = datetime.strptime(row['StartDate'], date_format)
-                    #         end_date = datetime.strptime(row['EndDate'], date_format)
-                    #     try:
-                    #         duration_parts = row['Duration'].split(':')
-                    #         hours = int(duration_parts[0])*60
-                    #         minutes = int(duration_parts[1])
-                    #         duration_min=hours + minutes
-                    #         duration_seconds=duration_min*60
-                    #     except:
-                    #         duration_seconds=3600
-                    #     total_time_taken_seconds = (end_date - start_date).total_seconds()
-                    #     if total_time_taken_seconds > duration_seconds:
-                    #         value1 = (total_time_taken_seconds / duration_seconds) * 100
-                    #         value_percentage = value1-100
-
-                    #         point=(row['TaskPoint']*value_percentage)/100
-                    #         row['CompletedPoint'] = round(row['TaskPoint'] - point)
-                    #     else:
-                    #         row['CompletedPoint'] = row['TaskPoint']
+                
                 except:
                     row['CompletedPoint']=""
+                
+                try:
+                    projectTask = ProjectTask.objects.filter(RefId=row['ProjectTaskId']).order_by('-SortId')
+                    projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
+                    subTasks=[]
+                    for subtask in projectTaskSerializer.data:
+                        try:                      
+                            taskStatus=TaskStatus.objects.get(StatusId=subtask['Status'])
+                            taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                            subtask['StatusName']=taskStatusSerializer.data['Status']
+                        except:
+                            subtask['StatusName']=""
+                        subTasks.append(subtask)
+
+                    row['SubTask'] = subTasks
+                except:
+                    row['SubTask'] =[]
                 try:
                     taskStatus = TaskStatus.objects.get(StatusId=row['Status'])
                     taskStatusSerializer = TaskStatusSerializer(taskStatus)
@@ -629,6 +649,12 @@ def ProjectTaskApiByUserIdAndProjectId(request):
             taskStatusName=[]
             for row in projectTaskSerializer.data:
                 row['Tickets']=[]
+                try:
+                    projectTask = ProjectTask.objects.filter(RefId=row['ProjectTaskId']).order_by('-SortId')
+                    projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
+                    row['SubTask'] = projectTaskSerializer.data
+                except:
+                    row['SubTask'] =[]
                 try:
                     projectTask = ProjectTask.objects.get(
                         RefId=row['ProjectTaskId'])
@@ -687,6 +713,12 @@ def ProjectTaskApiByTaskAssignedByAndProjectId(request):
                     projectTask,many=True)
             taskData=[]
             for row in projectTaskSerializer.data:
+                try:
+                    projectTask = ProjectTask.objects.filter(RefId=row['ProjectTaskId']).order_by('-SortId')
+                    projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
+                    row['SubTask'] = projectTaskSerializer.data
+                except:
+                    row['SubTask'] =[]
                 try:
                     taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
                     taskStatusSerializer=TaskStatusSerializer(taskStatus)
@@ -1703,12 +1735,13 @@ def ProjectTaskTimingCalculationById(ProjectTaskTimingId=""):
         total_duration_minutes = 0
 
         for row in projectTaskTiming:
+
             try:
-                date_format = '%m/%d/%Y, %I:%M:%S %p'
+                date_format = '%Y-%m-%dT%H:%M:%S%z'
                 start_date = datetime.strptime(row.StartDate, date_format)
                 end_date = datetime.strptime(row.EndDate, date_format)
             except:
-                date_format = '%d/%m/%Y, %I:%M:%S %p'
+                date_format = '%Y-%m-%dT%H:%M:%S%z'
                 start_date = datetime.strptime(row.StartDate, date_format)
                 end_date = datetime.strptime(row.EndDate, date_format)
 
@@ -1754,7 +1787,8 @@ def ProjectTaskTotalDurationCalculation(request):
                     '%m/%d/%Y, %I:%M:%S %p',  # Example: 04/07/2024, 10:06:38 AM
                     '%m/%d/%Y, %H:%M:%S',     # Example: 04/07/2024, 10:06:38
                     '%d/%m/%Y, %I:%M:%S %p',  # Example: 07/04/2024, 10:06:38 AM
-                    '%d/%m/%Y, %H:%M:%S'      # Example: 07/04/2024, 10:06:38
+                    '%d/%m/%Y, %H:%M:%S',     # Example: 07/04/2024, 10:06:38,
+                    "%Y-%m-%dT%H:%M:%S%z"
                 ]
 
                 start_date = end_date = None
@@ -2053,7 +2087,8 @@ def UpdateStatus(request):
                     '%m/%d/%Y, %I:%M:%S %p',  # Example: 04/07/2024, 10:06:38 AM
                     '%m/%d/%Y, %H:%M:%S',     # Example: 04/07/2024, 10:06:38
                     '%d/%m/%Y, %I:%M:%S %p',  # Example: 07/04/2024, 10:06:38 AM
-                    '%d/%m/%Y, %H:%M:%S'      # Example: 07/04/2024, 10:06:38
+                    '%d/%m/%Y, %H:%M:%S',      # Example: 07/04/2024, 10:06:38
+                    "%Y-%m-%dT%H:%M:%S%z"
                 ]
 
             end_date = scheduled_deadline = None

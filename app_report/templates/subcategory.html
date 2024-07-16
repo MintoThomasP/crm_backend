@@ -1,0 +1,29 @@
+{% for sub in subcategories %}
+<div class="subcategory">
+    <table>
+        <tr>
+            <td colspan="2">
+                {{ sub.categoryname }}
+            </td>
+        </tr>
+        <tr>
+            <td colspan="2">
+                {% if sub.subcategory %}
+                {% include "subcategory.html" with subcategories=sub.subcategory only %}
+                {% else %}
+                <table>
+                    <tr>
+                        
+                        {% for key, value in sub.items %}
+                            {% if key != 'categoryname' and key != 'subcategory' %}
+                            <td>{{ key }}: {{ value }}</td>
+                            {% endif %}
+                        {% endfor %}
+                    </tr>
+                </table>
+                {% endif %}
+            </td>
+        </tr>
+    </table>
+</div>
+{% endfor %}

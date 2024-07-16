@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from app_category.models import Category
+from app_category.models import Category, Report
 
 
 
@@ -15,4 +15,24 @@ class CategorySerializer(serializers.ModelSerializer):
             'SectionType',
             'CategoryType',
             'ActiveStatus'
+        )
+
+
+
+
+class ReportSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Report
+        fields = (
+            'SortId',
+            'ReportId',
+            'ReportType',
+            'Month',
+            'Year',
+            'ClientId',
+            'CategoryId',
+            'Amount',
+            'Comment',
+            'OrderNo',
+            'Level'
         )

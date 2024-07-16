@@ -108,3 +108,8 @@ class SectionType(models.Model):
 class CategoryType(models.Model):
     CategoryTypeId=models.AutoField(primary_key=True, editable=False)
     CategoryType=models.CharField(max_length=300, blank=True, null=True)
+
+
+class ReportType(models.Model):
+    ReportTypeId=models.AutoField(primary_key=True, editable=False)
+    ReportType=models.CharField(max_length=300, blank=True, null=True)

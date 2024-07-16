@@ -41,5 +41,7 @@ urlpatterns = [
     path('DocumentTypeApi/', views.DocumentTypeApi),
     path('SectionTypeApi/', views.SectionTypeApi),
     path('CategoryTypeApi/', views.CategoryTypeApi),
+    path('ReportTypeApi/', views.ReportTypeApi),
+
 
 ]

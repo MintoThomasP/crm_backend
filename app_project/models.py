@@ -44,6 +44,8 @@ class ProjectTask(models.Model):
     IsRepeated = models.BooleanField(default=False)
     RepeatInterval = models.CharField(max_length=50, blank=True, null=True)
     LastAssigned = models.DateTimeField(default=timezone.now, blank=True, null=True)
+    ExtraAccess=models.BooleanField(default=False)
+    AccessTo =models.TextField(blank=True, null=True)
     
 class ProjectTaskTiming(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)

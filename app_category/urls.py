@@ -8,4 +8,11 @@ urlpatterns = [
     path('GetAllCategoryBySectionTypeApi/', views.GetAllCategoryBySectionTypeApi),
 
 
+    path('CURDReport/', views.ReportApi),
+    url(r'^ReportApiById/(?P<ReportId>[0-9a-zA-Z\-]+)$', views.ReportApiById),
+
+    path('GetAllCategoryandSubCategories/', views.GetAllCategoryandSubCategories),
+    path('GetClientReportMonthly/', views.GetClientReportMonthly),
+
+
 ]

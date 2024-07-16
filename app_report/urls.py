@@ -17,7 +17,8 @@ urlpatterns = [
     # path('ReportApiBytaskId/', views.ReportApiBytaskId),
 
 
-        path('StaffReportApiByStaffId/', views.StaffReportApiByStaffId),
+    path('StaffReportApiByStaffId/', views.StaffReportApiByStaffId),
 
+    path('PandLReport/', views.PandLReport),
 
 ]
