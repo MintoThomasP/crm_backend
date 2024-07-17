@@ -126,7 +126,7 @@ def loginApi(request):
                 return JsonResponse("Update successfully", safe=False)
             return JsonResponse("Failed to Update", safe=False)
     except:
-        return JsonResponse("", safe=False)
+        return JsonResponse("Failed", safe=False)
         
 
 
