@@ -254,9 +254,9 @@ def ProjectTaskApiById(request, ProjectTaskId=""):
                     projectTask)
             ProjectTaskData=projectTaskSerializer.data
             try:
-                projectTask = ProjectTask.objects.filter(RefId=ProjectTaskId).order_by('-SortId')
-                projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
-                ProjectTaskData['SubTask'] = projectTaskSerializer.data
+                projectSubTask = ProjectTask.objects.filter(RefId=ProjectTaskId).order_by('-SortId')
+                projectSubTaskSerializer = ProjectTaskSerializer(projectSubTask, many=True)
+                ProjectTaskData['SubTask'] = projectSubTaskSerializer.data
             except:
                 ProjectTaskData['SubTask'] =[]
             try:
@@ -267,10 +267,10 @@ def ProjectTaskApiById(request, ProjectTaskId=""):
                 ProjectTaskData['StatusName']=""
             ProjectTaskData['Tickets']=[]
             try:
-                projectTask = ProjectTask.objects.get(
+                tickets = ProjectTask.objects.get(
                     RefId=ProjectTaskId)
-                projectTaskSerializer=ProjectTaskSerializer(projectTask)
-                ProjectTaskData['Tickets']=projectTaskSerializer.data
+                ticketSerializer=ProjectTaskSerializer(tickets)
+                ProjectTaskData['Tickets']=ticketSerializer.data
             except:
                 ProjectTaskData['Tickets']=[]
 
