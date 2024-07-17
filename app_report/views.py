@@ -232,9 +232,9 @@ def StaffReportApiByStaffId(request):
             'OnTimeCompletedTaskCount': 0
         }
         if start_date and end_date:
-            project_tasks_filtered = project_tasks.filter(ProjectId=project.ProjectId,CreatedDate__range=(start_date, end_date))
+            project_tasks_filtered = project_tasks.filter(ProjectId=project.ProjectId,CreatedDate__range=(start_date, end_date),TaskType='Task')
         else:
-            project_tasks_filtered = project_tasks.filter(ProjectId=project.ProjectId)
+            project_tasks_filtered = project_tasks.filter(ProjectId=project.ProjectId,TaskType='Task')
            
         for task in project_tasks_filtered:
             project_details['TotalNumberofTask'] += 1
