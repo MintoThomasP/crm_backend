@@ -19,6 +19,6 @@ urlpatterns = [
 
     path('StaffReportApiByStaffId/', views.StaffReportApiByStaffId),
 
-    path('PandLReport/', views.PandLReport),
-
+    path('PandLReport/<str:startdate>/<str:enddate>/', views.PandLReport),
+#  path('report/', views.report_view, name='report_view'),
 ]

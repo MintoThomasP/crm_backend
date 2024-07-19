@@ -8,6 +8,7 @@ urlpatterns = [
     path('Login/', views.loginApi),
     url(r'^Login/(?P<UserId>[0-9a-zA-Z\-]+)$', views.UserLoginApiById),
     path('UpdateUserTypeApi/', views.UpdateUserTypeApi),
+    path('loginByTokenApi/', views.loginByTokenApi),
 
 
 

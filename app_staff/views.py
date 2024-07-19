@@ -134,7 +134,7 @@ def StaffApiById(request, StaffId=""):
             designationData=staffSerializer.data
             designationData['DesignationName']=designationSerializer.data['Designation']
 
-            projectTask=ProjectTask.objects.filter(TaskAssignedTo=staffSerializer.data['StaffId'])
+            projectTask=ProjectTask.objects.filter(TaskAssignedTo=staffSerializer.data['StaffId'],TaskType='Task')
             projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
             work_status_count = {'Pending': 0, 'Completed': 0, 'Due': 0, 'Not Completed': 0, 'Finished': 0, 'Delay Finished': 0}
             current_date = datetime.today()

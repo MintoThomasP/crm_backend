@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
         integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Roboto:wght@100;300;400;500;700;900&display=swap');
 
@@ -37,26 +37,29 @@
         th {
             font-size: 12px;
             vertical-align: middle;
-            padding-top:5px;
+            padding-top: 5px;
             padding-bottom: 0px;
         }
 
         td {
             font-size: 12px;
             vertical-align: middle;
-            padding-top:5px;
+            padding-top: 5px;
             padding-bottom: 0px;
-           
+
         }
-        h2{
+
+        h2 {
             font-size: 25px;
             margin-bottom: 0px;
         }
-        .head{
+
+        .head {
             font-size: 15px;
             margin-bottom: 0px;
-            
+
         }
+
         .sub_table1 {
             border: 1px solid #131212;
             border-collapse: collapse;
@@ -65,6 +68,7 @@
             margin-bottom: 15px;
 
         }
+
         .sub_table2 {
             border: 1px solid #131212;
             border-collapse: collapse;
@@ -72,102 +76,102 @@
             margin-top: 0px;
 
         }
-        .thead{
+
+        .thead {
             vertical-align: middle;
         }
+    </style>
+</head>
 
-        </style>
-        </head>
-        <body>
-            
-<table>
-    <tr>
-        <td style="width:30%"><img src="./static/images/logo.png" alt=""></td>
-        <td style="width:40%"></td>
-        <td style="width:30%"><img src="./static/images/logocubex.png" alt=""></td>
-    </tr>
-</table>
-<h2 style="text-align: center;">Report</h2>
-<table>
-    <tr>
-        <td style="width:30%" class="head"><b>Date:</b> {{current_date}}</td>
-        
-        <td style="width:50%"></td>
-        <td style="width:30%; text-align: right;" class="head"><b>Name:</b> {{StaffName}}</td>
-        
-    </tr>
-    <tr>
-        <td  style="width:30%"></td>
-        <td style="width:50%"></td>
-        
-        <td style="width:30%; text-align: right;"><b>Total work time:</b> {{ total_work_time }}</td>
-    </tr>
-    
-    <tr>
-        <td  style="width:30%"></td>
-        <td style="width:50%"></td>
-        
-        <td style="width:30%; text-align: right;"><b>Total Points:</b> {{ totalPoint }}</td>
-    </tr>
-    
-    
-</table>
-<table class="sub_table1">
-    <tr style=" vertical-align: bottom;">
-        <th style="width:5%;">SlNo</th>
-        <th style="width:30%">Task</th>
-        <th>Start Time</th>
-        <th>End Time</th>
-        <th style="width:8%">Duration</th>
-        <th style="width:15%">Status</th>
-    </tr>
-    
-    {%for row in response_data%}
-    <tr>
-        <td colspan="6"><b>Login:</b>{{row.LoginTime }} </td>
-    </tr>
-    {%for col in row.Tasks%}
-    <tr>
-        <td>{{forloop.counter}}</td>
-        <td>{%if col.TaskType == 'Ticket'%}
-            {{col.TaskType}} -
-            {%endif%}
-            {{col.Title}}</td>
-        {%for time in col.timing%}
-        <td>{{time.StartDate}}</td>
-        <td>{{time.EndDate}}</td>
-        <td>{{time.Duration}}</td>
+<body>
+
+    <table>
+        <tr>
+            <td style="width:30%"><img src="./static/images/logo.png" alt=""></td>
+            <td style="width:40%"></td>
+            <td style="width:30%"><img src="./static/images/logocubex.png" alt=""></td>
+        </tr>
+    </table>
+    <h2 style="text-align: center;">Report</h2>
+    <table>
+        <tr>
+            <td style="width:30%" class="head"><b>Date:</b> {{current_date}}</td>
+
+            <td style="width:50%"></td>
+            <td style="width:30%; text-align: right;" class="head"><b>Name:</b> {{StaffName}}</td>
+
+        </tr>
+        <tr>
+            <td style="width:30%"></td>
+            <td style="width:50%"></td>
+
+            <td style="width:30%; text-align: right;"><b>Total work time:</b> {{ total_work_time }}</td>
+        </tr>
+
+        <tr>
+            <td style="width:30%"></td>
+            <td style="width:50%"></td>
+
+            <td style="width:30%; text-align: right;"><b>Total Points:</b> {{ totalPoint }}</td>
+        </tr>
+
+
+    </table>
+    <table class="sub_table1">
+        <tr style=" vertical-align: bottom;">
+            <th style="width:5%;">SlNo</th>
+            <th style="width:30%">Task</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th style="width:8%">Duration</th>
+            <th style="width:15%">Status</th>
+        </tr>
+
+        {%for row in response_data%}
+        <tr>
+            <td colspan="6"><b>Login:</b>{{row.LoginTime }} </td>
+        </tr>
+        {%for col in row.Tasks%}
+        <tr>
+            <td>{{forloop.counter}}</td>
+            <td>{%if col.TaskType == 'Ticket'%}
+                {{col.TaskType}} -
+                {%endif%}
+                {{col.Title}}</td>
+            {%for time in col.timing%}
+            <td>{{time.StartDate}}</td>
+            <td>{{time.EndDate}}</td>
+            <td>{{time.Duration}}</td>
+            {%endfor%}
+            <td>{{col.StatusName}}</td>
+        </tr>
         {%endfor%}
-        <td>{{col.StatusName}}</td>
-    </tr>
-    {%endfor%}
-    <tr>
-        <td colspan="6"><b>Logout:</b> {{row.LogoutTime }}</td>
-    </tr>
-    {%endfor%}
-</table>
-<!-- {%if pendingDetails%} -->
+        <tr>
+            <td colspan="6"><b>Logout:</b> {{row.LogoutTime }}</td>
+        </tr>
+        {%endfor%}
+    </table>
+    <!-- {%if pendingDetails%} -->
 
-<p class="head"><b>Pending Task Details</b></p>
-<table class="sub_table2">
-    <tr>
-        <th style="width:5%">SlNo</th>
-        <th style="width:60%">Task</th>
-        <th>Project</th>
-        <th style="width:15%">Status</th>
-    </tr>
-    {%for row in pendingDetails%}
-    <tr>
-        <td>{{forloop.counter}}</td>
-        <td>{{row.Title}}</td>
-        <td>{{row.ProjectName}}</td>
-        <td>{{row.StatusName}}</td>
+    <p class="head"><b>Pending Task Details</b></p>
+    <table class="sub_table2">
+        <tr>
+            <th style="width:5%">SlNo</th>
+            <th style="width:60%">Task</th>
+            <th>Project</th>
+            <th style="width:15%">Status</th>
+        </tr>
+        {%for row in pendingDetails%}
+        <tr>
+            <td>{{forloop.counter}}</td>
+            <td>{{row.Title}}</td>
+            <td>{{row.ProjectName}}</td>
+            <td>{{row.StatusName}}</td>
 
-    </tr>
-    {%endfor%}
-    <!-- {%endif%} -->
-   
-        </body>
-        
-        </html>
-        
+        </tr>
+        {%endfor%}
+        <!-- {%endif%} -->
+    </table>
+</body>
+
+</html>

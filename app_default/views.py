@@ -164,14 +164,14 @@ def UserGroupApi(request):
         else:
             return JsonResponse("Invalid request", safe=False)
     except:
-        return JsonResponse("Invalid payload", safe=False)
+        return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give UserGroupId to get one detail",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def UserGroupApiById(request, UserGroupId=""):
-    try:
+    # try:
         if request.method == 'GET':
             userGroup = UserGroup.objects.get(UserGroupId=UserGroupId)
             userGroup_serializer = UserGroupSerializer(userGroup)
@@ -183,8 +183,8 @@ def UserGroupApiById(request, UserGroupId=""):
             return JsonResponse("Deleted successfully", safe=False)
         else:
             return JsonResponse("Invalid request", safe=False)
-    except:
-        return JsonResponse("Invalid payload", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
 
 
@@ -224,7 +224,7 @@ def DesignationApi(request):
         else:
             return JsonResponse("Invalid request", safe=False)
     except:
-        return JsonResponse("Invalid payload", safe=False)
+        return JsonResponse("", safe=False)
     
 
 @csrf_exempt
@@ -245,7 +245,7 @@ def DesignationApiById(request, DesignationId=""):
         else:
             return JsonResponse("Invalid request", safe=False)
     except:
-        return JsonResponse("Invalid payload", safe=False)
+        return JsonResponse("", safe=False)
     
 
 
@@ -354,7 +354,7 @@ def CountryApi(request):
         else:
             return JsonResponse("Invalid request", safe=False)
     except:
-        return JsonResponse("Invalid payload", safe=False)
+        return JsonResponse("", safe=False)
     
 
 @csrf_exempt
@@ -375,7 +375,7 @@ def CountryApiById(request, CountryId=""):
         else:
             return JsonResponse("Invalid request", safe=False)
     except:
-        return JsonResponse("Invalid payload", safe=False)
+        return JsonResponse("", safe=False)
     
 
 
@@ -414,7 +414,7 @@ def StateApi(request):
         else:
             return JsonResponse("Invalid request", safe=False)
     except:
-        return JsonResponse("Invalid payload", safe=False)
+        return JsonResponse("", safe=False)
     
 
 @csrf_exempt
@@ -435,7 +435,7 @@ def StateApiById(request, StateId=""):
         else:
             return JsonResponse("Invalid request", safe=False)
     except:
-        return JsonResponse("Invalid payload", safe=False)
+        return JsonResponse("", safe=False)
     
 
 
@@ -452,7 +452,7 @@ def StateApiByCountryId(request,CountryId=""):
         else:
             return JsonResponse("Invalid request", safe=False)
     except:
-        return JsonResponse("Invalid payload", safe=False)
+        return JsonResponse("", safe=False)
     
 
 

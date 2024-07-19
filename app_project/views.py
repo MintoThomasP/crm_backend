@@ -14,7 +14,7 @@ from app_site.serializers import NotificationSerializer
 from app_staff.models import Staff
 from datetime import datetime, time, timedelta
 from app_staff.serializers import StaffSerializer
-
+from rest_framework.pagination import PageNumberPagination
 from app_project.models import CommentFile, Comments, Project, ProjectTask, ProjectTaskFile, ProjectTaskTiming, TaskReviews
 from app_project.serializers import CommentFileSerializer, CommentsSerializer, ProjectSerializer, ProjectTaskFileSerializer, ProjectTaskSerializer, ProjectTaskTimingSerializer,  SaveProjectTaskFileSerializer, TaskReviewsSerializer, UploadProjectTaskFileSerializer
 from dateutil.relativedelta import relativedelta
@@ -22,7 +22,7 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from django.utils import timezone
 from datetime import datetime
-
+from rest_framework import generics
 
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=ProjectSerializer)
@@ -101,6 +101,81 @@ def ProjectApiByCompanyId(request, CompanyId=""):
         return JsonResponse("", safe=False)
     
 
+class CustomPageNumberPagination(PageNumberPagination):
+
+    page_size = 40 # Adjust the page size as needed
+    page_size_query_param = 'page_size'
+
+
+class ProjectTaskPagination(generics.ListAPIView):
+    pagination_class = CustomPageNumberPagination
+    serializer_class = ProjectTaskSerializer 
+    def get(self, request, *args, **kwargs):
+        projectTask = ProjectTask.objects.filter(Q(RefId__isnull=True) | Q(RefId=""),TaskType='Task').order_by('-SortId')
+        projectTaskSerializer = ProjectTaskSerializer(
+                    projectTask, many=True)
+        page = self.paginate_queryset(projectTaskSerializer.data)
+        taskData=[]
+        if page is not None:
+            for row in page:
+                row['Tickets']=[]
+                try:
+                    projectTask = ProjectTask.objects.get(
+                        RefId=row['ProjectTaskId'])
+                    projectTaskSerializer=ProjectTaskSerializer(projectTask)
+                    row['Tickets']=projectTaskSerializer.data
+                except:
+                    row['Tickets']=[]
+                
+                try:
+                    project=Project.objects.get(ProjectId=row['ProjectId'])
+                    projectSerializer=ProjectSerializer(project)
+                    row['ProjectName']=projectSerializer.data['ProjectName']
+                except:
+                    row['ProjectName']=""
+                try:
+                    staff=Staff.objects.get(StaffId=row['TaskAssignedTo'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['AssignedTo']=staffSerializer.data['StaffName']
+                except:
+                    row['AssignedTo']=""
+
+                try:
+                    staff=Staff.objects.get(StaffId=row['TaskAssignedBy'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['AssignedBy']=staffSerializer.data['StaffName']
+                except:
+                    row['AssignedBy']=""
+
+
+                try:
+                    staff=Staff.objects.get(StaffId=row['VerifiedBy'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['VerifiedByName']=staffSerializer.data['StaffName']
+                except:
+                    row['VerifiedByName']= ""
+                try:
+                    taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                    taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                    row['StatusName']=taskStatusSerializer.data['Status']
+                except:
+                    row['StatusName']=""
+
+
+                try:
+                    projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+                    projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
+                    row['ProjectTaskFiles']=projectTaskFileSerializer.data
+                except:
+                    row['ProjectTaskFiles']=""
+
+                taskData.append(row)
+            return self.get_paginated_response(taskData)
+
+        # return JsonResponse(taskData, safe=False)
+
+
+
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=ProjectTaskSerializer)
 @swagger_auto_schema(method='PUT', request_body=ProjectTaskSerializer)
@@ -123,6 +198,7 @@ def ProjectTaskApi(request):
                     row['Tickets']=projectTaskSerializer.data
                 except:
                     row['Tickets']=[]
+                
                 try:
                     project=Project.objects.get(ProjectId=row['ProjectId'])
                     projectSerializer=ProjectSerializer(project)
@@ -246,7 +322,7 @@ def ProjectTaskApi(request):
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def ProjectTaskApiById(request, ProjectTaskId=""):
-    try:
+    # try:
         if request.method == 'GET': 
             projectTask = ProjectTask.objects.get(
                     ProjectTaskId=ProjectTaskId)
@@ -323,12 +399,36 @@ def ProjectTaskApiById(request, ProjectTaskId=""):
             return JsonResponse(ProjectTaskData, safe=False)
         elif request.method == 'DELETE':
             projectTask = ProjectTask.objects.get(ProjectTaskId=ProjectTaskId)
+            try:
+                ProjectTask.objects.filter(RefId=ProjectTaskId,TaskType='Subtask').delete()
+            except:
+                p=""
+            try:
+                ProjectTaskTiming.objects.filter(ProjectTaskId=ProjectTaskId).delete()
+            except:
+                p=""
+            try:
+                taskFile=ProjectTaskFile.objects.filter(ProjectTaskId=ProjectTaskId)
+                for row in taskFile:
+                    ProjectTaskFile.objects.get(
+                        ProjectTaskFileId=row['ProjectTaskFileId']).TaskFile.delete(save=True)
+                    row.delete()
+            except:
+                p=""
+            try:
+                TaskReviews.objects.filter(ProjectTaskId=ProjectTaskId).delete()
+            except:
+                p=""
+            try:
+                Comments.objects.filter(ProjectTaskId=ProjectTaskId).delete()
+            except:
+                p=""
             projectTask.delete()
             return JsonResponse("Deleted successfully", safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give ProjectId to get task detail",)
@@ -344,9 +444,9 @@ def ProjectTaskApiByProjectId(request, ProjectId=""):
             taskStatusName=[]
             for row in projectTaskSerializer.data:
                 try:
-                    projectTask = ProjectTask.objects.filter(RefId=row['ProjectTaskId']).order_by('-SortId')
-                    projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
-                    row['SubTask'] = projectTaskSerializer.data
+                    projectsubTask = ProjectTask.objects.filter(RefId=row['ProjectTaskId']).order_by('-SortId')
+                    projectsubTaskSerializer = ProjectTaskSerializer(projectsubTask, many=True)
+                    row['SubTask'] = projectsubTaskSerializer.data
                 except:
                     row['SubTask'] =[]
                 try:
@@ -1464,6 +1564,30 @@ def schedule_repeated_tasks(request):
                 
                     if new_taskserializer.is_valid():
                         new_taskserializer.save()
+                        subtasks = ProjectTask.objects.filter(RefId=task.ProjectTaskId)
+                        subtaskSerializer=ProjectTaskSerializer(subtasks,many=True)
+                        for subtask in subtaskSerializer.data:
+                            new_subtask_data = {
+                                "ProjectId": subtask['ProjectId'],
+                                "TaskAssignedTo": subtask['TaskAssignedTo'],
+                                "TaskAssignedBy": subtask['TaskAssignedBy'],
+                                "Title": subtask['Title'],
+                                "Description": subtask['Description'],
+                                "Status": 1,
+                                "CreatedDate": now.strftime("%Y-%m-%d"),
+                                "ScheduledDeadline": scheduled_deadline,
+                                "TaskPoint": subtask['TaskPoint'],
+                                "TaskType": subtask['TaskType'],
+                                "RefId": new_taskserializer.data['ProjectTaskId']
+
+                            }
+                            new_subtaskserializer = ProjectTaskSerializer(data=new_subtask_data)
+                            if new_subtaskserializer.is_valid():
+                                new_subtaskserializer.save()
+                            else:
+                
+                                print(new_subtaskserializer.errors)
+
                         i=i+1
                         data.append(new_taskserializer.data)
                     
@@ -2049,7 +2173,7 @@ def TicketsByTaskAssignedBy(request, TaskAssignedBy=""):
     except:
         return JsonResponse("", safe=False)
 
-from django.db.models import Q
+
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give LoginHistoryId to get one loginHistory detail",)
 @api_view(['GET'])

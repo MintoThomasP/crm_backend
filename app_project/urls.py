@@ -8,6 +8,8 @@ urlpatterns = [
     url(r'^ProjectApiByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.ProjectApiByCompanyId),
 
     path('ProjectTask/', views.ProjectTaskApi),
+    path('ProjectTaskPagination/', views.ProjectTaskPagination.as_view()),
+
     url(r'^ProjectTaskById/(?P<ProjectTaskId>[0-9a-zA-Z\-]+)$', views.ProjectTaskApiById),
     url(r'^ProjectTaskApiByProjectId/(?P<ProjectId>[0-9a-zA-Z\-]+)$', views.ProjectTaskApiByProjectId),
     url(r'^ProjectTaskApiByUserId/(?P<TaskAssignedTo>[0-9a-zA-Z\-]+)$', views.ProjectTaskApiByUserId),
@@ -42,8 +44,8 @@ urlpatterns = [
     path('GetAllProjectTaskApiByFiltering/', views.GetAllProjectTaskApiByFiltering), #Get all task filtering
 
     #  url(r'^send_notification/(?P<ProjectTaskId>[0-9a-zA-Z\-]+)$', views.send_notification_on_comment),
- path('schedule_repeated_tasks/', views.schedule_repeated_tasks),
-  path('send_notification/', views.send_notification),
+    path('schedule_repeated_tasks/', views.schedule_repeated_tasks),
+    path('send_notification/', views.send_notification),
 
     path('ProjectTaskTimingApi/', views.ProjectTaskTimingApi),
     url(r'^CURDprojectTaskTimingApiById/(?P<ProjectTaskTimingId>[0-9a-zA-Z\-]+)$', views.CURDprojectTaskTimingApiById),
