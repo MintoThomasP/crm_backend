@@ -601,18 +601,18 @@ def staffSalaryByPerformanceApi(request):
             TaskPoint += row['TaskPoint']
            
 
-            if row['TotalDuration']: 
-                Duration = row['Duration']
-                duration_seconds=durationCalculation(Duration)
-                TotalDuration = row['TotalDuration']
-                TotalDuration_seconds=durationCalculation(TotalDuration)
-                if TotalDuration_seconds > duration_seconds:
-                    value_percentage = ((TotalDuration_seconds / duration_seconds) * 100) - 100
-                    point = (row['TaskPoint'] * value_percentage) / 100
+            # if row['TotalDuration']: 
+            #     Duration = row['Duration']
+            #     duration_seconds=durationCalculation(Duration)
+            #     TotalDuration = row['TotalDuration']
+            #     TotalDuration_seconds=durationCalculation(TotalDuration)
+            #     if TotalDuration_seconds > duration_seconds:
+            #         value_percentage = ((TotalDuration_seconds / duration_seconds) * 100) - 100
+            #         point = (row['TaskPoint'] * value_percentage) / 100
                     
-                    CompletedPoint += round(row['TaskPoint'] - point)
-                else:
-                    CompletedPoint += row['TaskPoint']
+            #         CompletedPoint += round(row['TaskPoint'] - point)
+            #     else:
+            CompletedPoint += row['CompletionPoint']
 
         staff = Staff.objects.get(StaffId=requestData['StaffId'])
         staffSerializer = StaffSerializer(staff)

@@ -77,7 +77,7 @@ def ProjectReportApiByProjectId(request):
             
                 
             try:
-                if task_data['TaskType']=='Task' and task_data['Status'] != '1':
+                if task_data['TaskType']=='Task' and task_data['Status'] == '7' or task_data['Status'] == '8' or task_data['Status'] == '9':
                     if task_data['TotalDuration']:
                         Duration = task_data['Duration']
                         duration_seconds=durationCalculation(Duration)
@@ -151,7 +151,7 @@ def getAllProjectReport(request):
                         TotalDuration = task_data['TotalDuration']
                         TotalDuration_seconds=durationCalculation(TotalDuration)
                         point = task_data['TaskPoint']
-                        Staff_details['CompletedPoint'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
+                        # Staff_details['CompletedPoint'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
                         # Staff_details['CompletedPoint'] += round((task_data['TaskPoint']) - point, 2)
                         if TotalDuration_seconds < duration_seconds:
                             Staff_details['OnTimeCompletedTaskCount'] += 1
@@ -274,7 +274,7 @@ def StaffReportApiByStaffId(request):
                 TotalDuration = task.TotalDuration
                 TotalDuration_seconds=durationCalculation(TotalDuration)
                 point = task.TaskPoint
-                project_details['TotalCompletedPoints'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
+                # project_details['TotalCompletedPoints'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
                 #  round((task.TaskPoint) - point, 2)
                 if TotalDuration_seconds < duration_seconds:
                     project_details['OnTimeCompletedTaskCount'] += 1
@@ -434,16 +434,17 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
                                         timing['EndDate'] = end_date.strftime('%B %d, %Y, %I:%M:%S %p')
                                         
                                         
-                                        if task['TotalDuration'] and task['TaskType']!='Ticket':
-                                            Duration = task['Duration']
+                                        # if task['TotalDuration'] and task['TaskType']!='Ticket':
+                                        #     Duration = task['Duration']
                                         
-                                            duration_seconds=durationCalculation(Duration)
+                                        #     duration_seconds=durationCalculation(Duration)
                                             
-                                            TotalDuration = task['TotalDuration']
-                                            TotalDuration_seconds=durationCalculation(TotalDuration)
+                                        #     TotalDuration = task['TotalDuration']
+                                        #     TotalDuration_seconds=durationCalculation(TotalDuration)
                                             
-                                            point = task['TaskPoint']
-                                            totalPoint += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
+                                        #     point = task['TaskPoint']
+                                        # totalPoint += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
+                                        totalPoint+=task['CompletionPoint']
                                         timing_data.append(timing)
                                                 
                                         # except:
@@ -612,358 +613,7 @@ def dateConversion(Date):
 
 
 
-# @csrf_exempt
-# @api_view(['GET'])
-# def StaffDailyReportinPDFformat(request, StaffId=""):
-#     current_date = timezone.now().date()
-#     staff = Staff.objects.get(StaffId=StaffId)
-#     StaffName = staff.StaffName
-#     totalPoint=0
-#     projectTasks = ProjectTask.objects.filter(TaskAssignedTo=StaffId)
-#     projectTaskSerializer = ProjectTaskSerializer(projectTasks, many=True)
-#     taskData = []
-#     serial_number = 1
-#     date_formats = [
-#         '%m/%d/%Y, %I:%M:%S %p',
-#         '%m/%d/%Y, %H:%M:%S',
-#         '%d/%m/%Y, %I:%M:%S %p',
-#         '%d/%m/%Y, %H:%M:%S',
-#         "%Y-%m-%dT%H:%M",
-#         "%Y-%m-%dT%H:%M:%S%z"
-#     ]
 
-#     for row in projectTaskSerializer.data:
-#         try:
-#             taskStatus = TaskStatus.objects.get(StatusId=row['Status'])
-#             taskStatusSerializer = TaskStatusSerializer(taskStatus)
-#             row['StatusName'] = taskStatusSerializer.data['Status']
-#         except TaskStatus.DoesNotExist:
-#             row['StatusName'] = ""
-
-#         try:
-#             project = Project.objects.get(ProjectId=row['ProjectId'])
-#             projectSerializer = ProjectSerializer(project)
-#             row['ProjectName'] = projectSerializer.data['ProjectName']
-#         except Project.DoesNotExist:
-#             row['ProjectName'] = ""
-
-#         try:
-#             assigned_staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
-#             staffSerializer = StaffSerializer(assigned_staff)
-#             row['StaffName'] = staffSerializer.data['StaffName']
-#         except Staff.DoesNotExist:
-#             row['StaffName'] = ""
-        
-
-#         taskData.append(row)
-
-#     response_data = []
-#     total_work_time=0
-
-#     try:
-#         login_histories = LoginHistory.objects.filter(UserId=StaffId).order_by('SortId')
-
-#         for login_history in login_histories:
-#             login_time = login_history.LoginTime
-#             logout_time = login_history.LogoutTime if login_history.LogoutTime else ""
-
-           
-#             login_details = {
-#                 "LoginTime": login_time,
-#                 "LogoutTime": logout_time,
-#                 "Timing": [],
-#                 "TotalWorkTime": 0
-#             }
-
-            
-#             total_login_work_time = 0
-
-            
-#             for task in taskData:
-#                 task_timings = ProjectTaskTiming.objects.filter(
-#                     ProjectTaskId=task['ProjectTaskId'],
-#                     StartDate__range=(login_time, logout_time),
-#                     EndDate__range=(login_time, logout_time)
-#                 ).order_by('-SortId')
-
-#                 task_timing_serializer = ProjectTaskTimingSerializer(task_timings, many=True)
-
-#                 timing_data = []
-#                 for timing in task_timing_serializer.data:
-#                     start_date = None
-#                     for date_format in date_formats:
-#                         try:
-#                             start_date = datetime.strptime(timing['StartDate'], date_format)
-#                             end_date = datetime.strptime(timing['EndDate'], date_format)
-#                             break
-#                         except ValueError:
-#                             continue
-    
-        
-#                     if start_date and start_date.date() == current_date:
-        
-#                         try:
-#                             hours, minutes = map(int, timing['Duration'].split(':'))
-#                             total_duration_minutes = hours * 60 + minutes
-#                             total_login_work_time += total_duration_minutes
-#                         except:
-#                             p=""
-#                         timing_data.append({
-#                             "SortId": timing['SortId'],
-#                             "ProjectTaskTimingId": timing['ProjectTaskTimingId'],
-#                             "ProjectTaskId": timing['ProjectTaskId'],
-#                             "StartDate": start_date.strftime('%B %d, %Y, %I:%M:%S %p'),
-#                             "EndDate": end_date.strftime('%B %d, %Y, %I:%M:%S %p'),
-#                             "Duration": timing['Duration'],
-#                             "Note": timing['Note'],
-#                             "TaskDetails": task  # Append task details here
-#                         })
-#                         if task['TotalDuration'] and task['TaskType']!='Ticket':
-#                             Duration = task['Duration']
-                        
-#                             duration_seconds=durationCalculation(Duration)
-                            
-#                             TotalDuration = task['TotalDuration']
-#                             TotalDuration_seconds=durationCalculation(TotalDuration)
-                            
-#                             point = task['TaskPoint']
-#                             totalPoint += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
-#                         timing_data.append(timing)
-                                
-                       
-
-#                 if timing_data:
-#                     login_details['Timing'].extend(timing_data) 
-                   
-#                     login_details['Timing'].append(timing)
-
-          
-#             login_details['TotalWorkTime'] = total_login_work_time
-
-          
-#             response_data.append(login_details)
-
-#     except LoginHistory.DoesNotExist:
-#         pass
-
-#     PendingTask = ProjectTask.objects.filter(Q(Status='1') | Q(Status='2'), TaskAssignedTo=StaffId)
-#     PendingTaskSerializer = ProjectTaskSerializer(PendingTask, many=True)
-#     pendingDetails = []
-#     for col in PendingTaskSerializer.data:
-#         try:
-#             taskStatus = TaskStatus.objects.get(StatusId=col['Status'])
-#             taskStatusSerializer = TaskStatusSerializer(taskStatus)
-#             col['StatusName'] = taskStatusSerializer.data['Status']
-#         except TaskStatus.DoesNotExist:
-#             col['StatusName'] = ""
-
-#         try:
-#             project = Project.objects.get(ProjectId=col['ProjectId'])
-#             projectSerializer = ProjectSerializer(project)
-#             col['ProjectName'] = projectSerializer.data['ProjectName']
-#         except Project.DoesNotExist:
-#             col['ProjectName'] = ""
-#         for date_format in date_formats:
-#             try:
-            
-#                 deadline = col['ScheduledDeadline']
-#                 scheduled_deadline = datetime.strptime(deadline, date_format).date()
-            
-#                 break
-#             except ValueError:
-#                 continue
-#         else:
-        
-            
-#             scheduled_deadline = None
-
-
-#         if scheduled_deadline:
-#             if current_date < scheduled_deadline:
-#                 col['StatusName'] = "Incoming"
-            
-#             elif current_date > scheduled_deadline:
-#                 col['StatusName'] = "Due"
-            
-            
-
-
-#         pendingDetails.append(col)
-#     total_duration_hours = total_work_time // 60
-#     total_duration_remaining_minutes = total_work_time % 60
-#     total_duration = f"{total_duration_hours}:{total_duration_remaining_minutes}"
-
-
-#     context = {
-#         "StaffName": StaffName,
-#         "response_data": response_data,
-#         "current_date": current_date,
-#         "pendingDetails": pendingDetails,
-#         "total_work_time": total_duration, 
-#         "totalPoint":round(totalPoint,2),
-#         'pagesize':'A4',
-#     }
-#     return JsonResponse(context,safe=False)
-    # pdf = render_to_pdf('dailyreport.html', context)
-    
-    
-    # watermark_pdf = create_watermark("CRM")
-
-    
-    # input_pdf = PdfReader(BytesIO(pdf.content))
-
-    
-    # output_pdf_stream = add_watermark(input_pdf, watermark_pdf)
-
-   
-    # response = HttpResponse(output_pdf_stream.read(), content_type='application/pdf')
-    # response['Content-Disposition'] = f'attachment; filename={context["StaffName"]}.pdf'
-    # return HttpResponse(pdf.content, content_type='application/pdf')
-
-
-# # from collections import defaultdict
-# def get_subcategories(category_id):
-#     subcategories = Category.objects.filter(RefId=category_id, ActiveStatus=1)
-#     subcategory_serializer = CategorySerializer(subcategories, many=True)
-#     subcategory_data = []
-#     for subcategory in subcategory_serializer.data:
-#         children = get_subcategories(subcategory['CategoryId'])
-#         if children:
-#             subcategory['Subcategory'] = children
-#         report_data = get_report_data(subcategory['CategoryId'])
-#         if report_data:
-#             subcategory['Report'] = report_data
-#         subcategory_data.append(subcategory)
-#     return subcategory_data
-
-# def get_report_data(category_id):
-#     reports = Report.objects.filter(CategoryId=category_id)
-#     report_serializer = ReportSerializer(reports, many=True)
-#     return report_serializer.data
-
-# @csrf_exempt
-# @api_view(['GET'])
-# def PandLReport(request):
-#     if request.method == 'GET':
-#         categories = Category.objects.filter(
-#             Q(RefId__isnull=True) | Q(RefId=""),
-#             ActiveStatus=1,
-#             SectionType='2'
-#         ).order_by('-SortId')
-#         category_serializer = CategorySerializer(categories, many=True)
-#         category_data = []
-#         for category in category_serializer.data:
-#             subcategories = get_subcategories(category['CategoryId'])
-#             if subcategories:
-#                 category['Subcategory'] = subcategories
-#             report_data = get_report_data(category['CategoryId'])
-#             if report_data:
-#                 category['Report'] = report_data
-#             category_data.append(category)
-#         # categorized_data = categorize_by_month_and_year(category_data)
-#         context = {
-#             "category_data": category_data,
-#         }
-#         # pdf = render_to_pdf('pandl_report.html', context)
-#         # return HttpResponse(pdf.content, content_type='application/pdf')
-#         return JsonResponse(category_data, safe=False)
-
-# def categorize_by_month_and_year(data):
-#     def process_reports(reports):
-#         categorized_reports = defaultdict(lambda: defaultdict(list))
-#         for report in reports:
-#             year_month = f"{report['Month']}-{report['Year']}"
-#             categorized_reports[year_month]['reports'].append(report)
-#         return categorized_reports
-
-#     def process_item(item, categorized_data):
-#         if 'Report' in item:
-#             categorized_reports = process_reports(item['Report'])
-#             for year_month, reports in categorized_reports.items():
-#                 if year_month not in categorized_data:
-#                     categorized_data[year_month] = defaultdict(list)
-#                 categorized_data[year_month]['categories'].append({
-#                     'category': item,
-#                     'reports': reports['reports']
-#                 })
-#             del item['Report']
-
-#         if 'Subcategory' in item:
-#             for subcategory in item['Subcategory']:
-#                 process_item(subcategory, categorized_data)
-
-#     categorized_data = defaultdict(lambda: defaultdict(list))
-#     for item in data:
-#         process_item(item, categorized_data)
-
-#     return categorized_data
-
-
-# from collections import OrderedDict
-# from itertools import groupby
-# from operator import itemgetter
-# @api_view(['GET'])
-# @csrf_exempt
-# def PandLReport(request):
-#     if request.method == 'GET':
-#         reports = Report.objects.all()
-#         reportSerializer = ReportSerializer(reports, many=True)
-#         reportData = []
-
-#         # Sort reports by year and month
-#         sorted_reports = sorted(reportSerializer.data, key=itemgetter('Year', 'Month'))
-
-#         # Group reports by year and month
-#         for year_month, group in groupby(sorted_reports, key=itemgetter('Year', 'Month')):
-#             year, month = year_month
-#             grouped_data = {
-#                 'Year': year,
-#                 'Month': month,
-#                 'Reports': []
-#             }
-
-#             for row in group:
-#                 category_id = row['CategoryId']
-                
-#                 try:
-#                     category = Category.objects.get(CategoryId=category_id)
-#                     categorySerializer = CategorySerializer(category)
-#                     row['categoryData'] = categorySerializer.data
-
-#                     if category.RefId:
-#                         row['subcategories'] = (get_subcategories(category.RefId))
-#                     else:
-#                         row['subcategories'] = []
-                    
-#                     grouped_data['Reports'].append(row)
-#                 except Category.DoesNotExist:
-#                     pass
-
-#             reportData.append(grouped_data)
-#         context = {
-#             "reportData": reportData,
-#         }
-#         pdf = render_to_pdf('pandl_report.html', context)
-#         return HttpResponse(pdf.content, content_type='application/pdf')
-
-#         # return JsonResponse(reportData, safe=False)
-
-# def get_subcategories(ref_id):
-#     try:
-#         category = Category.objects.get(CategoryId=ref_id)
-#         categorySerializer = CategorySerializer(category)
-#         subcategory_data = {
-#             'categoryData': categorySerializer.data,
-#             'subcategories': []
-#         }
-        
-       
-#         if category.RefId:
-#             subcategory_data['subcategories'] = get_subcategories(category.RefId)
-        
-#         return subcategory_data
-#     except Category.DoesNotExist:
-#         return []
 
 
 
@@ -1011,74 +661,6 @@ def get_report_data(category_id, startDate, startYear, endDate, endYear):
     
     return report_data
 
-# @csrf_exempt
-# @api_view(['GET'])
-# def PandLReport(request, startdate="", enddate=""):
-#     if request.method == 'GET':
-#         start_date = startdate.split('-')
-#         startDate = start_date[0]  # month
-#         startYear = start_date[1]  # year
-        
-#         end_date = enddate.split('-')
-#         endDate = end_date[0]  # month
-#         endYear = end_date[1]  # year
-#         current_year = int(startYear)
-#         current_month = int(startDate)
-#         end_year = int(endYear)
-#         end_month = int(endDate)
-#         header = ["Item"]
-        
-#         while current_year < end_year or (current_year == end_year and current_month <= end_month):
-#             header.append(f"{current_year}-{current_month}")
-#             if current_month == 12:
-#                 current_month = 1
-#                 current_year += 1
-#             else:
-#                 current_month += 1
-        
-#         formatted_data = [{i: header[i] for i in range(len(header))}]
-#         responsedata = []  
-#         category_data_dict = {}
-#         for category in Category.objects.all():
-#             category_data_dict[category.CategoryId] = {key: 0 for key in range(1, len(header))}
-
-#         for col in formatted_data:
-#             for key, value in col.items(): 
-#                 if value == "Item":
-#                     continue
-                
-#                 year, month = value.split('-') 
-                
-#                 reports = Report.objects.filter(Month=month, Year=year).order_by('SortId')
-#                 reportSerializer = ReportSerializer(reports, many=True)
-                
-#                 for row in reportSerializer.data:
-#                     category_id = row['CategoryId']
-#                     amount = row['Amount']
-#                     level = row['Level']  
-                    
-#                     if category_id not in category_data_dict:
-#                         category_data_dict[category_id] = {key: 0 for key in range(1, len(header))}
-                    
-#                     if key in category_data_dict[category_id]:
-#                         category_data_dict[category_id][key] = amount
-#                     else:
-#                         category_data_dict[category_id][key] = amount
-                    
-                  
-#                     category_data_dict[category_id]['level'] = level
-
-        
-#         for category_id, data in category_data_dict.items():
-#             category = Category.objects.get(CategoryId=category_id)
-#             categorySerializer = CategorySerializer(category)
-            
-#             Categorydata = {
-#                 'Level': data['level'], 
-#                 '0': categorySerializer.data['Category'],
-#                 **data  
-#             }
-#             responsedata.append(Categorydata)
 
 
 @csrf_exempt

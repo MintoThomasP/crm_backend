@@ -187,6 +187,15 @@ def LoginHistoryApi(request):
             if loginHistorySerializer.is_valid():
                 loginHistorySerializer.save()
                 try:
+                    login = Login.objects.get(UserId=loginHistory.UserId)
+                    login.Token=""
+                    login.save()
+                except:
+                    p=""
+
+
+
+                try:
                     projectTask=ProjectTask.objects.filter(TaskAssignedTo=loginHistoryData['UserId'])
                     projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
                     for row in projectTaskSerializer.data:
