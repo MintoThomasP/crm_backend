@@ -1031,7 +1031,7 @@ class UploadProjectTaskFile(APIView):
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def CommentApi(request, pk=""):
-    try:
+    # try:
         if request.method == 'GET':
             comment = Comments.objects.all()
             commentSerializer = CommentsSerializer(
@@ -1084,8 +1084,8 @@ def CommentApi(request, pk=""):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="",)

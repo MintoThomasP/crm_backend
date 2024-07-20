@@ -18,6 +18,7 @@ urlpatterns = [
 
 
     url(r'^GetNotificationByToUser/(?P<ToUser>[0-9a-zA-Z\-]+)$', views.GetNotificationByToUser),
+    path('dateconversion/', views.dateconversion),
 
 ]
 if settings.DEBUG:

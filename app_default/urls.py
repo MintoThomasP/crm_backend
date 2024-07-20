@@ -42,6 +42,6 @@ urlpatterns = [
     path('SectionTypeApi/', views.SectionTypeApi),
     path('CategoryTypeApi/', views.CategoryTypeApi),
     path('ReportTypeApi/', views.ReportTypeApi),
-
+    path('MeetingTypeApi/', views.MeetingTypeApi),
 
 ]

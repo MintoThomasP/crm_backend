@@ -113,3 +113,9 @@ class CategoryType(models.Model):
 class ReportType(models.Model):
     ReportTypeId=models.AutoField(primary_key=True, editable=False)
     ReportType=models.CharField(max_length=300, blank=True, null=True)
+
+
+
+class MeetingType(models.Model):
+    MeetingTypeId=models.AutoField(primary_key=True, editable=False)
+    MeetingType=models.CharField(max_length=300, blank=True, null=True)

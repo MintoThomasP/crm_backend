@@ -18,7 +18,7 @@ from rest_framework.decorators import api_view
 from django.db.models import Q
 # Create your views here.
 
-
+from datetime import datetime, timedelta, timezone
 
 
 @csrf_exempt
@@ -309,6 +309,35 @@ def loginByTokenApi(request):
                 Data.append(message)
             Data.append(UserData)
             return JsonResponse(Data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+from datetime import datetime
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give UserId to get one loginHistory detail",)
+@api_view(['GET'])
+def AutoLogout(request, UserId=""):
+    try:
+        if request.method == 'GET': 
+            loginHistory = LoginHistory.objects.filter(
+                    Q(LogoutTime__isnull=True)| Q(LogoutTime=""))
+            loginHistorySerializer=LoginHistorySerializer(loginHistory,many=True)
+            for row in loginHistory:
+                logout_time = datetime.now(timezone.utc)
+                timezone_offset = timedelta(hours=5, minutes=30)
+                logout_time = logout_time.astimezone(timezone(timezone_offset))
+                formatted_logout_time = logout_time.strftime('%Y-%m-%dT%H:%M:%S%z')
+                formatted_logout_time = formatted_logout_time[:-2] + ':' + formatted_logout_time[-2:]
+                row.LogoutTime=formatted_logout_time
+                row.save()
+                login=Login.objects.get(LoginId=row.LoginId)
+                login.Token=""
+                login.save()
+
+            return JsonResponse("updated", safe=False)
         else:
             return JsonResponse("", safe=False)
     except:

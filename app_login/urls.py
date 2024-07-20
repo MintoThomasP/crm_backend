@@ -16,4 +16,7 @@ urlpatterns = [
     url(r'^LoginHistoryApiById/(?P<LoginHistoryId>[0-9a-zA-Z\-]+)$', views.LoginHistoryApiById),
     url(r'^LoginHistoryApiByUserId/(?P<UserId>[0-9a-zA-Z\-]+)$', views.LoginHistoryApiByUserId),
 
+
+    path('AutoLogout/', views.AutoLogout),
+
 ]

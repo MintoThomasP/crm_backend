@@ -1,6 +1,7 @@
 from django.db import models
 from datetime import datetime
 import uuid
+import pytz
 from django.utils import timezone
 # Create your models here.
 from django.db.models.signals import post_save
@@ -19,6 +20,12 @@ class Project(models.Model):
     Duration=models.IntegerField(default=0)
     Status=models.ForeignKey('app_default.TaskStatus',on_delete=models.CASCADE)
     ClientId=models.CharField(blank=True, null=True, max_length=50)
+    def save(self, *args, **kwargs):
+        if not self.StartDate:
+            # Convert current time to IST
+            ist = pytz.timezone('Asia/Kolkata')
+            self.StartDate = datetime.now(ist)
+        super(Project, self).save(*args, **kwargs)
 
 class ProjectTask(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)

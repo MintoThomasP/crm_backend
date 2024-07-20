@@ -38,3 +38,6 @@ class Notification(models.Model):
     FromUser=models.CharField(blank=True, null=True, max_length=50)
     ToUser=models.CharField(blank=True, null=True, max_length=300)
     CreatedDate=models.DateTimeField(editable=False, default=datetime.now)
+
+
+
