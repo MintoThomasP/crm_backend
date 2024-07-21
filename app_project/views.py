@@ -178,95 +178,26 @@ class ProjectTaskPagination(generics.ListAPIView):
 @csrf_exempt
 @api_view(['GET'])
 def RestTaskPoint(request):
-            projectTask = ProjectTask.objects.all()
-            projectTaskSerializer = ProjectTaskSerializer(
-                    projectTask, many=True)
-            for projectTask in projectTaskSerializer.data:
-                if projectTask['TotalDuration'] is None:
+    try:
+        project_tasks = ProjectTask.objects.all()
+        project_task_serializer = ProjectTaskSerializer(project_tasks, many=True)
 
-                    projectTaskTiming = ProjectTaskTiming.objects.filter(ProjectTaskId=projectTask['ProjectTaskId'])
-                    projectTaskTimingSerializer = ProjectTaskTimingSerializer(projectTaskTiming, many=True)
-                    total_duration_minutes = 0
-                    if len(projectTaskTiming):
-                        for row in projectTaskTiming:
+        for project_task in project_task_serializer.data:
+            if project_task['TotalDuration'] is None:
+                project_task_timings = ProjectTaskTiming.objects.filter(ProjectTaskId=project_task['ProjectTaskId'])
+                project_task_timing_serializer = ProjectTaskTimingSerializer(project_task_timings, many=True)
 
-                            try:
-                                date_format = '%Y-%m-%dT%H:%M:%S.%f'
-                                start_date = datetime.strptime(row.StartDate, date_format)
-                                end_date = datetime.strptime(row.EndDate, date_format)
-                            except:
-                                date_format = '%Y-%m-%dT%H:%M:%S.%f'
-                                try:
-                                    start_date = datetime.strptime(projectTask['StartDate'], date_format)
-                                except:
-                                    try:
-                                        hours, minutes = map(int, projectTask['Duration'].split(':'))
-                                    except:
-                                        projectTask['Duration']="0:10"
-                                    duration = timedelta(hours=1, minutes=0)
-                                    try:
-                                        ScheduledDeadline = datetime.strptime(projectTask['ScheduledDeadline'], date_format)
-                                        start_date = ScheduledDeadline + duration
-                                    except:
-                                        ScheduledDeadline = datetime.strptime(projectTask['SortId'], date_format)
-                                        start_date = ScheduledDeadline + duration
-                                    
-                                    formatted_datetime = start_date.strftime('%Y-%m-%dT%H:%M:%S%z')
-                                    projectTask['StartDate'] = formatted_datetime[:-2] + ':' + formatted_datetime[-2:]
-                                try:
-                                    end_date = datetime.strptime(projectTask['EndDate'], date_format)
-                                except:
-                                    hours, minutes = map(int, projectTask['Duration'].split(':'))
-                                    duration = timedelta(hours=1, minutes=0)
-                                    end_date = start_date + duration
-                                    formatted_datetime = end_date.strftime('%Y-%m-%dT%H:%M:%S%z')
-                                    projectTask['EndDate'] = formatted_datetime[:-2] + ':' + formatted_datetime[-2:]
-
-                            total_time_taken = end_date - start_date
-                            total_time_taken_in_seconds = total_time_taken.total_seconds()
-                            total_time_taken_data = {
-                                'hours': round(total_time_taken_in_seconds // 3600),
-                                'minutes': round((total_time_taken_in_seconds % 3600) // 60)
-                            }
-                            duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
-                            row.Duration = duration
-                            row.save()
-
-                            hours, minutes = map(int, duration.split(':'))
-                            total_duration_minutes += hours * 60 + minutes
-
-                        total_duration_hours = total_duration_minutes // 60
-                        total_duration_remaining_minutes = total_duration_minutes % 60
-                        total_duration = f"{total_duration_hours}:{total_duration_remaining_minutes}"
-
-                        projectTask['TotalDuration'] = total_duration
-                    else:
-                        date_format = '%Y-%m-%dT%H:%M:%S.%f'
+                total_duration_minutes = 0
+                if project_task_timings:
+                    for row in project_task_timings:
                         try:
-                            start_date = datetime.strptime(projectTask['StartDate'], date_format)
-                        except:
-                            try:
-                                hours, minutes = map(int, projectTask['Duration'].split(':'))
-                            except:
-                                projectTask['Duration']="0:10"
-                            duration = timedelta(hours=1, minutes=0)
-                            try:
-                                ScheduledDeadline = datetime.strptime(projectTask['ScheduledDeadline'], date_format)
-                                start_date = ScheduledDeadline + duration
-                            except:
-                                ScheduledDeadline = datetime.strptime(projectTask['SortId'], date_format)
-                                start_date = ScheduledDeadline + duration
-                            
-                            formatted_datetime = start_date.strftime('%Y-%m-%dT%H:%M:%S%z')
-                            projectTask['StartDate'] = formatted_datetime[:-2] + ':' + formatted_datetime[-2:]
-                        try:
-                            end_date = datetime.strptime(projectTask['EndDate'], date_format)
-                        except:
-                            hours, minutes = map(int, projectTask['Duration'].split(':'))
-                            duration = timedelta(hours=1, minutes=0)
-                            end_date = start_date + duration
-                            formatted_datetime = end_date.strftime('%Y-%m-%dT%H:%M:%S%z')
-                            projectTask['EndDate'] = formatted_datetime[:-2] + ':' + formatted_datetime[-2:]
+                            date_format = '%Y-%m-%dT%H:%M:%S.%f'
+                            start_date = datetime.strptime(row.StartDate, date_format)
+                            end_date = datetime.strptime(row.EndDate, date_format)
+                        except ValueError:
+                            # logger.error(f"Date parsing error for task {project_task['ProjectTaskId']}: {row.StartDate}, {row.EndDate}")
+                            start_date, end_date = handle_date_defaults(project_task)
+
                         total_time_taken = end_date - start_date
                         total_time_taken_in_seconds = total_time_taken.total_seconds()
                         total_time_taken_data = {
@@ -274,13 +205,57 @@ def RestTaskPoint(request):
                             'minutes': round((total_time_taken_in_seconds % 3600) // 60)
                         }
                         duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
-                        projectTask['TotalDuration'] = duration
-                projectTask['CompletionPoint']=round(pointCalculation(projectTask),2)
-                projectTaskSerializer = ProjectTaskSerializer(
-                    data=projectTask)
-                if projectTaskSerializer.is_valid():
-                    projectTaskSerializer.save()
-            return JsonResponse("taskData", safe=False)
+                        row.Duration = duration
+                        row.save()
+
+                        hours, minutes = map(int, duration.split(':'))
+                        total_duration_minutes += hours * 60 + minutes
+
+                    total_duration_hours = total_duration_minutes // 60
+                    total_duration_remaining_minutes = total_duration_minutes % 60
+                    total_duration = f"{total_duration_hours}:{total_duration_remaining_minutes}"
+
+                    project_task['TotalDuration'] = total_duration
+                else:
+                    start_date, end_date = handle_date_defaults(project_task)
+                    total_time_taken = end_date - start_date
+                    total_time_taken_in_seconds = total_time_taken.total_seconds()
+                    total_time_taken_data = {
+                        'hours': round(total_time_taken_in_seconds // 3600),
+                        'minutes': round((total_time_taken_in_seconds % 3600) // 60)
+                    }
+                    duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
+                    project_task['TotalDuration'] = duration
+
+            project_task['CompletionPoint'] = round(pointCalculation(project_task), 2)
+            project_task_serializer = ProjectTaskSerializer(data=project_task)
+            if project_task_serializer.is_valid():
+                project_task_serializer.save()
+            else:
+                p=""
+                # logger.error(f"Serializer validation error for task {project_task['ProjectTaskId']}: {project_task_serializer.errors}")
+
+        return JsonResponse({"status": "success"}, safe=False)
+    except Exception as e:
+        # logger.error(f"Internal server error: {e}")
+        return JsonResponse({"error": "Internal server error"}, status=500)
+
+def handle_date_defaults(project_task):
+    date_format = '%Y-%m-%dT%H:%M:%S.%f'
+    try:
+        start_date = datetime.strptime(project_task['StartDate'], date_format)
+    except ValueError:
+        hours, minutes = map(int, project_task['Duration'].split(':'))
+        duration = timedelta(hours=hours, minutes=minutes)
+        ScheduledDeadline = datetime.strptime(project_task.get('ScheduledDeadline', datetime.now().isoformat()), date_format)
+        start_date = ScheduledDeadline + duration
+
+    try:
+        end_date = datetime.strptime(project_task['EndDate'], date_format)
+    except ValueError:
+        end_date = start_date + timedelta(hours=1)  # default duration of 1 hour
+
+    return start_date, end_date
 
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=ProjectTaskSerializer)
@@ -610,113 +585,65 @@ def ProjectTaskApiByProjectId(request, ProjectId=""):
 @retry(retries=3, delay=2)
 def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
     try:
-        if request.method == 'GET': 
-            projectTask = ProjectTask.objects.filter(
-        Q(TaskAssignedTo=TaskAssignedTo) & 
-        Q(TaskType='Task') | 
-        (Q(TaskType='Ticket') & Q(TaskAssignedTo=TaskAssignedTo) & (Q(Status='2') | Q(Status='1')))
-    ).order_by('-SortId')
-           
-            projectTaskSerializer = ProjectTaskSerializer(
-                    projectTask,many=True)
-            taskStatusName=[]
-            for row in projectTaskSerializer.data:
-                
-                try:
-                    projectTask = ProjectTask.objects.filter(RefId=row['ProjectTaskId']).order_by('-SortId')
-                    projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
-                    subTasks=[]
-                    for subtask in projectTaskSerializer.data:
-                        try:                      
-                            taskStatus=TaskStatus.objects.get(StatusId=subtask['Status'])
-                            taskStatusSerializer=TaskStatusSerializer(taskStatus)
-                            subtask['StatusName']=taskStatusSerializer.data['Status']
-                        except:
-                            subtask['StatusName']=""
-                        subTasks.append(subtask)
+        if request.method == 'GET':
+            project_tasks = ProjectTask.objects.filter(
+                Q(TaskAssignedTo=TaskAssignedTo) &
+                Q(TaskType='Task') |
+                (Q(TaskType='Ticket') & Q(TaskAssignedTo=TaskAssignedTo) & (Q(Status='2') | Q(Status='1')))
+            ).order_by('-SortId').select_related('Project', 'TaskAssignedTo', 'TaskAssignedBy', 'VerifiedBy')
 
-                    row['SubTask'] = subTasks
-                except:
-                    row['SubTask'] =[]
+            project_task_serializer = ProjectTaskSerializer(project_tasks, many=True)
+            task_status_name = []
 
-                row['Tickets']=[]
+            task_status_dict = {status.StatusId: status.Status for status in TaskStatus.objects.all()}
+            project_dict = {project.ProjectId: project.ProjectName for project in Project.objects.all()}
+            staff_dict = {staff.StaffId: staff.StaffName for staff in Staff.objects.all()}
+
+            for row in project_task_serializer.data:
                 try:
-                    projectTask = ProjectTask.objects.filter(
-                        RefId=row['ProjectTaskId']).order_by('-SortId')
-                    projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
-                    row['Tickets']=projectTaskSerializer.data[0]
+                    sub_tasks = ProjectTask.objects.filter(RefId=row['ProjectTaskId']).order_by('-SortId')
+                    sub_task_serializer = ProjectTaskSerializer(sub_tasks, many=True)
+                    for subtask in sub_task_serializer.data:
+                        subtask['StatusName'] = task_status_dict.get(subtask['Status'], "")
+                    row['SubTask'] = sub_task_serializer.data
                 except:
-                    row['Tickets']=[]
-                # try:
-                #     if row['TotalDuration']:
-                #         row['CompletedPoint']=0
-                #         Duration = row['Duration']
-                #         duration_seconds=durationCalculation(Duration)
-                #         TotalDuration = row['TotalDuration']
-                #         TotalDuration_seconds=durationCalculation(TotalDuration)
-                #         try:
-                #             point = row['TaskPoint']
-                #         except:
-                #             point=1
-                #         row['CompletedPoint'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
-                # except:
-                #     row['CompletedPoint']=""
-                try:                      
-                    taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
-                    taskStatusSerializer=TaskStatusSerializer(taskStatus)
-                    row['StatusName']=taskStatusSerializer.data['Status']
-                except:
-                    row['StatusName']=""
+                    row['SubTask'] = []
 
                 try:
-                    project = Project.objects.get(ProjectId=row['ProjectId'])
-                    projectSerializer = ProjectSerializer(project)
-                    row['ProjectName'] = projectSerializer.data['ProjectName']
+                    tickets = ProjectTask.objects.filter(RefId=row['ProjectTaskId']).order_by('-SortId')
+                    ticket_serializer = ProjectTaskSerializer(tickets, many=True)
+                    row['Tickets'] = ticket_serializer.data
                 except:
-                    row['ProjectName'] = ""
-                try:
-                    staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
-                    staffSerializer = StaffSerializer(staff)
-                    row['StaffName'] = staffSerializer.data['StaffName']
-                except:
-                    row['StaffName'] =""
-                try:
-                    staff = Staff.objects.get(StaffId=row['TaskAssignedBy'])
-                    staffSerializer = StaffSerializer(staff)
-                    row['TaskAssignedByName'] = staffSerializer.data['StaffName']
-                except:
-                    row['TaskAssignedByName'] =""
+                    row['Tickets'] = []
 
+                row['StatusName'] = task_status_dict.get(row['Status'], "")
+                row['ProjectName'] = project_dict.get(row['ProjectId'], "")
+                row['StaffName'] = staff_dict.get(row['TaskAssignedTo'], "")
+                row['TaskAssignedByName'] = staff_dict.get(row['TaskAssignedBy'], "")
+                row['VerifiedByName'] = staff_dict.get(row['VerifiedBy'], "")
 
                 try:
-                    staff=Staff.objects.get(StaffId=row['VerifiedBy'])
-                    staffSerializer=StaffSerializer(staff)
-                    row['VerifiedByName']=staffSerializer.data['StaffName']
+                    project_task_files = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+                    project_task_file_serializer = ProjectTaskFileSerializer(project_task_files, many=True)
+                    row['ProjectTaskFiles'] = project_task_file_serializer.data
                 except:
-                    row['VerifiedByName']= ""
-                try:
-                    projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
-                    projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
-                    row['ProjectTaskFiles']=projectTaskFileSerializer.data
-                except:
-                    row['ProjectTaskFiles']=""
-                
-                
-                taskStatusName.append(row)
+                    row['ProjectTaskFiles'] = []
+
+                task_status_name.append(row)
+
             MediaViewData = []
             batch_size = 50
-            for start in range(0, len(taskStatusName), batch_size):
-                batch = taskStatusName[start:start + batch_size]
+            for start in range(0, len(task_status_name), batch_size):
+                batch = task_status_name[start:start + batch_size]
                 for media in batch:
                     MediaViewData.append(media)
 
             return JsonResponse(MediaViewData, safe=False)
-            
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
-    
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, safe=False)
+
 
 # @csrf_exempt
 # @swagger_auto_schema(method='GET',operation_description="NOTE: Get projecttask by staff",)
