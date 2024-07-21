@@ -179,7 +179,7 @@ from django.core.paginator import Paginator
 @csrf_exempt
 @api_view(['GET'])
 def RestTaskPoint(request):
-    try:
+    # try:
         project_tasks = ProjectTask.objects.all()
         paginator = Paginator(project_tasks, 100)  # Process 100 records at a time
         for page_number in paginator.page_range:
@@ -239,9 +239,9 @@ def RestTaskPoint(request):
                 #     logger.error(f"Serializer validation error for task {project_task['ProjectTaskId']}: {project_task_serializer.errors}")
 
         return JsonResponse({"status": "success"}, safe=False)
-    except Exception as e:
-        # logger.error("Internal server error: {e}")
-        return JsonResponse({"error": "Internal server error"}, status=500)
+    # except Exception as e:
+    #     # logger.error("Internal server error: {e}")
+    #     return JsonResponse({"error": "Internal server error"}, status=500)
 
 def handle_date_defaults(project_task):
     date_format = '%Y-%m-%dT%H:%M:%S.%f'
