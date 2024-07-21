@@ -181,6 +181,8 @@ def RestTaskPoint(request):
             projectTask = ProjectTask.objects.all()
             projectTaskSerializer = ProjectTaskSerializer(
                     projectTask, many=True)
+            success=0
+            failed=0
             for projectTask in projectTaskSerializer.data:
                 if projectTask['TotalDuration'] is None:
 
@@ -280,9 +282,16 @@ def RestTaskPoint(request):
                     ProjectTaskId=projectTask['ProjectTaskId'])
                 projectTaskSerializerLive = ProjectTaskSerializer(
                     projectTaskLive, data=projectTask)
+                
+            
                 if projectTaskSerializerLive.is_valid():
+                    success=+success
                     projectTaskSerializerLive.save()
-            return JsonResponse("taskData", safe=False)
+            
+                else:
+                    failed=+failed
+
+            return JsonResponse({'sucess':success,'failed':failed}, safe=False)
 
 # def RestTaskPoint(request):
 #     BATCH_SIZE = 100  # Adjust batch size as needed
