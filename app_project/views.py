@@ -712,97 +712,90 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
             projectTaskSerializer = ProjectTaskSerializer(
                     projectTask,many=True)
             taskStatusName=[]
-            for row in projectTaskSerializer.data:
+            # for row in projectTaskSerializer.data:
                 
-                try:
-                    projectTask = ProjectTask.objects.filter(RefId=row['ProjectTaskId']).order_by('-SortId')
-                    projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
-                    subTasks=[]
-                    for subtask in projectTaskSerializer.data:
-                        try:                      
-                            taskStatus=TaskStatus.objects.get(StatusId=subtask['Status'])
-                            taskStatusSerializer=TaskStatusSerializer(taskStatus)
-                            subtask['StatusName']=taskStatusSerializer.data['Status']
-                        except:
-                            subtask['StatusName']=""
-                        subTasks.append(subtask)
+            #     try:
+            #         projectTask = ProjectTask.objects.filter(RefId=row['ProjectTaskId']).order_by('-SortId')
+            #         projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
+            #         subTasks=[]
+            #         for subtask in projectTaskSerializer.data:
+            #             try:                      
+            #                 taskStatus=TaskStatus.objects.get(StatusId=subtask['Status'])
+            #                 taskStatusSerializer=TaskStatusSerializer(taskStatus)
+            #                 subtask['StatusName']=taskStatusSerializer.data['Status']
+            #             except:
+            #                 subtask['StatusName']=""
+            #             subTasks.append(subtask)
 
-                    row['SubTask'] = subTasks
-                except:
-                    row['SubTask'] =[]
+            #         row['SubTask'] = subTasks
+            #     except:
+            #         row['SubTask'] =[]
 
-                row['Tickets']=[]
-                try:
-                    projectTask = ProjectTask.objects.filter(
-                        RefId=row['ProjectTaskId']).order_by('-SortId')
-                    projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
-                    row['Tickets']=projectTaskSerializer.data[0]
-                except:
-                    row['Tickets']=[]
-                # try:
-                #     if row['TotalDuration']:
-                #         row['CompletedPoint']=0
-                #         Duration = row['Duration']
-                #         duration_seconds=durationCalculation(Duration)
-                #         TotalDuration = row['TotalDuration']
-                #         TotalDuration_seconds=durationCalculation(TotalDuration)
-                #         try:
-                #             point = row['TaskPoint']
-                #         except:
-                #             point=1
-                #         row['CompletedPoint'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
-                # except:
-                #     row['CompletedPoint']=""
-                try:                      
-                    taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
-                    taskStatusSerializer=TaskStatusSerializer(taskStatus)
-                    row['StatusName']=taskStatusSerializer.data['Status']
-                except:
-                    row['StatusName']=""
+            #     row['Tickets']=[]
+            #     try:
+            #         projectTask = ProjectTask.objects.filter(
+            #             RefId=row['ProjectTaskId']).order_by('-SortId')
+            #         projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
+            #         row['Tickets']=projectTaskSerializer.data[0]
+            #     except:
+            #         row['Tickets']=[]
+            #     # try:
+            #     #     if row['TotalDuration']:
+            #     #         row['CompletedPoint']=0
+            #     #         Duration = row['Duration']
+            #     #         duration_seconds=durationCalculation(Duration)
+            #     #         TotalDuration = row['TotalDuration']
+            #     #         TotalDuration_seconds=durationCalculation(TotalDuration)
+            #     #         try:
+            #     #             point = row['TaskPoint']
+            #     #         except:
+            #     #             point=1
+            #     #         row['CompletedPoint'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
+            #     # except:
+            #     #     row['CompletedPoint']=""
+            #     try:                      
+            #         taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+            #         taskStatusSerializer=TaskStatusSerializer(taskStatus)
+            #         row['StatusName']=taskStatusSerializer.data['Status']
+            #     except:
+            #         row['StatusName']=""
 
-                try:
-                    project = Project.objects.get(ProjectId=row['ProjectId'])
-                    projectSerializer = ProjectSerializer(project)
-                    row['ProjectName'] = projectSerializer.data['ProjectName']
-                except:
-                    row['ProjectName'] = ""
-                try:
-                    staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
-                    staffSerializer = StaffSerializer(staff)
-                    row['StaffName'] = staffSerializer.data['StaffName']
-                except:
-                    row['StaffName'] =""
-                try:
-                    staff = Staff.objects.get(StaffId=row['TaskAssignedBy'])
-                    staffSerializer = StaffSerializer(staff)
-                    row['TaskAssignedByName'] = staffSerializer.data['StaffName']
-                except:
-                    row['TaskAssignedByName'] =""
+            #     try:
+            #         project = Project.objects.get(ProjectId=row['ProjectId'])
+            #         projectSerializer = ProjectSerializer(project)
+            #         row['ProjectName'] = projectSerializer.data['ProjectName']
+            #     except:
+            #         row['ProjectName'] = ""
+            #     try:
+            #         staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
+            #         staffSerializer = StaffSerializer(staff)
+            #         row['StaffName'] = staffSerializer.data['StaffName']
+            #     except:
+            #         row['StaffName'] =""
+            #     try:
+            #         staff = Staff.objects.get(StaffId=row['TaskAssignedBy'])
+            #         staffSerializer = StaffSerializer(staff)
+            #         row['TaskAssignedByName'] = staffSerializer.data['StaffName']
+            #     except:
+            #         row['TaskAssignedByName'] =""
 
 
-                try:
-                    staff=Staff.objects.get(StaffId=row['VerifiedBy'])
-                    staffSerializer=StaffSerializer(staff)
-                    row['VerifiedByName']=staffSerializer.data['StaffName']
-                except:
-                    row['VerifiedByName']= ""
-                try:
-                    projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
-                    projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
-                    row['ProjectTaskFiles']=projectTaskFileSerializer.data
-                except:
-                    row['ProjectTaskFiles']=""
+            #     try:
+            #         staff=Staff.objects.get(StaffId=row['VerifiedBy'])
+            #         staffSerializer=StaffSerializer(staff)
+            #         row['VerifiedByName']=staffSerializer.data['StaffName']
+            #     except:
+            #         row['VerifiedByName']= ""
+            #     try:
+            #         projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+            #         projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
+            #         row['ProjectTaskFiles']=projectTaskFileSerializer.data
+            #     except:
+            #         row['ProjectTaskFiles']=""
                 
                 
-                taskStatusName.append(row)
-            MediaViewData = []
-            batch_size = 50
-            for start in range(0, len(taskStatusName), batch_size):
-                batch = taskStatusName[start:start + batch_size]
-                for media in batch:
-                    MediaViewData.append(media)
 
-            return JsonResponse(MediaViewData, safe=False)
+            return JsonResponse(projectTaskSerializer.data, safe=False)
             
         else:
             return JsonResponse("", safe=False)
