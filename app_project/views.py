@@ -175,29 +175,53 @@ class ProjectTaskPagination(generics.ListAPIView):
         # return JsonResponse(taskData, safe=False)
 
 
+from django.core.paginator import Paginator
 @csrf_exempt
 @api_view(['GET'])
 def RestTaskPoint(request):
     try:
         project_tasks = ProjectTask.objects.all()
-        project_task_serializer = ProjectTaskSerializer(project_tasks, many=True)
+        paginator = Paginator(project_tasks, 100)  # Process 100 records at a time
+        for page_number in paginator.page_range:
+            page = paginator.page(page_number)
+            project_task_serializer = ProjectTaskSerializer(page, many=True)
 
-        for project_task in project_task_serializer.data:
-            if project_task['TotalDuration'] is None:
-                project_task_timings = ProjectTaskTiming.objects.filter(ProjectTaskId=project_task['ProjectTaskId'])
-                project_task_timing_serializer = ProjectTaskTimingSerializer(project_task_timings, many=True)
+            for project_task in project_task_serializer.data:
+                if project_task['TotalDuration'] is None:
+                    project_task_timings = ProjectTaskTiming.objects.filter(ProjectTaskId=project_task['ProjectTaskId'])
+                    project_task_timing_serializer = ProjectTaskTimingSerializer(project_task_timings, many=True)
 
-                total_duration_minutes = 0
-                if project_task_timings:
-                    for row in project_task_timings:
-                        try:
-                            date_format = '%Y-%m-%dT%H:%M:%S.%f'
-                            start_date = datetime.strptime(row.StartDate, date_format)
-                            end_date = datetime.strptime(row.EndDate, date_format)
-                        except ValueError:
-                            # logger.error(f"Date parsing error for task {project_task['ProjectTaskId']}: {row.StartDate}, {row.EndDate}")
-                            start_date, end_date = handle_date_defaults(project_task)
+                    total_duration_minutes = 0
+                    if project_task_timings:
+                        for row in project_task_timings:
+                            try:
+                                date_format = '%Y-%m-%dT%H:%M:%S.%f'
+                                start_date = datetime.strptime(row.StartDate, date_format)
+                                end_date = datetime.strptime(row.EndDate, date_format)
+                            except ValueError:
+                                # logger.error(f"Date parsing error for task {project_task['ProjectTaskId']}: {row.StartDate}, {row.EndDate}")
+                                start_date, end_date = handle_date_defaults(project_task)
 
+                            total_time_taken = end_date - start_date
+                            total_time_taken_in_seconds = total_time_taken.total_seconds()
+                            total_time_taken_data = {
+                                'hours': round(total_time_taken_in_seconds // 3600),
+                                'minutes': round((total_time_taken_in_seconds % 3600) // 60)
+                            }
+                            duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
+                            row.Duration = duration
+                            row.save()
+
+                            hours, minutes = map(int, duration.split(':'))
+                            total_duration_minutes += hours * 60 + minutes
+
+                        total_duration_hours = total_duration_minutes // 60
+                        total_duration_remaining_minutes = total_duration_minutes % 60
+                        total_duration = f"{total_duration_hours}:{total_duration_remaining_minutes}"
+
+                        project_task['TotalDuration'] = total_duration
+                    else:
+                        start_date, end_date = handle_date_defaults(project_task)
                         total_time_taken = end_date - start_date
                         total_time_taken_in_seconds = total_time_taken.total_seconds()
                         total_time_taken_data = {
@@ -205,39 +229,18 @@ def RestTaskPoint(request):
                             'minutes': round((total_time_taken_in_seconds % 3600) // 60)
                         }
                         duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
-                        row.Duration = duration
-                        row.save()
+                        project_task['TotalDuration'] = duration
 
-                        hours, minutes = map(int, duration.split(':'))
-                        total_duration_minutes += hours * 60 + minutes
-
-                    total_duration_hours = total_duration_minutes // 60
-                    total_duration_remaining_minutes = total_duration_minutes % 60
-                    total_duration = f"{total_duration_hours}:{total_duration_remaining_minutes}"
-
-                    project_task['TotalDuration'] = total_duration
-                else:
-                    start_date, end_date = handle_date_defaults(project_task)
-                    total_time_taken = end_date - start_date
-                    total_time_taken_in_seconds = total_time_taken.total_seconds()
-                    total_time_taken_data = {
-                        'hours': round(total_time_taken_in_seconds // 3600),
-                        'minutes': round((total_time_taken_in_seconds % 3600) // 60)
-                    }
-                    duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
-                    project_task['TotalDuration'] = duration
-
-            project_task['CompletionPoint'] = round(pointCalculation(project_task), 2)
-            project_task_serializer = ProjectTaskSerializer(data=project_task)
-            if project_task_serializer.is_valid():
-                project_task_serializer.save()
-            else:
-                p=""
-                # logger.error(f"Serializer validation error for task {project_task['ProjectTaskId']}: {project_task_serializer.errors}")
+                project_task['CompletionPoint'] = round(pointCalculation(project_task), 2)
+                project_task_serializer = ProjectTaskSerializer(data=project_task)
+                if project_task_serializer.is_valid():
+                    project_task_serializer.save()
+                # else:
+                #     logger.error(f"Serializer validation error for task {project_task['ProjectTaskId']}: {project_task_serializer.errors}")
 
         return JsonResponse({"status": "success"}, safe=False)
     except Exception as e:
-        # logger.error(f"Internal server error: {e}")
+        # logger.error("Internal server error: {e}")
         return JsonResponse({"error": "Internal server error"}, status=500)
 
 def handle_date_defaults(project_task):
