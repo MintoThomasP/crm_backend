@@ -285,11 +285,11 @@ def RestTaskPoint(request):
                 
             
                 if projectTaskSerializerLive.is_valid():
-                    success=+1
+                    success=success+1
                     projectTaskSerializerLive.save()
             
                 else:
-                    failed=+1
+                    failed=failed+1
 
             return JsonResponse({'sucess':success,'failed':failed}, safe=False)
 
