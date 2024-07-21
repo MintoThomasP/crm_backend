@@ -182,15 +182,100 @@ def RestTaskPoint(request):
             projectTaskSerializer = ProjectTaskSerializer(
                     projectTask, many=True)
             for projectTask in projectTaskSerializer.data:
-                if projectTask['Status']=='7' or  projectTask['Status']=='8' or  projectTask['Status']=='9':
-                    Duration = projectTask['Duration']        
-                    duration_seconds=durationCalculation(Duration)
-                    TotalDuration = projectTask['TotalDuration']
-                    point=projectTask['TaskPoint']
-                    TotalDuration_seconds=durationCalculation(TotalDuration)
-                    projectTask['CompletionPoint']=round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
-                else:
-                    projectTask['CompletionPoint']=0.00
+                if projectTask['TotalDuration'] is None:
+
+                    projectTaskTiming = ProjectTaskTiming.objects.filter(ProjectTaskId=projectTask['ProjectTaskId'])
+                    projectTaskTimingSerializer = ProjectTaskTimingSerializer(projectTaskTiming, many=True)
+                    total_duration_minutes = 0
+                    if len(projectTaskTiming):
+                        for row in projectTaskTiming:
+
+                            try:
+                                date_format = '%Y-%m-%dT%H:%M:%S.%f'
+                                start_date = datetime.strptime(row.StartDate, date_format)
+                                end_date = datetime.strptime(row.EndDate, date_format)
+                            except:
+                                date_format = '%Y-%m-%dT%H:%M:%S.%f'
+                                try:
+                                    start_date = datetime.strptime(projectTask['StartDate'], date_format)
+                                except:
+                                    try:
+                                        hours, minutes = map(int, projectTask['Duration'].split(':'))
+                                    except:
+                                        projectTask['Duration']="0:10"
+                                    duration = timedelta(hours=1, minutes=0)
+                                    try:
+                                        ScheduledDeadline = datetime.strptime(projectTask['ScheduledDeadline'], date_format)
+                                        start_date = ScheduledDeadline + duration
+                                    except:
+                                        ScheduledDeadline = datetime.strptime(projectTask['SortId'], date_format)
+                                        start_date = ScheduledDeadline + duration
+                                    
+                                    formatted_datetime = start_date.strftime('%Y-%m-%dT%H:%M:%S%z')
+                                    projectTask['StartDate'] = formatted_datetime[:-2] + ':' + formatted_datetime[-2:]
+                                try:
+                                    end_date = datetime.strptime(projectTask['EndDate'], date_format)
+                                except:
+                                    hours, minutes = map(int, projectTask['Duration'].split(':'))
+                                    duration = timedelta(hours=1, minutes=0)
+                                    end_date = start_date + duration
+                                    formatted_datetime = end_date.strftime('%Y-%m-%dT%H:%M:%S%z')
+                                    projectTask['EndDate'] = formatted_datetime[:-2] + ':' + formatted_datetime[-2:]
+
+                            total_time_taken = end_date - start_date
+                            total_time_taken_in_seconds = total_time_taken.total_seconds()
+                            total_time_taken_data = {
+                                'hours': round(total_time_taken_in_seconds // 3600),
+                                'minutes': round((total_time_taken_in_seconds % 3600) // 60)
+                            }
+                            duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
+                            row.Duration = duration
+                            row.save()
+
+                            hours, minutes = map(int, duration.split(':'))
+                            total_duration_minutes += hours * 60 + minutes
+
+                        total_duration_hours = total_duration_minutes // 60
+                        total_duration_remaining_minutes = total_duration_minutes % 60
+                        total_duration = f"{total_duration_hours}:{total_duration_remaining_minutes}"
+
+                        projectTask['TotalDuration'] = total_duration
+                    else:
+                        date_format = '%Y-%m-%dT%H:%M:%S.%f'
+                        try:
+                            start_date = datetime.strptime(projectTask['StartDate'], date_format)
+                        except:
+                            try:
+                                hours, minutes = map(int, projectTask['Duration'].split(':'))
+                            except:
+                                projectTask['Duration']="0:10"
+                            duration = timedelta(hours=1, minutes=0)
+                            try:
+                                ScheduledDeadline = datetime.strptime(projectTask['ScheduledDeadline'], date_format)
+                                start_date = ScheduledDeadline + duration
+                            except:
+                                ScheduledDeadline = datetime.strptime(projectTask['SortId'], date_format)
+                                start_date = ScheduledDeadline + duration
+                            
+                            formatted_datetime = start_date.strftime('%Y-%m-%dT%H:%M:%S%z')
+                            projectTask['StartDate'] = formatted_datetime[:-2] + ':' + formatted_datetime[-2:]
+                        try:
+                            end_date = datetime.strptime(projectTask['EndDate'], date_format)
+                        except:
+                            hours, minutes = map(int, projectTask['Duration'].split(':'))
+                            duration = timedelta(hours=1, minutes=0)
+                            end_date = start_date + duration
+                            formatted_datetime = end_date.strftime('%Y-%m-%dT%H:%M:%S%z')
+                            projectTask['EndDate'] = formatted_datetime[:-2] + ':' + formatted_datetime[-2:]
+                        total_time_taken = end_date - start_date
+                        total_time_taken_in_seconds = total_time_taken.total_seconds()
+                        total_time_taken_data = {
+                            'hours': round(total_time_taken_in_seconds // 3600),
+                            'minutes': round((total_time_taken_in_seconds % 3600) // 60)
+                        }
+                        duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
+                        projectTask['TotalDuration'] = duration
+                projectTask['CompletionPoint']=round(pointCalculation(projectTask),2)
                 projectTaskSerializer = ProjectTaskSerializer(
                     data=projectTask)
                 if projectTaskSerializer.is_valid():
@@ -296,12 +381,12 @@ def ProjectTaskApi(request):
             projectTaskSerializer = ProjectTaskSerializer(
                 projectTask, data=projectTaskData)
             if projectTaskSerializer.data['Status']=='7' or  projectTaskSerializer.data['Status']=='8' or  projectTaskSerializer.data['Status']=='9':
-                Duration = projectTaskSerializer.data['Duration']        
-                duration_seconds=durationCalculation(Duration)
-                TotalDuration = projectTaskSerializer.data['TotalDuration']
-                point=projectTaskSerializer.data['TaskPoint']
-                TotalDuration_seconds=durationCalculation(TotalDuration)
-                projectTaskSerializer.data['CompletionPoint']=round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
+                # Duration = projectTaskSerializer.data['Duration']        
+                # duration_seconds=durationCalculation(Duration)
+                # TotalDuration = projectTaskSerializer.data['TotalDuration']
+                # point=projectTaskSerializer.data['TaskPoint']
+                # TotalDuration_seconds=durationCalculation(TotalDuration)
+                projectTaskSerializer.data['CompletionPoint']=round(pointCalculation(projectTaskSerializer.data),2)
                 # projectTask.save()
             if projectTaskSerializer.is_valid():
                 projectTaskSerializer.save()
