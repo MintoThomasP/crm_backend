@@ -46,7 +46,7 @@ class ProjectTask(models.Model):
     TaskPoint=models.IntegerField(default=0)
     TaskType=models.CharField(blank=True, null=True, max_length=100)
     RefId=models.CharField(blank=True, null=True, max_length=50)
-    CompletionPoint=models.IntegerField(default=0)
+    CompletionPoint=models.DecimalField(max_digits=10, decimal_places=2, default=0)
     VerifiedBy=models.CharField(blank=True, null=True, max_length=50)
     IsRepeated = models.BooleanField(default=False)
     RepeatInterval = models.CharField(max_length=50, blank=True, null=True)

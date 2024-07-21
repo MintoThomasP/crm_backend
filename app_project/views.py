@@ -175,6 +175,27 @@ class ProjectTaskPagination(generics.ListAPIView):
         # return JsonResponse(taskData, safe=False)
 
 
+@csrf_exempt
+@api_view(['GET'])
+def RestTaskPoint(request):
+            projectTask = ProjectTask.objects.all()
+            projectTaskSerializer = ProjectTaskSerializer(
+                    projectTask, many=True)
+            for projectTask in projectTaskSerializer.data:
+                if projectTask['Status']=='7' or  projectTask['Status']=='8' or  projectTask['Status']=='9':
+                    Duration = projectTask['Duration']        
+                    duration_seconds=durationCalculation(Duration)
+                    TotalDuration = projectTask['TotalDuration']
+                    point=projectTask['TaskPoint']
+                    TotalDuration_seconds=durationCalculation(TotalDuration)
+                    projectTask['CompletionPoint']=round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
+                else:
+                    projectTask['CompletionPoint']=0.00
+                projectTaskSerializer = ProjectTaskSerializer(
+                    data=projectTask)
+                if projectTaskSerializer.is_valid():
+                    projectTaskSerializer.save()
+            return JsonResponse("taskData", safe=False)
 
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=ProjectTaskSerializer)
@@ -274,6 +295,14 @@ def ProjectTaskApi(request):
                 ProjectTaskId=projectTaskData['ProjectTaskId'])
             projectTaskSerializer = ProjectTaskSerializer(
                 projectTask, data=projectTaskData)
+            if projectTaskSerializer.data['Status']=='7' or  projectTaskSerializer.data['Status']=='8' or  projectTaskSerializer.data['Status']=='9':
+                Duration = projectTaskSerializer.data['Duration']        
+                duration_seconds=durationCalculation(Duration)
+                TotalDuration = projectTaskSerializer.data['TotalDuration']
+                point=projectTaskSerializer.data['TaskPoint']
+                TotalDuration_seconds=durationCalculation(TotalDuration)
+                projectTaskSerializer.data['CompletionPoint']=round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
+                # projectTask.save()
             if projectTaskSerializer.is_valid():
                 projectTaskSerializer.save()
                 if projectTaskSerializer.data['Status']=='3':
@@ -301,13 +330,7 @@ def ProjectTaskApi(request):
 
                         })
                 elif projectTaskSerializer.data['Status']=='7' or  projectTaskSerializer.data['Status']=='8' or  projectTaskSerializer.data['Status']=='9':
-                    Duration = projectTask.Duration        
-                    duration_seconds=durationCalculation(Duration)
-                    TotalDuration = projectTask.TotalDuration
-                    point=projectTask.TaskPoint
-                    TotalDuration_seconds=durationCalculation(TotalDuration)
-                    projectTask.CompletionPoint=round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
-                    projectTask.save()
+                    
                     login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedTo'])
                     if login.Token :
                         sendNotification({
