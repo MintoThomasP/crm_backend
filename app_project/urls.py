@@ -61,7 +61,6 @@ urlpatterns = [
 
     path('UpdateEndDate/', views.UpdateEndDate),
     path('UpdateStatus/', views.UpdateStatus),
-    path('RestTaskPoint/', views.RestTaskPoint),
 
 
 ]
