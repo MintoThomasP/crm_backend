@@ -276,8 +276,10 @@ def RestTaskPoint(request):
                         duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
                         projectTask['TotalDuration'] = duration
                 projectTask['CompletionPoint']=round(pointCalculation(projectTask),2)
+                projectTaskLive = ProjectTask.objects.get(
+                    ProjectTaskId=projectTask['ProjectTaskId'])
                 projectTaskSerializer = ProjectTaskSerializer(
-                    data=projectTask)
+                    projectTaskLive, data=projectTask)
                 if projectTaskSerializer.is_valid():
                     projectTaskSerializer.save()
             return JsonResponse("taskData", safe=False)
