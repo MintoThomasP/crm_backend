@@ -147,9 +147,15 @@ def StaffApiById(request, StaffId=""):
         "%Y-%m-%dT%H:%M",
         "%Y-%m-%dT%H:%M:%S%z"
     ]
-          
+            total_point=0
+            total_points_gain=0
+            count=0
             for task in projectTaskSerializer.data:
                 scheduled_deadline=0
+                if task['Status'] == '7' or task['Status'] == '8' or task['Status'] == '9' :
+                    total_point=+float(task['TaskPoint'])
+                    total_points_gain=+float(task['CompletionPoint'])
+                    count=+1
                 for date_format in date_formats:
                     try:
                         deadline = task['ScheduledDeadline']
@@ -176,7 +182,9 @@ def StaffApiById(request, StaffId=""):
 
                 if task['Status'] == '7':
                     work_status_count['Finished'] += 1
-
+            work_status_count['Performance']=0
+            if count:
+                work_status_count['Performance']=total_points_gain/count
             designationData['WorkStatusCount'] = work_status_count
             return JsonResponse(designationData, safe=False)
         elif request.method == 'DELETE':
