@@ -278,10 +278,10 @@ def RestTaskPoint(request):
                 projectTask['CompletionPoint']=round(pointCalculation(projectTask),2)
                 projectTaskLive = ProjectTask.objects.get(
                     ProjectTaskId=projectTask['ProjectTaskId'])
-                projectTaskSerializer = ProjectTaskSerializer(
+                projectTaskSerializerLive = ProjectTaskSerializer(
                     projectTaskLive, data=projectTask)
-                if projectTaskSerializer.is_valid():
-                    projectTaskSerializer.save()
+                if projectTaskSerializerLive.is_valid():
+                    projectTaskSerializerLive.save()
             return JsonResponse("taskData", safe=False)
 
 # def RestTaskPoint(request):
