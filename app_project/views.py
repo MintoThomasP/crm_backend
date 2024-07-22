@@ -195,8 +195,8 @@ def RestTaskPoint(request):
 
                         try:
                             date_format = '%Y-%m-%dT%H:%M:%S.%f'
-                            start_date = datetime.strptime(row.StartDate, date_format)
-                            end_date = datetime.strptime(row.EndDate, date_format)
+                            start_date = datetime.strptime(row['StartDate'], date_format)
+                            end_date = datetime.strptime(row['EndDate'], date_format)
                         except:
                             date_format = '%Y-%m-%dT%H:%M:%S.%f'
                             try:
