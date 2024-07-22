@@ -189,8 +189,8 @@ def RestTaskPoint(request):
                     projectTaskTiming = ProjectTaskTiming.objects.filter(ProjectTaskId=projectTask['ProjectTaskId'])
                     projectTaskTimingSerializer = ProjectTaskTimingSerializer(projectTaskTiming, many=True)
                     total_duration_minutes = 0
-                    if len(projectTaskTiming):
-                        for row in projectTaskTiming:
+                    if len(projectTaskTimingSerializer.data):
+                        for row in projectTaskTimingSerializer.data:
 
                             try:
                                 date_format = '%Y-%m-%dT%H:%M:%S.%f'
