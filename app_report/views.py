@@ -284,7 +284,7 @@ def pointCalculation(projectTask):
     
     # except:
     #     point=0
-    return float(projectTask['CompletionPoint'])
+    return projectTask['CompletionPoint']
 
 
 

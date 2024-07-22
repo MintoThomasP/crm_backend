@@ -183,6 +183,7 @@ def RestTaskPoint(request):
                     projectTask, many=True)
             success=0
             failed=0
+            data_return=[]
             for projectTask in projectTaskSerializer.data:
                 # if projectTask['TotalDuration'] is None:
 
@@ -283,7 +284,7 @@ def RestTaskPoint(request):
                 projectTaskSerializerLive = ProjectTaskSerializer(
                     projectTaskLive, data=projectTask)
                 
-            
+                data_return.append(projectTask)
                 if projectTaskSerializerLive.is_valid():
                     success=success+1
                     projectTaskSerializerLive.save()
