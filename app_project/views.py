@@ -231,7 +231,7 @@ def RestTaskPoint(request):
                             'minutes': round((total_time_taken_in_seconds % 3600) // 60)
                         }
                         duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
-                        row.Duration = duration
+                        row['Duration'] = duration
                         row.save()
 
                         hours, minutes = map(int, duration.split(':'))
