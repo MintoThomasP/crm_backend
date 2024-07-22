@@ -278,7 +278,7 @@ def RestTaskPoint(request):
                         }
                         duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
                         projectTask['TotalDuration'] = duration
-                projectTask['CompletionPoint']=round(pointCalculation(projectTask),2)
+                projectTask['CompletionPoint']=round(float(pointCalculation(projectTask)),2)
                 projectTaskLive = ProjectTask.objects.get(
                     ProjectTaskId=projectTask['ProjectTaskId'])
                 projectTaskSerializerLive = ProjectTaskSerializer(
