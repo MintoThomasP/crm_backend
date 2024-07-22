@@ -292,7 +292,7 @@ def RestTaskPoint(request):
                 else:
                     failed=failed+1
 
-            return JsonResponse({'sucess':success,'failed':failed}, safe=False)
+            return JsonResponse(data_return, safe=False)
 
 # def RestTaskPoint(request):
 #     BATCH_SIZE = 100  # Adjust batch size as needed
