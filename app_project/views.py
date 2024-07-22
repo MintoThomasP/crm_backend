@@ -232,7 +232,7 @@ def RestTaskPoint(request):
                         }
                         duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
                         row['Duration'] = duration
-                        row.save()
+                        # row.save()
 
                         hours, minutes = map(int, duration.split(':'))
                         total_duration_minutes += hours * 60 + minutes
