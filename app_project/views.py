@@ -285,12 +285,12 @@ def RestTaskPoint(request):
                     projectTaskLive, data=projectTask)
                 
                 data_return.append(projectTask)
-                if projectTaskSerializerLive.is_valid():
-                    success=success+1
-                    projectTaskSerializerLive.save()
+                # if projectTaskSerializerLive.is_valid():
+                #     success=success+1
+                #     projectTaskSerializerLive.save()
             
-                else:
-                    failed=failed+1
+                # else:
+                #     failed=failed+1
 
             return JsonResponse(data_return, safe=False)
 

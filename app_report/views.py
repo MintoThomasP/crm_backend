@@ -250,21 +250,21 @@ def pointCalculation(projectTask):
             if time_taken == scheduled_duration_minutes:
                 projectTask['CompletionPoint']= allotted_points  # Scenario 1
             elif time_taken > scheduled_duration_minutes:
-                over_time_percentage = (time_taken - scheduled_duration_minutes) / total_working_minutes
+                over_time_percentage = (time_taken - scheduled_duration_minutes) 
                 projectTask['CompletionPoint']=  clamp_points(allotted_points * (1 - over_time_percentage))  # Scenario 2
             elif time_taken < scheduled_duration_minutes:
-                under_time_percentage = (scheduled_duration_minutes - time_taken) / total_working_minutes
+                under_time_percentage = (scheduled_duration_minutes - time_taken) 
                 projectTask['CompletionPoint']=  clamp_points(allotted_points * (1 + under_time_percentage))  # Scenario 3
         else:
             delay_percentage = .5
             if time_taken == scheduled_duration_minutes:
                 base_points = allotted_points * (1 - delay_percentage)  # Based on Scenario 1
             elif time_taken > scheduled_duration_minutes:
-                over_time_percentage = (time_taken - scheduled_duration_minutes) / total_working_minutes
+                over_time_percentage = (time_taken - scheduled_duration_minutes) 
                 base_points = allotted_points * (1 - delay_percentage - over_time_percentage)  # Based on Scenario 2
             else:
-                under_time_percentage = (scheduled_duration_minutes - time_taken) / total_working_minutes
-                base_points = allotted_points * (1 - delay_percentage + under_time_percentage)  # Based on Scenario 3
+                under_time_percentage = (scheduled_duration_minutes - time_taken)
+                base_points = allotted_points * (1 - delay_percentage )  # Based on Scenario 3
             
             projectTask['CompletionPoint']=  clamp_points(base_points - (allotted_points * 2))  # Adjusted by subtracting twice the task points
 
