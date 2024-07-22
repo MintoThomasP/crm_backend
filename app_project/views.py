@@ -178,71 +178,71 @@ class ProjectTaskPagination(generics.ListAPIView):
 @csrf_exempt
 @api_view(['GET'])
 def RestTaskPoint(request):
-            projectTask = ProjectTask.objects.all()
+            projectTask = ProjectTask.objects.filter(TaskType="Task")
             projectTaskSerializer = ProjectTaskSerializer(
                     projectTask, many=True)
             success=0
             failed=0
             for projectTask in projectTaskSerializer.data:
-                if projectTask['TotalDuration'] is None:
+                # if projectTask['TotalDuration'] is None:
 
-                    projectTaskTiming = ProjectTaskTiming.objects.filter(ProjectTaskId=projectTask['ProjectTaskId'])
-                    projectTaskTimingSerializer = ProjectTaskTimingSerializer(projectTaskTiming, many=True)
-                    total_duration_minutes = 0
-                    if len(projectTaskTimingSerializer.data):
-                        for row in projectTaskTimingSerializer.data:
+                projectTaskTiming = ProjectTaskTiming.objects.filter(ProjectTaskId=projectTask['ProjectTaskId'])
+                projectTaskTimingSerializer = ProjectTaskTimingSerializer(projectTaskTiming, many=True)
+                total_duration_minutes = 0
+                if len(projectTaskTimingSerializer.data):
+                    for row in projectTaskTimingSerializer.data:
 
+                        try:
+                            date_format = '%Y-%m-%dT%H:%M:%S.%f'
+                            start_date = datetime.strptime(row.StartDate, date_format)
+                            end_date = datetime.strptime(row.EndDate, date_format)
+                        except:
+                            date_format = '%Y-%m-%dT%H:%M:%S.%f'
                             try:
-                                date_format = '%Y-%m-%dT%H:%M:%S.%f'
-                                start_date = datetime.strptime(row.StartDate, date_format)
-                                end_date = datetime.strptime(row.EndDate, date_format)
+                                start_date = datetime.strptime(projectTask['StartDate'], date_format)
                             except:
-                                date_format = '%Y-%m-%dT%H:%M:%S.%f'
                                 try:
-                                    start_date = datetime.strptime(projectTask['StartDate'], date_format)
-                                except:
-                                    try:
-                                        hours, minutes = map(int, projectTask['Duration'].split(':'))
-                                    except:
-                                        projectTask['Duration']="0:10"
-                                    duration = timedelta(hours=1, minutes=0)
-                                    try:
-                                        ScheduledDeadline = datetime.strptime(projectTask['ScheduledDeadline'], date_format)
-                                        start_date = ScheduledDeadline + duration
-                                    except:
-                                        ScheduledDeadline = datetime.strptime(projectTask['SortId'], date_format)
-                                        start_date = ScheduledDeadline + duration
-                                    
-                                    formatted_datetime = start_date.strftime('%Y-%m-%dT%H:%M:%S%z')
-                                    projectTask['StartDate'] = formatted_datetime[:-2] + ':' + formatted_datetime[-2:]
-                                try:
-                                    end_date = datetime.strptime(projectTask['EndDate'], date_format)
-                                except:
                                     hours, minutes = map(int, projectTask['Duration'].split(':'))
-                                    duration = timedelta(hours=1, minutes=0)
-                                    end_date = start_date + duration
-                                    formatted_datetime = end_date.strftime('%Y-%m-%dT%H:%M:%S%z')
-                                    projectTask['EndDate'] = formatted_datetime[:-2] + ':' + formatted_datetime[-2:]
+                                except:
+                                    projectTask['Duration']="0:10"
+                                duration = timedelta(hours=1, minutes=0)
+                                try:
+                                    ScheduledDeadline = datetime.strptime(projectTask['ScheduledDeadline'], date_format)
+                                    start_date = ScheduledDeadline + duration
+                                except:
+                                    ScheduledDeadline = datetime.strptime(projectTask['SortId'], date_format)
+                                    start_date = ScheduledDeadline + duration
+                                
+                                formatted_datetime = start_date.strftime('%Y-%m-%dT%H:%M:%S%z')
+                                projectTask['StartDate'] = formatted_datetime[:-2] + ':' + formatted_datetime[-2:]
+                            try:
+                                end_date = datetime.strptime(projectTask['EndDate'], date_format)
+                            except:
+                                hours, minutes = map(int, projectTask['Duration'].split(':'))
+                                duration = timedelta(hours=1, minutes=0)
+                                end_date = start_date + duration
+                                formatted_datetime = end_date.strftime('%Y-%m-%dT%H:%M:%S%z')
+                                projectTask['EndDate'] = formatted_datetime[:-2] + ':' + formatted_datetime[-2:]
 
-                            total_time_taken = end_date - start_date
-                            total_time_taken_in_seconds = total_time_taken.total_seconds()
-                            total_time_taken_data = {
-                                'hours': round(total_time_taken_in_seconds // 3600),
-                                'minutes': round((total_time_taken_in_seconds % 3600) // 60)
-                            }
-                            duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
-                            row.Duration = duration
-                            row.save()
+                        total_time_taken = end_date - start_date
+                        total_time_taken_in_seconds = total_time_taken.total_seconds()
+                        total_time_taken_data = {
+                            'hours': round(total_time_taken_in_seconds // 3600),
+                            'minutes': round((total_time_taken_in_seconds % 3600) // 60)
+                        }
+                        duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
+                        row.Duration = duration
+                        row.save()
 
-                            hours, minutes = map(int, duration.split(':'))
-                            total_duration_minutes += hours * 60 + minutes
+                        hours, minutes = map(int, duration.split(':'))
+                        total_duration_minutes += hours * 60 + minutes
 
-                        total_duration_hours = total_duration_minutes // 60
-                        total_duration_remaining_minutes = total_duration_minutes % 60
-                        total_duration = f"{total_duration_hours}:{total_duration_remaining_minutes}"
+                    total_duration_hours = total_duration_minutes // 60
+                    total_duration_remaining_minutes = total_duration_minutes % 60
+                    total_duration = f"{total_duration_hours}:{total_duration_remaining_minutes}"
 
-                        projectTask['TotalDuration'] = total_duration
-                    else:
+                    projectTask['TotalDuration'] = total_duration
+                else:
                         date_format = '%Y-%m-%dT%H:%M:%S.%f'
                         try:
                             start_date = datetime.strptime(projectTask['StartDate'], date_format)
