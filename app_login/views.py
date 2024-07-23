@@ -224,7 +224,7 @@ def LoginHistoryApi(request):
                 return JsonResponse(loginHistorySerializer.data['LoginHistoryId'], safe=False)
             return JsonResponse("Failed to Update", safe=False)
         else:
-            return JsonResponse("", safe=False)
+            return JsonResponse("jj", safe=False)
     # except:
     #     return JsonResponse("", safe=False)
     
