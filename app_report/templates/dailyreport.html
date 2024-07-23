@@ -140,20 +140,20 @@
                     {{col.Title}} - {{col.timing|length}}
                 </td>
 
-                <td>{{col.timing[0].StartDate}}</td>
-                <td>{{col.timing[0].EndDate}}</td>
-                <td>{{col.timing[0].Duration}}</td>
+                <td>{{col.StartDate}}</td>
+                <td>{{col.EndDate}}</td>
+                <td>{{col.Duration}}</td>
                 <td rowspan="{{ col.timing|length }}">{{col.StatusName}}</td>
             </tr>
 
             {%for time in col.timing%}
-            {%if forloop.counter>1%}
+            <!-- {%if forloop.counter>1%} -->
             <tr>
                 <td>{{time.StartDate}}</td>
                 <td>{{time.EndDate}}</td>
                 <td>{{time.Duration}}</td>
             </tr>
-            {%endif%}
+            <!-- {%endif%} -->
             {%endfor%}
         {%endfor%}
         <tr>

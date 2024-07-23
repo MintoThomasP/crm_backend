@@ -380,6 +380,7 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
                                     task_timing_serializer = ProjectTaskTimingSerializer(task_timings, many=True)
 
                                     timing_data = []
+                                    isFirstData=True
                                     for timing in task_timing_serializer.data:
                                         start_date = None
                                         for date_format in date_formats:
@@ -401,26 +402,14 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
                                                 p=""
                                         timing['StartDate'] = start_date.strftime('%B %d, %Y, %I:%M:%S %p')
                                         timing['EndDate'] = end_date.strftime('%B %d, %Y, %I:%M:%S %p')
-                                        
-                                        
-                                        # if task['TotalDuration'] and task['TaskType']!='Ticket':
-                                        #     Duration = task['Duration']
-                                        
-                                        #     duration_seconds=durationCalculation(Duration)
-                                            
-                                        #     TotalDuration = task['TotalDuration']
-                                        #     TotalDuration_seconds=durationCalculation(TotalDuration)
-                                            
-                                        #     point = task['TaskPoint']
-                                        # totalPoint += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
                                         totalPoint=totalPoint+float(task['CompletionPoint'])
-                                        timing_data.append(timing)
-                                                
-                                        # except:
-                                        #     totalPoint +=0
-                                        
-    
-                                            
+                                        if isFirstData:
+                                            task['StartDate']=timing['StartDate']
+                                            task['EndDate']=timing['EndDate']
+                                            task['Duration']=timing['Duration']
+
+                                            timing_data.append(timing)
+                                           
                                     if timing_data:
                                         task['timing'] = timing_data
                                         login_details['Tasks'].append(task)
