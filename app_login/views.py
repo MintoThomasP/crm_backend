@@ -172,16 +172,8 @@ def LoginHistoryApi(request):
                 data=loginHistoryData)
             
             loginHistoryOld = LoginHistory.objects.get(Q(Q(LogoutTime__isnull=True) | Q(LogoutTime='')) & Q(UserId=loginHistoryData['UserId']))
-            loginHistoryOldSerializer = LoginHistorySerializer(
-                loginHistoryOld)
-            loginHistoryOldSerializer.data['LogoutTime']=loginHistoryData['LoginTime']
-
-            loginHistoryClose = LoginHistory.objects.get(
-                LoginHistoryId=loginHistoryOldSerializer.data['LoginHistoryId'])
-            loginHistoryCloseSerializer = LoginHistorySerializer(
-                loginHistoryClose, data=loginHistoryOldSerializer.data)
-            if loginHistoryCloseSerializer.is_valid():
-                loginHistoryCloseSerializer.save()
+            loginHistoryOld.LogoutTime=loginHistoryData['LoginTime']
+            loginHistoryOld.save()
             if loginHistorySerializer.is_valid():
                 loginHistorySerializer.save()
                 
