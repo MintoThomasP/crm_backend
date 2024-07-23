@@ -131,7 +131,7 @@
             <td colspan="5"><b>Login:</b>{{row.LoginTime }} </td>
         </tr>
         {%for col in row.Tasks%}
-        {% with timing_count=col.timing|length %}
+        {% with timing_count=(col.timing|length)+1 %}
             <tr>
                 <!-- <td rowspan="{{ col.timing|length }}">{{forloop.counter}}</td> -->
                 <td rowspan="{{ timing_count }}">
