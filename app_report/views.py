@@ -299,7 +299,7 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
     current_date = timezone.now().date()
     staff = Staff.objects.get(StaffId=StaffId)
     StaffName = staff.StaffName
-    totalPoint=0
+    totalPoint=0.00
     projectTasks = ProjectTask.objects.filter(TaskAssignedTo=StaffId)
     projectTaskSerializer = ProjectTaskSerializer(projectTasks, many=True)
     taskData = []
@@ -413,7 +413,7 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
                                             
                                         #     point = task['TaskPoint']
                                         # totalPoint += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
-                                        totalPoint+=task['CompletionPoint']
+                                        totalPoint=totalPoint+float(task['CompletionPoint'])
                                         timing_data.append(timing)
                                                 
                                         # except:
