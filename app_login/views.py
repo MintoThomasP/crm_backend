@@ -170,10 +170,12 @@ def LoginHistoryApi(request):
             loginHistoryData = JSONParser().parse(request)
             loginHistorySerializer = LoginHistorySerializer(
                 data=loginHistoryData)
-            
-            loginHistoryOld = LoginHistory.objects.get(Q(Q(LogoutTime__isnull=True) | Q(LogoutTime='')) & Q(UserId=loginHistoryData['UserId']))
-            loginHistoryOld.LogoutTime=loginHistoryData['LoginTime']
-            loginHistoryOld.save()
+            try:
+                loginHistoryOld = LoginHistory.objects.get(Q(Q(LogoutTime__isnull=True) | Q(LogoutTime='')) & Q(UserId=loginHistoryData['UserId']))
+                loginHistoryOld.LogoutTime=loginHistoryData['LoginTime']
+                loginHistoryOld.save()
+            except:
+                p=""
             if loginHistorySerializer.is_valid():
                 loginHistorySerializer.save()
                 
