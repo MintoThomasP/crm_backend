@@ -138,13 +138,13 @@
                     {%if col.TaskType == 'Ticket'%}
                     {{col.TaskType}} -
                     {%endif%}
-                    {{col.Title}} - {{timing_count}}
+                    {{col.Title}}
                 </td>
 
                 <td>{{col.StartDate}}</td>
                 <td>{{col.EndDate}}</td>
                 <td>{{col.Duration}}</td>
-                <td rowspan="{{ col.timing|length +1}}">{{timing_count}}</td>
+                <td rowspan="{{ timing_count }}">{{col.StatusName}}</td>
             </tr>
 
             {%for time in col.timing%}
