@@ -174,7 +174,7 @@ def LoginHistoryApi(request):
                 loginHistoryOld = LoginHistory.objects.get(Q(Q(LogoutTime__isnull=True) | Q(LogoutTime='')) & Q(UserId=loginHistoryData['UserId']))
                 loginHistoryOld.LogoutTime=loginHistoryData['LoginTime']
                 loginHistoryOld.save()
-            except:
+            except BaseException as error:
                 p=""
             if loginHistorySerializer.is_valid():
                 loginHistorySerializer.save()
