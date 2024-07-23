@@ -484,13 +484,13 @@ def ProjectTaskApi(request):
                 ProjectTaskId=projectTaskData['ProjectTaskId'])
             projectTaskSerializer = ProjectTaskSerializer(
                 projectTask, data=projectTaskData)
-            if projectTaskSerializer.data['Status']=='7' or  projectTaskSerializer.data['Status']=='8' or  projectTaskSerializer.data['Status']=='9':
+            if projectTaskData['Status']=='7' or  projectTaskData['Status']=='8' or  projectTaskData['Status']=='9':
                 # Duration = projectTaskSerializer.data['Duration']        
                 # duration_seconds=durationCalculation(Duration)
                 # TotalDuration = projectTaskSerializer.data['TotalDuration']
                 # point=projectTaskSerializer.data['TaskPoint']
                 # TotalDuration_seconds=durationCalculation(TotalDuration)
-                projectTaskSerializer.data['CompletionPoint']=round(pointCalculation(projectTaskSerializer.data),2)
+                projectTaskSerializer.data['CompletionPoint']=round(pointCalculation(projectTaskData),2)
                 # projectTask.save()
             if projectTaskSerializer.is_valid():
                 projectTaskSerializer.save()
