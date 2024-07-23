@@ -125,19 +125,14 @@
             <th style="width:8%">Duration</th>
             <th style="width:15%">Status</th>
         </tr>
-        {% rowcount=0 %}
-        {%for row in response_data%}
 
-        {% rowcount=rowcount | add: 1 %}
+        {%for row in response_data%}
         <tr>
-            <td>{{rowcount | add: 1}}</td>
             <td><b>Login:</b>{{row.LoginTime }} </td>
-            <td colspan="3">{{row.LoginTime }} </td>
+            <td colspan="4">{{row.LoginTime }} </td>
         </tr>
         {%for col in row.Tasks%}
-        {% rowcount=rowcount | add: 1 %}
             <tr>
-                <td>{{rowcount | add: 1}}</td>
                 <!-- <td rowspan="{{ col.timing|length }}">{{forloop.counter}}</td> -->
                 <td rowspan="{{ col.timing|length | add:1 }}">
                     {%if col.TaskType == 'Ticket'%}
@@ -160,11 +155,9 @@
             </tr>
             {%endfor%}
         {%endfor%}
-        {%for col in row.Tasks%}
         <tr>
-            <td>{{rowcount | add: 1}}</td>
             <td ><b>Logout:</b> </td>
-            <td colspan="3">{{row.LogoutTime }}</td>
+            <td colspan="4">{{row.LogoutTime }}</td>
         </tr>
         {%endfor%}
     </table>
