@@ -160,7 +160,7 @@ def UpdateUserTypeApi(request, pk=""):
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def LoginHistoryApi(request):
-    try:
+    # try:
         if request.method == 'GET':
             loginHistory = LoginHistory.objects.all().order_by('-SortId')
             loginHistorySerializer = LoginHistorySerializer(
@@ -225,8 +225,8 @@ def LoginHistoryApi(request):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give LoginHistoryId to get one loginHistory detail",)
