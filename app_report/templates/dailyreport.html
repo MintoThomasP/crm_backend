@@ -119,29 +119,29 @@
     </table>
     <table class="sub_table1">
         <tr style=" vertical-align: bottom;">
-            <th style="width:5%;">SlNo</th>
             <th style="width:30%">Task</th>
-            <th colspan="3">Work Details</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th style="width:8%">Duration</th>
             <th style="width:15%">Status</th>
         </tr>
 
         {%for row in response_data%}
         <tr>
-            <td colspan="6"><b>Login:</b>{{row.LoginTime }} </td>
+            <td colspan="5"><b>Login:</b>{{row.LoginTime }} </td>
         </tr>
         {%for col in row.Tasks%}
-        <tr>
-            <td rowspan="{{ col.timing|length }}">{{forloop.counter}}</td>
-            <td rowspan="{{ col.timing|length }}">{%if col.TaskType == 'Ticket'%}
-                {{col.TaskType}} -
-                {%endif%}
-                {{col.Title}}</td>
-                <th>Start Time</th>
-                <th>End Time</th>
-                <th style="width:8%">Duration</th>
+            <tr>
+                <!-- <td rowspan="{{ col.timing|length }}">{{forloop.counter}}</td> -->
+                <td rowspan="{{ col.timing|length }}">
+                    {%if col.TaskType == 'Ticket'%}
+                    {{col.TaskType}} -
+                    {%endif%}
+                    {{col.Title}} - {{col.timing|length}}
+                </td>
 
-            <td rowspan="{{ col.timing|length }}">{{col.StatusName}}</td>
-        </tr>
+                <td rowspan="{{ col.timing|length }}">{{col.StatusName}}</td>
+            </tr>
 
             {%for time in col.timing%}
             <tr>
