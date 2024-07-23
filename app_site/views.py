@@ -13,7 +13,7 @@ from app_project.serializers import ProjectTaskSerializer
 from app_site.models import Notification, SiteSettings
 from app_site.serializers import NotificationSerializer, SaveSiteSettingsSerializer, SiteSettingsSerializer, UploadSiteSettingsSerializer
 from django.db.models import Max
-
+from django.db.models import F
 from app_staff.models import Staff
 from app_staff.serializers import StaffSerializer
 # Create your views here.
@@ -168,7 +168,7 @@ def GetNotificationByToUser(request, ToUser=""):
         if request.method == 'GET':
            
             notification = Notification.objects.filter(
-                    ToUser=ToUser)
+                    ToUser=ToUser).order_by(F('CreatedDate').desc())[:50]
             notificationSerializer = NotificationSerializer(
                     notification,many=True)
             notificationData=[]

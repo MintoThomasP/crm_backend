@@ -2007,7 +2007,7 @@ def sendNotification(notifyData):
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def ProjectTaskTimingApi(request, pk=""):
-    # try:
+    try:
         if request.method == 'GET':
             projectTaskTiming = ProjectTaskTiming.objects.all()
             projectTaskTimingSerializer = ProjectTaskTimingSerializer(
@@ -2039,8 +2039,8 @@ def ProjectTaskTimingApi(request, pk=""):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="",)
