@@ -393,7 +393,7 @@ def RestTaskPoint(request):
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def ProjectTaskApi(request):
-    # try:
+    try:
         if request.method == 'GET':
             projectTask = ProjectTask.objects.filter(Q(RefId__isnull=True) | Q(RefId=""),TaskType='Task').order_by('-SortId')
             projectTaskSerializer = ProjectTaskSerializer(
@@ -534,8 +534,8 @@ def ProjectTaskApi(request):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give ProjectTaskId to get one task detail",)
