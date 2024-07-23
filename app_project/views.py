@@ -2086,7 +2086,7 @@ def ProjectTaskTimingApiByProjectTaskId(request, ProjectTaskId=""):
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def getLastTimmingByTaskId(request, ProjectTaskId=""):
-    # try:
+    try:
         if request.method == 'GET':
             projectTaskTiming = ProjectTaskTiming.objects.filter( Q(Q(EndDate__isnull=True) | Q(EndDate='')) & Q(ProjectTaskId=ProjectTaskId))
             projectTaskTimingSerializer = ProjectTaskTimingSerializer(
@@ -2094,8 +2094,8 @@ def getLastTimmingByTaskId(request, ProjectTaskId=""):
             return JsonResponse(projectTaskTimingSerializer.data[0], safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-        # return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 
 
