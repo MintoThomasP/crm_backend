@@ -432,6 +432,8 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
             taskStatus = TaskStatus.objects.get(StatusId=col['Status'])
             taskStatusSerializer = TaskStatusSerializer(taskStatus)
             col['StatusName'] = taskStatusSerializer.data['Status']
+            if col['Status']== 3:
+                col['StatusName'] = col['StatusName'] + " - Not Verified"
         except TaskStatus.DoesNotExist:
             col['StatusName'] = ""
 
