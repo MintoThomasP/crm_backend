@@ -131,8 +131,8 @@
         </tr>
         {%for col in row.Tasks%}
         <tr>
-            <td rowspan="{{len(col.timing)}}">{{forloop.counter}}</td>
-            <td rowspan="{{len(col.timing)}}">{%if col.TaskType == 'Ticket'%}
+            <td rowspan="{{ col.timing|length }}">{{forloop.counter}}</td>
+            <td rowspan="{{ col.timing|length }}">{%if col.TaskType == 'Ticket'%}
                 {{col.TaskType}} -
                 {%endif%}
                 {{col.Title}}</td>
@@ -140,7 +140,7 @@
                 <th>End Time</th>
                 <th style="width:8%">Duration</th>
 
-            <td rowspan="{{len(col.timing)}}">{{col.StatusName}}</td>
+            <td rowspan="{{ col.timing|length }}">{{col.StatusName}}</td>
         </tr>
 
             {%for time in col.timing%}
