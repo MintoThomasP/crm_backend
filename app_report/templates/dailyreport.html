@@ -121,9 +121,7 @@
         <tr style=" vertical-align: bottom;">
             <th style="width:5%;">SlNo</th>
             <th style="width:30%">Task</th>
-            <th>Start Time</th>
-            <th>End Time</th>
-            <th style="width:8%">Duration</th>
+            <th colspan="3">Work Details</th>
             <th style="width:15%">Status</th>
         </tr>
 
@@ -133,18 +131,25 @@
         </tr>
         {%for col in row.Tasks%}
         <tr>
-            <td>{{forloop.counter}}</td>
-            <td>{%if col.TaskType == 'Ticket'%}
+            <td rowspan="{{len(col.timing)}}">{{forloop.counter}}</td>
+            <td rowspan="{{len(col.timing)}}">{%if col.TaskType == 'Ticket'%}
                 {{col.TaskType}} -
                 {%endif%}
                 {{col.Title}}</td>
-            {%for time in col.timing%}
-            <td>{{time.StartDate}}</td>
-            <td>{{time.EndDate}}</td>
-            <td>{{time.Duration}}</td>
-            {%endfor%}
-            <td>{{col.StatusName}}</td>
+                <th>Start Time</th>
+                <th>End Time</th>
+                <th style="width:8%">Duration</th>
+
+            <td rowspan="{{len(col.timing)}}">{{col.StatusName}}</td>
         </tr>
+
+            {%for time in col.timing%}
+            <tr>
+                <td>{{time.StartDate}}</td>
+                <td>{{time.EndDate}}</td>
+                <td>{{time.Duration}}</td>
+            </tr>
+            {%endfor%}
         {%endfor%}
         <tr>
             <td colspan="6"><b>Logout:</b> {{row.LogoutTime }}</td>
