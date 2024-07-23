@@ -131,19 +131,20 @@
             <td colspan="5"><b>Login:</b>{{row.LoginTime }} </td>
         </tr>
         {%for col in row.Tasks%}
+        {% with timing_count=col.timing|length %}
             <tr>
                 <!-- <td rowspan="{{ col.timing|length }}">{{forloop.counter}}</td> -->
-                <td rowspan="{{ col.timing|length+1 }}">
+                <td rowspan="{{ timing_count }}">
                     {%if col.TaskType == 'Ticket'%}
                     {{col.TaskType}} -
                     {%endif%}
-                    {{col.Title}} - {{col.timing|length+1}}
+                    {{col.Title}} - {{timing_count}}
                 </td>
 
                 <td>{{col.StartDate}}</td>
                 <td>{{col.EndDate}}</td>
                 <td>{{col.Duration}}</td>
-                <td rowspan="{{ col.timing|length +1}}">{{col.StatusName}}</td>
+                <td rowspan="{{ col.timing|length +1}}">{{timing_count}}</td>
             </tr>
 
             {%for time in col.timing%}
