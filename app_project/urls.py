@@ -50,6 +50,7 @@ urlpatterns = [
     path('ProjectTaskTimingApi/', views.ProjectTaskTimingApi),
     url(r'^CURDprojectTaskTimingApiById/(?P<ProjectTaskTimingId>[0-9a-zA-Z\-]+)$', views.CURDprojectTaskTimingApiById),
     url(r'^ProjectTaskTimingApiByProjectTaskId/(?P<ProjectTaskId>[0-9a-zA-Z\-]+)$', views.ProjectTaskTimingApiByProjectTaskId),
+    url(r'^getLastTimmingByTaskId/(?P<ProjectTaskId>[0-9a-zA-Z\-]+)$', views.getLastTimmingByTaskId),
     url(r'^ProjectTaskTimingCalculationById/(?P<ProjectTaskTimingId>[0-9a-zA-Z\-]+)$', views.ProjectTaskTimingCalculationById),
 
 
