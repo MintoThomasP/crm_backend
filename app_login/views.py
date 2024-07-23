@@ -171,7 +171,7 @@ def LoginHistoryApi(request):
             loginHistorySerializer = LoginHistorySerializer(
                 data=loginHistoryData)
             
-            loginHistoryOld = LoginHistory.objects.get(Q(Q(LogoutTime__isnull=True) | Q(LogoutTime='')) & Q(UserId=1))
+            loginHistoryOld = LoginHistory.objects.get(Q(Q(LogoutTime__isnull=True) | Q(LogoutTime='')) & Q(UserId=loginHistoryData['UserId']))
             loginHistoryOldSerializer = LoginHistorySerializer(
                 loginHistoryOld)
             loginHistoryOldSerializer.data['LogoutTime']=loginHistoryData['LoginTime']
