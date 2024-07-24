@@ -246,45 +246,45 @@ def pointCalculation(projectTask):
         # return max(-(allotted_points * 2), min(points, allotted_points * 2))
     
     if projectTask['Status']== 7 or projectTask['Status']== 8 or projectTask['Status']== 9 :
-        # if projectTask['Status']== 7:
-        #     # if time_taken == scheduled_duration_minutes:
-        #         projectTask['CompletionPoint']= allotted_points  # Scenario 1
-        #     # elif time_taken > scheduled_duration_minutes:
-        #     #     over_time_percentage = (time_taken - scheduled_duration_minutes) 
-        #     #     projectTask['CompletionPoint']=  clamp_points(allotted_points * (1 - over_time_percentage))  # Scenario 2
-        #     # elif time_taken < scheduled_duration_minutes:
-        #     #     under_time_percentage = (scheduled_duration_minutes - time_taken) 
-        #     #     projectTask['CompletionPoint']=  clamp_points(allotted_points * (1 + under_time_percentage))  # Scenario 3
-        # else:
-        #     delay_percentage = .5
-        #     if time_taken == scheduled_duration_minutes:
-        #         base_points = allotted_points * (1)  # Based on Scenario 1
-        #     elif time_taken > scheduled_duration_minutes:
-        #         over_time_percentage = (time_taken - scheduled_duration_minutes) 
-        #         base_points = allotted_points * (1 - (delay_percentage*2))  # Based on Scenario 2
-        #     else:
-        #         under_time_percentage = (scheduled_duration_minutes - time_taken)
-        #         base_points = allotted_points * (1 - delay_percentage )  # Based on Scenario 3
+        if projectTask['Status']== 7:
+            if time_taken == scheduled_duration:
+                projectTask['CompletionPoint']= allotted_points  # Scenario 1
+            elif time_taken > scheduled_duration:
+                over_time_percentage = (time_taken - scheduled_duration) 
+                projectTask['CompletionPoint']=  clamp_points(allotted_points * (1 - over_time_percentage))  # Scenario 2
+            elif time_taken < scheduled_duration:
+                under_time_percentage = (scheduled_duration - time_taken) 
+                projectTask['CompletionPoint']=  clamp_points(allotted_points * (1 + under_time_percentage))  # Scenario 3
+        else:
+            delay_percentage = .5
+            if time_taken == scheduled_duration:
+                base_points = allotted_points * (1)  # Based on Scenario 1
+            elif time_taken > scheduled_duration:
+                over_time_percentage = (time_taken - scheduled_duration) 
+                base_points = allotted_points * (1 - (delay_percentage*2))  # Based on Scenario 2
+            else:
+                under_time_percentage = (scheduled_duration - time_taken)
+                base_points = allotted_points * (1 - delay_percentage )  # Based on Scenario 3
             
-        #     projectTask['CompletionPoint']=  clamp_points(base_points - (allotted_points * 2))  # Adjusted by subtracting twice the task points
+            projectTask['CompletionPoint']=  clamp_points(base_points - (allotted_points * 2))  # Adjusted by subtracting twice the task points
 
 
-        try:
-            value_percentage = ((time_taken / scheduled_duration) * 100) - 100
-            try:
-                if time_taken == scheduled_duration:
-                    point=allotted_points
-                else:
-                    pointPercent = ((allotted_points) * value_percentage) / 100
-                    point=allotted_points-pointPercent
+        # try:
+        #     value_percentage = ((time_taken / scheduled_duration) * 100) - 100
+        #     try:
+        #         if time_taken == scheduled_duration:
+        #             point=allotted_points
+        #         else:
+        #             pointPercent = ((allotted_points) * value_percentage) / 100
+        #             point=allotted_points-pointPercent
 
-            except:
-                pointPercent = ((1) * value_percentage) / 100
-                point=point-pointPercent
+        #     except:
+        #         pointPercent = ((1) * value_percentage) / 100
+        #         point=point-pointPercent
         
-        except:
-            point=0
-    return clamp_points(point)
+        # except:
+        #     point=0
+    return clamp_points(projectTask['CompletionPoint'])
 
 
 
@@ -432,7 +432,7 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
             taskStatus = TaskStatus.objects.get(StatusId=col['Status'])
             taskStatusSerializer = TaskStatusSerializer(taskStatus)
             col['StatusName'] = taskStatusSerializer.data['Status']
-            if col['Status']== 3:
+            if col['Status']== '3' or col['Status']== 3:
                 col['StatusName'] = col['StatusName'] + " - Not Verified"
         except TaskStatus.DoesNotExist:
             col['StatusName'] = ""

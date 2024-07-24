@@ -126,7 +126,7 @@ def GetAllCategoryBySectionTypeApi(request):
 @swagger_auto_schema(method='PUT', request_body=ReportSerializer)
 @api_view(['POST', 'PUT'])
 def ReportApi(request):
-    try:
+    # try:
         # if request.method == 'GET':
         #     report = Report.objects.all()
         #     reportSerializer = ReportSerializer(
@@ -150,8 +150,8 @@ def ReportApi(request):
             return JsonResponse("ok", safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("Invalid", safe=False)
+    # except:
+    #     return JsonResponse("Invalid", safe=False)
 
 
 @csrf_exempt
