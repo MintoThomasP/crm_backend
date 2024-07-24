@@ -154,8 +154,8 @@ def StaffApiById(request, StaffId=""):
                 scheduled_deadline=0
                 if task['Status'] == '7' or task['Status'] == '8' or task['Status'] == '9' :
                     total_point=+float(task['TaskPoint'])
-                    total_points_gain=+float(task['CompletionPoint'])
-                    count=+1
+                    total_points_gain=total_points_gain+float(task['CompletionPoint'])
+                    count=count+1
                 for date_format in date_formats:
                     try:
                         deadline = task['ScheduledDeadline']
