@@ -237,34 +237,33 @@ def pointCalculation(projectTask):
     # delay_minutes = (datetime(end_datetime) - datetime(scheduled_datetime)).total_seconds() / 60
 
     def clamp_points(points):
-        if float(points<-(allotted_points * 2)):
+        if float(points)<((float(allotted_points) * (-2))):
             return -(allotted_points * 2)
-        elif  float(points>(allotted_points * 2)):
+        elif float(points)>((float(allotted_points) * (2))):
             return (allotted_points * 2)
         else:
             return float(points)
         # return max(-(allotted_points * 2), min(points, allotted_points * 2))
-    
-    if projectTask['Status']== 7 or projectTask['Status']== 8 or projectTask['Status']== 9 :
-        if projectTask['Status']== 7:
+    if projectTask['Status']== '7' or projectTask['Status']== '8' or projectTask['Status']== '9' :
+        if projectTask['Status']== '7':
             if time_taken == scheduled_duration:
                 projectTask['CompletionPoint']= allotted_points  # Scenario 1
             elif time_taken > scheduled_duration:
-                over_time_percentage = (time_taken - scheduled_duration) 
+                over_time_percentage = (time_taken/scheduled_duration) 
                 projectTask['CompletionPoint']=  clamp_points(allotted_points * (1 - over_time_percentage))  # Scenario 2
             elif time_taken < scheduled_duration:
-                under_time_percentage = (scheduled_duration - time_taken) 
+                under_time_percentage = (time_taken/scheduled_duration) 
                 projectTask['CompletionPoint']=  clamp_points(allotted_points * (1 + under_time_percentage))  # Scenario 3
         else:
             delay_percentage = .5
             if time_taken == scheduled_duration:
                 base_points = allotted_points * (1)  # Based on Scenario 1
             elif time_taken > scheduled_duration:
-                over_time_percentage = (time_taken - scheduled_duration) 
-                base_points = allotted_points * (1 - (delay_percentage*2))  # Based on Scenario 2
+                over_time_percentage = (time_taken/scheduled_duration)  
+                base_points = allotted_points * (1 - (delay_percentage*2)-over_time_percentage)  # Based on Scenario 2
             else:
-                under_time_percentage = (scheduled_duration - time_taken)
-                base_points = allotted_points * (1 - delay_percentage )  # Based on Scenario 3
+                under_time_percentage = (time_taken/scheduled_duration) 
+                base_points = allotted_points * (1 - (delay_percentage*1.5)+over_time_percentage )  # Based on Scenario 3
             
             projectTask['CompletionPoint']=  clamp_points(base_points - (allotted_points * 2))  # Adjusted by subtracting twice the task points
 
@@ -284,7 +283,7 @@ def pointCalculation(projectTask):
         
         # except:
         #     point=0
-    return clamp_points(projectTask['CompletionPoint'])
+    return projectTask['CompletionPoint']
 
 
 

@@ -393,7 +393,7 @@ def RestTaskPoint(request):
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def ProjectTaskApi(request):
-    try:
+    # try:
         if request.method == 'GET':
             projectTask = ProjectTask.objects.filter(Q(RefId__isnull=True) | Q(RefId=""),TaskType='Task').order_by('-SortId')
             projectTaskSerializer = ProjectTaskSerializer(
@@ -482,18 +482,15 @@ def ProjectTaskApi(request):
             projectTaskData = JSONParser().parse(request)
             projectTask = ProjectTask.objects.get(
                 ProjectTaskId=projectTaskData['ProjectTaskId'])
-            if projectTaskData['Status']=='7' or  projectTaskData['Status']=='8' or  projectTaskData['Status']=='9':
-                # Duration = projectTaskSerializer.data['Duration']        
-                # duration_seconds=durationCalculation(Duration)
-                # TotalDuration = projectTaskSerializer.data['TotalDuration']
-                # point=projectTaskSerializer.data['TaskPoint']
-                # TotalDuration_seconds=durationCalculation(TotalDuration)
-                projectTaskData['CompletionPoint']=round(pointCalculation(projectTaskData),2)
-                # projectTask.save()
             projectTaskSerializer = ProjectTaskSerializer(
-                projectTask, data=projectTaskData)
+                projectTask,data=projectTaskData)
             if projectTaskSerializer.is_valid():
                 projectTaskSerializer.save()
+                if projectTaskData['Status']=='7' or  projectTaskData['Status']=='8' or  projectTaskData['Status']=='9' or projectTaskData['Status']==7 or  projectTaskData['Status']==8 or  projectTaskData['Status']==9:
+                    projectTaskPoint = ProjectTask.objects.get(
+                        ProjectTaskId=projectTaskData['ProjectTaskId'])
+                    projectTaskPoint.CompletionPoint=pointCalculation(projectTaskSerializer.data)
+                    projectTaskPoint.save()
                 if projectTaskSerializer.data['Status']=='3':
                     login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedBy'])
                     title="Need verification"
@@ -531,11 +528,12 @@ def ProjectTaskApi(request):
                         })
 
                 return JsonResponse(projectTaskSerializer.data['ProjectTaskId'], safe=False)
-            return JsonResponse("Failed to Update", safe=False)
+            
+            return JsonResponse("", safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give ProjectTaskId to get one task detail",)
