@@ -9,8 +9,8 @@ from django.http import HttpResponse
 from app_category.models import Category, Report
 from app_category.serializers import CategorySerializer, ReportSerializer
 
-from app_default.models import TaskStatus
-from app_default.serializers import TaskStatusSerializer
+from app_default.models import CategoryType, TaskStatus
+from app_default.serializers import CategoryTypeSerializer, TaskStatusSerializer
 from app_default.views import retry
 from app_login.models import LoginHistory
 from app_login.serializers import LoginHistorySerializer
@@ -263,7 +263,7 @@ def pointCalculation(projectTask):
                 base_points = allotted_points * (1 - (delay_percentage*2)-over_time_percentage)  # Based on Scenario 2
             else:
                 under_time_percentage = (time_taken/scheduled_duration) 
-                base_points = allotted_points * (1 - (delay_percentage*1.5)+over_time_percentage )  # Based on Scenario 3
+                base_points = allotted_points * (1 - (delay_percentage*1.5)+under_time_percentage )  # Based on Scenario 3
             
             projectTask['CompletionPoint']=  clamp_points(base_points - (allotted_points * 2))  # Adjusted by subtracting twice the task points
 
@@ -622,9 +622,394 @@ def get_report_data(category_id, startDate, startYear, endDate, endYear):
 
 
 
+# @csrf_exempt
+# @api_view(['GET'])
+# def PandLReport(request, startdate="", enddate="",ClientId=""):
+#     if request.method == 'GET':
+#         start_date = startdate.split('-')
+#         startDate = start_date[0]  # month
+#         startYear = start_date[1]  # year
+        
+#         end_date = enddate.split('-')
+#         endDate = end_date[0]  # month
+#         endYear = end_date[1]  # year
+#         current_year = int(startYear)
+#         current_month = int(startDate)
+#         end_year = int(endYear)
+#         end_month = int(endDate)
+#         header = ["Item"]
+        
+#         while current_year < end_year or (current_year == end_year and current_month <= end_month):
+#             header.append(f"{current_year}-{current_month}")
+#             if current_month == 12:
+#                 current_month = 1
+#                 current_year += 1
+#             else:
+#                 current_month += 1
+#             header.append("%")
+#         header.append("YTD - 2024")
+#         formatted_data = [{i: header[i] for i in range(len(header))}]
+#         responsedata = []  
+#         category_data_dict = {}
+#         datcount=0
+#         # for category in Category.objects.all():
+#         #     category_data_dict[category.CategoryId] = {key: "" for key in range(1, len(header))}
+#         #     category_data_dict[category.CategoryId]['OrderNo'] = None  # Initialize level as None
+#         # total_income = {key: 0 for key in range(1, len(header))}
+#         # total_expense = {key: 0 for key in range(1, len(header))}
+        
+#         # level_one_count = 0
+#         for col in formatted_data:
+#             reportSerializerData=[]
+#             for key, value in col.items(): 
+#                 try:
+#                     if value == "Item":
+#                         continue
+                    
+#                     year, month = value.split('-') 
+                    
+#                     reports = Report.objects.filter(Month=month, Year=year,ClientId=ClientId).order_by('OrderNo')
+#                     reportSerializer = ReportSerializer(reports, many=True)
+                    
+#                     for row in reportSerializer.data:
+#                         category_id = row['CategoryId']
+#                         amount = row['Amount']
+#                         OrderNo = row['OrderNo']  
+#                         Level = row['Level']  
+                        
+#                         try:
+#                             if key in category_data_dict[category_id]:
+#                                 category_data_dict[category_id][key] = amount
+                            
+                        
+#                         except:
+#                             category_data_dict[category_id]=[]
+#                             category_data_dict[category_id] = {key: "" for key in range(1, len(header))}
+#                             category_data_dict[category_id]['OrderNo'] = None  # Initialize level as None
+#                         if key in category_data_dict[category_id]:
+#                             category_data_dict[category_id][key] = amount
+#                         if category_data_dict[category_id]['OrderNo'] is None or OrderNo > category_data_dict[category_id]['OrderNo']:
+#                             category_data_dict[category_id]['OrderNo'] = OrderNo
+#                             category_data_dict[category_id]['Level'] = Level
+                        
+                        
+                        
+#                 except:
+
+#                     p=""
+
+#         cell_length=2
+        
+#         for category_id, data in category_data_dict.items():
+#             if data['OrderNo'] is None:
+#                 continue 
+#             try:
+#                 category = Category.objects.get(CategoryId=category_id)
+#                 categorySerializer = CategorySerializer(category)
+#                 cell_length=len(data.items())
+#                 Categorydata = {
+#                     'OrderNo': data['OrderNo'], 
+#                     '0': categorySerializer.data['Category'],
+#                     'Level': data['Level'],
+#                     **{k: v for k, v in data.items() if k != 'OrderNo'}  
+#                 }
+#             except:
+#                 category = CategoryType.objects.get(
+#                     CategoryTypeId=category_id)
+#                 categorySerializer = CategoryTypeSerializer(
+#                     category)
+#                 cell_length=len(data.items())
+                
+#                 Categorydata = {
+#                     'OrderNo': data['OrderNo'], 
+#                     '0': categorySerializer.data['CategoryType'],
+#                     'Level': data['Level'],
+#                     **{k: v for k, v in data.items() if k != 'OrderNo'}  
+#                 }
+                
+
+#             responsedata.append(Categorydata)
+#             if data['Level'] == 1:
+#                 level_one_count += 1
+                
+#                 # Sum up the totals for each key
+#                 for k, v in data.items():
+#                     if k != 'OrderNo' and isinstance(v, (int, float)):
+#                         if k not in totals:
+#                             totals[k] = 0
+#                         totals[k] += v
+                
+#                 if level_one_count == 2:
+#                     total_data = {
+#                         'OrderNo': 0,
+#                         '0': "Total",
+#                         'Level': 0
+#                     }
+                    
+#                     for k, v in totals.items():
+#                         total_data[k] = v
+                    
+#                     responsedata.append(total_data)
+                    
+#                     # Reset counters and totals for the next group of Level 1 items
+#                     level_one_count = 0
+#                     totals = {}
+#         responsedata = sorted(responsedata, key=lambda x: x['OrderNo'])      
+#         context = {
+#             "formatted_data": formatted_data[0],
+#             "responsedata": responsedata,
+#             "cell_length":cell_length
+#         }
+#         pdf = render_to_pdf('pandl_report.html', context)
+#         return HttpResponse(pdf.content, content_type='application/pdf')
+#         # return JsonResponse(context,safe=False)
+        
 @csrf_exempt
 @api_view(['GET'])
-def PandLReport(request, startdate="", enddate=""):
+def PandLReport(request, startdate="", enddate="",ClientId=""):
+    if request.method == 'GET':
+        start_date = startdate.split('-')
+        startDate = start_date[0]  # month
+        startYear = start_date[1]  # year
+        
+        end_date = enddate.split('-')
+        endDate = end_date[0]  # month
+        endYear = end_date[1]  # year
+        current_year = int(startYear)
+        current_month = int(startDate)
+        end_year = int(endYear)
+        end_month = int(endDate)
+        header = ["Item"]
+        
+        while current_year < end_year or (current_year == end_year and current_month <= end_month):
+            header.append(f"{current_year}-{current_month}")
+            if current_month == 12:
+                current_month = 1
+                current_year += 1
+            else:
+                current_month += 1
+            header.append("%")
+        header.append("YTD - "+str(end_year))
+        header.append("%")
+        formatted_data = [{i: header[i] for i in range(len(header))}]
+        responsedata = []  
+        category_data_dict = {}
+        datcount=0
+
+        for col in formatted_data:
+            reportSerializerData=[]
+            for key, value in col.items(): 
+                try:
+                    if value == "Item":
+                        continue
+                    year, month = value.split('-') 
+                    
+                    reports = Report.objects.filter(Month=month, Year=year,ClientId=ClientId).order_by('OrderNo')
+                    reportSerializer = ReportSerializer(reports, many=True)
+                    
+                    for row in reportSerializer.data:
+                        category_id = row['CategoryId']
+                        amount = row['Amount']
+                        OrderNo = row['OrderNo']  
+                        Level = row['Level']  
+                        
+                        try:
+                            if key in category_data_dict[category_id]:
+                                category_data_dict[category_id][key] = amount
+                            
+                        
+                        except:
+                            category_data_dict[category_id]=[]
+                            category_data_dict[category_id] = {key: "" for key in range(1, len(header))}
+                            category_data_dict[category_id]['OrderNo'] = None  # Initialize level as None
+                        if key in category_data_dict[category_id]:
+                            category_data_dict[category_id][key] = amount
+                        if category_data_dict[category_id]['OrderNo'] is None or OrderNo > category_data_dict[category_id]['OrderNo']:
+                            category_data_dict[category_id]['OrderNo'] = OrderNo
+                            category_data_dict[category_id]['Level'] = Level
+                        
+                except:
+
+                    p=""
+
+        cell_length=2
+        
+        LevelAmount={}
+        BaseValue={}
+        LevelIndex=""
+        isFirst=True
+        isBaseValue=False
+        for category_id, data in category_data_dict.items():
+            if data['OrderNo'] is None:
+                continue 
+            try:
+                category = Category.objects.get(CategoryId=category_id)
+                categorySerializer = CategorySerializer(category)
+                cell_length=len(data.items())-1
+                Categorydata = {
+                    'OrderNo': data['OrderNo'], 
+                    '0': categorySerializer.data['Category'],
+                    'Level': data['Level'],
+                    **{k: v for k, v in data.items() if k != 'OrderNo' and  k != 'Level'}  
+                }
+            except:
+                if isFirst ==False and isBaseValue!=True:
+
+                    Categorydata = {
+                        'OrderNo': data['OrderNo'], 
+                        '0': "Total",
+                        'Level': 1,
+                        **{k: v for k, v in LevelAmount[LevelIndex].items() if k != 'OrderNo' and  k != 'Level'}  
+                    }
+                    responsedata.append(Categorydata)
+                LevelIndex="level-"+category_id
+                LevelAmount[LevelIndex]={}
+                category = CategoryType.objects.get(
+                    CategoryTypeId=category_id)
+                categorySerializer = CategoryTypeSerializer(
+                    category)
+                if categorySerializer.data['UsageType']=="Base Value":
+                    isBaseValue=True
+                elif isFirst:
+                    isBaseValue=False
+                    isFirst=False
+                    Categorydata = {
+                        'OrderNo': data['OrderNo'], 
+                        '0': "Total",
+                        'Level': 1,
+                        **{k: v for k, v in BaseValue.items() if k != 'OrderNo' and  k != 'Level'}  
+                    }
+                    responsedata.append(Categorydata)
+                
+                cell_length=len(data.items())-1
+                datcount+=1
+                Categorydata = {
+                    'OrderNo': data['OrderNo'], 
+                    '0': categorySerializer.data['CategoryType'],
+                    'Level': data['Level'],
+                    **{k: v for k, v in data.items() if k != 'OrderNo' and  k != 'Level'}  
+                }
+            # print(LevelAmount)
+            for k, v in data.items():
+                amount=0
+                if k != 'OrderNo' and  k != 'Level' and k !='0' and k !=0 and v!='null' and v and v is not None:
+                    # print(v)
+                    amount=v
+                try:
+                    if isBaseValue:
+                        BaseValue[k]=int(BaseValue[k])+int(amount)
+                    else:
+                        LevelAmount[LevelIndex][k]=int(LevelAmount[LevelIndex][k])+int(amount)
+                except:
+                    if isBaseValue:
+                        BaseValue[k]=0
+                        BaseValue[k]=int(BaseValue[k])+int(amount)
+                    else:
+                        LevelAmount[LevelIndex][k]=0
+                        LevelAmount[LevelIndex][k]=int(LevelAmount[LevelIndex][k])+int(amount)
+                    
+            responsedata.append(Categorydata)
+        
+        Categorydata = {
+            'OrderNo': data['OrderNo'], 
+            '0': "Total",
+            'Level': 0,
+            **{k: v for k, v in LevelAmount[LevelIndex].items() if k != 'OrderNo' and  k != 'Level'}  
+        }
+        responsedata.append(Categorydata)
+        responsedata = sorted(responsedata, key=lambda x: x['OrderNo'])
+        # data = []
+        data = []
+
+        for cat_data in responsedata:
+            amount = 0.00
+            key = ""
+            item = {}
+            
+            for k, v in cat_data.items():
+                item[k] = ""
+
+                # Skip specific keys
+                if k in ['OrderNo', 'Level', '0']:
+                    item[k] = v
+                    continue
+
+                # Identify amount and key
+                if v != 'null' and v and v is not None:
+                    amount = v
+                    key = k
+                    item[k] = v
+
+                # Calculate percentage for even keys 2, 4, 6
+                elif int(k) % 2 == 0 and key:
+                    base_value = BaseValue.get(key, None)
+                    if base_value and base_value != 'null' and base_value is not None:
+                        try:
+                            base_value = float(base_value)
+                            amount = float(amount)
+                            v = round((amount / base_value) * 100,2)
+                        except ValueError:
+                            v = 0.00
+                    else:
+                        v = 0.00
+                    cat_data[k] = f"{v}%"
+                    item[k] = cat_data[k]
+
+                    amount = 0.00
+
+                # Default assignment for other keys
+                else:
+                    item[k] = v
+            
+            data.append(item)
+
+        # for cat_data in responsedata:
+        #     amount = 0
+        #     key = ""
+        #     item = {}
+            
+        #     for k, v in cat_data.items():
+        #         if k != 'OrderNo' and k != 'Level' and k != '0' and k != 0:
+        #             if v != 'null' and v is not None:
+        #                 amount = v
+        #                 key = k
+        #                 item[k] = v
+        #             else:
+        #                 base_value = BaseValue.get(key, None)
+        #                 if base_value and base_value != 'null' and base_value is not None:
+        #                     try:
+        #                         base_value = float(base_value)
+        #                         amount = float(amount)
+        #                         v = (amount / base_value) * 100
+        #                     except ValueError:
+        #                         v = 0
+        #                 else:
+        #                     v = 0
+        #                 cat_data[k] = f"{v}%"
+        #                 print(cat_data[k])
+        #                 item[k] = cat_data[k]
+        #         else:
+        #             item[k] = v
+        #     data.append(item)
+
+
+        context = {
+            "formatted_data": formatted_data[0],
+            "responsedata": responsedata,
+            "data":data,
+            "cell_length":cell_length
+        }
+        pdf = render_to_pdf('pandl_report.html', context)
+        return HttpResponse(pdf.content, content_type='application/pdf')
+        return JsonResponse(context,safe=False)
+        
+
+
+
+import pandas as pd
+@csrf_exempt
+@api_view(['GET'])
+def BalanceSheetReport(request, startdate="", enddate=""):
     if request.method == 'GET':
         start_date = startdate.split('-')
         startDate = start_date[0]  # month
@@ -654,7 +1039,7 @@ def PandLReport(request, startdate="", enddate=""):
         for category in Category.objects.all():
             category_data_dict[category.CategoryId] = {key: "" for key in range(1, len(header))}
             category_data_dict[category.CategoryId]['OrderNo'] = None  # Initialize level as None
-
+            category_data_dict[category.CategoryId]['Level'] = None 
         for col in formatted_data:
             for key, value in col.items(): 
                 if value == "Item":
@@ -668,16 +1053,18 @@ def PandLReport(request, startdate="", enddate=""):
                 for row in reportSerializer.data:
                     category_id = row['CategoryId']
                     amount = row['Amount']
-                    level = row['OrderNo']  
-                    
+                    OrderNo = row['OrderNo']  
+                    level = row['Level'] 
                     if key in category_data_dict[category_id]:
                         category_data_dict[category_id][key] = amount
                     else:
                         category_data_dict[category_id][key] = amount
                     
                    
-                    if category_data_dict[category_id]['OrderNo'] is None or level > category_data_dict[category_id]['OrderNo']:
-                        category_data_dict[category_id]['OrderNo'] = level
+                    if category_data_dict[category_id]['OrderNo'] is None or OrderNo > category_data_dict[category_id]['OrderNo']:
+                        category_data_dict[category_id]['OrderNo'] = OrderNo
+                    if category_data_dict[category_id]['Level'] is None or level > category_data_dict[category_id]['Level']:
+                        category_data_dict[category_id]['Level'] = level
                     
 
 
@@ -685,11 +1072,14 @@ def PandLReport(request, startdate="", enddate=""):
         for category_id, data in category_data_dict.items():
             if data['OrderNo'] is None:
                 continue 
+            if data['Level'] is None:
+                continue 
             category = Category.objects.get(CategoryId=category_id)
             categorySerializer = CategorySerializer(category)
             
             Categorydata = {
                 'OrderNo': data['OrderNo'], 
+                'Level': data['Level'], 
                 '0': categorySerializer.data['Category'],
                 **{k: v for k, v in data.items() if k != 'OrderNo'}  
             }
@@ -699,6 +1089,55 @@ def PandLReport(request, startdate="", enddate=""):
             "formatted_data": formatted_data[0],
             "responsedata": responsedata
         }
-        pdf = render_to_pdf('pandl_report.html', context)
-        return HttpResponse(pdf.content, content_type='application/pdf')
         # return JsonResponse(context, safe=False)
+   
+        # headers = context["formatted_data"].values()
+    
+        # data = context["responsedata"]
+
+        # df = pd.DataFrame(data)
+
+        # if 'OrderNo' in df.columns:
+        #     df = df.drop(columns=['OrderNo'])
+
+        # df.columns = headers
+
+       
+        # buffer = BytesIO()
+
+        
+        # with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+        #     df.to_excel(writer, index=False, header=True)
+
+        # buffer.seek(0)
+        # response = HttpResponse(buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        # response['Content-Disposition'] = 'attachment; filename="output.xlsx"'
+
+        # return response
+        df = pd.DataFrame(responsedata)
+
+        if 'OrderNo' in df.columns:
+            df = df.drop(columns=['OrderNo'])
+
+
+        if 'Level' in df.columns:
+            df = df.drop(columns=['Level'])
+        df.columns = context["formatted_data"].values()
+
+        if 'Level' in df.columns:
+            df['Item'] = df.apply(lambda row: '    ' * (row['Level'] - 1) + row['Item'], axis=1)
+        
+        buffer = BytesIO()
+
+       
+        with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, header=True)
+
+       
+        buffer.seek(0)
+
+        # Prepare the HTTP response with the Excel file
+        response = HttpResponse(buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename="output.xlsx"'
+
+        return response

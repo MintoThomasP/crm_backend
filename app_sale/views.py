@@ -1,5 +1,6 @@
 from django.shortcuts import render
 import os
+from rest_framework import generics
 from django.db.models import Q
 import smtplib
 from email.message import EmailMessage
@@ -23,11 +24,16 @@ from app_default.serializers import InvoiceStatusSerializer
 from app_default.views import retry
 from app_project.models import Project
 from app_project.serializers import ProjectSerializer
+
 from app_sale.models import Invoice, InvoiceDocument, InvoiceItem, PaymentReceived, Quotation, QuotationFile, QuotationItem
 from app_sale.serializers import InvoiceDocumentSerializer, InvoiceItemSerializer, InvoiceSerializer, PaymentDocumentSerializer, PaymentReceivedDetailSerializer, PaymentReceivedSerializer, QuotationFileSerializer, QuotationItemSerializer, QuotationSerializer
 from app_site.models import SiteSettings
 from app_staff.models import Staff
 from app_staff.serializers import StaffSerializer
+from rest_framework.pagination import PageNumberPagination
+class CustomPagination(PageNumberPagination):
+    page_size = 40 # Adjust the page size as needed
+    page_size_query_param = 'page_size'
 
 def sendCubexizsoftMail(msg=""):
     EMAIL_ADDRESS = settings.EMAIL_HOST_USER
@@ -132,17 +138,23 @@ def QuotationApiById(request, QuotationId=""):
     except:
         return JsonResponse("", safe=False)
     
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Quotation Details by CompanyId",)
-@api_view(['GET'])
-@retry(retries=3, delay=2)
-def QuotationApiByCompanyId(request,CompanyId=""):
-    try:
-        if request.method == 'GET':
-            quotation = Quotation.objects.filter(CompanyId=CompanyId)
-            quotationSerializer = QuotationSerializer(
-                    quotation, many=True)
-            quoteData=[]
-            for row in quotationSerializer.data:
+class QuotationApiByCompanyId(generics.ListAPIView):
+    queryset =Quotation.objects.all().order_by('-SortId')
+    pagination_class = CustomPagination
+    serializer_class = QuotationSerializer 
+    def post(self, request, *args, **kwargs):
+        filterData = JSONParser().parse(request)
+        Keyword = filterData.get('SearchKeyword', '')
+        if filterData['CompanyId']:
+            self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+        if Keyword:
+            self.queryset = self.queryset.filter(Subject__icontains=Keyword)
+        page = self.paginate_queryset(self.queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            data = []
+
+            for row in serializer.data:
                 try:
                     client=Client.objects.get(ClientId=row['ClientId'])
                     clientSerializer=ClientSerializer(client)
@@ -161,12 +173,9 @@ def QuotationApiByCompanyId(request,CompanyId=""):
                     row['StaffName']=staffSerializer.data['StaffName']
                 except:
                     row['StaffName']=[]
-                quoteData.append(row)
-            return JsonResponse(quoteData, safe=False)
-        else:
-            return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+                data.append(row)
+            return self.get_paginated_response(data)
+        
 
 
 @csrf_exempt
@@ -357,17 +366,21 @@ def InvoiceApiById(request, InvoiceId=""):
         return JsonResponse("", safe=False)
 
 
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Invoice Details",)
-@api_view(['GET'])
-@retry(retries=3, delay=2)
-def InvoiceApiByCompanyId(request,CompanyId=""):
-    try:
-        if request.method == 'GET':
-            invoice = Invoice.objects.filter(CompanyId=CompanyId).order_by('-SortId')
-            invoiceSerializer = InvoiceSerializer(
-                    invoice, many=True)
-            invoiceData=[]
-            for row in invoiceSerializer.data:
+
+class InvoiceApiByCompanyId(generics.ListAPIView):
+    queryset =PaymentReceived.objects.all().order_by('-SortId')
+    pagination_class = CustomPagination
+    serializer_class = PaymentReceivedSerializer 
+    def post(self, request, *args, **kwargs):
+        filterData = JSONParser().parse(request)
+        if filterData['CompanyId']:
+            self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+        page = self.paginate_queryset(self.queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            data = []
+
+            for row in serializer.data:
                 try:
                     client=Client.objects.get(ClientId=row['ClientId'])
                     clientSerializer=ClientSerializer(client)
@@ -386,12 +399,8 @@ def InvoiceApiByCompanyId(request,CompanyId=""):
                     row['StaffName']=staffSerializer.data['StaffName']
                 except:
                     row['StaffName']=[]
-                invoiceData.append(row)
-            return JsonResponse(invoiceData, safe=False)
-        else:
-            return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+                data.append(row)
+            return self.get_paginated_response(data)
 
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=InvoiceItemSerializer)
@@ -581,17 +590,20 @@ def PaymentReceivedApiById(request, PaymentReceivedId=""):
 
 
 
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all InvoiceDocument Details",)
-@api_view(['GET'])
-@retry(retries=3, delay=2)
-def PaymentReceivedApiCompanyId(request,CompanyId=""):
-    try:
-        if request.method == 'GET':
-            paymentReceived = PaymentReceived.objects.filter(CompanyId=CompanyId).order_by('-SortId')
-            paymentReceivedSerializer = PaymentReceivedSerializer(
-                    paymentReceived, many=True)
-            paymentData=[]
-            for row in paymentReceivedSerializer.data:
+class PaymentReceivedApiCompanyId(generics.ListAPIView):
+    queryset =PaymentReceived.objects.all().order_by('-SortId')
+    pagination_class = CustomPagination
+    serializer_class = PaymentReceivedSerializer 
+    def post(self, request, *args, **kwargs):
+        filterData = JSONParser().parse(request)
+        if filterData['CompanyId']:
+            self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+        page = self.paginate_queryset(self.queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            data = []
+
+            for row in serializer.data:
                 try:
                     client=Client.objects.get(ClientId=row['ClientId'])
                     clientSerializer=ClientSerializer(client)
@@ -604,13 +616,9 @@ def PaymentReceivedApiCompanyId(request,CompanyId=""):
                     row['StaffName']=staffSerializer.data['StaffName']
                 except:
                     row['StaffName']=[]
-                paymentData.append(row)
-            
-            return JsonResponse(paymentData, safe=False)
-        else:
-            return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+                data.append(row)
+            return self.get_paginated_response(data)
+        
         
 
 @csrf_exempt

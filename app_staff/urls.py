@@ -11,7 +11,8 @@ urlpatterns = [
     path('Staff/', views.staffApi),
     url(r'^Staff/(?P<StaffId>[0-9a-zA-Z\-]+)$', views.StaffApiById),
     url(r'^staffByStaffCode/(?P<StaffCode>[0-9a-zA-Z\-]+)$', views.staffApiByStaffCode),
-    url(r'^StaffApiByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.StaffApiByCompanyId),
+    path('StaffApiByCompanyId/', views.StaffApiByCompanyId.as_view()), # pagination for staff manage table
+   
 
     path('StaffGuardian/', views.staffGuardianApi),
     url(r'^StaffGuardian/(?P<StaffGuardianId>[0-9a-zA-Z\-]+)$', views.staffGuardianApiById),
@@ -30,7 +31,8 @@ urlpatterns = [
 
     path('leaveApplicationApi/', views.leaveApplicationApi),
     url(r'^leaveApplicationApiById/(?P<LeaveApplicationId>[0-9a-zA-Z\-]+)$', views.leaveApplicationApiById),
-    url(r'^leaveApplicationApiByStaffId/(?P<StaffId>[0-9a-zA-Z\-]+)$', views.leaveApplicationApiByStaffId),
+    path('GetAllLeaveApplicationByCompanyId/', views.GetAllLeaveApplicationByCompanyId.as_view()), # pagination for leave application for admin side
+    path('leaveApplicationApiByStaffId/', views.leaveApplicationApiByStaffId.as_view()), #  pagination for leave application for staff login
 
 # path('GetAllActiveStaffList/', views.GetAllActiveStaffListApi),
 url(r'^GetAllActiveStaffList/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.GetAllActiveStaffListApi),

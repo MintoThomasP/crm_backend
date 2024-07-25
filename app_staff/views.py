@@ -11,6 +11,7 @@ from io import BytesIO
 from app_default.models import Designation, LeaveStatus, LeaveType
 from app_default.serializers import DesignationSerializer, LeaveStatusSerializer, LeaveTypeSerializer
 from app_login.serializers import LoginSerializer
+from app_project.views import CustomPageNumberPagination
 from app_report.views import durationCalculation
 from app_staff.models import LeaveApplication, Staff, StaffDocuments, StaffGuardian
 import os
@@ -19,7 +20,8 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
-
+from rest_framework import generics
+from django.db.models import Q
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=SaveStaffSerializer)
 @swagger_auto_schema(method='PUT', request_body=SaveStaffSerializer)
@@ -513,76 +515,6 @@ def GetAllActiveStaffListApi(request,CompanyId=""):
     
 
 
-# @csrf_exempt
-# @api_view(['POST'])
-# def staffSalaryByPerformanceApi(request):
-#     # try:
-#         if request.method == 'POST':
-#             requestData = JSONParser().parse(request)
-#             month=requestData['Month']
-#             year=requestData['Year']
-#             # start_date=1-month-year
-#             # end_date=31-month-year
-
-#             start_date = datetime(year, month, 1)
-#             end_date = start_date.replace(day=1, month=start_date.month % 12 + 1) - timedelta(days=1)
-            
-        
-#             projectTask=ProjectTask.objects.filter(TaskAssignedTo=requestData['StaffId'],ScheduledDeadline__range=(start_date, end_date))
-#             projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
-           
-#             CompletedPoint=0
-#             TaskPoint=0
-#             for row in projectTaskSerializer.data:
-#                 TaskPoint+=row['TaskPoint']
-               
-#                 if row['StartDate'] and row['EndDate']:
-#                     try:
-#                         date_format = '%m/%d/%Y, %I:%M:%S %p' 
-#                         start_date = datetime.strptime(row['StartDate'], date_format)
-#                         end_date = datetime.strptime(row['EndDate'], date_format)
-#                     except:
-#                         date_format = '%d/%m/%Y, %I:%M:%S %p'
-#                         start_date = datetime.strptime(row['StartDate'], date_format)
-#                         end_date = datetime.strptime(row['EndDate'], date_format)
-#                     try:
-#                         duration_parts = row['Duration'].split(':')
-#                         hours = int(duration_parts[0])*60
-#                         minutes = int(duration_parts[1])
-#                         duration_min=hours + minutes
-#                         duration_seconds=duration_min*60
-#                     except:
-#                         duration_seconds=3600
-
-#                     total_time_taken_seconds = (end_date - start_date).total_seconds()
-#                     if total_time_taken_seconds > duration_seconds:
-#                         value1 = (total_time_taken_seconds / duration_seconds) * 100
-#                         value_percentage = value1-100
-#                         point=(row['TaskPoint']*value_percentage)/100
-                        
-#                         CompletedPoint += round(row['TaskPoint'] - point)
-                       
-#                     else:
-#                         CompletedPoint += row['TaskPoint']
-#                     print(CompletedPoint)
-#                     staff=Staff.objects.get(StaffId=requestData['StaffId'])
-#                     staffSerializer=StaffSerializer(staff)
-#                     try:
-#                         Salary=int(staffSerializer.data['Salary'])
-#                     except:
-#                         Salary=0
-                    
-                    
-#                     if CompletedPoint < 0 : 
-#                         Payment=Salary+((Salary*0.1)*(((CompletedPoint/TaskPoint)*100))/100)
-#                     elif CompletedPoint > TaskPoint:
-#                         Payment=Salary+((Salary*0.1)*(((CompletedPoint/TaskPoint)*100)-100)/100)
-#                     else:
-#                         Payment=Salary
-
-#             return JsonResponse(Payment,safe=False)
-
-
 @csrf_exempt
 @api_view(['POST'])
 @retry(retries=3, delay=2)
@@ -607,19 +539,7 @@ def staffSalaryByPerformanceApi(request):
         for row in projectTaskSerializer.data:
             
             TaskPoint += row['TaskPoint']
-           
-
-            # if row['TotalDuration']: 
-            #     Duration = row['Duration']
-            #     duration_seconds=durationCalculation(Duration)
-            #     TotalDuration = row['TotalDuration']
-            #     TotalDuration_seconds=durationCalculation(TotalDuration)
-            #     if TotalDuration_seconds > duration_seconds:
-            #         value_percentage = ((TotalDuration_seconds / duration_seconds) * 100) - 100
-            #         point = (row['TaskPoint'] * value_percentage) / 100
-                    
-            #         CompletedPoint += round(row['TaskPoint'] - point)
-            #     else:
+   
             CompletedPoint += row['CompletionPoint']
 
         staff = Staff.objects.get(StaffId=requestData['StaffId'])
@@ -629,9 +549,6 @@ def staffSalaryByPerformanceApi(request):
             Salary = int(staffSerializer.data['Salary'])
         except:
             Salary = 0
-      
-        print("CompletedPoint",CompletedPoint)
-        print(TaskPoint)
         if CompletedPoint < 0:
             Payment = Salary + ((Salary * 0.1) * ((CompletedPoint / TaskPoint) * 100) / 100)
         elif CompletedPoint > TaskPoint:
@@ -720,21 +637,64 @@ def leaveApplicationApiById(request, LeaveApplicationId=""):
     except:
         return JsonResponse("", safe=False)
         
+class GetAllLeaveApplicationByCompanyId(generics.ListAPIView):
+    queryset =LeaveApplication.objects.all().order_by('-SortId')
+    pagination_class = CustomPageNumberPagination
+    serializer_class = LeaveApplicationSerializer 
+    def post(self, request, *args, **kwargs):
+        filterData = JSONParser().parse(request)
+        Keyword = filterData.get('SearchKeyword', '')
+        if filterData['CompanyId']:
+            self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
 
+        if Keyword:
+            self.queryset = self.queryset.filter(Q(Subject__icontains=Keyword)|Q(Description__icontains=Keyword))
+        page = self.paginate_queryset(self.queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            data = []
 
-@csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give StaffId to get one LeaveApplication",)
-@api_view(['GET'])
-@retry(retries=3, delay=2)
-def leaveApplicationApiByStaffId(request, StaffId=""):
-    try:
-        if request.method == 'GET': 
-            leaveApplication = LeaveApplication.objects.filter(
-                    StaffId=StaffId)
-            leaveApplicationSerializer = LeaveApplicationSerializer(
-                    leaveApplication,many=True)
-            leaveData=[]
-            for row in leaveApplicationSerializer.data:
+            for row in serializer.data:
+                try:
+                    leaveStatus = LeaveStatus.objects.get(StatusId=row['Status'])
+                    leaveStatus_serializer = LeaveStatusSerializer(leaveStatus)
+                    row['StatusName']=leaveStatus_serializer.data['Status']
+                except:
+                    row['StatusName']=""
+                try:
+                    leaveType = LeaveType.objects.get(LeaveTypeId=row['LeaveType'])
+                    leaveType_serializer = LeaveTypeSerializer(leaveType)
+                    row['LeaveTypeName']=leaveType_serializer.data['LeaveType']
+                except:
+                    row['LeaveTypeName']=""
+                try:
+                    staff = Staff.objects.get(StaffId=row['StaffId'])
+                    staff_serializer = StaffSerializer(staff)
+                    row['StaffName']=staff_serializer.data['StaffName']
+                except:
+                    row['StaffName']=""
+                data.append(row)
+            return self.get_paginated_response(data)
+        
+
+class leaveApplicationApiByStaffId(generics.ListAPIView):
+    queryset =LeaveApplication.objects.all().order_by('-SortId')
+    pagination_class = CustomPageNumberPagination
+    serializer_class = LeaveApplicationSerializer 
+    def post(self, request, *args, **kwargs):
+        filterData = JSONParser().parse(request)
+        Keyword = filterData.get('SearchKeyword', '')
+        if filterData['StaffId']:
+            self.queryset = self.queryset.filter(StaffId=filterData['StaffId'])
+
+        if Keyword:
+            self.queryset = self.queryset.filter(Q(Subject__icontains=Keyword)|Q(Description__icontains=Keyword))
+        page = self.paginate_queryset(self.queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            data = []
+
+            for row in serializer.data:
                 try:
                     leaveStatus = LeaveStatus.objects.get(StatusId=row['Status'])
                     leaveStatus_serializer = LeaveStatusSerializer(leaveStatus)
@@ -756,65 +716,58 @@ def leaveApplicationApiByStaffId(request, StaffId=""):
                 except:
                     row['StaffName']=""
 
-                leaveData.append(row)
-            return JsonResponse(leaveData, safe=False)
-        
-        else:
-            return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+                data.append(row)
+            return self.get_paginated_response(data)
 
 
+class StaffApiByCompanyId(generics.ListAPIView):
+    queryset =Staff.objects.all()
+    pagination_class = CustomPageNumberPagination
+    serializer_class = StaffSerializer 
+    def post(self, request, *args, **kwargs):
+            filterData = JSONParser().parse(request)
+            Keyword = filterData.get('SearchKeyword', '')
+            if filterData['CompanyId']:
+                self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+            if Keyword:
+                self.queryset = self.queryset.filter(StaffName__icontains=Keyword)
 
-@csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give StaffId to get one staffdetail",)
-@api_view(['GET'])
-@retry(retries=3, delay=2)
-def StaffApiByCompanyId(request, CompanyId=""):
-    try:
-        if request.method == 'GET': 
-            staff = Staff.objects.filter(
-                    CompanyId=CompanyId)
-            staffSerializer = StaffSerializer(
-                    staff,many=True)
-            StaffData=[]
-            for row in staffSerializer.data:
-                designation=Designation.objects.get(DesignationId=row['Designation'])
-                designationSerializer=DesignationSerializer(designation)
-                row['DesignationName']=designationSerializer.data['Designation']
-
-                projectTask=ProjectTask.objects.filter(TaskAssignedTo=row['StaffId'])
-                projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
-                work_status_count = {'Pending': 0, 'Completed': 0, 'Due': 0, 'Not Completed': 0, 'Finished': 0, 'Delay Finished': 0}
-                current_date = str(date.today())
             
-                for task in projectTaskSerializer.data:
-                    if task['Status'] == '1' or task['Status'] == '2':
-                        work_status_count['Pending'] += 1
+            page = self.paginate_queryset(self.queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                data = []
+                for row in serializer.data:
+                    designation=Designation.objects.get(DesignationId=row['Designation'])
+                    designationSerializer=DesignationSerializer(designation)
+                    row['DesignationName']=designationSerializer.data['Designation']
+
+                    projectTask=ProjectTask.objects.filter(TaskAssignedTo=row['StaffId'])
+                    projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
+                    work_status_count = {'Pending': 0, 'Completed': 0, 'Due': 0, 'Not Completed': 0, 'Finished': 0, 'Delay Finished': 0}
+                    current_date = str(date.today())
                 
-                    if task['Status'] == '3':
-                        work_status_count['Completed'] += 1
-            
-                    if task['CreatedDate'] < current_date and task['Status'] == '1':
-                        work_status_count['Due'] += 1
-
-                    if task['Status'] == '8' or task['Status'] == '9':
-                        work_status_count['Delay Finished'] += 1
-
-                    if task['Status'] == '4' or task['Status'] == '5' or task['Status'] == '6':
-                        work_status_count['Not Completed'] += 1   
-
-                    if task['Status'] == '7':
-                        work_status_count['Finished'] += 1
-
-                row['WorkStatusCount'] = work_status_count
-                StaffData.append(row)
-            
+                    for task in projectTaskSerializer.data:
+                        if task['Status'] == '1' or task['Status'] == '2':
+                            work_status_count['Pending'] += 1
+                    
+                        if task['Status'] == '3':
+                            work_status_count['Completed'] += 1
                 
-            return JsonResponse(StaffData, safe=False)
+                        if task['CreatedDate'] < current_date and task['Status'] == '1':
+                            work_status_count['Due'] += 1
 
-           
-        else:
-            return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+                        if task['Status'] == '8' or task['Status'] == '9':
+                            work_status_count['Delay Finished'] += 1
+
+                        if task['Status'] == '4' or task['Status'] == '5' or task['Status'] == '6':
+                            work_status_count['Not Completed'] += 1   
+
+                        if task['Status'] == '7':
+                            work_status_count['Finished'] += 1
+
+                    row['WorkStatusCount'] = work_status_count
+                    data.append(row)
+                return self.get_paginated_response(data)
+                
+ 

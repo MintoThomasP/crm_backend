@@ -5,7 +5,8 @@ from app_client import views
 urlpatterns = [
     path('Client/', views.clientApi),
     url(r'^ClientById/(?P<ClientId>[0-9a-zA-Z\-]+)$', views.ClientApiById),
-    url(r'^ClientApiByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.ClientApiByCompanyId),
+    path('ClientApiByCompanyId/', views.ClientApiByCompanyId.as_view()),
+    url(r'^ClientByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.ClientByCompanyId),
 
     path('ClientOtherDetails/', views.ClientOtherDetailsApi),
     url(r'^ClientOtherDetailsApiById/(?P<ClientOtherDetailId>[0-9a-zA-Z\-]+)$', views.ClientOtherDetailsApiById),

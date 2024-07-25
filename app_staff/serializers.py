@@ -120,6 +120,7 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
 'LeaveFrom',
 'LeaveTo',
 'LeaveType',
-'Status'
+'Status',
+'CompanyId'
 
 )

@@ -78,3 +78,4 @@ class LeaveApplication(models.Model):
     LeaveTo=models.CharField(blank=True, null=True, max_length=100)
     LeaveType=models.CharField(blank=True, null=True, max_length=100)
     Status=models.CharField(blank=True, null=True, max_length=100)
+    CompanyId=models.CharField(blank=True, null=True, max_length=50)

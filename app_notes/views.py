@@ -14,8 +14,11 @@ from django.http.response import JsonResponse
 from django.utils import timezone
 from app_notes.models import MeetingNoteDocument, MeetingNotes
 from app_notes.serializers import MeetingNoteDocumentSerializer, MeetingNotesSerializer
+from app_project.views import CustomPageNumberPagination
 from app_staff.models import Staff
 from app_staff.serializers import StaffSerializer
+from rest_framework import generics
+from django.db.models import Q
 # Create your views here.
 
 
@@ -123,27 +126,28 @@ def DeleteMeetingDocument(request, MeetingNoteDocumentId=""):
         return JsonResponse("", safe=False)
     
 
-@csrf_exempt
-@api_view(['POST'])
-@retry(retries=3, delay=2)
-def MeetingNotesApiByCompanyId(request):
-    # try:
-        if request.method == 'POST': 
-            meetingNotesData = JSONParser().parse(request)
-           
-            if meetingNotesData['StartDate'] and  meetingNotesData['EndDate']:
-                start_date = timezone.datetime.strptime(meetingNotesData['StartDate'], '%Y-%m-%d').date()
-                print(start_date)
-                end_date = (timezone.datetime.strptime(meetingNotesData['EndDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
-                meetingNotes = MeetingNotes.objects.filter(
-                        CompanyId=meetingNotesData['CompanyId'],CreatedDate__range=(start_date,end_date))
-            else:
-                meetingNotes = MeetingNotes.objects.filter(
-                        CompanyId=meetingNotesData['CompanyId'])
-            meetingNotesSerializer = MeetingNotesSerializer(
-                    meetingNotes,many=True)
-            noteData=[]
-            for row in meetingNotesSerializer.data:
+class MeetingNotesApiByCompanyId(generics.ListAPIView):
+    queryset =MeetingNotes.objects.all()
+    pagination_class = CustomPageNumberPagination
+    serializer_class = MeetingNotesSerializer 
+    def post(self, request, *args, **kwargs):
+        filterData = JSONParser().parse(request)
+        Keyword = filterData.get('SearchKeyword', '')
+        if Keyword:
+            self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
+        if filterData['CompanyId']:
+            self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+
+        if filterData['StartDate'] and  filterData['EndDate']:
+            start_date = timezone.datetime.strptime(filterData['StartDate'], '%Y-%m-%d').date()
+            end_date = (timezone.datetime.strptime(filterData['EndDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
+            self.queryset = self.queryset.filter(CreatedDate__range=(start_date,end_date))
+        page = self.paginate_queryset(self.queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            data = []
+
+            for row in serializer.data:
                 try:
                     staff=Staff.objects.get(StaffId=row['CreatedBy'])
                     staffSerializer=StaffSerializer(staff)
@@ -168,10 +172,6 @@ def MeetingNotesApiByCompanyId(request):
                     row['MeetingDocuments']=meetingDocumentSerializer.data
                 except:
                     row['MeetingDocuments']=""
-                noteData.append(row)
+                data.append(row)
 
-            return JsonResponse(noteData, safe=False)
-        else:
-            return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+            return self.get_paginated_response(data)

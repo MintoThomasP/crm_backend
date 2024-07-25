@@ -11,8 +11,15 @@ urlpatterns = [
     path('CURDReport/', views.ReportApi),
     url(r'^ReportApiById/(?P<ReportId>[0-9a-zA-Z\-]+)$', views.ReportApiById),
 
+    path('SaveReportRefFile/', views.SaveReportRefFile.as_view()),
+
     path('GetAllCategoryandSubCategories/', views.GetAllCategoryandSubCategories),
+    path('GetCategoryandSubCategoriesByCategoryType/', views.GetCategoryandSubCategoriesByCategoryType),
     path('GetClientReportMonthly/', views.GetClientReportMonthly),
 
+
+    path('SaveReport/', views.BulkCreateReportView.as_view()),
+
+    url(r'^DeleteReportRefFileById/(?P<ReportRefFileId>[0-9a-zA-Z\-]+)$', views.DeleteReportRefFileById),
 
 ]

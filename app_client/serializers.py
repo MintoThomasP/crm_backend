@@ -18,7 +18,8 @@ class ClientSerializer(serializers.ModelSerializer):
 'Phone1',
 'Phone2',
 'CustomerType',
-'AdvanceAmount'
+'AdvanceAmount',
+'SetDefaultProject'
 )
         
 class ClientOtherDetailsSerializer(serializers.ModelSerializer):

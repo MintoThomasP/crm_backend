@@ -11,7 +11,9 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from app_default.models import Country, State
 from app_default.serializers import CountrySerializer, StateSerializer
 from app_default.views import retry
-
+from app_project.views import CustomPageNumberPagination
+from rest_framework import generics
+from django.db.models import Q
 
 
 @csrf_exempt
@@ -91,22 +93,49 @@ def ClientApiById(request, ClientId=""):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
-
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all client details",)
+from django.db import transaction   
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give CompanyId to get all project detail",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
-def ClientApiByCompanyId(request,CompanyId=""):
+def ClientByCompanyId(request, CompanyId=""):
     try:
         if request.method == 'GET':
-            client = Client.objects.filter(CompanyId=CompanyId)
-            clientSerializer = ClientSerializer(
-                    client, many=True)
-            return JsonResponse(clientSerializer.data, safe=False)
+            BATCH_SIZE = 100
+            client = Client.objects.filter(
+                    CompanyId=CompanyId)
+            total_client=client.count()
+            all_serialized_data = []
+            for i in range(0, total_client, BATCH_SIZE):
+                with transaction.atomic():
+                    batch_tasks = client[i:i+BATCH_SIZE]
+                    serializer = ClientSerializer(batch_tasks, many=True)
+                    serialized_data = serializer.data
+                    all_serialized_data.extend(serialized_data)
+            return JsonResponse(all_serialized_data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
-        return JsonResponse("Invalid", safe=False)
+        return JsonResponse("", safe=False)
+
+
+class ClientApiByCompanyId(generics.ListAPIView):
+    queryset =Client.objects.all()
+    pagination_class = CustomPageNumberPagination
+    serializer_class = ClientSerializer 
+    def post(self, request, *args, **kwargs):
+        filterData = JSONParser().parse(request)
+        Keyword = filterData.get('SearchKeyword', '')
+        if filterData['CompanyId']:
+            self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+
+        if Keyword:
+            self.queryset = self.queryset.filter(Q(CustomerDisplayName__icontains=Keyword)|Q(CompanyName__icontains=Keyword))
+        page = self.paginate_queryset(self.queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
 
 
 @csrf_exempt

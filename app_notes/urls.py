@@ -9,6 +9,6 @@ urlpatterns = [
     url(r'^DeleteMeetingDocument/(?P<MeetingNoteDocumentId>[0-9a-zA-Z\-]+)$', views.DeleteMeetingDocument),
 
 
-    path('MeetingNotesApiByCompanyId/', views.MeetingNotesApiByCompanyId),
+    path('MeetingNotesApiByCompanyId/', views.MeetingNotesApiByCompanyId.as_view()),
 
 ]

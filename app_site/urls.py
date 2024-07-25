@@ -16,8 +16,8 @@ urlpatterns = [
     url(r'^UploadSiteSettingsImage/(?P<SiteSettingsId>[0-9a-zA-Z\-]+)$',
         views.UploadSiteSettingsImage.as_view()),
 
-
-    url(r'^GetNotificationByToUser/(?P<ToUser>[0-9a-zA-Z\-]+)$', views.GetNotificationByToUser),
+path('GetNotificationByToUser/', views.GetNotificationByToUser.as_view()),
+    
     path('dateconversion/', views.dateconversion),
 
 ]

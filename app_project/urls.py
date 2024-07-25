@@ -5,10 +5,11 @@ from app_project import views
 urlpatterns = [
     path('Project/', views.ProjectApi),
     url(r'^ProjectById/(?P<ProjectId>[0-9a-zA-Z\-]+)$', views.ProjectApiById),
-    url(r'^ProjectApiByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.ProjectApiByCompanyId),
+    path('ProjectApiByCompanyId/', views.ProjectApiByCompanyId.as_view()),
+    url(r'^ProjectByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.ProjectByCompanyId),
 
     path('ProjectTask/', views.ProjectTaskApi),
-    path('ProjectTaskPagination/', views.ProjectTaskPagination.as_view()),
+    path('ProjectTaskPagination/', views.ProjectTaskPagination.as_view()), #currently using this API for get all Task, my Task, task assigned by me
 
     url(r'^ProjectTaskById/(?P<ProjectTaskId>[0-9a-zA-Z\-]+)$', views.ProjectTaskApiById),
     url(r'^ProjectTaskApiByProjectId/(?P<ProjectId>[0-9a-zA-Z\-]+)$', views.ProjectTaskApiByProjectId),
@@ -55,7 +56,7 @@ urlpatterns = [
 
 
     path('ProjectTaskTotalDurationCalculation/', views.ProjectTaskTotalDurationCalculation),
-    path('GetAllTicketsApi/', views.GetAllTicketsApi),
+    path('GetAllTicketsApi/', views.GetAllTicketsApi.as_view()), # only using this API for get all tickets, and tickets assigned by me and filteration
 
     url(r'^TicketsByTaskAssignedTo/(?P<TaskAssignedTo>[0-9a-zA-Z\-]+)$', views.TicketsByTaskAssignedTo),
     url(r'^TicketsByTaskAssignedBy/(?P<TaskAssignedBy>[0-9a-zA-Z\-]+)$', views.TicketsByTaskAssignedBy),

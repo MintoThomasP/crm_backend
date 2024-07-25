@@ -8,8 +8,8 @@ from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from django.db.models import Q
-from app_category.models import Category, Report
-from app_category.serializers import CategorySerializer, ReportSerializer
+from app_category.models import Category, Report, ReportRefFile
+from app_category.serializers import CategorySerializer, ReportRefFileSerializer, ReportSaveSerializer, ReportSerializer, SaveReportRefFileSerializer
 from app_default.models import CategoryType
 from app_default.serializers import CategoryTypeSerializer
 
@@ -203,6 +203,43 @@ def get_report_data(category_id):
 
 @csrf_exempt
 @api_view(['POST'])
+def GetCategoryandSubCategoriesByCategoryType(request):
+    # try:
+        if request.method == 'POST':
+            category_data = JSONParser().parse(request)
+            categoryType=CategoryType.objects.filter(CategoryTypeId__in=category_data['CategoryType'])
+            categoryType_serializer = CategoryTypeSerializer(categoryType, many=True)
+            data = []
+            for category_type in categoryType_serializer.data:
+                categories = Category.objects.filter(
+                    Q(RefId__isnull=True) | Q(RefId=""),
+                    ActiveStatus=1,
+                    SectionType=category_data['SectionType'],CategoryType=category_type['CategoryTypeId']
+                ).order_by('CategoryType')
+                category_serializer = CategorySerializer(categories, many=True)
+                
+                for category in category_serializer.data:
+                    subcategories = get_subcategories(category['CategoryId'])
+                    if subcategories:
+                        category['Subcategory'] = subcategories
+                    else:
+                    
+                        category['Subcategory'] = []
+                    # report_data = get_report_data(category['CategoryId'])
+                    # if report_data:
+                    #     category['Report'] = report_data
+                category_type['Subcategory']=category_serializer.data
+                category_type['Category']=category_type['CategoryType']
+                category_type['CategoryId']=category_type['CategoryTypeId']
+                data.append(category_type)
+            return JsonResponse(data, safe=False)
+        else:
+            return JsonResponse([], safe=False)
+    # except:
+    #     return JsonResponse("Invalid", safe=False)
+
+@csrf_exempt
+@api_view(['POST'])
 def GetAllCategoryandSubCategories(request):
     try:
         if request.method == 'POST':
@@ -210,7 +247,7 @@ def GetAllCategoryandSubCategories(request):
             categories = Category.objects.filter(
                 Q(RefId__isnull=True) | Q(RefId=""),
                 ActiveStatus=1,
-                SectionType=category_data['SectionType']
+                SectionType=category_data['SectionType'],
             ).order_by('-SortId')
             category_serializer = CategorySerializer(categories, many=True)
             category_data = []
@@ -242,10 +279,181 @@ def GetClientReportMonthly(request):
         report, many=True)
     reportData=[]
     for report in reportSerializer.data:
-        category = Category.objects.get(
-            CategoryId=report['CategoryId'])
-        categorySerializer = CategorySerializer(
-            category)
-        report['CategoryName']=categorySerializer.data['Category']
+        report['ReportRefFile']=[]
+        try:
+            category = Category.objects.get(
+                CategoryId=report['CategoryId'])
+            categorySerializer = CategorySerializer(
+                category)
+            report['CategoryName']=categorySerializer.data['Category']
+            if categorySerializer.data['RefId']:
+                report['RefId']=categorySerializer.data['RefId']
+            else:
+                report['RefId']=categorySerializer.data['CategoryType']
+            reportFiles=ReportRefFile.objects.filter(ReportId=report['ReportId'])
+            reportFilesSerializer = ReportRefFileSerializer(
+                reportFiles,many=True)
+            report['ReportRefFile']=reportFilesSerializer.data
+        except:
+            category = CategoryType.objects.get(
+                CategoryTypeId=report['CategoryId'])
+            categorySerializer = CategoryTypeSerializer(
+                category)
+            report['CategoryName']=categorySerializer.data['CategoryType']
+            report['RefId']=""
         reportData.append(report)
     return JsonResponse(reportData, safe=False)
+
+
+class SaveReportRefFile(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+    def post(self, request,  *args, **kwargs):
+        try:
+                Serializer = SaveReportRefFileSerializer(
+                    data=request.data)
+                if Serializer.is_valid():
+                    Serializer.save()
+                    return JsonResponse(Serializer.data['ReportRefFileId'], safe=False)
+                else:
+                    return JsonResponse("", safe=False)
+        except:
+            return JsonResponse("", safe=False)
+        
+class SaveReport(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+    def post(self, request,  *args, **kwargs):
+        reportData = JSONParser().parse(request)
+        for report in reportData:
+            if report['ReportId']:
+                report = Report.objects.get(
+                    ReportId=reportData['ReportId'])
+                reportSerializer = ReportSerializer(
+                    report, data=report)
+                if reportSerializer.is_valid():
+                    reportSerializer.save()
+            else:
+                reportSerializer = ReportSerializer(
+                    data=report)
+                if reportSerializer.is_valid():
+                    reportSerializer.save()
+                    if report['RefFiles']:
+                        for file in report['RefFiles']:
+                            filedata={
+                                'ReportId':reportSerializer.data['ReportId'],
+                                'ReportRefFile':file['ReportRefFile'],
+                                'OrderNo':file['ReportRefFile']
+                            }
+                           
+                            Serializer = SaveReportRefFileSerializer(
+                                data=filedata)
+                            if Serializer.is_valid():
+                                Serializer.save()
+        return JsonResponse("added", safe=False)
+    
+
+
+# class BulkCreateReportView(APIView):
+#     parser_classes = (MultiPartParser, FormParser)
+
+#     def post(self, request):
+#         data = request.data
+#         reports_data = []
+
+#         # Extract reports data
+#         for report in data:
+#             if report['ReportId']:
+#                 report = Report.objects.get(
+#                     ReportId=data['ReportId'])
+#                 reportSerializer = ReportSerializer(
+#                     report, data=report)
+#                 if reportSerializer.is_valid():
+#                     reportSerializer.save()
+#             else:
+#                 reportSerializer = ReportSerializer(
+#                     data=report)
+#                 if reportSerializer.is_valid():
+#                     reportSerializer.save()
+#                     if report['RefFiles']:
+#                         for file in report['RefFiles']:
+#                             filedata={
+#                                 'ReportId':reportSerializer.data['ReportId'],
+#                                 'ReportRefFile':file['ReportRefFile'],
+#                                 'OrderNo':file['ReportRefFile']
+#                             }
+                           
+#                             Serializer = SaveReportRefFileSerializer(
+#                                 data=filedata)
+#                             if Serializer.is_valid():
+#                                 Serializer.save()
+#         return JsonResponse("added", safe=False)
+    
+
+from rest_framework import status
+from rest_framework.response import Response
+class BulkCreateReportView(APIView):
+    def post(self, request, *args, **kwargs):
+        try:
+        
+            if request.data['RefFiles']:
+                if request.data['ReportId']:
+                    report = Report.objects.get(
+                        ReportId=request.data['ReportId'])
+                    serializer = ReportSerializer(report,data=request.data)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response(serializer.data, status=status.HTTP_201_CREATED)
+                else:
+                    serializer = ReportSerializer(data=request.data)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return Response(serializer.data, status=status.HTTP_201_CREATED)
+                return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        except:
+            if request.data['ReportId']:
+                report = Report.objects.get(
+                    ReportId=request.data['ReportId'])
+                serializer = ReportSaveSerializer(report,data=request.data)
+                if serializer.is_valid():
+                    serializer.save()
+            else:
+                serializer = ReportSaveSerializer(data=request.data)
+                if serializer.is_valid():
+                    serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+# class BulkCreateReportView(APIView):
+#     def post(self, request, *args, **kwargs):
+       
+#         serializer = BulkReportSerializer(data=request.data)
+#         if serializer.is_valid():
+#             reports_data = serializer.validated_data.get('reports',[])
+#             created_reports = []
+#             for report_data in reports_data:
+#                 report_serializer = ReportSerializer(data=report_data)
+#                 if report_serializer.is_valid():
+#                     report = report_serializer.save()
+#                     created_reports.append(report_serializer.data)
+#                 else:
+#                     return Response(report_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#             return Response(created_reports, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+
+
+@csrf_exempt
+@api_view(['DELETE'])
+def DeleteReportRefFileById(request, ReportRefFileId=""):
+    try:
+        if request.method == 'DELETE':
+            report = ReportRefFile.objects.get(ReportRefFileId=ReportRefFileId)
+            report.ReportRefFile.delete(save=True)
+            report.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("Invalid", safe=False)

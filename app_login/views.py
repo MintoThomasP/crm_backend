@@ -358,3 +358,18 @@ def AutoLogout(request, UserId=""):
     except:
         return JsonResponse("", safe=False)
     
+
+
+@csrf_exempt
+@api_view(['GET'])
+def CheckEmptyLogout(request, UserId=""):
+    try:
+        if request.method == 'GET': 
+            loginHistory = LoginHistory.objects.filter(
+                    Q(LogoutTime__isnull=True)| Q(LogoutTime=""),UserId=UserId)
+            loginHistorySerializer=LoginHistorySerializer(loginHistory,many=True)
+            return JsonResponse(loginHistorySerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)

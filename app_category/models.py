@@ -31,3 +31,13 @@ class Report(models.Model):
     OrderNo=models.IntegerField(default=1)
     Level=models.IntegerField(default=1)#its the level of category
 
+
+
+class ReportRefFile(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    ReportRefFileId=models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    ReportRefFile=models.FileField(upload_to='ReportRefFile/',null=True,blank=True)
+    ReportId=models.ForeignKey(Report, on_delete=models.CASCADE, related_name='images')
+    OrderNo=models.IntegerField(default=1)
+

@@ -46,7 +46,9 @@ class ProjectTaskSerializer(serializers.ModelSerializer):
 'RepeatInterval',
 'LastAssigned',
 'ExtraAccess',
-'AccessTo')
+'AccessTo',
+'ClientId',
+        )
 
 
 class ProjectTaskTimingSerializer(serializers.ModelSerializer):

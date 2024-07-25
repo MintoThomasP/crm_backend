@@ -154,7 +154,9 @@ class CategoryTypeSerializer(serializers.ModelSerializer):
         model = CategoryType
         fields = (
 'CategoryTypeId',
-'CategoryType'
+'CategoryType',
+'UsageType',
+'Ref'
 )
         
 

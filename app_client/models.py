@@ -20,7 +20,7 @@ class Client(models.Model):
     Phone2=models.CharField(max_length=15, blank=True, null=True)
     CustomerType=models.CharField(max_length=300, blank=True, null=True)
     AdvanceAmount=models.CharField(max_length=15, blank=True, null=True, default="0")
-
+    SetDefaultProject=models.BooleanField(default=True)
 
 
 class ClientOtherDetails(models.Model):

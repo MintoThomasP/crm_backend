@@ -22,7 +22,13 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from django.utils import timezone
 from datetime import datetime
+
 from rest_framework import generics
+from django.db.models import Q
+
+class CustomPageNumberPagination(PageNumberPagination):
+    page_size = 40 # Adjust the page size as needed
+    page_size_query_param = 'page_size'
 
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=ProjectSerializer)
@@ -82,11 +88,28 @@ def ProjectApiById(request, ProjectId=""):
     except:
         return JsonResponse("", safe=False)
     
+class ProjectApiByCompanyId(generics.ListAPIView):
+    queryset =Project.objects.all()
+    pagination_class = CustomPageNumberPagination
+    serializer_class = ProjectSerializer 
+    def post(self, request, *args, **kwargs):
+        filterData = JSONParser().parse(request)
+        Keyword = filterData.get('SearchKeyword', '')
+        if filterData['CompanyId']:
+            self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+
+        if Keyword:
+            self.queryset = self.queryset.filter(Q(ProjectName__icontains=Keyword)|Q(Description__icontains=Keyword))
+        page = self.paginate_queryset(self.queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give ProjectId to get one project detail",)
-@api_view(['GET','DELETE'])
+@swagger_auto_schema(method='GET',operation_description="NOTE: Give CompanyId to get all project detail",)
+@api_view(['GET'])
 @retry(retries=3, delay=2)
-def ProjectApiByCompanyId(request, CompanyId=""):
+def ProjectByCompanyId(request, CompanyId=""):
     try:
         if request.method == 'GET': 
             project = Project.objects.filter(
@@ -94,30 +117,120 @@ def ProjectApiByCompanyId(request, CompanyId=""):
             projectSerializer = ProjectSerializer(
                     project,many=True)
             return JsonResponse(projectSerializer.data, safe=False)
-
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
     
 
-class CustomPageNumberPagination(PageNumberPagination):
+# class CustomPageNumberPagination(PageNumberPagination):
 
-    page_size = 40 # Adjust the page size as needed
-    page_size_query_param = 'page_size'
+#     page_size = 40 # Adjust the page size as needed
+#     page_size_query_param = 'page_size'
+
+
+# class ProjectTaskPagination(generics.ListAPIView):
+#     pagination_class = CustomPageNumberPagination
+#     serializer_class = ProjectTaskSerializer 
+#     def get(self, request, *args, **kwargs):
+#         projectTask = ProjectTask.objects.filter(Q(RefId__isnull=True) | Q(RefId=""),TaskType='Task').order_by('-SortId')
+#         projectTaskSerializer = ProjectTaskSerializer(
+#                     projectTask, many=True)
+#         page = self.paginate_queryset(projectTaskSerializer.data)
+#         taskData=[]
+#         if page is not None:
+#             for row in page:
+#                 row['Tickets']=[]
+#                 try:
+#                     projectTask = ProjectTask.objects.get(
+#                         RefId=row['ProjectTaskId'])
+#                     projectTaskSerializer=ProjectTaskSerializer(projectTask)
+#                     row['Tickets']=projectTaskSerializer.data
+#                 except:
+#                     row['Tickets']=[]
+                
+#                 try:
+#                     project=Project.objects.get(ProjectId=row['ProjectId'])
+#                     projectSerializer=ProjectSerializer(project)
+#                     row['ProjectName']=projectSerializer.data['ProjectName']
+#                 except:
+#                     row['ProjectName']=""
+#                 try:
+#                     staff=Staff.objects.get(StaffId=row['TaskAssignedTo'])
+#                     staffSerializer=StaffSerializer(staff)
+#                     row['AssignedTo']=staffSerializer.data['StaffName']
+#                 except:
+#                     row['AssignedTo']=""
+
+#                 try:
+#                     staff=Staff.objects.get(StaffId=row['TaskAssignedBy'])
+#                     staffSerializer=StaffSerializer(staff)
+#                     row['AssignedBy']=staffSerializer.data['StaffName']
+#                 except:
+#                     row['AssignedBy']=""
+
+
+#                 try:
+#                     staff=Staff.objects.get(StaffId=row['VerifiedBy'])
+#                     staffSerializer=StaffSerializer(staff)
+#                     row['VerifiedByName']=staffSerializer.data['StaffName']
+#                 except:
+#                     row['VerifiedByName']= ""
+#                 try:
+#                     taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+#                     taskStatusSerializer=TaskStatusSerializer(taskStatus)
+#                     row['StatusName']=taskStatusSerializer.data['Status']
+#                 except:
+#                     row['StatusName']=""
+
+
+#                 try:
+#                     projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+#                     projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
+#                     row['ProjectTaskFiles']=projectTaskFileSerializer.data
+#                 except:
+#                     row['ProjectTaskFiles']=""
+
+#                 taskData.append(row)
+#             return self.get_paginated_response(taskData)
+
+        # return JsonResponse(taskData, safe=False)
+
+
 
 
 class ProjectTaskPagination(generics.ListAPIView):
+    queryset =ProjectTask.objects.filter(Q(RefId__isnull=True) | Q(RefId=""),TaskType='Task').order_by('-SortId')
     pagination_class = CustomPageNumberPagination
     serializer_class = ProjectTaskSerializer 
-    def get(self, request, *args, **kwargs):
-        projectTask = ProjectTask.objects.filter(Q(RefId__isnull=True) | Q(RefId=""),TaskType='Task').order_by('-SortId')
-        projectTaskSerializer = ProjectTaskSerializer(
-                    projectTask, many=True)
-        page = self.paginate_queryset(projectTaskSerializer.data)
-        taskData=[]
+    def post(self, request, *args, **kwargs):
+        filterData = JSONParser().parse(request)
+        Keyword = filterData.get('SearchKeyword', '')
+        if filterData['TaskAssignedTo']:
+            self.queryset = self.queryset.filter(TaskAssignedTo=filterData['TaskAssignedTo'])
+        if filterData['TaskAssignedBy']:
+            self.queryset = self.queryset.filter(TaskAssignedBy=filterData['TaskAssignedBy'])
+        if filterData['ProjectId']:
+            self.queryset = self.queryset.filter(ProjectId=filterData['ProjectId'])
+        if Keyword:
+                self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
+        if filterData['CreatedDate']:
+            created_date_str = filterData['CreatedDate']
+            created_date = datetime.strptime(created_date_str, '%Y-%m-%d').date()
+            self.queryset = self.queryset.filter(CreatedDate__startswith=created_date)
+        if filterData['EndDate']:
+            end_date_str = filterData['EndDate']
+            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+            self.queryset = self.queryset.filter(EndDate__startswith=end_date)
+
+            
+        
+        page = self.paginate_queryset(self.queryset)
         if page is not None:
-            for row in page:
+            serializer = self.get_serializer(page, many=True)
+            data = []
+
+            for row in serializer.data:
                 row['Tickets']=[]
                 try:
                     projectTask = ProjectTask.objects.get(
@@ -126,6 +239,22 @@ class ProjectTaskPagination(generics.ListAPIView):
                     row['Tickets']=projectTaskSerializer.data
                 except:
                     row['Tickets']=[]
+                try:
+                    projectTask = ProjectTask.objects.filter(RefId=row['ProjectTaskId']).order_by('-SortId')
+                    projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
+                    subTasks=[]
+                    for subtask in projectTaskSerializer.data:
+                        try:                      
+                            taskStatus=TaskStatus.objects.get(StatusId=subtask['Status'])
+                            taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                            subtask['StatusName']=taskStatusSerializer.data['Status']
+                        except:
+                            subtask['StatusName']=""
+                        subTasks.append(subtask)
+
+                    row['SubTask'] = subTasks
+                except:
+                    row['SubTask'] =[]
                 
                 try:
                     project=Project.objects.get(ProjectId=row['ProjectId'])
@@ -169,10 +298,10 @@ class ProjectTaskPagination(generics.ListAPIView):
                 except:
                     row['ProjectTaskFiles']=""
 
-                taskData.append(row)
-            return self.get_paginated_response(taskData)
+                data.append(row)
+            return self.get_paginated_response(data)
+        
 
-        # return JsonResponse(taskData, safe=False)
 
 # from django.db import transaction
 @csrf_exempt
@@ -749,20 +878,7 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
                     row['Tickets']=projectTaskSerializer.data[0]
                 except:
                     row['Tickets']=[]
-                # try:
-                #     if row['TotalDuration']:
-                #         row['CompletedPoint']=0
-                #         Duration = row['Duration']
-                #         duration_seconds=durationCalculation(Duration)
-                #         TotalDuration = row['TotalDuration']
-                #         TotalDuration_seconds=durationCalculation(TotalDuration)
-                #         try:
-                #             point = row['TaskPoint']
-                #         except:
-                #             point=1
-                #         row['CompletedPoint'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
-                # except:
-                #     row['CompletedPoint']=""
+  
                 try:                      
                     taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
                     taskStatusSerializer=TaskStatusSerializer(taskStatus)
@@ -805,14 +921,9 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
                 
                 
                 taskStatusName.append(row)
-            MediaViewData = []
-            batch_size = 50
-            for start in range(0, len(taskStatusName), batch_size):
-                batch = taskStatusName[start:start + batch_size]
-                for media in batch:
-                    MediaViewData.append(media)
+          
 
-            return JsonResponse(MediaViewData, safe=False)
+            return JsonResponse(taskStatusName, safe=False)
             
         else:
             return JsonResponse("", safe=False)
@@ -2230,18 +2341,35 @@ def ProjectTaskTotalDurationCalculation(request):
 
 
 
-@csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all ProjectTask Details",)
-@api_view(['GET'])
-@retry(retries=3, delay=2)
-def GetAllTicketsApi(request):
-    try:
-        if request.method == 'GET':
-            projectTask = ProjectTask.objects.filter(TaskType='Ticket').order_by('-SortId')
-            projectTaskSerializer = ProjectTaskSerializer(
-                    projectTask, many=True)
-            taskData=[]
-            for row in projectTaskSerializer.data:
+
+class GetAllTicketsApi(generics.ListAPIView):
+    queryset =ProjectTask.objects.filter(TaskType='Ticket').order_by('-SortId')
+    pagination_class = CustomPageNumberPagination
+    serializer_class = ProjectTaskSerializer 
+    def post(self, request, *args, **kwargs):
+        filterData = JSONParser().parse(request)
+        Keyword = filterData.get('SearchKeyword', '')
+        if filterData['TaskAssignedTo']:
+            self.queryset = self.queryset.filter(TaskAssignedTo=filterData['TaskAssignedTo'])
+        if filterData['TaskAssignedBy']:
+            self.queryset = self.queryset.filter(TaskAssignedBy=filterData['TaskAssignedBy'])
+        if filterData['ProjectId']:
+            self.queryset = self.queryset.filter(ProjectId=filterData['ProjectId'])
+        if filterData['Status']:
+            self.queryset = self.queryset.filter(Status=filterData['Status'])
+        if Keyword:
+                self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
+        if filterData['CreatedDate']:
+            created_date_str = filterData['CreatedDate']
+            created_date = datetime.strptime(created_date_str, '%Y-%m-%d').date()
+            self.queryset = self.queryset.filter(CreatedDate__startswith=created_date)
+       
+        page = self.paginate_queryset(self.queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            data = []
+
+            for row in serializer.data:
                 row['Tickets']=[]
                 try:
                     projectTask = ProjectTask.objects.get(
@@ -2292,15 +2420,11 @@ def GetAllTicketsApi(request):
                 except:
                     row['ProjectTaskFiles']=""
 
-                taskData.append(row)
+                data.append(row)
             
 
-            return JsonResponse(taskData, safe=False)
-        else:
-            return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
-
+            return self.get_paginated_response(data)
+        
 
 
 
@@ -2485,7 +2609,7 @@ def UpdateEndDate(request):
     return JsonResponse("Updated", safe=False)
 
 
-from django.db.models import Q
+
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give LoginHistoryId to get one loginHistory detail",)
 @api_view(['GET'])

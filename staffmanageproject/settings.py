@@ -106,7 +106,7 @@ DATABASES = {
         'NAME': 'staffmanage_db',
         # 'USER': 'root',
         # 'PASSWORD': '',
-        'USER': 'python_user',
+         'USER': 'python_user',
         'PASSWORD': 'Kq#oCWJN0sAR',
         'HOST': 'localhost',
         'PORT': '3306',

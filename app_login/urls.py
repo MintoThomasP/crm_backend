@@ -18,5 +18,6 @@ urlpatterns = [
 
 
     path('AutoLogout/', views.AutoLogout),
+    url(r'^CheckEmptyLogout/(?P<UserId>[0-9a-zA-Z\-]+)$', views.CheckEmptyLogout),
 
 ]

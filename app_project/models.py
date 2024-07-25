@@ -53,6 +53,7 @@ class ProjectTask(models.Model):
     LastAssigned = models.DateTimeField(default=timezone.now, blank=True, null=True)
     ExtraAccess=models.BooleanField(default=False)
     AccessTo =models.TextField(blank=True, null=True)
+    ClientId=models.CharField(blank=True, null=True, max_length=50)
     
 class ProjectTaskTiming(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)

@@ -117,13 +117,21 @@ class PermissionSerializer(serializers.ModelSerializer):
         model = Permission
         fields = ['id', 'name', 'codename', 'content_type']
 
+from django.db import transaction
 def get_permissions(request):
+    BATCH_SIZE = 100
     permissions = Permission.objects.all()
-    serializer = PermissionSerializer(permissions, many=True)
-    serialized_data = serializer.data
-
-    # You can return the serialized data as a JSON response
-    return JsonResponse(serialized_data,safe=False)
+    total_permission = permissions.count()
+    
+    all_serialized_data = []
+    
+    for i in range(0, total_permission, BATCH_SIZE):
+        with transaction.atomic():
+            batch_tasks = permissions[i:i+BATCH_SIZE]
+            serializer = PermissionSerializer(batch_tasks, many=True)
+            serialized_data = serializer.data
+            all_serialized_data.extend(serialized_data)
+    return JsonResponse(all_serialized_data, safe=False)
 
 
 
