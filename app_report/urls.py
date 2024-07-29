@@ -19,7 +19,9 @@ urlpatterns = [
 
     path('StaffReportApiByStaffId/', views.StaffReportApiByStaffId),
 
-    path('PandLReport/<str:startdate>/<str:enddate>/<str:ClientId>', views.PandLReport),
-    path('BalanceSheetReport/<str:startdate>/<str:enddate>/', views.BalanceSheetReport),
+    path('FinanceReport/<str:startdate>/<str:enddate>/<str:ClientId>/<ReportType>', views.FinanceReport),
+    path('FinanceReportPDF/<str:startdate>/<str:enddate>/<str:ClientId>/<ReportType>/<NoOfMonths>', views.FinanceReportPDF),
+
+    
 #  path('report/', views.report_view, name='report_view'),
 ]

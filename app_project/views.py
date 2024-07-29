@@ -931,29 +931,6 @@ def ProjectTaskApiByUserId(request, TaskAssignedTo=""):
         return JsonResponse("", safe=False)
     
 
-# @csrf_exempt
-# @swagger_auto_schema(method='GET',operation_description="NOTE: Get projecttask by staff",)
-# @api_view(['GET'])
-# def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
-#     try:
-#         if request.method == 'GET': 
-#             projectTask = ProjectTask.objects.filter(
-#                     TaskAssignedBy=TaskAssignedBy)
-#             projectTaskSerializer = ProjectTaskSerializer(
-#                     projectTask,many=True)
-#             taskStatusName=[]
-#             for row in projectTaskSerializer.data:
-#                 taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
-#                 taskStatusSerializer=TaskStatusSerializer(taskStatus)
-#                 row['StatusName']=taskStatusSerializer.data['Status']
-#                 taskStatusName.append(row)
-#             return JsonResponse(taskStatusName, safe=False)
-            
-#         else:
-#             return JsonResponse("", safe=False)
-#     except:
-#         return JsonResponse("", safe=False)
-    
 
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get projecttask by staff",)
@@ -966,17 +943,6 @@ def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
             projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
             taskStatusName = []
             for row in projectTaskSerializer.data:
-                # try:
-                #     if row['TotalDuration']:
-                #         Duration = row['Duration']
-                #         duration_seconds=durationCalculation(Duration)
-                #         TotalDuration = row['TotalDuration']
-                #         TotalDuration_seconds=durationCalculation(TotalDuration)
-                #         point = row['TaskPoint']
-                #         row['CompletedPoint'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
-                
-                # except:
-                #     row['CompletedPoint']=""
                 
                 try:
                     projectTask = ProjectTask.objects.filter(RefId=row['ProjectTaskId']).order_by('-SortId')
@@ -1035,87 +1001,6 @@ def ProjectTaskApiByTaskAssignedBy(request, TaskAssignedBy=""):
     except:
         return JsonResponse("", safe=False)
 
-# class ProjectTaskApiByUserIdAndProjectId(generics.ListAPIView):
-#     queryset = ProjectTask.objects.filter(TaskType='Task').order_by('-SortId')
-#     pagination_class = CustomPageNumberPagination
-#     serializer_class = ProjectTaskSerializer 
-    
-#     def post(self, request, *args, **kwargs):
-#         projectTaskData = JSONParser().parse(request)
-#         if projectTaskData['ProjectId']:
-#             self.queryset = self.queryset.filter(
-#                 ProjectId=projectTaskData['ProjectId'])
-            
-#         if projectTaskData['TaskAssignedTo']:
-#             self.queryset = self.queryset.filter(TaskAssignedTo=projectTaskData['TaskAssignedTo'])
-#         if projectTaskData['EndDate']:
-#             self.queryset = self.queryset.filter(EndDate__startswith=projectTaskData['EndDate'])
-        
-#         page = self.paginate_queryset(self.queryset)
-#         if page is not None:
-#             serializer = self.get_serializer(page, many=True)
-       
-#             taskStatusName=[]
-#             for row in serializer.data:
-#                 row['Tickets']=[]
-#                 try:
-#                     projectTask = ProjectTask.objects.filter(RefId=row['ProjectTaskId']).order_by('-SortId')
-#                     projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
-#                     row['SubTask'] = projectTaskSerializer.data
-#                 except:
-#                     row['SubTask'] =[]
-#                 try:
-#                     projectTask = ProjectTask.objects.get(
-#                         RefId=row['ProjectTaskId'])
-#                     projectTaskSerializer=ProjectTaskSerializer(projectTask)
-#                     row['Tickets']=projectTaskSerializer.data
-#                 except:
-#                     row['Tickets']=[]
-#                 try:
-#                     taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
-#                     taskStatusSerializer=TaskStatusSerializer(taskStatus)
-#                     row['StatusName']=taskStatusSerializer.data['Status']
-#                 except:
-#                     row['StatusName']=""
-#                 # try:
-#                 #     if row['TotalDuration']:
-#                 #         row['CompletedPoint']=0
-#                 #         Duration = row['Duration']
-#                 #         duration_seconds=durationCalculation(Duration)
-#                 #         TotalDuration = row['TotalDuration']
-#                 #         TotalDuration_seconds=durationCalculation(TotalDuration)
-#                 #         try:
-#                 #             point = row['TaskPoint']
-#                 #         except:
-#                 #             point=1
-#                 #         row['CompletedPoint'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
-#                 # except:
-#                 #     row['CompletedPoint']=""
-
-#                 try:
-#                     project = Project.objects.get(ProjectId=row['ProjectId'])
-#                     projectSerializer = ProjectSerializer(project)
-#                     row['ProjectName'] = projectSerializer.data['ProjectName']
-#                 except:
-#                     row['ProjectName'] = ""
-#                 staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
-#                 staffSerializer = StaffSerializer(staff)
-#                 row['StaffName'] = staffSerializer.data['StaffName']
-#                 try:
-#                     staff=Staff.objects.get(StaffId=row['VerifiedBy'])
-#                     staffSerializer=StaffSerializer(staff)
-#                     row['VerifiedByName']=staffSerializer.data['StaffName']
-#                 except:
-#                     row['VerifiedByName']= ""
-
-#                 try:
-#                     projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
-#                     projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
-#                     row['ProjectTaskFiles']=projectTaskFileSerializer.data
-#                 except:
-#                     row['ProjectTaskFiles']=""
-#                 taskStatusName.append(row)
-#             return self.get_paginated_response(taskStatusName)
     
 
 @csrf_exempt

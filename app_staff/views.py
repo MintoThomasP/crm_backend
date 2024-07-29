@@ -538,9 +538,9 @@ def staffSalaryByPerformanceApi(request):
 
         for row in projectTaskSerializer.data:
             
-            TaskPoint += row['TaskPoint']
+            TaskPoint += int(row['TaskPoint'])
    
-            CompletedPoint += row['CompletionPoint']
+            CompletedPoint += int(row['CompletionPoint'])
 
         staff = Staff.objects.get(StaffId=requestData['StaffId'])
         staffSerializer = StaffSerializer(staff)

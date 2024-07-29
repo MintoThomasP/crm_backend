@@ -274,7 +274,7 @@ def GetAllCategoryandSubCategories(request):
 def GetClientReportMonthly(request):
     data = JSONParser().parse(request)
 
-    report = Report.objects.filter(ClientId=data['ClientId'],Month=data['Month'],Year=data['Year']).order_by('-OrderNo')
+    report = Report.objects.filter(ClientId=data['ClientId'],Month=data['Month'],Year=data['Year'],ReportType=data['ReportType']).order_by('-OrderNo')
     reportSerializer = ReportSerializer(
         report, many=True)
     reportData=[]

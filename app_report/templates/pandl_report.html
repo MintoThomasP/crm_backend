@@ -13,14 +13,14 @@
         /* @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Roboto:wght@100;300;400;500;700;900&display=swap'); */
 
         th {
-            font-size: 12px;
+            font-size: 10px;
             vertical-align: middle;
             padding-top: 5px;
             padding-bottom: 0px;
         }
 
         td {
-            font-size: 12px;
+            font-size: 10px;
             vertical-align: middle;
             padding-top: 5px;
             padding-bottom: 0px;
@@ -28,7 +28,7 @@
         }
 
         h2 {
-            font-size: 25px;
+            font-size: 20px;
             margin-bottom: 0px;
         }
 
@@ -41,7 +41,7 @@
         .sub_table1 {
             border: 1.5px solid #505050;
             border-collapse: collapse;
-            padding: 5px 5px;
+            padding: 2px 2px;
             margin-top: 10px;
             margin-bottom: 15px;
 
@@ -76,39 +76,103 @@
             border-left: 0px solid #50505000;
             border-bottom: 0px solid #50505000;
         }
-        tbody tr th{
+
+        tbody tr th {
             padding: 5px 0px !important;
         }
-        .no-bg{
+
+        .no-bg {
             background: #e6dfdf00;
         }
-         tr td,
-         tr th {
+
+        tr td,
+        tr th {
             text-align: right;
         }
-        tbody  tr td:first-child,
-        tbody  tr th:first-child {
+
+        tbody tr td:first-child,
+        tbody tr th:first-child {
             border-right: 1.5px solid #505050;
         }
-        thead tr{
+
+        thead tr {
             text-align: center;
         }
-        thead h2{
+
+        thead h2 {
             padding: 15px 5px;
         }
+
         .thead {
             vertical-align: middle;
         }
-
-        tr:nth-child(even) {
-        }
-        .first-column {
-        width: 150px; 
-    }
-    .default-column {
-        width: 85px; 
-    }
     </style>
+
+    {% if NoOfMonths > 21 %}
+    <style>
+        @page {
+            size: A1 landscape;
+            margin: .5cm;
+            /* adjust margins as needed */
+        }
+    </style>
+    {% elif NoOfMonths > 18 %}
+    <style>
+        @page {
+            size: A1 portrait;
+            margin: .5cm;
+            /* adjust margins as needed */
+        }
+    </style>
+    {% elif NoOfMonths > 15 %}
+    <style>
+        @page {
+            size: A2 landscape;
+            margin: .5cm;
+            /* adjust margins as needed */
+        }
+    </style>
+    {% elif NoOfMonths > 12 %}
+    <style>
+        @page {
+            size: A2 portrait;
+            margin: .5cm;
+            /* adjust margins as needed */
+        }
+    </style>
+    {% elif NoOfMonths > 9 %}
+    <style>
+        @page {
+            size: A3 landscape;
+            margin: .5cm;
+            /* adjust margins as needed */
+        }
+    </style>
+    {% elif NoOfMonths > 6 %}
+    <style>
+        @page {
+            size: A3 portrait;
+            margin: .5cm;
+            /* adjust margins as needed */
+        }
+    </style>
+    {% elif NoOfMonths > 3 %}
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: .5cm;
+            /* adjust margins as needed */
+        }
+    </style>
+    {% elif NoOfMonths > 0 %}
+    <style>
+        @page {
+            size: A2 portrait;
+            margin: .5cm;
+            /* adjust margins as needed */
+        }
+    </style>
+    {% endif %}
 </head>
 
 <body>
@@ -122,53 +186,68 @@
             </tr>
             <tr style="vertical-align: bottom;">
                 {% for key, value in formatted_data.items %}
-                    {% if forloop.first %}
-                        <th style="width:200px;">{{ value }}</th>  <!-- Increase width here -->
-                    {% else %}
-                        <th>{{ value }}</th>
-                    {% endif %}
+                {% if forloop.first %}
+                <th style="width:200px;">{{ value }}</th> <!-- Increase width here -->
+                {% else %}
+                <th>{{ value }}</th>
+                {% endif %}
                 {% endfor %}
             </tr>
         </thead>
         <tbody>
             {% for i in responsedata %}
-                {% if forloop.counter0|divisibleby:2 %}
-             
-                    <tr style="vertical-align: bottom; background-color: #f2f2f2;">
+            {% if forloop.counter0|divisibleby:2 %}
+
+            <tr style="vertical-align: bottom; background-color: #f2f2f2;">
                 {% else %}
-              
-                    <tr style="vertical-align: bottom; background-color: #ffffff;">
+
+            <tr style="vertical-align: bottom; background-color: #ffffff;">
                 {% endif %}
                 {% for key, value in i.items %}
-                    {% if key != 'OrderNo' and   key != 'Level' %}
-                            <td >
-                                {% if value and value != '0' and value != 'null'%}
-                                    {%if i.Level == 1%}
-                                        <b>{{ value }}</b>
-                                    {% elif key == '0'%}
-                                        &nbsp;&nbsp;&nbsp;&nbsp;{{ value }}
-                                    {% elif i.Level == 3 or  key != '0'%}
-                                        <div style="text-align: right;">
-                                            {{ value }}
-                                        </div>
-                                    {% elif i.Level == 0 %}
-                                    <div style="text-align: right;">
-                                        <b>{{ value }}</b>
-                                    </div>
-                                    {% endif %}
-                                {% elif i.Level == 1 %}
-                                    {{''}}
-                                {% else %}
-                                <div style="text-align: center;">
-                                    {{'-'}}
-                                </div>
-                                {% endif %}
-                            </td>
-                            
+                {% if key not in expectField%}
+                {% if key|divisibleby:2 and key != '0' %}
+
+                <td width="40px">
+                    {% else %}
+                <td>
+
                     {% endif %}
+                    {% if value and value != '0' and value != 'null'%}
+                    {%if i.Level == 1%}
+                    <b>
+                        {% if key != '0'%}
+                        <div style="text-align: right;">
+                            {{ value }}
+                        </div>
+                        {% else %}
+                        {{ value }}
+
+                        {% endif %}
+                    </b>
+                    {% elif key == '0'%}
+                    &nbsp;&nbsp;&nbsp;&nbsp;{{ value }}
+                    {% elif i.Level == 3 or key != '0'%}
+                    <div style="text-align: right;">
+                        {{ value }}
+                    </div>
+                    {% elif i.Level == 0 %}
+                    <div style="text-align: right;">
+                        <b>{{ value }}</b>
+                    </div>
+                    {% endif %}
+                    {% elif i.Level == 1 %}
+                    {{''}}
+                    {% else %}
+                    <div style="text-align: center;">
+                        {{'-'}}
+                    </div>
+                    {% endif %}
+                </td>
+
+                {% endif %}
                 {% endfor %}
-                </tr>
-              
+            </tr>
+
             {% endfor %}
         </tbody>
     </table>
