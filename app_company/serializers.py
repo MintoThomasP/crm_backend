@@ -13,7 +13,8 @@ class CompanySerializer(serializers.ModelSerializer):
             'EmailId',
             'Website',
             'RegisteredOn',
-            'Address'
+            'Address',
+            'UserGroup'
         )
 class CompanyDocumentsSerializer(serializers.ModelSerializer):
     class Meta:

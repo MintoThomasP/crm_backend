@@ -638,7 +638,6 @@ def FinanceReportPDF(request, startdate="", enddate="",ClientId="",ReportType=""
 @api_view(['GET'])
 def FinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""):
     context = getFinanceReport(request, startdate, enddate,ClientId ,ReportType)
-    print(context)
     return JsonResponse(context,safe=False)
     
 def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType="",NoOfMonths="0"):

@@ -59,7 +59,7 @@
         @page {
     size: A4 portrait;
     margin: 30pt;
-@frame footer_frame {
+    @frame footer_frame {
     -pdf-frame-content: footer_content;
     left: 30pt;
     
@@ -111,7 +111,7 @@
                                 </tr>
                                 <tr>
                                     <td style="width:20%; padding-top: 10px;">Reference Number</td>
-                                    <td style="width:45%;border-bottom: 1px solid grey;padding-top: 5px;padding-right: 5px;"></td>
+                                    <td style="width:45%;border-bottom: 1px solid grey;padding-top: 5px;padding-right: 5px;">{{payment.ReferenceNumber}}</td>
                                     <td></td>
                                 </tr>
                                 <tr>
@@ -126,11 +126,19 @@
                                 <tr  style="padding-top: 10px;">
                                     <td><p style="color: gray;"><b>Bill To</b></p>
                                         <p><b>{{client.CustomerDisplayName}}</b><br>
-                                            {{billingAdress.Address1}}<br>
-                                            {{billingAdress.Address2}}<br>
-                                            {{billingAdress.City}}<br>
-                                            {{billingAdress.State}}<br>
-                                            {{billingAdress.CountryName}}</p></td>
+                                            {{billingaddressdata.Address1}}<br>
+                                            {%if billingaddressdata.Address2 %} 
+                                            {{billingaddressdata.Address2}}
+                                            <br>{%endif%}
+                                            {%if billingaddressdata.City %}
+                                             {{billingaddressdata.City}}
+                                             <br>{%endif%}
+                                            {%if billingaddressdata.StateName %} 
+                                            {{billingaddressdata.StateName}}
+                                            <br> {%endif%}
+                                           {%if billingaddressdata.CountryName %} 
+                                           {{billingaddressdata.CountryName}} 
+                                           {%endif%}</p></td>
                                 </tr>
                             </table>
 

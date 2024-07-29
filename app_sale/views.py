@@ -18,9 +18,9 @@ from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 
 from app_client.models import Client, ClientAddress
-from app_client.serializers import ClientSerializer
-from app_default.models import InvoiceStatus, PaymentMode
-from app_default.serializers import InvoiceStatusSerializer
+from app_client.serializers import ClientAddressSerializer, ClientSerializer
+from app_default.models import Country, InvoiceStatus, PaymentMode, State
+from app_default.serializers import CountrySerializer, InvoiceStatusSerializer, StateSerializer
 from app_default.views import retry
 from app_project.models import Project
 from app_project.serializers import ProjectSerializer
@@ -368,9 +368,9 @@ def InvoiceApiById(request, InvoiceId=""):
 
 
 class InvoiceApiByCompanyId(generics.ListAPIView):
-    queryset =PaymentReceived.objects.all().order_by('-SortId')
+    queryset =Invoice.objects.all().order_by('-SortId')
     pagination_class = CustomPagination
-    serializer_class = PaymentReceivedSerializer 
+    serializer_class = InvoiceSerializer 
     def post(self, request, *args, **kwargs):
         filterData = JSONParser().parse(request)
         if filterData['CompanyId']:
@@ -1177,6 +1177,21 @@ def ViewPaymentPDF(request, PaymentReceivedId=""):
             payment = PaymentReceived.objects.get(PaymentReceivedId=PaymentReceivedId)
             paymentMode=PaymentMode.objects.get(PaymentModeId=payment.PaymentMode)
             billingAdress=ClientAddress.objects.get(ClientId=payment.ClientId)
+            billingAdressSerializer=ClientAddressSerializer(billingAdress)
+            billingaddressdata=billingAdressSerializer.data
+            try:
+                country=Country.objects.get(CountryId=billingAdress.Country)
+                countrySerializer=CountrySerializer(country)
+                billingaddressdata['CountryName']=countrySerializer.data['Country']
+            except:
+                billingaddressdata['CountryName']=""
+            try:
+                state=State.objects.get(StateId=billingAdress.State)
+                stateSerializer=StateSerializer(state)
+                billingaddressdata['StateName']=stateSerializer.data['State']
+            except:
+                billingaddressdata['StateName']=""
+
             client=Client.objects.get(ClientId=payment.ClientId)
 
             
@@ -1188,7 +1203,7 @@ def ViewPaymentPDF(request, PaymentReceivedId=""):
             context = {
                 'payment': payment,
                 'paymentMode':paymentMode,
-                'billingAdress':billingAdress,
+                'billingaddressdata':billingaddressdata,
                 'client':client
                 
             }

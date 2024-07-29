@@ -15,6 +15,7 @@ class Company(models.Model):
     Website=models.TextField(blank=True, null=True)
     RegisteredOn=models.CharField(max_length=150, blank=True, null=True)
     Address=models.TextField(blank=True, null=True)
+    UserGroup=models.CharField(blank=True, null=True, max_length=300)
 
 
 class CompanyDocuments(models.Model):

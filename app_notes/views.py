@@ -19,6 +19,7 @@ from app_staff.models import Staff
 from app_staff.serializers import StaffSerializer
 from rest_framework import generics
 from django.db.models import Q
+from datetime import datetime, timedelta, timezone
 # Create your views here.
 
 
@@ -137,7 +138,12 @@ class MeetingNotesApiByCompanyId(generics.ListAPIView):
             self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
         if filterData['CompanyId']:
             self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
-
+        if filterData['CreatedBy']:
+            self.queryset = self.queryset.filter(CreatedBy=filterData['CreatedBy'])
+        if filterData['MeetingType']:
+            self.queryset = self.queryset.filter(MeetingType=filterData['MeetingType'])
+        if filterData['ParticipatedBy']:
+            self.queryset = self.queryset.filter(TeamParticipants__icontains=filterData['ParticipatedBy'])
         if filterData['StartDate'] and  filterData['EndDate']:
             start_date = timezone.datetime.strptime(filterData['StartDate'], '%Y-%m-%d').date()
             end_date = (timezone.datetime.strptime(filterData['EndDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
@@ -175,3 +181,31 @@ class MeetingNotesApiByCompanyId(generics.ListAPIView):
                 data.append(row)
 
             return self.get_paginated_response(data)
+        
+
+from datetime import datetime
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all MeetingNotes Details",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def UpdateCreatedDateinMeetingNotes(request):
+    try:
+        if request.method == 'GET':
+            meetingNotes = MeetingNotes.objects.all().order_by('-SortId')
+            meetingNotesSerializer = MeetingNotesSerializer(
+                    meetingNotes, many=True)
+            for row in meetingNotes:
+                parsed_datetime=datetime.strptime(row.StartTime, '%Y-%m-%dT%H:%M')
+                
+                formatted_datetime = parsed_datetime.strftime('%Y-%m-%dT%H:%M:%S%z')
+               
+                
+                row.CreatedDate=formatted_datetime
+                row.save()
+               
+                
+            return JsonResponse("date changed", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)

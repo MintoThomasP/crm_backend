@@ -87,7 +87,18 @@ def CategoryApiById(request, CategoryId=""):
         return JsonResponse("Invalid", safe=False)
 
 
-
+def get_subcategoriesbysectiontype(category_id):
+    subcategories = Category.objects.filter(RefId=category_id, ActiveStatus=1).order_by('-SortId')
+    subcategory_serializer = CategorySerializer(subcategories, many=True)
+    subcategory_data = []
+    for subcategory in subcategory_serializer.data:
+        children = get_subcategoriesbysectiontype(subcategory['CategoryId'])
+        if children:
+            subcategory['Subcategory'] = children
+        else:
+            subcategory['Subcategory']=[]
+        subcategory_data.append(subcategory)
+    return subcategory_data
 
 @csrf_exempt
 @api_view(['POST'])
@@ -107,6 +118,15 @@ def GetAllCategoryBySectionTypeApi(request):
                     row['CategoryTypeName']=categoryTypeSerializer.data['CategoryType']
                 except:
                     row['CategoryTypeName']=""
+                subcategories = get_subcategoriesbysectiontype(row['CategoryId'])
+                if subcategories:
+                    row['Subcategory'] = subcategories
+                else:
+                   
+                    row['Subcategory'] = []
+                # report_data = get_report_data(row['CategoryId'])
+                # if report_data:
+                #     row['Report'] = report_data
                 categoryData.append(row)
             return JsonResponse(categorySerializer.data, safe=False)
         else:

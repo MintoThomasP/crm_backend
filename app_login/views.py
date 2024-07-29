@@ -2,6 +2,8 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
+from app_company.models import Company
+from app_company.serializers import CompanySerializer
 from app_default.models import UserType
 from app_default.serializers import UserTypeSerializer
 from app_default.views import retry
@@ -96,9 +98,11 @@ def loginApi(request):
                 userType_serializer = UserTypeSerializer(userType)
                 status=""
                 message=""
-                if userType_serializer.data['UserType'] == 'Staff' or userType_serializer.data['UserType'] == 'Admin':
+                print(userType_serializer.data['UserType'])
+                if userType_serializer.data['UserType'] == 'Team' or userType_serializer.data['UserType'] == 'Admin' or userType_serializer.data['UserType'] == 'Super Admin':
                     staff = Staff.objects.get(
                         StaffId=login_serializer.data['UserId'])
+                   
                     staff_serializer = StaffSerializer(staff)
                     # if staff_serializer.data['Status'] == -1:
                     #     status="FAILED"
@@ -107,6 +111,18 @@ def loginApi(request):
                     status="SUCCESS"
                     message='Successfully logged in'
                     UserData = staff_serializer.data
+                elif userType_serializer.data['UserType'] == 'Company':
+                    company = Company.objects.get(
+                        CompanyId=login_serializer.data['UserId'])
+                    
+                    company_serializer = CompanySerializer(company)
+                    # if staff_serializer.data['Status'] == -1:
+                    #     status="FAILED"
+                    #     message='Your account has been blocked. Please contact administrator.'
+                    # else:
+                    status="SUCCESS"
+                    message='Successfully logged in'
+                    UserData = company_serializer.data
                 else:
                     status="SUCCESS"
                     message='Successfully logged in'

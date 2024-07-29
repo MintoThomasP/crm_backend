@@ -11,4 +11,5 @@ urlpatterns = [
 
     path('MeetingNotesApiByCompanyId/', views.MeetingNotesApiByCompanyId.as_view()),
 
+ path('UpdateCreatedDateinMeetingNotes/', views.UpdateCreatedDateinMeetingNotes),
 ]
