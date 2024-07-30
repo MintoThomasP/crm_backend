@@ -126,14 +126,11 @@
         </tr>
         {%for col in row.Tasks%}
             <tr>
-                
-                <!-- <td rowspan="{{ col.timing|length }}">{{forloop.counter}}</td> -->
-                {{col.timing|length}}
                 {%if col.timing|length == 1 %}
                 <td rowspan="{{ col.timing|length}}">
                     {%endif%}
                     {%if col.timing|length > 1 %}
-                <td rowspan="{{ col.timing|length | add:1}}">
+                <td rowspan="{{ col.timing|length}}">
                     {%endif%}
                     {%if col.TaskType == 'Ticket'%}
                     {{col.TaskType}} -
@@ -145,23 +142,28 @@
                 <td>{{col.StartDate}}</td>
                 <td>{{col.EndDate}}</td>
                 <td>{{col.Duration}}</td>
-                {{col.timing|length}}
+                
                 {%if col.timing|length == 1 %}
-                <td rowspan="{{ col.timing|length}}">
+                <td rowspan="{{col.timing|length}}">
                     {%else%}
-                <td rowspan="{{ col.timing|length| add:1}}">
+                <td rowspan="{{ col.timing|length}}">
                     {%endif%}
                     
                     {{col.StatusName}}</td>
             </tr>
             {%if col.timing|length > 1 %}
-            {%for time in col.timing%}
+            {%for time in col.timing %}
+            
+            {%if not forloop.last %}
+            
             <tr>
                
                 <td>{{time.StartDate}}</td>
                 <td>{{time.EndDate}}</td>
                 <td>{{time.Duration}}</td>
             </tr>
+            
+            {%endif%}
             {%endfor%}
             
             {%endif%}
