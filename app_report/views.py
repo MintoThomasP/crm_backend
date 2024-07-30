@@ -502,9 +502,6 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
 
 
 
-    # pdf = generate_pdf_with_watermark('dailyreport.html', context)
-    # invoice_file_name = f'{StaffName}.pdf'
-    # return HttpResponse(pdf.content, content_type='application/pdf')
 
 
 

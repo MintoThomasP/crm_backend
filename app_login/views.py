@@ -98,7 +98,7 @@ def loginApi(request):
                 userType_serializer = UserTypeSerializer(userType)
                 status=""
                 message=""
-                print(userType_serializer.data['UserType'])
+                
                 if userType_serializer.data['UserType'] == 'Team' or userType_serializer.data['UserType'] == 'Admin' or userType_serializer.data['UserType'] == 'Super Admin':
                     staff = Staff.objects.get(
                         StaffId=login_serializer.data['UserId'])
@@ -320,9 +320,10 @@ def loginByTokenApi(request):
                 userType_serializer = UserTypeSerializer(userType)
                 status=""
                 message=""
-                if userType_serializer.data['UserType'] == 'Staff' or userType_serializer.data['UserType'] == 'Admin':
+                if userType_serializer.data['UserType'] == 'Team' or userType_serializer.data['UserType'] == 'Admin' or userType_serializer.data['UserType'] == 'Super Admin':
                     staff = Staff.objects.get(
                         StaffId=login_serializer.data['UserId'])
+                   
                     staff_serializer = StaffSerializer(staff)
                     # if staff_serializer.data['Status'] == -1:
                     #     status="FAILED"
@@ -331,6 +332,18 @@ def loginByTokenApi(request):
                     status="SUCCESS"
                     message='Successfully logged in'
                     UserData = staff_serializer.data
+                elif userType_serializer.data['UserType'] == 'Company':
+                    company = Company.objects.get(
+                        CompanyId=login_serializer.data['UserId'])
+                    
+                    company_serializer = CompanySerializer(company)
+                    # if staff_serializer.data['Status'] == -1:
+                    #     status="FAILED"
+                    #     message='Your account has been blocked. Please contact administrator.'
+                    # else:
+                    status="SUCCESS"
+                    message='Successfully logged in'
+                    UserData = company_serializer.data
                 else:
                     status="SUCCESS"
                     message='Successfully logged in'
