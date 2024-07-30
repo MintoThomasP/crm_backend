@@ -311,7 +311,7 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
         "%Y-%m-%dT%H:%M",
         "%Y-%m-%dT%H:%M:%S%z"
     ]
-
+ 
     for row in projectTaskSerializer.data:
         try:
             taskStatus = TaskStatus.objects.get(StatusId=row['Status'])
@@ -319,31 +319,31 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
             row['StatusName'] = taskStatusSerializer.data['Status']
         except TaskStatus.DoesNotExist:
             row['StatusName'] = ""
-
+ 
         try:
             project = Project.objects.get(ProjectId=row['ProjectId'])
             projectSerializer = ProjectSerializer(project)
             row['ProjectName'] = projectSerializer.data['ProjectName']
         except Project.DoesNotExist:
             row['ProjectName'] = ""
-
+ 
         try:
             assigned_staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
             staffSerializer = StaffSerializer(assigned_staff)
             row['StaffName'] = staffSerializer.data['StaffName']
         except Staff.DoesNotExist:
             row['StaffName'] = ""
-        
-
+       
+ 
         taskData.append(row)
-
+ 
     response_data = []
     total_work_time = 0
-    
-
+   
+ 
     try:
         login_histories = LoginHistory.objects.filter(UserId=StaffId).order_by('SortId')
-
+ 
         for login_history in login_histories:
             login_time = ""
             logout_time = ""
@@ -355,7 +355,7 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
                         if login_time_dt and login_time_dt.date() == current_date:
                             login_time = login_history.LoginTime
                             logout_time = login_history.LogoutTime if login_history.LogoutTime else ""
-                            
+                           
                             if login_time:
                                 login_details = {
                                     "LoginTime": login_time_dt.strftime('%B %d, %Y, %I:%M:%S %p'),
@@ -363,21 +363,21 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
                                     "Tasks": [],
                                     "TotalWorkTime": 0  
                                 }
-
-                                total_login_work_time = 0 
+ 
+                                total_login_work_time = 0
                                
                                 for task in taskData:
                                     task_timings = ProjectTaskTiming.objects.filter(
                                         ProjectTaskId=task['ProjectTaskId'],
-                                        __range=(login_time, logout_time),
+                                        StartDate__range=(login_time, logout_time),
                                         EndDate__range=(login_time, logout_time)
                                     ).order_by('-SortId')
                                  
-
-                                    
-
+ 
+                                   
+ 
                                     task_timing_serializer = ProjectTaskTimingSerializer(task_timings, many=True)
-
+ 
                                     timing_data = []
                                     isFirstData=True
                                     for timing in task_timing_serializer.data:
@@ -390,7 +390,7 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
                                             except ValueError:
                                                 continue
                                        
-                                            
+                                           
                                         if start_date and start_date.date() == current_date:
                                            
                                             try:
@@ -406,23 +406,23 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
                                             task['StartDate']=timing['StartDate']
                                             task['EndDate']=timing['EndDate']
                                             task['Duration']=timing['Duration']
-
+ 
                                             timing_data.append(timing)
                                            
                                     if timing_data:
                                         task['timing'] = timing_data
                                         login_details['Tasks'].append(task)
-
+ 
                                 login_details['TotalWorkTime'] = total_login_work_time
                                 total_work_time += total_login_work_time
                                 response_data.append(login_details)
                                 break
                 except ValueError:
                     continue
-
+ 
     except LoginHistory.DoesNotExist:
         pass
-
+ 
     PendingTask = ProjectTask.objects.filter(Q(Status='1')| Q(Status='10') | Q(Status='2'),Q(TaskType='Task')|Q(TaskType='Ticket'), TaskAssignedTo=StaffId,)
     PendingTaskSerializer = ProjectTaskSerializer(PendingTask, many=True)
     pendingDetails = []
@@ -435,7 +435,7 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
                 col['StatusName'] = col['StatusName'] + " - Not Verified"
         except TaskStatus.DoesNotExist:
             col['StatusName'] = ""
-
+ 
         try:
             project = Project.objects.get(ProjectId=col['ProjectId'])
             projectSerializer = ProjectSerializer(project)
@@ -453,49 +453,49 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
                 continue
         else:
            
-            
+           
             scheduled_deadline = None
-
-
+ 
+ 
         if scheduled_deadline:
             print(current_date)
             print(scheduled_deadline)
             if col['Status'] == '10':
                 col['StatusName'] = "Pause"
-
+ 
             elif current_datetime < scheduled_deadline:
                 col['StatusName'] = "Incoming"
-            
+           
             elif current_datetime > scheduled_deadline:
                 col['StatusName'] = "Due"
-
+ 
         pendingDetails.append(col)
     total_duration_hours = total_work_time // 60
     total_duration_remaining_minutes = total_work_time % 60
     total_duration = f"{total_duration_hours}:{total_duration_remaining_minutes}"
-
-
+ 
+ 
     context = {
         "StaffName": StaffName,
         "response_data": response_data,
         "current_date": current_date,
         "pendingDetails": pendingDetails,
-        "total_work_time": total_duration, 
+        "total_work_time": total_duration,
         "totalPoint":round(totalPoint,2),
         'pagesize':'A4',
     }
     # return JsonResponse(context,safe=False)
     pdf = render_to_pdf('dailyreport.html', context)
-    
-    
+   
+   
     watermark_pdf = create_watermark("CRM")
-
-    
+ 
+   
     input_pdf = PdfReader(BytesIO(pdf.content))
-
-    
+ 
+   
     output_pdf_stream = add_watermark(input_pdf, watermark_pdf)
-
+ 
    
     response = HttpResponse(output_pdf_stream.read(), content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename={context["StaffName"]}.pdf'
@@ -901,137 +901,29 @@ def getYTD(ClientId="",ReportType="",year="",month=""):
 
 
 
-
 @csrf_exempt
 @api_view(['GET'])
 def StaffTaskReportNasedOnDateinPDFformat(request, StaffId="", StartDate="", EndDate=""):
-    current_datetime = timezone.now()
     staff = Staff.objects.get(StaffId=StaffId)
     StaffName = staff.StaffName
-    totalPoint = 0.00
-    projectTasks = ProjectTask.objects.filter(TaskAssignedTo=StaffId)
-    projectTaskSerializer = ProjectTaskSerializer(projectTasks, many=True)
-    taskData = []
-    for row in projectTaskSerializer.data:
-        try:
-            taskStatus = TaskStatus.objects.get(StatusId=row['Status'])
-            taskStatusSerializer = TaskStatusSerializer(taskStatus)
-            row['StatusName'] = taskStatusSerializer.data['Status']
-        except TaskStatus.DoesNotExist:
-            row['StatusName'] = ""
-
-        try:
-            project = Project.objects.get(ProjectId=row['ProjectId'])
-            projectSerializer = ProjectSerializer(project)
-            row['ProjectName'] = projectSerializer.data['ProjectName']
-        except Project.DoesNotExist:
-            row['ProjectName'] = ""
-
-        try:
-            assigned_staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
-            staffSerializer = StaffSerializer(assigned_staff)
-            row['StaffName'] = staffSerializer.data['StaffName']
-        except Staff.DoesNotExist:
-            row['StaffName'] = ""
-
-        taskData.append(row)
-
     start_dt = timezone.datetime.strptime(StartDate, '%Y-%m-%d').date()
     end_dt = (timezone.datetime.strptime(EndDate, '%Y-%m-%d') + timezone.timedelta(days=1)).date()
-
     delta = timedelta(days=1)
     dates = []
     while start_dt <= end_dt:
         dates.append(start_dt.isoformat())
         start_dt += delta
-
-    response_data = []
-    total_work_time = 0
+    print(dates)
+    ResponseData=[]
     for date in dates:
-        try:
-            login_histories = LoginHistory.objects.filter(UserId=StaffId).order_by('SortId')
+       
+        loginHistory=LoginHistory.objects.filter(UserId=StaffId,LoginTime__startswith=date)
+        print(loginHistory.query)
+        loginHistorySerializer=LoginHistorySerializer(loginHistory,many=True)
+        
+    
 
-            for login_history in login_histories:
-                login_time = ""
-                logout_time = ""
-                try:
-                    if login_history.LoginTime and login_history.LogoutTime:
-                        login_time_dt = datetime.strptime(login_history.LoginTime, '%Y-%m-%dT%H:%M:%S%z')
-                        logout_time_dt = datetime.strptime(login_history.LogoutTime, '%Y-%m-%dT%H:%M:%S%z')
-                       
-                        if login_time_dt and login_time_dt.date() == date:
+ 
 
-                            print(login_time_dt.date())
-                            print("date",date)
-                            login_time = login_history.LoginTime
-                            logout_time = login_history.LogoutTime if login_history.LogoutTime else ""
-                            
-                            if login_time:
-                                login_details = {
-                                    "LoginTime": login_time_dt.strftime('%B %d, %Y, %I:%M:%S %p'),
-                                    "LogoutTime": logout_time_dt.strftime('%B %d, %Y, %I:%M:%S %p'),
-                                    "Tasks": [],
-                                    "TotalWorkTime": 0  
-                                }
-
-                                total_login_work_time = 0 
-                                
-                                task_timings_list = []
-                                
-                                for task in taskData:
-                                    task_timings = ProjectTaskTiming.objects.filter(
-                                        ProjectTaskId=task['ProjectTaskId'],
-                                        StartDate__range=(login_time, logout_time),
-                                        EndDate__range=(login_time, logout_time)
-                                    ).order_by('-SortId')
-
-                                    task_timing_serializer = ProjectTaskTimingSerializer(task_timings, many=True)
-
-                                    timing_data = []
-                                    isFirstData = True
-                                    for timing in task_timing_serializer.data:
-                                        start_date = None
-                                        try:
-                                            start_date = datetime.strptime(timing['StartDate'], '%Y-%m-%dT%H:%M:%S%z')
-                                            end_date = datetime.strptime(timing['EndDate'], '%Y-%m-%dT%H:%M:%S%z')
-                                            break
-                                        except ValueError:
-                                            continue
-                                        
-                                    if start_date and start_date.date() == date:
-                                        try:
-                                            hours, minutes = map(int, timing['Duration'].split(':'))
-                                            total_duration_minutes = hours * 60 + minutes
-                                            total_login_work_time += total_duration_minutes
-                                        except:
-                                            pass
-                                        timing['StartDate'] = start_date.strftime('%B %d, %Y, %I:%M:%S %p')
-                                        timing['EndDate'] = end_date.strftime('%B %d, %Y, %I:%M:%S %p')
-                                        totalPoint += float(task['CompletionPoint'])
-                                        if isFirstData:
-                                            task['StartDate'] = timing['StartDate']
-                                            task['EndDate'] = timing['EndDate']
-                                            task['Duration'] = timing['Duration']
-
-                                            timing_data.append(timing)
-                                            
-                                    if timing_data:
-                                        task['timing'] = timing_data
-                                        task_timings_list.append(task)
-
-                                task_timings_list.sort(key=lambda x: datetime.strptime(x['StartDate'], '%B %d, %Y, %I:%M:%S %p'))
-                                
-                                for sorted_task in task_timings_list:
-                                    login_details['Tasks'].append(sorted_task)
-
-                                login_details['TotalWorkTime'] = total_login_work_time
-                                total_work_time += total_login_work_time
-                                response_data.append(login_details)
-                                break
-                except ValueError:
-                    continue
-
-        except LoginHistory.DoesNotExist:
-            pass
-
-    return JsonResponse(response_data,safe=False)
+   
+    return JsonResponse(loginHistorySerializer.data,safe=False)
