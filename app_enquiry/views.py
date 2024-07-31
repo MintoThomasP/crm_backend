@@ -4,8 +4,8 @@ from django.http.response import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
-from app_default.models import EnquiryType
-from app_default.serializers import EnquiryTypeSerializer
+from app_default.models import EnquiryStatus, EnquiryType, FollowUpStatus
+from app_default.serializers import EnquiryStatusSerializer, EnquiryTypeSerializer, FollowUpStatusSerializer
 from app_default.views import retry
 from app_enquiry.models import Enquiry, FollowUp
 from app_enquiry.serailizers import EnquirySerializer, FollowUpSerializer
@@ -17,9 +17,6 @@ from app_staff.serializers import StaffSerializer
 # Create your views here.
 
 
-
-
-
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=EnquirySerializer)
 @swagger_auto_schema(method='PUT', request_body=EnquirySerializer)
@@ -29,7 +26,7 @@ from app_staff.serializers import StaffSerializer
 def EnquiryApi(request):
     try:
         if request.method == 'GET':
-            enquiry = Enquiry.objects.all().order_by('-SortId')
+            enquiry = Enquiry.objects.all()
             enquirySerializer = EnquirySerializer(
                     enquiry, many=True)
             return JsonResponse(enquirySerializer.data, safe=False)
@@ -98,10 +95,20 @@ class EnquiryApiByCompanyId(generics.ListAPIView):
             data = []
 
             for row in serializer.data:
-                enquiryType = EnquiryType.objects.get(EnquiryTypeId=row['EnquiryType'])
-                enquiryType_serializer = EnquiryTypeSerializer(
-                enquiryType)
-                row['EnquiryTypeName']=enquiryType_serializer.data
+                try:
+                    enquiryType = EnquiryType.objects.get(EnquiryTypeId=row['EnquiryType'])
+                    enquiryType_serializer = EnquiryTypeSerializer(
+                    enquiryType)
+                    row['EnquiryTypeName']=enquiryType_serializer.data['EnquiryType']
+                except:
+                    row['EnquiryTypeName']=""
+                try:
+                    enquiryStatus = EnquiryStatus.objects.get(StatusId=row['Status'])
+                    enquiryStatus_serializer = EnquiryStatusSerializer(
+                    enquiryStatus)
+                    row['EnquiryStatusName']=enquiryStatus_serializer.data['Status']
+                except:
+                    row['EnquiryStatusName']=""
                 data.append(row)
             return self.get_paginated_response(data)
 
@@ -152,6 +159,7 @@ def CURDFollowUpApiById(request, FollowUpId=""):
             followUp = FollowUp.objects.get(FollowUpId=FollowUpId)
             followUpSerializer = FollowUpSerializer(
                 followUp)
+         
             return JsonResponse(followUpSerializer.data, safe=False)    
         elif request.method == 'DELETE':
              followUp = FollowUp.objects.get(FollowUpId=FollowUpId)
@@ -186,6 +194,12 @@ def CURDFollowUpApiByEnquiryId(request, EnquiryId=""):
                     row['UserName']=staffSerializer.data['StaffName']
                 except:
                     row['UserName']=""
+                try:
+                    status=FollowUpStatus.objects.get(StatusId=row['Status'])
+                    statusSerializer=FollowUpStatusSerializer(status)
+                    row['StatusName']=statusSerializer.data['Status']
+                except:
+                    row['StatusName']
                 followUpData.append(row)
             return JsonResponse(followUpData, safe=False)    
        

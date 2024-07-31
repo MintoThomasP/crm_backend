@@ -4,8 +4,8 @@ from django.views.decorators.csrf import csrf_exempt
 import requests
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
-from app_default.models import CategoryType, CompanyDocumentType, Country, Currency, DepositTo, Designation, EnquiryType, FollowUpStatus, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, ReportType, SectionType, StaffStatus, State, TaskStatus, UserGroup, UserType
-from app_default.serializers import CategoryTypeSerializer, CompanyDocumentTypeSerializer, CountrySerializer, CurrencySerializer, DepositToSerializer, DesignationSerializer, EnquiryTypeSerializer, FollowUpStatusSerializer,InvoiceStatusSerializer, LeaveStatusSerializer, LeaveTypeSerializer, MeetingTypeSerializer, PaymentModeSerializer, ReportTypeSerializer, SectionTypeSerializer, StaffStatusSerializer, StateSerializer, TaskStatusSerializer, UserGroupSerializer, UserTypeSerializer
+from app_default.models import CategoryType, CompanyDocumentType, Country, Currency, DepositTo, Designation, EnquiryStatus, EnquiryType, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, ReportType, SectionType, StaffStatus, State, TaskStatus, UserGroup, UserType
+from app_default.serializers import CategoryTypeSerializer, CompanyDocumentTypeSerializer, CountrySerializer, CurrencySerializer, DepositToSerializer, DesignationSerializer, EnquiryStatusSerializer, EnquiryTypeSerializer, FollowUpStatusSerializer, FollowUpTypeSerializer,InvoiceStatusSerializer, LeaveStatusSerializer, LeaveTypeSerializer, MeetingTypeSerializer, PaymentModeSerializer, ReportTypeSerializer, SectionTypeSerializer, StaffStatusSerializer, StateSerializer, TaskStatusSerializer, UserGroupSerializer, UserTypeSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 import time
@@ -636,6 +636,36 @@ def FollowUpStatusApi(request):
             followUpStatus = FollowUpStatus.objects.all()
             followUpStatusSerializer = FollowUpStatusSerializer(followUpStatus, many=True)
             return JsonResponse(followUpStatusSerializer.data, safe=False)    
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("Invalid", safe=False)
+    
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all FollowUpType",)
+@api_view(['GET'])
+def FollowUpTypeApi(request):
+    try:
+        if request.method == 'GET':
+            followUpType = FollowUpType.objects.all()
+            followUpTypeSerializer = FollowUpTypeSerializer(followUpType, many=True)
+            return JsonResponse(followUpTypeSerializer.data, safe=False)    
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("Invalid", safe=False)
+    
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all VanDeliveryEnquiryStatus",)
+@api_view(['GET'])
+def EnquiryStatusApi(request):
+    try:
+        if request.method == 'GET': 
+            enquiryStatus = EnquiryStatus.objects.all()
+            enquiryStatusSerializer = EnquiryStatusSerializer(enquiryStatus, many=True)
+            return JsonResponse(enquiryStatusSerializer.data, safe=False)        
         else:
             return JsonResponse("", safe=False)
     except:

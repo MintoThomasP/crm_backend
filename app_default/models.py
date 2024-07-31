@@ -122,11 +122,17 @@ class MeetingType(models.Model):
     MeetingTypeId=models.AutoField(primary_key=True, editable=False)
     MeetingType=models.CharField(max_length=300, blank=True, null=True)
 
+class EnquiryStatus(models.Model):
+    StatusId = models.AutoField(primary_key=True, editable=False)
+    Status = models.CharField(max_length=300, blank=True, null=True)
 
 class EnquiryType(models.Model):
     EnquiryTypeId=models.AutoField(primary_key=True, editable=False)
     EnquiryType=models.CharField(max_length=300, blank=True, null=True)
 
+class FollowUpType(models.Model):
+    FollowUpTypeId=models.AutoField(primary_key=True, editable=False)
+    FollowUpType=models.CharField(max_length=300, blank=True, null=True)
 
 class FollowUpStatus(models.Model):
     StatusId = models.AutoField(primary_key=True, editable=False)

@@ -639,7 +639,7 @@ def FinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""):
     return JsonResponse(context,safe=False)
     
 def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType="",NoOfMonths="0"):
-    # try :
+    try :
         if request.method == 'GET':
             expectField=['OrderNo', 'Level','RefId','CategoryId']
             start_date = startdate.split('-')
@@ -758,7 +758,7 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
                         category)
                     if categorySerializer.data['UsageType']=="Base Value":
                         isBaseValue=True
-                    elif (isFirst and len(BaseValue.items()))or(isFirst and ReportType=='2'):
+                    elif (isFirst and len(BaseValue.items())):
                         isBaseValue=False
                         isFirst=False
                         Categorydata = {
@@ -770,7 +770,9 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
                             **{k: v for k, v in BaseValue.items() if k not in expectField and k!='0'}  
                         }
                         responsedata.append(Categorydata)
-                    
+                    elif ReportType=='2':
+                        isBaseValue=False
+                        isFirst=False
                     cell_length=len(data.items())-1
                     datcount+=1
                     Categorydata = {
@@ -875,8 +877,8 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
         
             return "NODATA"
         # print(startdate, enddate,ClientId ,ReportType)
-    # except:
-    #     return "NODATA"
+    except:
+        return "NODATA"
 
 def getYTD(ClientId="",ReportType="",year="",month=""):
     if year=="":
