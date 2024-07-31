@@ -43,5 +43,7 @@ urlpatterns = [
     path('CategoryTypeApi/', views.CategoryTypeApi),
     path('ReportTypeApi/', views.ReportTypeApi),
     path('MeetingTypeApi/', views.MeetingTypeApi),
+    path('EnquiryTypeApi/', views.EnquiryTypeApi),
+    path('FollowUpStatusApi/', views.FollowUpStatusApi),
 
 ]

@@ -799,79 +799,81 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
                             LevelAmount[LevelIndex][k]=int(LevelAmount[LevelIndex][k])+int(amount)
                         
                 responsedata.append(Categorydata)
-            # if len(responsedata):
-            Categorydata = {
-                'OrderNo': len(responsedata)+1, 
-                '0': "Total",
-                'Level': 1,
-                'RefId': "",
-                'CategoryId':  "TOTALID",
-                **{k: v for k, v in LevelAmount[LevelIndex].items() if k not in expectField and k!='0'}  
-            }
-            responsedata.append(Categorydata)
+            if len(LevelAmount):
+                Categorydata = {
+                    'OrderNo': len(responsedata)+1, 
+                    '0': "Total",
+                    'Level': 1,
+                    'RefId': "",
+                    'CategoryId':  "TOTALID",
+                    **{k: v for k, v in LevelAmount[LevelIndex].items() if k not in expectField and k!='0'}  
+                }
+                responsedata.append(Categorydata)
             responsedata = sorted(responsedata, key=lambda x: x['OrderNo'])
             # data = []
             data = []
+            if len(responsedata):
 
-            for cat_data in responsedata:
-                amount = 0.00
-                key = ""
-                item = {}
-                
-                for k, v in cat_data.items():
-                    item[k] = ""
+                for cat_data in responsedata:
+                    amount = 0.00
+                    key = ""
+                    item = {}
+                    
+                    for k, v in cat_data.items():
+                        item[k] = ""
 
-                    # Skip specific keys
-                    if k in expectField:
-                        item[k] = v
-                        continue
+                        # Skip specific keys
+                        if k in expectField:
+                            item[k] = v
+                            continue
 
-                    # Identify amount and key
-                    if v != 'null' and v and v is not None:
-                        amount = v
-                        key = k
-                        item[k] = v
+                        # Identify amount and key
+                        if v != 'null' and v and v is not None:
+                            amount = v
+                            key = k
+                            item[k] = v
 
-                    # Calculate percentage for even keys 2, 4, 6
-                    elif int(k) % 2 == 0 and key and ReportType=='1':
-                        base_value = BaseValue.get(key, None)
-                        if base_value and base_value != 'null' and base_value is not None:
-                            try:
-                                base_value = float(base_value)
-                                amount = float(amount)
-                                v = round((amount / base_value) * 100,2)
-                            except ValueError:
+                        # Calculate percentage for even keys 2, 4, 6
+                        elif int(k) % 2 == 0 and key and ReportType=='1':
+                            base_value = BaseValue.get(key, None)
+                            if base_value and base_value != 'null' and base_value is not None:
+                                try:
+                                    base_value = float(base_value)
+                                    amount = float(amount)
+                                    v = round((amount / base_value) * 100,2)
+                                except ValueError:
+                                    v = 0.00
+                            else:
                                 v = 0.00
-                        else:
-                            v = 0.00
-                        if cat_data['Level']==1 :
-                            if v!=0.0:
+                            if cat_data['Level']==1 :
+                                if v!=0.0:
+                                    cat_data[k] = f"{v}%"
+                                    item[k] = cat_data[k]
+                            else:
                                 cat_data[k] = f"{v}%"
                                 item[k] = cat_data[k]
+
+                            amount = 0.00
+
+                        # Default assignment for other keys
                         else:
-                            cat_data[k] = f"{v}%"
-                            item[k] = cat_data[k]
-
-                        amount = 0.00
-
-                    # Default assignment for other keys
-                    else:
-                        item[k] = v
-                
-                data.append(item)
+                            item[k] = v
+                    
+                    data.append(item)
 
 
-            context = {
-                "formatted_data": formatted_data[0],
-                "responsedata": responsedata,
-                "cell_length":cell_length,
-                "BaseValue":BaseValue,
-                "expectField":expectField,
-                "NoOfMonths":int(NoOfMonths)
-,
-            }
-            return context
+                context = {
+                    "formatted_data": formatted_data[0],
+                    "responsedata": responsedata,
+                    "cell_length":cell_length,
+                    "BaseValue":BaseValue,
+                    "expectField":expectField,
+                    "NoOfMonths":int(NoOfMonths)
+    ,
+                }
+                return context
         
+            return "NODATA"
         # print(startdate, enddate,ClientId ,ReportType)
     # except:
     #     return "NODATA"
@@ -903,21 +905,20 @@ def getYTD(ClientId="",ReportType="",year="",month=""):
 
 @csrf_exempt
 @api_view(['GET'])
-def StaffTaskReportNasedOnDateinPDFformat(request, StaffId="", StartDate="", EndDate=""):
+def StaffTaskReportBasedOnDateinPDFformat(request, StaffId="", StartDate="", EndDate=""):
     staff = Staff.objects.get(StaffId=StaffId)
     StaffName = staff.StaffName
-    start_dt = timezone.datetime.strptime(StartDate, '%Y-%m-%d').date()
-    end_dt = (timezone.datetime.strptime(EndDate, '%Y-%m-%d') + timezone.timedelta(days=1)).date()
+    start_dt = datetime.strptime(StartDate, '%Y-%m-%d').date()
+    end_dt = datetime.strptime(EndDate, '%Y-%m-%d').date()
     delta = timedelta(days=1)
     dates = []
     while start_dt <= end_dt:
-        dates.append(start_dt.isoformat())
+        dates.append(start_dt.strftime("%Y-%m-%d"))
         start_dt += delta
     print(dates)
     ResponseData=[]
     for date in dates:
-       
-        loginHistory=LoginHistory.objects.filter(UserId=StaffId,LoginTime__startswith=date)
+        loginHistory=LoginHistory.objects.filter(UserId=StaffId,LoginTime__icontains=date)
         print(loginHistory.query)
         loginHistorySerializer=LoginHistorySerializer(loginHistory,many=True)
         
