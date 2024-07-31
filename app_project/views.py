@@ -200,7 +200,7 @@ def ProjectByCompanyId(request, CompanyId=""):
 
 
 class ProjectTaskPagination(generics.ListAPIView):
-    queryset =ProjectTask.objects.filter(Q(RefId__isnull=True) | Q(RefId=""),TaskType='Subtask').order_by('-SortId')
+    queryset =ProjectTask.objects.filter(Q(RefId__isnull=True) | Q(RefId=""),TaskType='Task').order_by('-SortId')
     pagination_class = CustomPageNumberPagination
     serializer_class = ProjectTaskSerializer 
     def post(self, request, *args, **kwargs):
