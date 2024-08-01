@@ -615,7 +615,7 @@ def ProjectTaskApi(request):
                 projectTask,data=projectTaskData)
             if projectTaskSerializer.is_valid():
                 projectTaskSerializer.save()
-                if projectTaskData['TaskType']!='Subtask':
+                if projectTaskSerializer.data['TaskType']!='Subtask':
                     if projectTaskData['Status']=='7' or  projectTaskData['Status']=='8' or  projectTaskData['Status']=='9' or projectTaskData['Status']==7 or  projectTaskData['Status']==8 or  projectTaskData['Status']==9:
                         projectTaskPoint = ProjectTask.objects.get(
                             ProjectTaskId=projectTaskData['ProjectTaskId'])
