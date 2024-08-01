@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Roboto:wght@100;300;400;500;700;900&display=swap');
+
+        /* html {
+            font-family: 'Roboto', sans-serif;
+            color: rgba(0, 0, 0, 0);
+            font-weight:450;
+        }
+        @media print {
+            html {
+                color: rgba(0, 0, 0, 0);
+                text-shadow: 0 0 0 #000000;
+                font-weight:450;
+               
+            }
+
+            @media print and (-webkit-min-device-pixel-ratio:0) {
+                html {
+                color: #000000;
+                -webkit-print-color-adjust: exact;
+                font-weight:450;
+                
+                }
+            }
+        } */
+        th {
+            font-size: 12px;
+            vertical-align: middle;
+            padding-top: 5px;
+            padding-bottom: 0px;
+        }
+
+        td {
+            font-size: 12px;
+            vertical-align: middle;
+            padding-top: 5px;
+            padding-bottom: 0px;
+
+        }
+
+        h2 {
+            font-size: 25px;
+            margin-bottom: 0px;
+        }
+
+        .head {
+            font-size: 15px;
+            margin-bottom: 0px;
+
+        }
+
+        .sub_table1 {
+            border: 1px solid #131212;
+            border-collapse: collapse;
+            padding: 5px 5px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+
+        }
+
+        .sub_table2 {
+            border: 1px solid #131212;
+            border-collapse: collapse;
+            padding: 5px 5px;
+            margin-top: 0px;
+
+        }
+
+        .thead {
+            vertical-align: middle;
+        }
+    </style>
+</head>
+
+<body>
+
+    <table>
+        <tr>
+            <td style="width:30%"><img src="./static/images/logo.png" alt=""></td>
+            <td style="width:40%"></td>
+            <td style="width:30%"><img src="./static/images/logocubex.png" alt=""></td>
+        </tr>
+    </table>
+    <h2 style="text-align: center;">Report</h2>
+    <table>
+        <tr>
+            <td style="width:30%"></td>
+
+            <td style="width:50%"></td>
+            <td style="width:30%; text-align: right;" class="head"><b>Name:</b> {{StaffName}}</td>
+
+        </tr>
+        <tr>
+            <td style="width:30%"></td>
+
+            <td style="width:50%; text-align: right;"><b>Total work time:</b>{{total_duration}} </td>
+            <td style="width:30%; text-align: right;"><b>Total Points:</b>{{totalPoint}} </td>
+        </tr>
+        
+
+
+    </table>
+    {%for row in sorted_response_data %}
+    <table class="sub_table1">
+        <tr><td style="width:30%" class="head" colspan="5"><b>Date:</b> {{row.Date}}</td></tr>
+        <tr style=" vertical-align: bottom;">
+            <th style="width:30%">Task</th>
+            <th>Start Time</th>
+            <th>End Time</th>
+            <th style="width:8%">Duration</th>
+            <th style="width:15%">Status</th>
+        </tr>
+        {%for login in row.Logins%}
+        <tr>
+            <td><b>Login:</b></td>
+            <td colspan="4">{{login.LoginTime }} </td>
+        </tr>
+        {%for task in login.Tasks%}
+        <tr>
+           
+            <td rowspan="{{ task.Timing|length }}">
+                {% if task.TaskType == 'Ticket' %}
+                    {{ task.TaskType }} -
+                {% endif %}
+                {{ task.Title }}
+            </td>
+            <td>{{ task.Timing.0.StartDate }}</td>
+            <td>{{ task.Timing.0.EndDate }}</td>
+            <td>{{ task.Timing.0.Duration }}</td>
+            
+            <td rowspan="{{ task.Timing|length }}">
+                {{ task.StatusName }}
+            </td>
+        </tr>
+        {% for time in task.Timing %}
+            {% if not forloop.first %}
+                <tr>
+                    <td>{{ time.StartDate }}</td>
+                    <td>{{ time.EndDate }}</td>
+                    <td>{{ time.Duration }}</td>
+                </tr>
+            {% endif %}
+        {% endfor %}
+   
+            
+        {%endfor%}
+        <tr>
+            <td><b>Logout:</b></td>
+            <td colspan="4">{{login.LogoutTime }} </td>
+        </tr>
+{%endfor%}
+        
+</table>
+{%endfor%}
+
+{%if pendingDetails%}
+<p class="head"><b>Pending Tasks as per {{current_datetime}}</b></p>
+    <table class="sub_table2">
+        <tr>
+            <th style="width:5%">SlNo</th>
+            <th style="width:60%">Task</th>
+            <th>Project</th>
+            <th style="width:15%">Status</th>
+        </tr>
+        {%for row in pendingDetails%}
+        <tr>
+            <td>{{forloop.counter}}</td>
+            <td>{{row.Title}}</td>
+            <td>{{row.ProjectName}}</td>
+            <td>{{row.StatusName}}</td>
+
+        </tr>
+        {%endfor%}
+       
+    </table>
+    {%endif%}
+</body>
+
+</html>

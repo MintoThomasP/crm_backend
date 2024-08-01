@@ -4,8 +4,8 @@ from django.http.response import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
-from app_default.models import EnquiryStatus, EnquiryType, FollowUpStatus
-from app_default.serializers import EnquiryStatusSerializer, EnquiryTypeSerializer, FollowUpStatusSerializer
+from app_default.models import EnquiryStatus, EnquiryType, FollowUpStatus, FollowUpType
+from app_default.serializers import EnquiryStatusSerializer, EnquiryTypeSerializer, FollowUpStatusSerializer, FollowUpTypeSerializer
 from app_default.views import retry
 from app_enquiry.models import Enquiry, FollowUp
 from app_enquiry.serailizers import EnquirySerializer, FollowUpSerializer
@@ -199,7 +199,13 @@ def CURDFollowUpApiByEnquiryId(request, EnquiryId=""):
                     statusSerializer=FollowUpStatusSerializer(status)
                     row['StatusName']=statusSerializer.data['Status']
                 except:
-                    row['StatusName']
+                    row['StatusName']=""
+                try:
+                    type=FollowUpType.objects.get(FollowUpTypeId=row['FollowUpType'])
+                    typeSerializer=FollowUpTypeSerializer(type)
+                    row['FollowUpTypeName']=typeSerializer.data['FollowUpType']
+                except:
+                    row['FollowUpTypeName']=""
                 followUpData.append(row)
             return JsonResponse(followUpData, safe=False)    
        

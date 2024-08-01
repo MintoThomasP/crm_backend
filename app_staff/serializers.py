@@ -1,4 +1,4 @@
-from app_staff.models import LeaveApplication, Staff, StaffDocuments, StaffGuardian
+from app_staff.models import LeaveApplication, SalarySlip, Staff, StaffDocuments, StaffGuardian
 from rest_framework import serializers
 
 
@@ -122,5 +122,28 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
 'LeaveType',
 'Status',
 'CompanyId'
+
+)
+        
+
+class SalarySlipSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SalarySlip
+        fields = (
+            'SortId',
+                  'SalarySlip',
+                  'StaffId',
+                  'Year',
+                  'Month',
+                  'BasicPay',
+                  'ConveyanceAllowance',
+                  'MedicalAllowance',
+                  'OtherAllowance',
+                  'AppreciationBonus',
+                  'TotalWorkingDays',
+                  'LOP',
+                  'PaidDays',
+                  'Leave',
+                  'GrossPay'
 
 )

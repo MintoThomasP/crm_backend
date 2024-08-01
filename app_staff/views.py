@@ -13,9 +13,9 @@ from app_default.serializers import DesignationSerializer, LeaveStatusSerializer
 from app_login.serializers import LoginSerializer
 from app_project.views import CustomPageNumberPagination
 from app_report.views import durationCalculation
-from app_staff.models import LeaveApplication, Staff, StaffDocuments, StaffGuardian
+from app_staff.models import LeaveApplication, SalarySlip, Staff, StaffDocuments, StaffGuardian
 import os
-from app_staff.serializers import LeaveApplicationSerializer, SaveStaffSerializer, StaffDocumentsSerializer, StaffGuardianSerializer, StaffSerializer, UpdateStaffSerializer, UploadStaffDocumentsSerializer
+from app_staff.serializers import LeaveApplicationSerializer, SalarySlipSerializer, SaveStaffSerializer, StaffDocumentsSerializer, StaffGuardianSerializer, StaffSerializer, UpdateStaffSerializer, UploadStaffDocumentsSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -771,3 +771,29 @@ class StaffApiByCompanyId(generics.ListAPIView):
                 return self.get_paginated_response(data)
                 
  
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=SalarySlipSerializer)
+@swagger_auto_schema(method='PUT', request_body=SalarySlipSerializer)
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all SalarySlip Details",)
+@api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
+def SalarySlipApi(request,StaffId="",Year="",Month=""):
+    try:
+        if request.method == 'GET':
+            salarySlip = SalarySlip.objects.filter(StaffId=StaffId,Year=Year,Month=Month)
+            salarySlipSerializer = SalarySlipSerializer(
+                    salarySlip)
+            return JsonResponse(salarySlipSerializer.data, safe=False)
+        elif request.method == 'POST':
+            salarySlipData = JSONParser().parse(request)
+            salarySlipSerializer = SalarySlipSerializer(
+                data=salarySlipData)
+            if salarySlipSerializer.is_valid():
+                salarySlipSerializer.save()
+                return JsonResponse(salarySlipSerializer.data['SalarySlipId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+   

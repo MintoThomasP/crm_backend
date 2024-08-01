@@ -12,7 +12,7 @@ urlpatterns = [
 
     path('StaffDailyReport/<str:StaffId>/', views.StaffDailyReportinPDFformat),
 
-    path('StaffTaskReportNasedOnDateinPDFformat/<str:StaffId>/<str:StartDate>/<str:EndDate>/', views.StaffTaskReportBasedOnDateinPDFformat),
+    path('StaffTaskReportBasedOnDateinPDFformat/<str:StaffId>/<str:StartDate>/<str:EndDate>/', views.StaffTaskReportBasedOnDateinPDFformat),
 
     
 
@@ -23,6 +23,7 @@ urlpatterns = [
 
     path('FinanceReport/<str:startdate>/<str:enddate>/<str:ClientId>/<ReportType>', views.FinanceReport),
     path('FinanceReportPDF/<str:startdate>/<str:enddate>/<str:ClientId>/<ReportType>/<NoOfMonths>', views.FinanceReportPDF),
+    path('FinanceReportExcel/<str:startdate>/<str:enddate>/<str:ClientId>/<ReportType>/<NoOfMonths>', views.FinanceReportExcel),
 
     
 #  path('report/', views.report_view, name='report_view'),

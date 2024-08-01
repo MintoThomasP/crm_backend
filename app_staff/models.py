@@ -79,3 +79,25 @@ class LeaveApplication(models.Model):
     LeaveType=models.CharField(blank=True, null=True, max_length=100)
     Status=models.CharField(blank=True, null=True, max_length=100)
     CompanyId=models.CharField(blank=True, null=True, max_length=50)
+
+
+
+
+class SalarySlip(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    SalarySlip = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    StaffId=models.CharField(blank=True, null=True, max_length=50)
+    Year=models.IntegerField()
+    Month=models.IntegerField()
+    BasicPay=models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    ConveyanceAllowance=models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    MedicalAllowance=models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    OtherAllowance=models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    AppreciationBonus=models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    TotalWorkingDays=models.IntegerField()
+    LOP=models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    PaidDays=models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    Leave=models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    GrossPay=models.DecimalField(max_digits=10, decimal_places=2, default=0)
+

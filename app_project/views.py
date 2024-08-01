@@ -615,46 +615,47 @@ def ProjectTaskApi(request):
                 projectTask,data=projectTaskData)
             if projectTaskSerializer.is_valid():
                 projectTaskSerializer.save()
-                if projectTaskData['Status']=='7' or  projectTaskData['Status']=='8' or  projectTaskData['Status']=='9' or projectTaskData['Status']==7 or  projectTaskData['Status']==8 or  projectTaskData['Status']==9:
-                    projectTaskPoint = ProjectTask.objects.get(
-                        ProjectTaskId=projectTaskData['ProjectTaskId'])
-                    projectTaskPoint.CompletionPoint=pointCalculation(projectTaskSerializer.data)
-                    projectTaskPoint.save()
-                if projectTaskSerializer.data['Status']=='3':
-                    login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedBy'])
-                    title="Need verification"
-                    if projectTaskSerializer.data['TaskType']=="Ticket":
-                        title="Ticket closed"
-                    if login.Token :
-                        sendNotification({
-                            "title":title,
-                            "body":projectTaskSerializer.data['Title'],
-                            "token":login.Token,
-                            "fromuser":projectTaskSerializer.data['TaskAssignedTo'],
-                            "touser":projectTaskSerializer.data['TaskAssignedBy']
-                        })
-                elif projectTaskSerializer.data['Status']=='4' or  projectTaskSerializer.data['Status']=='5' or  projectTaskSerializer.data['Status']=='6':
-                    login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedTo'])
-                    if login.Token :
-                        sendNotification({
-                            "title":"Not verified",
-                            "body":projectTaskSerializer.data['Title'],
-                            "token":login.Token,
-                            "fromuser":projectTaskSerializer.data['TaskAssignedBy'],
-                            "touser":projectTaskSerializer.data['TaskAssignedTo']
+                if projectTaskData['TaskType']!='Subtask':
+                    if projectTaskData['Status']=='7' or  projectTaskData['Status']=='8' or  projectTaskData['Status']=='9' or projectTaskData['Status']==7 or  projectTaskData['Status']==8 or  projectTaskData['Status']==9:
+                        projectTaskPoint = ProjectTask.objects.get(
+                            ProjectTaskId=projectTaskData['ProjectTaskId'])
+                        projectTaskPoint.CompletionPoint=pointCalculation(projectTaskSerializer.data)
+                        projectTaskPoint.save()
+                    if projectTaskSerializer.data['Status']=='3':
+                        login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedBy'])
+                        title="Need verification"
+                        if projectTaskSerializer.data['TaskType']=="Ticket":
+                            title="Ticket closed"
+                        if login.Token :
+                            sendNotification({
+                                "title":title,
+                                "body":projectTaskSerializer.data['Title'],
+                                "token":login.Token,
+                                "fromuser":projectTaskSerializer.data['TaskAssignedTo'],
+                                "touser":projectTaskSerializer.data['TaskAssignedBy']
+                            })
+                    elif projectTaskSerializer.data['Status']=='4' or  projectTaskSerializer.data['Status']=='5' or  projectTaskSerializer.data['Status']=='6':
+                        login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedTo'])
+                        if login.Token :
+                            sendNotification({
+                                "title":"Not verified",
+                                "body":projectTaskSerializer.data['Title'],
+                                "token":login.Token,
+                                "fromuser":projectTaskSerializer.data['TaskAssignedBy'],
+                                "touser":projectTaskSerializer.data['TaskAssignedTo']
 
-                        })
-                elif projectTaskSerializer.data['Status']=='7' or  projectTaskSerializer.data['Status']=='8' or  projectTaskSerializer.data['Status']=='9':
+                            })
+                    elif projectTaskSerializer.data['Status']=='7' or  projectTaskSerializer.data['Status']=='8' or  projectTaskSerializer.data['Status']=='9':
                     
-                    login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedTo'])
-                    if login.Token :
-                        sendNotification({
-                            "title":"Verified",
-                            "body":projectTaskSerializer.data['Title'],
-                            "token":login.Token,
-                            "fromuser":projectTaskSerializer.data['TaskAssignedBy'],
-                            "touser":projectTaskSerializer.data['TaskAssignedTo']
-                        })
+                        login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedTo'])
+                        if login.Token :
+                            sendNotification({
+                                "title":"Verified",
+                                "body":projectTaskSerializer.data['Title'],
+                                "token":login.Token,
+                                "fromuser":projectTaskSerializer.data['TaskAssignedBy'],
+                                "touser":projectTaskSerializer.data['TaskAssignedTo']
+                            })
 
                 return JsonResponse(projectTaskSerializer.data['ProjectTaskId'], safe=False)
             

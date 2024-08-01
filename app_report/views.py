@@ -904,29 +904,215 @@ def getYTD(ClientId="",ReportType="",year="",month=""):
 
 
 
+from django.db.models import DateTimeField
+from django.db.models.functions import Cast
+
+
 
 @csrf_exempt
 @api_view(['GET'])
 def StaffTaskReportBasedOnDateinPDFformat(request, StaffId="", StartDate="", EndDate=""):
+    current_datetime = timezone.now()
     staff = Staff.objects.get(StaffId=StaffId)
     StaffName = staff.StaffName
     start_dt = datetime.strptime(StartDate, '%Y-%m-%d').date()
-    end_dt = datetime.strptime(EndDate, '%Y-%m-%d').date()
-    delta = timedelta(days=1)
-    dates = []
-    while start_dt <= end_dt:
-        dates.append(start_dt.strftime("%Y-%m-%d"))
-        start_dt += delta
-    print(dates)
-    ResponseData=[]
-    for date in dates:
-        loginHistory=LoginHistory.objects.filter(UserId=StaffId,LoginTime__icontains=date)
-        print(loginHistory.query)
-        loginHistorySerializer=LoginHistorySerializer(loginHistory,many=True)
+    end_dt = (datetime.strptime(EndDate, '%Y-%m-%d') + timezone.timedelta(days=1)).date()
+
+    response_data_by_date = {}
+    # loginHistory = LoginHistory.objects.annotate(LoginTime_cast=Cast('LoginTime', DateTimeField())).filter(
+    #     LoginTime_cast__range=(start_dt, end_dt), UserId=StaffId).exclude(LogoutTime_isnull=True).order_by('SortId')
+    loginHistory = LoginHistory.objects.annotate(
+    LoginTime_cast=Cast('LoginTime', DateTimeField())
+).filter(
+    LoginTime_cast__range=(start_dt, end_dt),
+    UserId=StaffId
+).exclude(
+    LogoutTime__isnull=True
+).order_by('SortId')
+    loginHistorySerializer = LoginHistorySerializer(loginHistory, many=True)
+    total_login_work_time=0
+    totalPoint=0
+    for login in loginHistorySerializer.data:
         
-    
 
+        login_time = login['LoginTime']
+        logout_time = login['LogoutTime']
+        login_date = login_time.split('T')[0]
+        
+        # Ensure the date key exists in the dictionary
+        if login_date not in response_data_by_date:
+            response_data_by_date[login_date] = []
+
+        projectTask = ProjectTask.objects.filter(
+            TaskAssignedTo=StaffId,
+            StartDate__range=(login_time, logout_time),
+            EndDate__range=(login_time, logout_time)
+        )
+        projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
+        taskData = []
+
+        for task in projectTaskSerializer.data:
+            try:
+                taskStatus = TaskStatus.objects.get(StatusId=task['Status'])
+                taskStatusSerializer = TaskStatusSerializer(taskStatus)
+                task['StatusName'] = taskStatusSerializer.data['Status']
+            except TaskStatus.DoesNotExist:
+                task['StatusName'] = ""
+           
+
+            projectTasktiming = ProjectTaskTiming.objects.filter(
+                ProjectTaskId=task['ProjectTaskId'],
+                StartDate__range=(login_time, logout_time),
+                EndDate__range=(login_time, logout_time)
+            )
+            
+            projectTaskTimingSerializer = ProjectTaskTimingSerializer(projectTasktiming, many=True)
+            timingData=[]
+            for time in projectTaskTimingSerializer.data:
+                try:
+                    hours, minutes = map(int, time['Duration'].split(':'))
+                    total_duration_minutes = hours * 60 + minutes
+                    total_login_work_time += total_duration_minutes
+                except:
+                    p=""
+                totalPoint=totalPoint+float(task['CompletionPoint'])
+                
+                time['StartDate'] = datetime.strptime(task['StartDate'], '%Y-%m-%dT%H:%M:%S%z').strftime('%B %d, %Y, %I:%M:%S %p')
+                time['EndDate'] = datetime.strptime(task['EndDate'], '%Y-%m-%dT%H:%M:%S%z').strftime('%B %d, %Y, %I:%M:%S %p')
+                timingData.append(time)
+            task['Timing']=timingData
+            taskData.append(task)
+        
+        login_time = datetime.strptime(login['LoginTime'], '%Y-%m-%dT%H:%M:%S%z')
+        logout_time = datetime.strptime(login['LogoutTime'], '%Y-%m-%dT%H:%M:%S%z')
+
+        login['LoginTime'] = login_time.strftime('%B %d, %Y, %I:%M:%S %p')
+        login['LogoutTime'] = logout_time.strftime('%B %d, %Y, %I:%M:%S %p')
+        login['Tasks'] = taskData
+        response_data_by_date[login_date].append(login)
+
+    sorted_response_data = []
+    for date in sorted(response_data_by_date.keys()):
+        sorted_response_data.append({
+            'Date': date,
+            'Logins': response_data_by_date[date]
+        })
+    total_duration_hours = total_login_work_time // 60
+    total_duration_remaining_minutes = total_login_work_time % 60
+    total_duration = f"{total_duration_hours}:{total_duration_remaining_minutes}"
+    PendingTask = ProjectTask.objects.filter(Q(Status='1')| Q(Status='10') | Q(Status='2'),Q(TaskType='Task')|Q(TaskType='Ticket'), TaskAssignedTo=StaffId,)
+    PendingTaskSerializer = ProjectTaskSerializer(PendingTask, many=True)
+    pendingDetails = []
+    for col in PendingTaskSerializer.data:
+        try:
+            taskStatus = TaskStatus.objects.get(StatusId=col['Status'])
+            taskStatusSerializer = TaskStatusSerializer(taskStatus)
+            col['StatusName'] = taskStatusSerializer.data['Status']
+            if col['Status']== '3' or col['Status']== 3:
+                col['StatusName'] = col['StatusName'] + " - Not Verified"
+        except TaskStatus.DoesNotExist:
+            col['StatusName'] = ""
  
+        try:
+            project = Project.objects.get(ProjectId=col['ProjectId'])
+            projectSerializer = ProjectSerializer(project)
+            col['ProjectName'] = projectSerializer.data['ProjectName']
+        except Project.DoesNotExist:
+            col['ProjectName'] = ""
+        
 
-   
-    return JsonResponse(loginHistorySerializer.data,safe=False)
+            
+        deadline = col['ScheduledDeadline']
+        scheduled_deadline = datetime.strptime(deadline,'%Y-%m-%dT%H:%M')
+        
+        if scheduled_deadline:
+            if col['Status'] == '10':
+                col['StatusName'] = "Pause"
+ 
+            elif current_datetime < scheduled_deadline:
+                col['StatusName'] = "Incoming"
+           
+            elif current_datetime > scheduled_deadline:
+                col['StatusName'] = "Due"
+ 
+        pendingDetails.append(col)
+
+    context = {
+        "StaffName": StaffName,
+        'totalPoint':totalPoint,
+        'total_duration':total_duration,
+        'current_datetime':current_datetime,
+        'pendingDetails':pendingDetails,
+
+        "sorted_response_data": sorted_response_data,
+    }
+    
+    pdf = render_to_pdf('stafftaskreport.html', context)
+    watermark_pdf = create_watermark("CRM")
+ 
+    input_pdf = PdfReader(BytesIO(pdf.content))
+    output_pdf_stream = add_watermark(input_pdf, watermark_pdf)
+ 
+    response = HttpResponse(output_pdf_stream.read(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename={context["StaffName"]}.pdf'
+    return HttpResponse(pdf.content, content_type='application/pdf')
+    # return JsonResponse(context, safe=False)
+
+
+from openpyxl import Workbook
+from openpyxl.utils import get_column_letter
+@csrf_exempt
+@api_view(['GET'])
+def FinanceReportExcel(request, startdate="", enddate="",ClientId="",ReportType="",NoOfMonths=""):
+    context = getFinanceReport(request, startdate, enddate,ClientId ,ReportType,NoOfMonths)
+    # return JsonResponse(context,safe=False)
+    if ReportType=='1':
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'attachment; filename=finance_report.xlsx'
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Finance Report"
+
+
+        headers = context.get('headers', [])
+        data = context.get('data', [])
+
+        # Add headers
+        for col_num, header in enumerate(headers, 1):
+            col_letter = get_column_letter(col_num)
+            ws[col_letter + '1'] = header
+
+        # Add data rows
+        for row_num, row_data in enumerate(data, 2):
+            for col_num, cell_value in enumerate(row_data, 1):
+                col_letter = get_column_letter(col_num)
+                ws[col_letter + str(row_num)] = cell_value
+
+        wb.save(response)
+        return response
+    # elif ReportType=='2':
+    #     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    #     response['Content-Disposition'] = 'attachment; filename=finance_report.xlsx'
+
+    #     wb = Workbook()
+    #     ws = wb.active
+    #     ws.title = "Balance Report"
+
+    #     # Example of how to add data from context to Excel
+    #     # Assuming context is a dictionary with lists of data
+    #     headers = context.get('headers', [])
+    #     data = context.get('data', [])
+
+    #     # Add headers
+    #     for col_num, header in enumerate(headers, 1):
+    #         col_letter = get_column_letter(col_num)
+    #         ws[col_letter + '1'] = header
+
+    #     # Add data rows
+    #     for row_num, row_data in enumerate(data, 2):
+    #         for col_num, cell_value in enumerate(row_data, 1):
+    #             col_letter = get_column_letter(col_num)
+    #             ws[col_letter + str(row_num)] = cell_value
+
+    #     wb.save(response)
+    #     return response
