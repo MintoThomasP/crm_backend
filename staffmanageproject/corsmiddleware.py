@@ -20,7 +20,7 @@ class DynamicCORSOriginMiddleware(MiddlewareMixin):
             else:
                 allowed_origin = None
                 
-        elif current_host in dev_hosts and origin:
+        elif current_host in dev_hosts:
             allowed_origin = '*'
         else:
             allowed_origin = None
