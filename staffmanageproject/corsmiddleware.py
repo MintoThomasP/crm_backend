@@ -1,27 +1,27 @@
 # corsmiddleware.py
 
+from django.http import JsonResponse
 from django.utils.deprecation import MiddlewareMixin
 
 class DynamicCORSOriginMiddleware(MiddlewareMixin):
     def process_request(self, request):
         current_host = request.get_host()
         origin = request.META.get('HTTP_ORIGIN')
-        print(current_host)
         # Define the development and production hosts
         dev_hosts = ['127.0.0.1','127.0.0.1:8000', 'crm-api.cubexizsoft.com']
         prod_host = 'crm-api-live.cubexizsoft.com'
         allowed_origin = '*'
-
+        prod_orgin=['https://crm.cubexizsoft.com','https://www.crm.cubexizsoft.com','https://crm.cubexizsoft.com/']
         # Allow all origins for development hosts
         
         if current_host == prod_host:
-            if origin == "https://crm.cubexizsoft.com":
+            if origin != None and origin in prod_orgin:
                 allowed_origin = origin
             else:
                 allowed_origin = None
-        elif current_host in dev_hosts:
+                
+        elif current_host in dev_hosts and origin:
             allowed_origin = '*'
-        
         else:
             allowed_origin = None
 
@@ -39,5 +39,5 @@ class DynamicCORSOriginMiddleware(MiddlewareMixin):
                 return response
 
             return response
-
-        return self.get_response(request)
+        else:
+            return JsonResponse({'error': 'Your requests are not allowed here.'}, status=403)
