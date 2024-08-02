@@ -2,12 +2,7 @@
 
 from django.http import JsonResponse
 from django.utils.deprecation import MiddlewareMixin
-import socket
-def get_current_host():
-    try:
-        return socket.gethostname()
-    except:
-        return 'unknown'
+
 class DynamicCORSOriginMiddleware(MiddlewareMixin):
     def process_request(self, request):
         current_host = request.get_host()
