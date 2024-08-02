@@ -13,6 +13,8 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import pymysql
 
+from staffmanageproject.corsmiddleware import get_current_host
+
 pymysql.install_as_MySQLdb()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -98,33 +100,48 @@ WSGI_APPLICATION = 'staffmanageproject.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
+if get_current_host() in ['crm-api.cubexizsoft.com','crm-api-live.cubexizsoft.com']:
 
-DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': BASE_DIR / 'db.sqlite3',
-    # }
+    DATABASES = {
 
-     'default': {
-        'ENGINE': 'dj_db_conn_pool.backends.mysql',
-        'NAME': 'staffmanage_db',
-        # 'USER': 'root',
-        # 'PASSWORD': '',
-        'USER': 'python_user',
-        'PASSWORD': 'Kq#oCWJN0sAR',
-        'HOST': 'localhost',
-        'PORT': '3306',
-        'POOL_OPTIONS' : {
-            'POOL_SIZE': 40,
-            'MAX_OVERFLOW': 60,
-            'RECYCLE': 3 * 60 * 60
-        },
-        'OPTIONS': {
-            'sql_mode': 'traditional',
+        'default': {
+            'ENGINE': 'dj_db_conn_pool.backends.mysql',
+            'NAME': 'staffmanage_db',
+            'USER': 'python_user',
+            'PASSWORD': 'Kq#oCWJN0sAR',
+            'HOST': 'localhost',
+            'PORT': '3306',
+            'POOL_OPTIONS' : {
+                'POOL_SIZE': 40,
+                'MAX_OVERFLOW': 60,
+                'RECYCLE': 3 * 60 * 60
+            },
+            'OPTIONS': {
+                'sql_mode': 'traditional',
+            }
         }
     }
-}
+else:
 
+    DATABASES = {
+
+        'default': {
+            'ENGINE': 'dj_db_conn_pool.backends.mysql',
+            'NAME': 'staffmanage_db',
+            'USER': 'root',
+            'PASSWORD': '',
+            'HOST': 'localhost',
+            'PORT': '3306',
+            'POOL_OPTIONS' : {
+                'POOL_SIZE': 40,
+                'MAX_OVERFLOW': 60,
+                'RECYCLE': 3 * 60 * 60
+            },
+            'OPTIONS': {
+                'sql_mode': 'traditional',
+            }
+        }
+    }
 
 
 
