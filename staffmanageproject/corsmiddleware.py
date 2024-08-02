@@ -13,10 +13,11 @@ class DynamicCORSOriginMiddleware(MiddlewareMixin):
         allowed_origin = '*'
         prod_orgin=['https://crm.cubexizsoft.com','https://www.crm.cubexizsoft.com','https://crm.cubexizsoft.com/']
         # Allow all origins for development hosts
-        
-        if current_host == prod_host:
-            is_cron_job = request.headers.get('X-CRON-JOB') == 'true'
-            if origin != None and origin in prod_orgin and is_cron_job:
+        if request.method=="GET":
+            allowed_origin = '*'
+        elif current_host == prod_host:
+            # is_cron_job = request.headers.get('X-CRON-JOB') == 'true'
+            if origin != None and origin in prod_orgin:
                 allowed_origin = origin
             else:
                 allowed_origin = None
