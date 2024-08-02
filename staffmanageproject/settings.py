@@ -61,7 +61,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+    # 'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -70,8 +70,12 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.gzip.GZipMiddleware',
+    'staffmanageproject.corsmiddleware.DynamicCORSOriginMiddleware',
 ]
 
+# Set CORS_ORIGIN_ALLOW_ALL and CORS_ALLOWED_ORIGINS to defaults
+# CORS_ORIGIN_ALLOW_ALL = False
+# CORS_ALLOWED_ORIGINS = []  # Not used since we're handling CORS dynamically
 ROOT_URLCONF = 'staffmanageproject.urls'
 
 TEMPLATES = [
@@ -91,11 +95,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'staffmanageproject.wsgi.application'
-# CORS_ORIGIN_ALLOW_ALL=True
-CORS_ORIGIN_ALLOW_ALL = False
-CORS_ALLOWED_ORIGINS = [
-    "https://crm.cubexizsoft.com/",
-]
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
@@ -109,10 +108,10 @@ DATABASES = {
      'default': {
         'ENGINE': 'dj_db_conn_pool.backends.mysql',
         'NAME': 'staffmanage_db',
-        # 'USER': 'root',
-        # 'PASSWORD': '',
-        'USER': 'python_user',
-        'PASSWORD': 'Kq#oCWJN0sAR',
+        'USER': 'root',
+        'PASSWORD': '',
+        # 'USER': 'python_user',
+        # 'PASSWORD': 'Kq#oCWJN0sAR',
         'HOST': 'localhost',
         'PORT': '3306',
         'POOL_OPTIONS' : {
