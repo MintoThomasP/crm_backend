@@ -29,7 +29,7 @@ SECRET_KEY = 'django-insecure-_5@07uks53!#s287u04jba(%+hqtq^jk50m4t$pxjz&rn7-hu8
 DEBUG = True
 
 ALLOWED_HOSTS = ['127.0.0.1','crm-api.cubexizsoft.com','54.151.144.203','crm-api-live.cubexizsoft.com']
-CORS_ORIGIN_ALLOW_ALL=True
+
 
 # Application definition
 
@@ -91,7 +91,11 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'staffmanageproject.wsgi.application'
-
+# CORS_ORIGIN_ALLOW_ALL=True
+CORS_ORIGIN_ALLOW_ALL = False
+CORS_ALLOWED_ORIGINS = [
+    "https://crm.cubexizsoft.com/",
+]
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
