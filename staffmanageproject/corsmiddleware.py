@@ -15,7 +15,8 @@ class DynamicCORSOriginMiddleware(MiddlewareMixin):
         # Allow all origins for development hosts
         
         if current_host == prod_host:
-            if origin != None and origin in prod_orgin:
+            is_cron_job = request.headers.get('X-CRON-JOB') == 'true'
+            if origin != None and origin in prod_orgin and is_cron_job:
                 allowed_origin = origin
             else:
                 allowed_origin = None
