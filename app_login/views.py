@@ -402,3 +402,15 @@ def CheckEmptyLogout(request, UserId=""):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
+    
+
+
+
+def currentTime():
+    logout_time = datetime.now(timezone.utc)
+    timezone_offset = timedelta(hours=5, minutes=30)
+    logout_time = logout_time.astimezone(timezone(timezone_offset))
+    formatted_logout_time = logout_time.strftime('%Y-%m-%dT%H:%M:%S%z')
+    formatted_logout_time = formatted_logout_time[:-2] + ':' + formatted_logout_time[-2:]
+    LogoutTime=formatted_logout_time
+    return LogoutTime

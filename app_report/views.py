@@ -8,12 +8,13 @@ from django.http.response import JsonResponse
 from django.http import HttpResponse
 from app_category.models import Category, Report
 from app_category.serializers import CategorySerializer, ReportSerializer
-
+import pandas as pd
 from app_default.models import CategoryType, TaskStatus
 from app_default.serializers import CategoryTypeSerializer, TaskStatusSerializer
 from app_default.views import retry
 from app_login.models import LoginHistory
 from app_login.serializers import LoginHistorySerializer
+from app_login.views import currentTime
 from app_project.models import Project, ProjectTask, ProjectTaskTiming
 from app_project.serializers import ProjectSerializer, ProjectTaskSerializer, ProjectTaskTimingSerializer
 from app_sale.views import render_to_pdf
@@ -134,19 +135,6 @@ def getAllProjectReport(request):
         ProjectDetails.append(staff_item)
 
     return JsonResponse(ProjectDetails, safe=False)
-
-
-
-
-
-    
-
-
-
-
-
-
-
 
 
 
@@ -628,6 +616,7 @@ def FinanceReportPDF(request, startdate="", enddate="",ClientId="",ReportType=""
         # return JsonResponse(context,safe=False)
         return HttpResponse(pdf.content, content_type='application/pdf')
     elif ReportType=='2':
+        print(context)
         pdf = render_to_pdf('balance_report.html', context)
         # return JsonResponse(context,safe=False)
         return HttpResponse(pdf.content, content_type='application/pdf')
@@ -908,10 +897,10 @@ from django.db.models import DateTimeField
 from django.db.models.functions import Cast
 
 
-
 @csrf_exempt
 @api_view(['GET'])
 def StaffTaskReportBasedOnDateinPDFformat(request, StaffId="", StartDate="", EndDate=""):
+    
     current_datetime = timezone.now()
     staff = Staff.objects.get(StaffId=StaffId)
     StaffName = staff.StaffName
@@ -926,8 +915,6 @@ def StaffTaskReportBasedOnDateinPDFformat(request, StaffId="", StartDate="", End
 ).filter(
     LoginTime_cast__range=(start_dt, end_dt),
     UserId=StaffId
-).exclude(
-    LogoutTime__isnull=True
 ).order_by('SortId')
     loginHistorySerializer = LoginHistorySerializer(loginHistory, many=True)
     total_login_work_time=0
@@ -937,17 +924,22 @@ def StaffTaskReportBasedOnDateinPDFformat(request, StaffId="", StartDate="", End
 
         login_time = login['LoginTime']
         logout_time = login['LogoutTime']
+       
+        if logout_time is None:
+            logout_time=currentTime()
+            
         login_date = login_time.split('T')[0]
         
         # Ensure the date key exists in the dictionary
         if login_date not in response_data_by_date:
             response_data_by_date[login_date] = []
-
+       
         projectTask = ProjectTask.objects.filter(
             TaskAssignedTo=StaffId,
             StartDate__range=(login_time, logout_time),
             EndDate__range=(login_time, logout_time)
         )
+       
         projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
         taskData = []
 
@@ -964,7 +956,8 @@ def StaffTaskReportBasedOnDateinPDFformat(request, StaffId="", StartDate="", End
                 ProjectTaskId=task['ProjectTaskId'],
                 StartDate__range=(login_time, logout_time),
                 EndDate__range=(login_time, logout_time)
-            )
+            ).order_by('SortId')
+            
             
             projectTaskTimingSerializer = ProjectTaskTimingSerializer(projectTasktiming, many=True)
             timingData=[]
@@ -984,10 +977,15 @@ def StaffTaskReportBasedOnDateinPDFformat(request, StaffId="", StartDate="", End
             taskData.append(task)
         
         login_time = datetime.strptime(login['LoginTime'], '%Y-%m-%dT%H:%M:%S%z')
-        logout_time = datetime.strptime(login['LogoutTime'], '%Y-%m-%dT%H:%M:%S%z')
-
         login['LoginTime'] = login_time.strftime('%B %d, %Y, %I:%M:%S %p')
-        login['LogoutTime'] = logout_time.strftime('%B %d, %Y, %I:%M:%S %p')
+        try:
+            logout_time = datetime.strptime(login['LogoutTime'], '%Y-%m-%dT%H:%M:%S%z')
+            login['LogoutTime'] = logout_time.strftime('%B %d, %Y, %I:%M:%S %p')
+        except:
+            login['LogoutTime']=""
+
+        
+        
         login['Tasks'] = taskData
         response_data_by_date[login_date].append(login)
 
@@ -1023,8 +1021,10 @@ def StaffTaskReportBasedOnDateinPDFformat(request, StaffId="", StartDate="", End
 
             
         deadline = col['ScheduledDeadline']
-        scheduled_deadline = datetime.strptime(deadline,'%Y-%m-%dT%H:%M')
-        
+        try:
+            scheduled_deadline = datetime.strptime(deadline,'%Y-%m-%dT%H:%M')
+        except:
+            scheduled_deadline = datetime.strptime(deadline,'%Y-%m-%dT%H:%M:%S%z')
         if scheduled_deadline:
             if col['Status'] == '10':
                 col['StatusName'] = "Pause"
@@ -1059,60 +1059,87 @@ def StaffTaskReportBasedOnDateinPDFformat(request, StaffId="", StartDate="", End
     # return JsonResponse(context, safe=False)
 
 
-from openpyxl import Workbook
+from openpyxl.styles import Alignment, PatternFill, Font
 from openpyxl.utils import get_column_letter
+from openpyxl.cell import MergedCell
 @csrf_exempt
 @api_view(['GET'])
 def FinanceReportExcel(request, startdate="", enddate="",ClientId="",ReportType="",NoOfMonths=""):
     context = getFinanceReport(request, startdate, enddate,ClientId ,ReportType,NoOfMonths)
-    # return JsonResponse(context,safe=False)
+    
+    df = pd.DataFrame(context['responsedata'])
+    
+    # Drop specific columns if they exist
+    columns_to_drop = ['OrderNo', 'Level', 'RefId', 'CategoryId']
+    df = df.drop(columns=[col for col in columns_to_drop if col in df.columns])
+    
+    # Rename columns based on the context's formatted data
+    df.columns = context["formatted_data"].values()
+    
+    # Example: Indent items based on their level
+    if 'Level' in df.columns:
+        df['Item'] = df.apply(lambda row: '    ' * (row['Level'] - 1) + row['Item'], axis=1)
+    
+    df = df.fillna(0)
+    
+    buffer = BytesIO()
+    with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
+        df.to_excel(writer, index=False, header=True, startrow=3)  # Start writing data from the 4th row
+        workbook = writer.book
+        worksheet = writer.sheets['Sheet1']
+        
+        # Merging cells in the first three rows and centering the content
+        num_columns = len(df.columns)
+        worksheet.merge_cells(start_row=1, start_column=1, end_row=3, end_column=num_columns)
+        cell = worksheet.cell(row=1, column=1)
+        cell.value = "Detailed Income Statement"
+        cell.alignment = Alignment(horizontal='center', vertical='center')
+
+        # Make the first row bold and set the font size to 20px
+        bold_font = Font(bold=True, size=20)
+        for cell in worksheet[1]:
+            cell.font = bold_font
+        # Auto-size columns based on the maximum width of their content
+        for col_idx, col in enumerate(df.columns, 1):  # col_idx starts from 1
+            max_length = max(
+                len(str(cell.value)) if cell.value is not None else 0
+                for cell in worksheet[get_column_letter(col_idx)]
+                if not isinstance(cell, MergedCell)
+            )
+            adjusted_width = max_length + 2  # Adjust width with some padding
+            worksheet.column_dimensions[get_column_letter(col_idx)].width = adjusted_width
+
+        # Right-align data from the second column onwards
+        for row in worksheet.iter_rows(min_row=4, min_col=2, max_col=num_columns):
+            for cell in row:
+                cell.alignment = Alignment(horizontal='right')
+        # Add alternating row background colors
+        light_gray_fill = PatternFill(start_color='D3D3D3', end_color='D3D3D3', fill_type='solid')
+        white_fill = PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid')
+        
+        for row_idx, row in enumerate(worksheet.iter_rows(min_row=4, max_row=worksheet.max_row, min_col=1, max_col=num_columns), start=4):
+            fill = light_gray_fill if (row_idx - 4) % 2 == 0 else white_fill
+            for cell in row:
+                cell.fill = fill
+    
+    
+    buffer.seek(0)
     if ReportType=='1':
-        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        response['Content-Disposition'] = 'attachment; filename=finance_report.xlsx'
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Finance Report"
-
-
-        headers = context.get('headers', [])
-        data = context.get('data', [])
-
-        # Add headers
-        for col_num, header in enumerate(headers, 1):
-            col_letter = get_column_letter(col_num)
-            ws[col_letter + '1'] = header
-
-        # Add data rows
-        for row_num, row_data in enumerate(data, 2):
-            for col_num, cell_value in enumerate(row_data, 1):
-                col_letter = get_column_letter(col_num)
-                ws[col_letter + str(row_num)] = cell_value
-
-        wb.save(response)
+        response = HttpResponse(buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'inline; filename="pandl_report.xlsx"'
+        
         return response
-    # elif ReportType=='2':
-    #     response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    #     response['Content-Disposition'] = 'attachment; filename=finance_report.xlsx'
+    
+    if ReportType=='2':
+        response = HttpResponse(buffer, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        response['Content-Disposition'] = 'inline; filename="balance_report.xlsx"'
+        
+        return response
+    
 
-    #     wb = Workbook()
-    #     ws = wb.active
-    #     ws.title = "Balance Report"
 
-    #     # Example of how to add data from context to Excel
-    #     # Assuming context is a dictionary with lists of data
-    #     headers = context.get('headers', [])
-    #     data = context.get('data', [])
 
-    #     # Add headers
-    #     for col_num, header in enumerate(headers, 1):
-    #         col_letter = get_column_letter(col_num)
-    #         ws[col_letter + '1'] = header
-
-    #     # Add data rows
-    #     for row_num, row_data in enumerate(data, 2):
-    #         for col_num, cell_value in enumerate(row_data, 1):
-    #             col_letter = get_column_letter(col_num)
-    #             ws[col_letter + str(row_num)] = cell_value
-
-    #     wb.save(response)
-    #     return response
+def fixCampaignerPhone(phone):
+    if pd.isnull(phone):
+        phone = ''
+    return phone

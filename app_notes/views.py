@@ -19,7 +19,8 @@ from app_staff.models import Staff
 from app_staff.serializers import StaffSerializer
 from rest_framework import generics
 from django.db.models import Q
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
+from django.utils import timezone
 # Create your views here.
 
 
@@ -126,13 +127,18 @@ def DeleteMeetingDocument(request, MeetingNoteDocumentId=""):
     except:
         return JsonResponse("", safe=False)
     
+from rest_framework.pagination import PageNumberPagination  
+class CustomNotesPagination(PageNumberPagination):
+    page_size = 10 # Adjust the page size as needed
+    page_size_query_param = 'page_size'  
 
 class MeetingNotesApiByCompanyId(generics.ListAPIView):
     queryset =MeetingNotes.objects.all()
-    pagination_class = CustomPageNumberPagination
+    pagination_class = CustomNotesPagination
     serializer_class = MeetingNotesSerializer 
     def post(self, request, *args, **kwargs):
         filterData = JSONParser().parse(request)
+        
         Keyword = filterData.get('SearchKeyword', '')
         if Keyword:
             self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
@@ -140,14 +146,19 @@ class MeetingNotesApiByCompanyId(generics.ListAPIView):
             self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
         if filterData['CreatedBy']:
             self.queryset = self.queryset.filter(CreatedBy=filterData['CreatedBy'])
+            
         if filterData['MeetingType']:
             self.queryset = self.queryset.filter(MeetingType=filterData['MeetingType'])
         if filterData['ParticipatedBy']:
             self.queryset = self.queryset.filter(TeamParticipants__icontains=filterData['ParticipatedBy'])
-        if filterData['StartDate'] and  filterData['EndDate']:
+        if filterData['StartDate'] and filterData['EndDate']:
+            # start_date=datetime.strptime(filterData['StartDate'], '%Y-%m-%d').date()
+            # end_date=datetime.strptime(filterData['EndDate'], '%Y-%m-%d').date()
             start_date = timezone.datetime.strptime(filterData['StartDate'], '%Y-%m-%d').date()
             end_date = (timezone.datetime.strptime(filterData['EndDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
+            print(start_date)
             self.queryset = self.queryset.filter(CreatedDate__range=(start_date,end_date))
+            print(self.queryset)
         page = self.paginate_queryset(self.queryset)
         if page is not None:
             serializer = self.get_serializer(page, many=True)

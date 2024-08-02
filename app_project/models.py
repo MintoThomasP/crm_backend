@@ -43,7 +43,7 @@ class ProjectTask(models.Model):
     ScheduledDeadline=models.CharField(max_length=100,default=datetime.now)
     StartDate=models.CharField(blank=True, null=True, max_length=100)
     EndDate=models.CharField(blank=True, null=True, max_length=100)
-    TaskPoint=models.IntegerField(default=0)
+    TaskPoint=models.IntegerField(default=1)
     TaskType=models.CharField(blank=True, null=True, max_length=100)
     RefId=models.CharField(blank=True, null=True, max_length=50)
     CompletionPoint=models.DecimalField(max_digits=10, decimal_places=2, default=0)

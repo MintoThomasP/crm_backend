@@ -1,5 +1,9 @@
+import calendar
+from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from app_company.models import Company
+from app_company.serializers import CompanySerializer
 from app_default.views import retry
 from app_project.models import ProjectTask
 from app_project.serializers import ProjectTaskSerializer
@@ -13,6 +17,7 @@ from app_default.serializers import DesignationSerializer, LeaveStatusSerializer
 from app_login.serializers import LoginSerializer
 from app_project.views import CustomPageNumberPagination
 from app_report.views import durationCalculation
+from app_site.models import SiteSettings
 from app_staff.models import LeaveApplication, SalarySlip, Staff, StaffDocuments, StaffGuardian
 import os
 from app_staff.serializers import LeaveApplicationSerializer, SalarySlipSerializer, SaveStaffSerializer, StaffDocumentsSerializer, StaffGuardianSerializer, StaffSerializer, UpdateStaffSerializer, UploadStaffDocumentsSerializer
@@ -22,6 +27,12 @@ from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework import generics
 from django.db.models import Q
+from django.db.models import Avg
+from datetime import datetime
+from django.utils import timezone
+from xhtml2pdf import pisa
+from django.template.loader import get_template
+
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=SaveStaffSerializer)
 @swagger_auto_schema(method='PUT', request_body=SaveStaffSerializer)
@@ -772,8 +783,6 @@ class StaffApiByCompanyId(generics.ListAPIView):
                 
  
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=SalarySlipSerializer)
-@swagger_auto_schema(method='PUT', request_body=SalarySlipSerializer)
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all SalarySlip Details",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
@@ -784,7 +793,161 @@ def SalarySlipApi(request,StaffId="",Year="",Month=""):
             salarySlipSerializer = SalarySlipSerializer(
                     salarySlip)
             return JsonResponse(salarySlipSerializer.data, safe=False)
-        elif request.method == 'POST':
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+   
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all SalarySlip Details",)
+@api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
+def CreateSalarySlipApi(request):
+    # try:
+        if request.method == 'GET':
+            staffDa = Staff.objects.filter(Status=1)
+            staffSerializer = StaffSerializer(
+                    staffDa,many=True)
+            # return JsonResponse(staffSerializer.data, safe=False)
+            today = datetime.today()
+            first_day_of_this_month = today.replace(day=1)
+            last_day_of_last_month = first_day_of_this_month - timedelta(days=1)
+            last_month = last_day_of_last_month.month
+            last_month_year = last_day_of_last_month.year
+            days_in_last_month = calendar.monthrange(last_month_year, last_month)[1]
+
+            # First day of last month
+            first_day_of_last_month = last_day_of_last_month.replace(day=1)
+
+            # Get the number of days in the last month
+            days_in_last_month = calendar.monthrange(last_month_year, last_month)[1]
+
+            # Formatting the dates
+            first_day_str = str(first_day_of_last_month.strftime('%Y-%m-%d'))
+            last_day_str = str(last_day_of_last_month.strftime('%Y-%m-%d'))
+            for staff in staffSerializer.data:
+                # try:
+                        salary=float(staff['Salary'])
+                        start_date = timezone.datetime.strptime(first_day_str, '%Y-%m-%d').date()
+                        end_date = (timezone.datetime.strptime(last_day_str, '%Y-%m-%d') + timezone.timedelta(days=1)).date()
+                        leaveApplication = LeaveApplication.objects.filter( Q(LeaveFrom__range=(start_date, end_date))|Q(LeaveTo__range=(start_date, end_date)),Status__in=[2],StaffId=staff['StaffId'])
+                        leaveApplicationSerializer = LeaveApplicationSerializer(
+                            leaveApplication,many=True)
+                        LOP=calculate_leave(leaveApplicationSerializer.data,last_month_year,last_month)
+                        PaidDays=days_in_last_month-LOP
+                        Leave=0
+                        salaryPay=(float(salary)/float(days_in_last_month)*(PaidDays))
+                        BasicPay=salaryPay*.6
+                        ConveyanceAllowance=salaryPay*.1
+                        MedicalAllowance=salaryPay*.1
+                        OtherAllowance=salaryPay*.2
+                        AppreciationBonus=0
+                        PerformancePoint = ProjectTask.objects.filter(Status__in=[7,8,9],TaskAssignedTo=staff['StaffId'], CreatedDate__range=(start_date, end_date),TaskType='Task').aggregate(average=Avg('TaskPoint'))['average']
+                        if PerformancePoint and float(PerformancePoint)>=1.5:
+                            AppreciationBonus=((float(PerformancePoint)-float(1.5))*2)*(salaryPay*.1)
+                        
+                        GrossPay=salaryPay+AppreciationBonus
+                        
+                        data = {
+                            'SalarySlipId': '',
+                            'StaffId': staff['StaffId'],
+                            'Year': last_month_year,
+                            'Month': last_month,
+                            'BasicPay': round(BasicPay,2),
+                            'ConveyanceAllowance': round(ConveyanceAllowance,2),
+                            'MedicalAllowance': round(MedicalAllowance,2),
+                            'OtherAllowance': round(OtherAllowance,2),
+                            'AppreciationBonus': round(AppreciationBonus,2),
+                            'TotalWorkingDays': days_in_last_month,
+                            'LOP': LOP,
+                            'PaidDays': PaidDays,
+                            'Leave': Leave,
+                            'GrossPay': round(GrossPay,2),
+                        }
+                        salarySlip = SalarySlipSerializer(
+                            data=data)
+                        if salarySlip.is_valid():
+                            salarySlip.save()
+                
+                # except:
+                #     p=""
+            return JsonResponse("staffSerializer.data", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
+
+def calculate_leave(leave_entries,target_year,target_month):
+
+    total_leave_days = 0
+
+    for entry in leave_entries:
+        leave_type = entry['LeaveType']
+        leave_from = datetime.fromisoformat(entry['LeaveFrom']) if isinstance(entry['LeaveFrom'], str) else entry['LeaveFrom']
+        leave_to = datetime.fromisoformat(entry['LeaveTo']) if isinstance(entry['LeaveTo'], str) else entry['LeaveTo']
+
+        # Calculate the start and end dates within July
+        start_date = max(leave_from, datetime(target_year, target_month, 1))
+        end_date = min(leave_to, datetime(target_year, target_month + 1, 1) - timedelta(days=1))
+
+        # Calculate the number of leave days if there's an overlap
+        if start_date <= end_date:
+            if leave_type == 'half day' and start_date.month == target_month:
+                total_leave_days += 0.5
+            else:
+                leave_days = (end_date - start_date).days + 1
+                total_leave_days += leave_days
+
+    return total_leave_days
+
+
+@csrf_exempt
+@api_view(['GET'])
+def DownloadSalarySlip(request, Month,Year,StaffId):
+        salarySlip = SalarySlip.objects.get(StaffId=StaffId,Year=Year,Month=Month)
+        staffData = Staff.objects.get(StaffId=salarySlip.StaffId)
+        companyData = Company.objects.get(CompanyId=staffData.CompanyId)
+        SiteSettingsData = SiteSettings.objects.get(CompanyId=staffData.CompanyId)
+        TotalEarnings=salarySlip.BasicPay+salarySlip.ConveyanceAllowance+salarySlip.MedicalAllowance+salarySlip.OtherAllowance+salarySlip.AppreciationBonus
+        TotalDeductions=0
+        NetSalary=TotalEarnings-TotalDeductions
+        context = {
+            'salarySlip':salarySlip,
+            'staff':staffData,
+            'company':companyData,
+            'TotalEarnings':TotalEarnings,
+            'TotalDeductions':TotalDeductions,
+            'NetSalary':NetSalary,
+            'SiteSetting':SiteSettingsData,
+            'Month':  calendar.month_name[int(Month)],
+            'Year':Year
+        }
+        # return JsonResponse("", safe=False)
+        pdf = render_to_pdf('salary_slip.html', context)
+        response = HttpResponse(pdf.content, content_type='application/pdf')
+        response['Content-Disposition'] = 'inline; filename="salary_slip_'+staffData.StaffName+'_'+calendar.month_name[int(Month)]+'_'+Year+'.pdf"'
+        return response
+
+def render_to_pdf(template_src, context_dict={}):
+    template = get_template(template_src)
+    html = template.render(context_dict)
+    result = BytesIO()
+    
+        
+    pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
+    if not pdf.err:
+        return HttpResponse(result.getvalue(), content_type='application/pdf')
+        
+    return None
+
+
+
+@csrf_exempt
+@api_view(['POST','PUT'])
+@retry(retries=3, delay=2)
+def CURDSalarySlipApi(request):
+    try:
+        if request.method == 'POST':
             salarySlipData = JSONParser().parse(request)
             salarySlipSerializer = SalarySlipSerializer(
                 data=salarySlipData)
@@ -792,8 +955,17 @@ def SalarySlipApi(request,StaffId="",Year="",Month=""):
                 salarySlipSerializer.save()
                 return JsonResponse(salarySlipSerializer.data['SalarySlipId'], safe=False)
             return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            salarySlipData = JSONParser().parse(request)
+            salarySlip = SalarySlip.objects.get(
+                SalarySlipId=salarySlipData['SalarySlipId'])
+            salarySlipSerializer = SalarySlipSerializer(
+                salarySlip, data=salarySlipData)
+            if salarySlipSerializer.is_valid():
+                salarySlipSerializer.save()
+                return JsonResponse(salarySlipSerializer.data['SalarySlipId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-   

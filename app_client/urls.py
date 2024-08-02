@@ -12,6 +12,7 @@ urlpatterns = [
     url(r'^ClientOtherDetailsApiById/(?P<ClientOtherDetailId>[0-9a-zA-Z\-]+)$', views.ClientOtherDetailsApiById),
 
     path('UploadClientDocument/', views.UploadClientDocument.as_view()),
+    url(r'^ClientDocumentApiById/(?P<ClientDocumentId>[0-9a-zA-Z\-]+)$', views.ClientDocumentApiById),
 
 
     path('ClientAddress/', views.ClientAddressApi),

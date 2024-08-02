@@ -39,6 +39,12 @@ url(r'^GetAllActiveStaffList/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.GetAllActive
 
 
 path('staffSalaryByPerformance/', views.staffSalaryByPerformanceApi),
+path('CreateSalarySlip/', views.CreateSalarySlipApi),
+    path('DownloadSalarySlip/<str:Month>/<str:Year>/<str:StaffId>', views.DownloadSalarySlip),
+
+path('CURDSalarySlipApi/', views.CURDSalarySlipApi),
+
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

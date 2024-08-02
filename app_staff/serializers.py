@@ -24,7 +24,8 @@ class StaffSerializer(serializers.ModelSerializer):
 'CurrentAddress',
 'LeavingDate',
 'Status',
-'ProfilePhoto'
+'ProfilePhoto',
+'BankAccount'
 )
         
 
@@ -48,7 +49,8 @@ class SaveStaffSerializer(serializers.ModelSerializer):
 'UserType',
 'LeavingDate',
 'Status',
-'CurrentAddress')
+'CurrentAddress',
+'BankAccount')
         
 
 
@@ -121,7 +123,8 @@ class LeaveApplicationSerializer(serializers.ModelSerializer):
 'LeaveTo',
 'LeaveType',
 'Status',
-'CompanyId'
+'CompanyId',
+'NoOfDays'
 
 )
         
@@ -131,7 +134,7 @@ class SalarySlipSerializer(serializers.ModelSerializer):
         model = SalarySlip
         fields = (
             'SortId',
-                  'SalarySlip',
+                  'SalarySlipId',
                   'StaffId',
                   'Year',
                   'Month',

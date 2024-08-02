@@ -31,6 +31,6 @@ class FollowUp(models.Model):
     FollowUpDateandTime=models.CharField(max_length=50,blank=True, null=True)
     Note=models.TextField(blank=True, null=True)
     ScheduledDateandTime=models.CharField(max_length=50,blank=True, null=True) #come as next entry
-    ScheduledBy=models.CharField(max_length=50,blank=True, null=True)
+    ScheduledTo=models.CharField(max_length=50,blank=True, null=True)
     ReferedBy=models.CharField(max_length=50,blank=True, null=True)#Previous FollowUpId
     Status = models.CharField(max_length=100,blank=True, null=True)

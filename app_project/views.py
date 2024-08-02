@@ -22,7 +22,14 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from django.utils import timezone
 from datetime import datetime
-
+import logging
+from typing import Any, Dict
+from uuid import uuid4
+from django.conf import settings
+from django.core.cache import cache
+import firebase_admin
+from firebase_admin import credentials
+from app_staff.models import Staff
 from rest_framework import generics
 from django.db.models import Q
 
@@ -123,78 +130,6 @@ def ProjectByCompanyId(request, CompanyId=""):
         return JsonResponse("", safe=False)
     
 
-# class CustomPageNumberPagination(PageNumberPagination):
-
-#     page_size = 40 # Adjust the page size as needed
-#     page_size_query_param = 'page_size'
-
-
-# class ProjectTaskPagination(generics.ListAPIView):
-#     pagination_class = CustomPageNumberPagination
-#     serializer_class = ProjectTaskSerializer 
-#     def get(self, request, *args, **kwargs):
-#         projectTask = ProjectTask.objects.filter(Q(RefId__isnull=True) | Q(RefId=""),TaskType='Task').order_by('-SortId')
-#         projectTaskSerializer = ProjectTaskSerializer(
-#                     projectTask, many=True)
-#         page = self.paginate_queryset(projectTaskSerializer.data)
-#         taskData=[]
-#         if page is not None:
-#             for row in page:
-#                 row['Tickets']=[]
-#                 try:
-#                     projectTask = ProjectTask.objects.get(
-#                         RefId=row['ProjectTaskId'])
-#                     projectTaskSerializer=ProjectTaskSerializer(projectTask)
-#                     row['Tickets']=projectTaskSerializer.data
-#                 except:
-#                     row['Tickets']=[]
-                
-#                 try:
-#                     project=Project.objects.get(ProjectId=row['ProjectId'])
-#                     projectSerializer=ProjectSerializer(project)
-#                     row['ProjectName']=projectSerializer.data['ProjectName']
-#                 except:
-#                     row['ProjectName']=""
-#                 try:
-#                     staff=Staff.objects.get(StaffId=row['TaskAssignedTo'])
-#                     staffSerializer=StaffSerializer(staff)
-#                     row['AssignedTo']=staffSerializer.data['StaffName']
-#                 except:
-#                     row['AssignedTo']=""
-
-#                 try:
-#                     staff=Staff.objects.get(StaffId=row['TaskAssignedBy'])
-#                     staffSerializer=StaffSerializer(staff)
-#                     row['AssignedBy']=staffSerializer.data['StaffName']
-#                 except:
-#                     row['AssignedBy']=""
-
-
-#                 try:
-#                     staff=Staff.objects.get(StaffId=row['VerifiedBy'])
-#                     staffSerializer=StaffSerializer(staff)
-#                     row['VerifiedByName']=staffSerializer.data['StaffName']
-#                 except:
-#                     row['VerifiedByName']= ""
-#                 try:
-#                     taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
-#                     taskStatusSerializer=TaskStatusSerializer(taskStatus)
-#                     row['StatusName']=taskStatusSerializer.data['Status']
-#                 except:
-#                     row['StatusName']=""
-
-
-#                 try:
-#                     projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
-#                     projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
-#                     row['ProjectTaskFiles']=projectTaskFileSerializer.data
-#                 except:
-#                     row['ProjectTaskFiles']=""
-
-#                 taskData.append(row)
-#             return self.get_paginated_response(taskData)
-
-        # return JsonResponse(taskData, safe=False)
 
 
 
@@ -231,12 +166,12 @@ class ProjectTaskPagination(generics.ListAPIView):
             data = []
 
             for row in serializer.data:
-                row['Tickets']=[]
+               
                 try:
                     projectTask = ProjectTask.objects.filter(
-                        RefId=row['ProjectTaskId'],TaskType='Ticket').order_by('-SortId').first()
+                        RefId=row['ProjectTaskId'],TaskType='Ticket').order_by('-SortId')
                     projectTaskSerializer=ProjectTaskSerializer(projectTask, many=True)
-                    row['Tickets']=projectTaskSerializer.data
+                    row['Tickets']=projectTaskSerializer.data[0]
                 except:
                     row['Tickets']=[]
                 try:
@@ -303,7 +238,7 @@ class ProjectTaskPagination(generics.ListAPIView):
         
 
 
-# from django.db import transaction
+
 @csrf_exempt
 @api_view(['GET'])
 def RestTaskPoint(request):
@@ -522,7 +457,7 @@ def RestTaskPoint(request):
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def ProjectTaskApi(request):
-    # try:
+    try:
         if request.method == 'GET':
             projectTask = ProjectTask.objects.filter(Q(RefId__isnull=True) | Q(RefId=""),TaskType='Task').order_by('-SortId')
             projectTaskSerializer = ProjectTaskSerializer(
@@ -571,8 +506,6 @@ def ProjectTaskApi(request):
                     row['StatusName']=taskStatusSerializer.data['Status']
                 except:
                     row['StatusName']=""
-
-
                 try:
                     projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
                     projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
@@ -662,15 +595,15 @@ def ProjectTaskApi(request):
             return JsonResponse("", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give ProjectTaskId to get one task detail",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def ProjectTaskApiById(request, ProjectTaskId=""):
-    # try:
+    try:
         if request.method == 'GET': 
             projectTask = ProjectTask.objects.get(
                     ProjectTaskId=ProjectTaskId)
@@ -678,7 +611,7 @@ def ProjectTaskApiById(request, ProjectTaskId=""):
                     projectTask)
             ProjectTaskData=projectTaskSerializer.data
             try:
-                projectSubTask = ProjectTask.objects.filter(RefId=ProjectTaskId).order_by('-SortId')
+                projectSubTask = ProjectTask.objects.filter(RefId=ProjectTaskId,TaskType='Subtask').order_by('-SortId')
                 projectSubTaskSerializer = ProjectTaskSerializer(projectSubTask, many=True)
                 ProjectTaskData['SubTask'] = projectSubTaskSerializer.data
             except:
@@ -691,10 +624,10 @@ def ProjectTaskApiById(request, ProjectTaskId=""):
                 ProjectTaskData['StatusName']=""
             ProjectTaskData['Tickets']=[]
             try:
-                tickets = ProjectTask.objects.get(
-                    RefId=ProjectTaskId)
-                ticketSerializer=ProjectTaskSerializer(tickets)
-                ProjectTaskData['Tickets']=ticketSerializer.data
+                tickets = ProjectTask.objects.filter(
+                    RefId=ProjectTaskId,TaskType='Ticket').order_by('-SortId')
+                ticketSerializer=ProjectTaskSerializer(tickets,many=True)
+                ProjectTaskData['Tickets']=ticketSerializer.data[0]
             except:
                 ProjectTaskData['Tickets']=[]
 
@@ -775,8 +708,8 @@ def ProjectTaskApiById(request, ProjectTaskId=""):
             return JsonResponse("Deleted successfully", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give ProjectId to get task detail",)
@@ -1302,7 +1235,7 @@ class UploadProjectTaskFile(APIView):
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def CommentApi(request, pk=""):
-    # try:
+    try:
         if request.method == 'GET':
             comment = Comments.objects.all()
             commentSerializer = CommentsSerializer(
@@ -1355,8 +1288,8 @@ def CommentApi(request, pk=""):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="",)
@@ -1479,45 +1412,7 @@ def ProjectTaskApiFilteringforTaskAssignedTo(request,):
                     projectTask,many=True)
             taskStatusName=[]
             for row in projectTaskSerializer.data:
-                # try:
-                #     if row['TotalDuration']:
-                #         Duration = row['Duration']
-                #         duration_seconds=durationCalculation(Duration)
-                #         TotalDuration = row['TotalDuration']
-                #         TotalDuration_seconds=durationCalculation(TotalDuration)
-                #         point = row['TaskPoint']
-                #         row['CompletedPoint'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
-                #         # row['CompletedPoint'] += round((row['TaskPoint']) - point, 2)
-                        
-
-                #     # if row['StartDate'] and row['EndDate']:
-                #     #     try:
-                #     #         date_format = '%m/%d/%Y, %I:%M:%S %p' 
-                #     #         start_date = datetime.strptime(row['StartDate'], date_format)
-                #     #         end_date = datetime.strptime(row['EndDate'], date_format)
-                #     #     except:
-                #     #         date_format = '%d/%m/%Y, %I:%M:%S %p'
-                #     #         start_date = datetime.strptime(row['StartDate'], date_format)
-                #     #         end_date = datetime.strptime(row['EndDate'], date_format)
-
-                #     #     try:
-                #     #         duration_parts = row['Duration'].split(':')
-                #     #         hours = int(duration_parts[0])*60
-                #     #         minutes = int(duration_parts[1])
-                #     #         duration_min=hours + minutes
-                #     #         duration_seconds=duration_min*60
-                #     #     except:
-                #     #         duration_seconds=3600
-                #     #     total_time_taken_seconds = (end_date - start_date).total_seconds()
-                #     #     if total_time_taken_seconds > duration_seconds:
-                #     #         value1 = (total_time_taken_seconds / duration_seconds) * 100
-                #     #         value_percentage = value1-100
-                #     #         point=(row['TaskPoint']*value_percentage)/100
-                #     #         row['CompletedPoint'] = round(row['TaskPoint'] - point)
-                #     #     else:
-                #     #         row['CompletedPoint'] = row['TaskPoint']
-                # except:
-                #     row['CompletedPoint']=""
+                
                 try:                     
                     taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
                     taskStatusSerializer=TaskStatusSerializer(taskStatus)
@@ -1599,45 +1494,7 @@ def ProjectTaskApiFilteringforTaskAssignedBy(request,):
             projectTaskSerializer = ProjectTaskSerializer(projectTask,many=True)
             taskStatusName=[]
             for row in projectTaskSerializer.data:
-                # try:
-                #     if row['TotalDuration']:
-                #         Duration = row['Duration']
-                #         duration_seconds=durationCalculation(Duration)
-                #         TotalDuration = row['TotalDuration']
-                #         TotalDuration_seconds=durationCalculation(TotalDuration)
-                #         point = row['TaskPoint']
-                #         row['CompletedPoint'] += round(pointCalculation(duration_seconds, TotalDuration_seconds, point),2)
-                #         # row['CompletedPoint'] += round((row['TaskPoint']) - point, 2)
-                        
-
-                    # if row['StartDate'] and row['EndDate']:
-                    #     try:
-                    #         date_format = '%m/%d/%Y, %I:%M:%S %p' 
-                    #         start_date = datetime.strptime(row['StartDate'], date_format)
-                    #         end_date = datetime.strptime(row['EndDate'], date_format)
-                    #     except:
-                    #         date_format = '%d/%m/%Y, %I:%M:%S %p'
-                    #         start_date = datetime.strptime(row['StartDate'], date_format)
-                    #         end_date = datetime.strptime(row['EndDate'], date_format)
-
-                    #     try:
-                    #         duration_parts = row['Duration'].split(':')
-                    #         hours = int(duration_parts[0])*60
-                    #         minutes = int(duration_parts[1])
-                    #         duration_min=hours + minutes
-                    #         duration_seconds=duration_min*60
-                    #     except:
-                    #         duration_seconds=3600
-                    #     total_time_taken_seconds = (end_date - start_date).total_seconds()
-                    #     if total_time_taken_seconds > duration_seconds:
-                    #         value1 = (total_time_taken_seconds / duration_seconds) * 100
-                    #         value_percentage = value1-100
-                    #         point=(row['TaskPoint']*value_percentage)/100
-                    #         row['CompletedPoint'] = round(row['TaskPoint'] - point)
-                    #     else:
-                    #         row['CompletedPoint'] = row['TaskPoint']
-                # except:
-                #     row['CompletedPoint']=""
+                
                 try:                        
                     taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
                     taskStatusSerializer=TaskStatusSerializer(taskStatus)
@@ -1683,7 +1540,7 @@ def ProjectTaskApiFilteringforTaskAssignedBy(request,):
 @api_view(['POST'])
 @retry(retries=3, delay=2)
 def GetAllProjectTaskApiByFiltering(request):
-    # try:
+    try:
         if request.method == 'POST':
             taskData = JSONParser().parse(request)
            
@@ -1782,8 +1639,8 @@ def GetAllProjectTaskApiByFiltering(request):
             return JsonResponse(taskData, safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
         
 
 
@@ -1887,59 +1744,13 @@ def schedule_repeated_tasks(request):
 
 
 
-import logging
-from typing import Any, Dict
-from uuid import uuid4
-from django.conf import settings
-from django.core.cache import cache
-import firebase_admin
-from firebase_admin import credentials, auth, firestore
-from app_staff.models import Staff
+
 
 cred = credentials.Certificate(settings.GOOGLE_APPLICATION_CREDENTIALS) # path to credentials.json file
 
 
 firebase_app = firebase_admin.initialize_app(cred, name='app_project')
 
-
-# auth_client = auth.Client(app=firebase_app)
-# firestore_client = firestore.client(app=firebase_app)
-
-# logger = logging.getLogger(__name__)
-
-
-# def cached(func):
-#     def wrapper(*args, **kwargs):
-#         user = kwargs.get('user')
-#         key = 'token_' + str(user.StaffId)
-#         token = cache.get(key)
-#         if token is None:
-#             token = func(*args, **kwargs)
-#             cache.set(key, token, timeout=60 * 60) # 1 hour
-#         return token
-
-#     return wrapper
-
-# class FirebaseService:
-#     @staticmethod
-#     @cached
-#     def get_custom_token_for_user(user: Staff):
-#         auth_claims = {
-#             'uid': user.StaffId,
-#         }
-#         return auth_client.create_custom_token(uid=user.StaffId, developer_claims=auth_claims)
-  
-#     @staticmethod
-#     def send_notification_to_user(user: Staff, message: Dict[str, Any]):
-#         msg_id = str(uuid4())
-#         notification_ref = firestore_client.collection(u'app-notifications') \
-#             .document(u'{}'.format(user.StaffId)).collection("user-notifications").document(u'{}'.format(msg_id))
-      
-#         notification_ref.set({
-#             u'message': message,
-#             'id': msg_id
-#         })
-#         logger.info(u'Notification sent to user {}'.format(user.StaffId))
 
 
 
@@ -2002,7 +1813,7 @@ def sendNotification(notifyData):
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def ProjectTaskTimingApi(request, pk=""):
-    # try:
+    try:
         if request.method == 'GET':
             projectTaskTiming = ProjectTaskTiming.objects.all()
             projectTaskTimingSerializer = ProjectTaskTimingSerializer(
@@ -2024,8 +1835,8 @@ def ProjectTaskTimingApi(request, pk=""):
                 projectTaskTiming, data=projectTaskTimingdata)
             if projectTaskTimingSerializer.is_valid():
                 projectTaskTimingSerializer.save()
-                ProjectTaskTimingId=projectTaskTimingSerializer.data['ProjectTaskTimingId']
-                ProjectTaskTimingCalculationById(ProjectTaskTimingId)
+                ProjectTaskId=projectTaskTimingSerializer.data['ProjectTaskId']
+                ProjectTaskTimingCalculationById(ProjectTaskId)
                 projectTask=ProjectTask.objects.get(ProjectTaskId=projectTaskTiming.ProjectTaskId)
                 projectTask.EndDate = projectTaskTimingdata['EndDate']
                 projectTask.save()
@@ -2034,8 +1845,8 @@ def ProjectTaskTimingApi(request, pk=""):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="",)
@@ -2083,7 +1894,7 @@ def ProjectTaskTimingApiByProjectTaskId(request, ProjectTaskId=""):
 def getLastTimmingByTaskId(request, ProjectTaskId=""):
     try:
         if request.method == 'GET':
-            projectTaskTiming = ProjectTaskTiming.objects.filter( Q(Q(EndDate__isnull=True) | Q(EndDate='')) & Q(ProjectTaskId=ProjectTaskId))
+            projectTaskTiming = ProjectTaskTiming.objects.filter( Q(Q(EndDate__isnull=True) | Q(EndDate='')) & Q(ProjectTaskId=ProjectTaskId)).order_by('-SortId')
             projectTaskTimingSerializer = ProjectTaskTimingSerializer(
                 projectTaskTiming,many=True)
             return JsonResponse(projectTaskTimingSerializer.data[0], safe=False)
@@ -2139,22 +1950,15 @@ def getLastTimmingByTaskId(request, ProjectTaskId=""):
 #         return JsonResponse("", safe=False)
 
 
-def ProjectTaskTimingCalculationById(ProjectTaskTimingId=""):
-        TaskTiming = ProjectTaskTiming.objects.get(ProjectTaskTimingId=ProjectTaskTimingId)
-        projectTaskTiming = ProjectTaskTiming.objects.filter(ProjectTaskId=TaskTiming.ProjectTaskId)
+def ProjectTaskTimingCalculationById(ProjectTaskId=""):
+        # TaskTiming = ProjectTaskTiming.objects.get(ProjectTaskTimingId=ProjectTaskTimingId)
+        projectTaskTiming = ProjectTaskTiming.objects.filter(ProjectTaskId=ProjectTaskId)
         projectTaskTimingSerializer = ProjectTaskTimingSerializer(projectTaskTiming, many=True)
         total_duration_minutes = 0
-
         for row in projectTaskTiming:
-
-            try:
-                date_format = '%Y-%m-%dT%H:%M:%S%z'
-                start_date = datetime.strptime(row.StartDate, date_format)
-                end_date = datetime.strptime(row.EndDate, date_format)
-            except:
-                date_format = '%Y-%m-%dT%H:%M:%S%z'
-                start_date = datetime.strptime(row.StartDate, date_format)
-                end_date = datetime.strptime(row.EndDate, date_format)
+            date_format = '%Y-%m-%dT%H:%M:%S%z'
+            start_date = datetime.strptime(row.StartDate, date_format)
+            end_date = datetime.strptime(row.EndDate, date_format)
 
             total_time_taken = end_date - start_date
             total_time_taken_in_seconds = total_time_taken.total_seconds()
@@ -2173,7 +1977,7 @@ def ProjectTaskTimingCalculationById(ProjectTaskTimingId=""):
         total_duration_remaining_minutes = total_duration_minutes % 60
         total_duration = f"{total_duration_hours}:{total_duration_remaining_minutes}"
 
-        projectTask = ProjectTask.objects.get(ProjectTaskId=TaskTiming.ProjectTaskId)
+        projectTask = ProjectTask.objects.get(ProjectTaskId=ProjectTaskId)
         projectTask.TotalDuration = total_duration
         projectTask.save()
 
@@ -2474,77 +2278,8 @@ def TicketsByTaskAssignedBy(request, TaskAssignedBy=""):
         return JsonResponse("", safe=False)
 
 
-@csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give LoginHistoryId to get one loginHistory detail",)
-@api_view(['GET'])
-@retry(retries=3, delay=2)
-def UpdateEndDate(request):
-    project_tasks = ProjectTask.objects.filter(Q(EndDate__isnull=True) | Q(EndDate=""))
-    project_task_serializer = ProjectTaskSerializer(project_tasks, many=True)
-    timing_data = []
-
-    for row in project_task_serializer.data:
-        if row['StartDate'] and row['Status'] != '1':
-            task_timings = ProjectTaskTiming.objects.filter(ProjectTaskId=row['ProjectTaskId']).order_by('-SortId')
-            if task_timings.exists():
-                task_timings_serializer = ProjectTaskTimingSerializer(task_timings, many=True)
-                end_date = task_timings_serializer.data[0]['EndDate']
-                projectTask=ProjectTask.objects.get(ProjectTaskId=row['ProjectTaskId'])
-                projectTask.EndDate=end_date
-                projectTask.save()
-    return JsonResponse("Updated", safe=False)
-
-
-
-@csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give LoginHistoryId to get one loginHistory detail",)
-@api_view(['GET'])
-@retry(retries=3, delay=2)
-def UpdateStatus(request):
-    project_tasks = ProjectTask.objects.filter(Q(Status='8') | Q(Status='9'),TaskType='Task')
-    project_task_serializer = ProjectTaskSerializer(project_tasks, many=True)
-    timing_data = []
-
-    for row in project_task_serializer.data:
-        if row['StartDate'] and row['EndDate']:
-            date_formats = [
-                    '%m/%d/%Y, %I:%M:%S %p',  # Example: 04/07/2024, 10:06:38 AM
-                    '%m/%d/%Y, %H:%M:%S',     # Example: 04/07/2024, 10:06:38
-                    '%d/%m/%Y, %I:%M:%S %p',  # Example: 07/04/2024, 10:06:38 AM
-                    '%d/%m/%Y, %H:%M:%S',      # Example: 07/04/2024, 10:06:38
-                    "%Y-%m-%dT%H:%M:%S%z"
-                ]
-
-            end_date = scheduled_deadline = None
-            for date_format in date_formats:
-                try:
-                    
-                    end_date = datetime.strptime(row['EndDate'], date_format)
-                    scheduled_deadline = datetime.strptime(row['ScheduledDeadline'], date_format)
-                    break
-                except ValueError:
-                    continue
-            if row['TotalDuration']:
-               
-                Duration = row['Duration']
-                duration_seconds=durationCalculation(Duration)
-                TotalDuration = row['TotalDuration']
-                TotalDuration_seconds=durationCalculation(TotalDuration)
-
-                    
-            task = ProjectTask.objects.get(ProjectTaskId=row['ProjectTaskId'])
-            if end_date and scheduled_deadline:
-
-                if end_date < scheduled_deadline and TotalDuration_seconds < duration_seconds:
-                    task.Status = '7'
-                    task.save()
-                elif end_date > scheduled_deadline:
-                    task.Status = '8'
-                    task.save()
-                elif TotalDuration_seconds > scheduled_deadline:
-                    task.Status = '9'
-                    task.save()
-    return JsonResponse("updated", safe=False)
 
 
     
+
+

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Roboto:wght@100;300;400;500;700;900&display=swap'); */
+
+        th {
+            font-size: 13px;
+            vertical-align: middle;
+            padding-top: 5px;
+            padding-bottom: 0px;
+        }
+
+        td {
+            font-size: 13px;
+            vertical-align: middle;
+            padding-top: 5px;
+            padding-bottom: 0px;
+        }
+
+        h2 {
+            font-size: 20px;
+            margin-bottom: 0px;
+        }
+
+        .head {
+            font-size: 15px;
+            margin-bottom: 0px;
+
+        }
+
+        .sub_table1 {
+            border: 1px solid #505050;
+            border-collapse: collapse;
+            padding: 2px 2px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+            width: 100%;
+        }
+
+        .sub_table1 th,
+        .sub_table1 td {
+            border: 1px solid #505050;
+            border-collapse: collapse;
+            padding: 4px 3px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+
+        }
+
+        .sub_table2 {
+            border: 1px solid #505050;
+            border-collapse: collapse;
+            padding: 5px 5px;
+            margin-top: 0px;
+
+        }
+
+
+        tbody tr td:first-child,
+        tbody tr th:first-child {
+            text-align: left;
+        }
+
+        tbody tr th {
+            padding: 5px 0px !important;
+        }
+
+        .no-bg {
+            background: #e6dfdf00;
+        }
+
+        tbody tr td:first-child,
+        tbody tr th:first-child {
+            border-right: 1.5px solid #505050;
+        }
+
+        thead tr {
+            text-align: center;
+        }
+
+        thead h2 {
+            padding: 15px 5px;
+        }
+
+        .thead {
+            vertical-align: middle;
+        }
+        .ItemName{
+            width: 35%;
+            font-weight: 600;
+        }
+        .ItemValue{
+            width: 15%;
+        }
+        .text-center{
+            text-align: center;
+        }
+        .bold{
+            font-weight: 600;
+        }
+        .text-right{
+            text-align: right;
+        }
+    </style>
+
+</head>
+
+<body>
+
+    <table class="sub_table1">
+        <thead>
+            <tr>
+                <td><img src="{{SiteSetting.Logo}}"/></td>
+                <td colspan="3" class="text-right">
+                    {{company.CompanyName}}
+                    <br/>
+                    {{company.Address}}
+                </td>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td colspan="4" class="text-center bold">Pay Slip for {{Month}} {{Year}}</td>
+            </tr>
+            <tr>
+                <td class="ItemName">Employee ID</td>
+                <td class="ItemValue">{{staff.StaffCode}}</td>
+                <td class="ItemName" rowspan="5" colspan="2">
+                    Bank Details
+                    <br/>
+                    {{staff.BankAccount}}
+                </td>
+            </tr>
+            <tr>
+                <td class="ItemName">Employee Name</td>
+                <td class="ItemValue">{{staff.StaffName}}</td>
+            </tr>
+            <tr>
+                <td class="ItemName">Designation</td>
+                <td class="ItemValue">{{staff.StaffCode}}</td>
+            </tr>
+            <tr>
+                <td class="ItemName">Department</td>
+                <td class="ItemValue">{{staff.StaffCode}}</td>
+            </tr>
+            <tr>
+                <td class="ItemName">Date of Joining</td>
+                <td class="ItemValue">{{staff.JoinedOn}}</td>
+            </tr> 
+            <tr>
+                <td colspan="4">
+                    <br/>
+                    <br/>
+                    <br/>
+                </td>
+            </tr>
+            <tr>
+                <td class="ItemName">Gross Wages</td>
+                <td class="text-right ItemValue">{{salarySlip.GrossPay}}</td>
+                <td class="ItemName"></td>
+                <td class="ItemValue"></td>
+            </tr>
+            <tr>
+                <td class="ItemName">Total Working Days</td>
+                <td class="text-center ItemValue">{{salarySlip.TotalWorkingDays}}</td>
+                <td class="ItemName">Leaves</td>
+                <td class="text-center ItemValue">{{salarySlip.Leave}}</td>
+            </tr>
+            <tr>
+                <td class="ItemName">LOP Days</td>
+                <td class="text-center temValue">{{salarySlip.LOP}}</td>
+                <td class="ItemName">Paid Days</td>
+                <td class="text-center ItemValue">{{salarySlip.PaidDays}}</td>
+            </tr>
+            <tr>
+                <td colspan="2" class="text-center bold">Earnings</td>
+                <td colspan="2" class="text-center bold">Deductions </td>
+            </tr>
+            <tr>
+                <td class="ItemName">Basic</td>
+                <td class="text-right ItemValue">{{salarySlip.BasicPay}}</td>
+                <td class="ItemName"></td>
+                <td class="text-right ItemValue"></td>
+            </tr>
+            <tr>
+                <td class="ItemName">Conveyance Allowance</td>
+                <td class="text-right ItemValue">{{salarySlip.ConveyanceAllowance}}</td>
+                <td class="ItemName"></td>
+                <td class="text-right ItemValue"></td>
+            </tr>
+            <tr>
+                <td class="ItemName">Medical Allowance</td>
+                <td class="text-right ItemValue">{{salarySlip.MedicalAllowance}}</td>
+                <td class="ItemName"></td>
+                <td class="text-right ItemValue"></td>
+            </tr>
+            <tr>
+                <td class="ItemName">Other Allowances</td>
+                <td class="text-right ItemValue">{{salarySlip.OtherAllowance}}</td>
+                <td class="ItemName"></td>
+                <td class="text-right ItemValue"></td>
+            </tr>
+            <tr>
+                <td class="ItemName">Appreciation Bonus</td>
+                <td class="text-right ItemValue">{{salarySlip.AppreciationBonus}}</td>
+                <td class="ItemName"></td>
+                <td class="text-right ItemValue"></td>
+            </tr>
+            <tr>
+                <td class="ItemName">Total Earnings</td>
+                <td class="text-right ItemValue">{{TotalEarnings}}</td>
+                <td class="ItemName">Total Deductions</td>
+                <td class="text-right ItemValue">{{TotalDeductions}}</td>
+            </tr>
+            <tr>
+                <td colspan="3" class="text-right bold">Net Salary</td>
+                <td class="text-right ItemValue">{{NetSalary}}</td>
+            </tr>
+        </tbody>
+    </table>
+
+</body>
+
+</html>

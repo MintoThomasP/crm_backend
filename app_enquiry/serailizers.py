@@ -33,7 +33,7 @@ class FollowUpSerializer(serializers.ModelSerializer):
             'FollowUpDateandTime',
             'Note',
             'ScheduledDateandTime',
-            'ScheduledBy',
+            'ScheduledTo',
             'ReferedBy',
             'Status'
         )

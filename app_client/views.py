@@ -210,14 +210,30 @@ class UploadClientDocument(APIView):
                     return JsonResponse("", safe=False)
         except:
             return JsonResponse("", safe=False)
-        
+
+
+# @csrf_exempt
+# @swagger_auto_schema(method='GET',operation_description="NOTE: Give ClientOtherDetailsId to get one clientOtherDetailsdetail",)
+# @api_view(['GET','DELETE'])
+# @retry(retries=3, delay=2)
+# def DeleteClientDocument(request, ClientDocumentId=""):
+#     try:
+#         if request.method == 'DELETE':
+#             clientOtherDetails = ClientDocuments.objects.get(ClientDocumentId=ClientDocumentId)
+#             ClientDocuments.objects.get(ClientDocumentId=ClientDocumentId).Document.delete(save=True)
+#             clientOtherDetails.delete()
+#             return JsonResponse("Deleted successfully", safe=False)
+#         else:
+#             return JsonResponse("", safe=False)
+#     except:
+#         return JsonResponse("", safe=False)   
 
 
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give ClientDocumentId to get one ClientDocument detail",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
-def QuotationFileApiById(request, ClientDocumentId=""):
+def ClientDocumentApiById(request, ClientDocumentId=""):
     try:
         if request.method == 'GET': 
             clientDocuments = ClientDocuments.objects.get(
@@ -227,6 +243,7 @@ def QuotationFileApiById(request, ClientDocumentId=""):
             return JsonResponse(clientDocumentsSerializer.data, safe=False)
         elif request.method == 'DELETE':
             clientDocuments = ClientDocuments.objects.get(ClientDocumentId=ClientDocumentId)
+            ClientDocuments.objects.get(ClientDocumentId=ClientDocumentId).Document.delete(save=True)
             clientDocuments.delete()
             return JsonResponse("Deleted successfully", safe=False)
         else:
