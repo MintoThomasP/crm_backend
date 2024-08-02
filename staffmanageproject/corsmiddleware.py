@@ -9,13 +9,16 @@ class DynamicCORSOriginMiddleware(MiddlewareMixin):
         print(current_host)
         # Define the development and production hosts
         dev_hosts = ['127.0.0.1','127.0.0.1:8000', 'crm-api.cubexizsoft.com']
-        prod_host = ['crm-api-live.cubexizsoft.com','https://crm-api-live.cubexizsoft.com','https://crm-api-live.cubexizsoft.com/']
+        prod_host = 'crm-api-live.cubexizsoft.com'
         allowed_origin = '*'
 
         # Allow all origins for development hosts
         
-        if current_host in prod_host:
-            allowed_origin = "https://crm.cubexizsoft.com"
+        if current_host == prod_host:
+            if origin == "https://crm.cubexizsoft.com":
+                allowed_origin = origin
+            else:
+                allowed_origin = None
         elif current_host in dev_hosts:
             allowed_origin = '*'
         
