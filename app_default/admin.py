@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from app_default.models import Country, Currency, DepositTo, Designation, InvoiceStatus, PaymentMode, State, TaskStatus, UserGroup, UserType
+from app_default.models import Currency, DepositTo, InvoiceStatus, PaymentMode, TaskStatus, UserType
 
 # Register your models here.
 
@@ -17,41 +17,19 @@ class UserTypeAdmin(admin.ModelAdmin):
 'UserType')
 admin.site.register(UserType, UserTypeAdmin)
 
-class DesignationAdmin(admin.ModelAdmin):
-    list_display = ('SortId',
-                  'DesignationId',
-                  'Designation',
-                  )
-admin.site.register(Designation, DesignationAdmin)
-
-
-class UserGroupAdmin(admin.ModelAdmin):
-    list_display = ('SortId',
-                  'UserGroupId',
-                  'UserGroup',
-                  'AccessTo')
-admin.site.register(UserGroup, UserGroupAdmin)
 
 
 
 
 
 
-class CountryAdmin(admin.ModelAdmin):
-    list_display =('SortId',
-                  'CountryId',
-                  'Country',
-                  )
-admin.site.register(Country, CountryAdmin)
 
 
-class StateAdmin(admin.ModelAdmin):
-    list_display =('SortId',
-                  'StateId',
-                  'CountryId',
-                  'State'
-                  )
-admin.site.register(State, StateAdmin)
+
+
+
+
+
 
 
 class CurrencyAdmin(admin.ModelAdmin):

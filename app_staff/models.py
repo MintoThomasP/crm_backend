@@ -18,7 +18,7 @@ class Staff(models.Model):
     PermanentAddress = models.TextField(blank=True, null=True)
     JoinedOn=models.CharField(blank=True, null=True, max_length=100)
     QrCode=models.ImageField(upload_to='qr_codes/',null=True,blank=True)
-    Salary=models.CharField(blank=True, null=True, max_length=15)
+    Salary=models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     Designation=models.CharField(blank=True, null=True, max_length=50)
     UserGroup=models.CharField(blank=True, null=True, max_length=300)
     UserType=models.CharField(blank=True, null=True, max_length=50)
@@ -28,6 +28,7 @@ class Staff(models.Model):
     Status=models.IntegerField(default=1)
     FCMToken=models.CharField(blank=True, null=True, max_length=300)
     BankAccount=models.TextField(blank=True, null=True)
+    CountryCode=models.CharField(blank=True, null=True, max_length=10)
 
     def save(self, *args, **kwargs):
         if not self.StaffCode or self.StaffCode == 'CS-E-1':
@@ -101,4 +102,16 @@ class SalarySlip(models.Model):
     PaidDays=models.DecimalField(max_digits=10, decimal_places=2, default=0)
     Leave=models.DecimalField(max_digits=10, decimal_places=2, default=0)
     GrossPay=models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    BankAccount=models.TextField(blank=True, null=True)
 
+
+
+class MoveOnRegister(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    MoveOnRegisterId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    StaffId=models.CharField(blank=True, null=True, max_length=50)
+    MoveOnReason=models.CharField(blank=True, null=True, max_length=50)
+    Notes=models.TextField(blank=True, null=True)
+    MoveOutDateTime=models.CharField(max_length=100,blank=True, null=True)
+    MoveInDateTime=models.CharField(max_length=100,blank=True, null=True)

@@ -1,6 +1,6 @@
 
 from xml.dom.minidom import DocumentType
-from app_default.models import CategoryType, CompanyDocumentType, Country, Currency, DepositTo, Designation, EnquiryStatus, EnquiryType, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, ReportType, SectionType, StaffStatus, State, TaskStatus, UserGroup, UserType
+from app_default.models import CategoryType, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquiryType, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, ReportType, SectionType, StaffStatus, TaskStatus, UserType
 from rest_framework import serializers
 
 
@@ -25,45 +25,6 @@ class UserTypeSerializer(serializers.ModelSerializer):
 )
         
 
-class DesignationSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Designation
-        fields = ('SortId',
-                  'DesignationId',
-                  'Designation',
-                  )
-        
-
-class UserGroupSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = UserGroup
-        fields = ('SortId',
-                  'UserGroupId',
-                  'UserGroup',
-                  'AccessTo')
-        
-
-
-
-
-class CountrySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Country
-        fields = ('SortId',
-                  'CountryId',
-                  'Country',
-                  )
-        
-        
-class StateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = State
-        fields = ('SortId',
-                  'StateId',
-                  'CountryId',
-                  'State'
-                  )
-        
 
 class CurrencySerializer(serializers.ModelSerializer):
     class Meta:
@@ -207,4 +168,15 @@ class EnquiryStatusSerializer(serializers.ModelSerializer):
         fields = (
             'StatusId',
             'Status',
+        )
+
+
+class CountryCodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CountryCode
+        fields = (
+            'CountryCodeId',
+            'Country',
+            'CountryCode',
+            'RegularExpression'
         )

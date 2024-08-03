@@ -9,6 +9,8 @@ from django.http import HttpResponse
 from app_category.models import Category, Report
 from app_category.serializers import CategorySerializer, ReportSerializer
 import pandas as pd
+from app_company.models import Company
+from app_company.serializers import CompanySerializer
 from app_default.models import CategoryType, TaskStatus
 from app_default.serializers import CategoryTypeSerializer, TaskStatusSerializer
 from app_default.views import retry
@@ -18,6 +20,8 @@ from app_login.views import currentTime
 from app_project.models import Project, ProjectTask, ProjectTaskTiming
 from app_project.serializers import ProjectSerializer, ProjectTaskSerializer, ProjectTaskTimingSerializer
 from app_sale.views import render_to_pdf
+from app_site.models import SiteSettings
+from app_site.serializers import SiteSettingsSerializer
 from app_staff.models import Staff
 from app_staff.serializers import StaffSerializer
 # Create your views here.
@@ -892,11 +896,11 @@ def getYTD(ClientId="",ReportType="",year="",month=""):
     return queryset_list
 
 
-
+from django.conf import settings
 from django.db.models import DateTimeField
 from django.db.models.functions import Cast
 
-
+import os
 @csrf_exempt
 @api_view(['GET'])
 def StaffTaskReportBasedOnDateinPDFformat(request, StaffId="", StartDate="", EndDate=""):
@@ -904,6 +908,27 @@ def StaffTaskReportBasedOnDateinPDFformat(request, StaffId="", StartDate="", End
     current_datetime = timezone.now()
     staff = Staff.objects.get(StaffId=StaffId)
     StaffName = staff.StaffName
+   
+    try:
+        siteSettings=SiteSettings.objects.get(CompanyId=staff.CompanyId)
+        siteSettingsSerializer=SiteSettingsSerializer(siteSettings)
+        logo=os.path.join(settings.BASE_DIR)+siteSettingsSerializer.data['Logo']
+    except:
+        logo=""
+    try:
+        company=Company.objects.get(CompanyId=staff.CompanyId)
+        companySerializer=CompanySerializer(company)
+        
+        CompanyName=companySerializer.data['CompanyName']
+        
+        CompanyAddress=companySerializer.data['Address']
+    except:
+        CompanyName=""
+        CompanyAddress=""
+
+        
+    
+
     
 
     response_data_by_date = {}
@@ -996,7 +1021,7 @@ def StaffTaskReportBasedOnDateinPDFformat(request, StaffId="", StartDate="", End
     sorted_response_data = []
     for date in sorted(response_data_by_date.keys()):
         sorted_response_data.append({
-            'Date': date,
+            'Date': datetime.strptime(date, '%Y-%m-%d').strftime('%B %d, %Y'),
             'Logins': response_data_by_date[date]
         })
     total_duration_hours = total_login_work_time // 60
@@ -1043,6 +1068,9 @@ def StaffTaskReportBasedOnDateinPDFformat(request, StaffId="", StartDate="", End
 
     context = {
         "StaffName": StaffName,
+        "logo":logo,
+        'CompanyName':CompanyName,
+        "CompanyAddress":CompanyAddress,
         'totalPoint':totalPoint,
         'total_duration':total_duration,
         'current_datetime':current_datetime,

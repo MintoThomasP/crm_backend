@@ -77,7 +77,7 @@ def EnquiryApiById(request, EnquiryId=""):
     
 
 class EnquiryApiByCompanyId(generics.ListAPIView):
-    queryset =Enquiry.objects.all()
+    queryset =Enquiry.objects.all().order_by('-CreatedDate')
     pagination_class = CustomPageNumberPagination
     serializer_class = EnquirySerializer 
     def post(self, request, *args, **kwargs):

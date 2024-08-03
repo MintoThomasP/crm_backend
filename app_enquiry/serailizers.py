@@ -17,7 +17,9 @@ class EnquirySerializer(serializers.ModelSerializer):
 'EnquiryDate',
 'CreatedDate',
 'CreatedBy',
-'CompanyId')
+'CompanyId',
+'CountryCode')
+
         
 
 

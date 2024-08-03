@@ -19,8 +19,10 @@ from rest_framework.parsers import MultiPartParser, FormParser
 
 from app_client.models import Client, ClientAddress
 from app_client.serializers import ClientAddressSerializer, ClientSerializer
-from app_default.models import Country, InvoiceStatus, PaymentMode, State
-from app_default.serializers import CountrySerializer, InvoiceStatusSerializer, StateSerializer
+from app_default.models import InvoiceStatus, PaymentMode
+from app_basic.models import Country, State
+from app_default.serializers import InvoiceStatusSerializer
+from app_basic.serializers import CountrySerializer, StateSerializer
 from app_default.views import retry
 from app_project.models import Project
 from app_project.serializers import ProjectSerializer

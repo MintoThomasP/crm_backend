@@ -1,4 +1,4 @@
-from app_staff.models import LeaveApplication, SalarySlip, Staff, StaffDocuments, StaffGuardian
+from app_staff.models import LeaveApplication, MoveOnRegister, SalarySlip, Staff, StaffDocuments, StaffGuardian
 from rest_framework import serializers
 
 
@@ -25,7 +25,8 @@ class StaffSerializer(serializers.ModelSerializer):
 'LeavingDate',
 'Status',
 'ProfilePhoto',
-'BankAccount'
+'BankAccount',
+'CountryCode'
 )
         
 
@@ -50,7 +51,8 @@ class SaveStaffSerializer(serializers.ModelSerializer):
 'LeavingDate',
 'Status',
 'CurrentAddress',
-'BankAccount')
+'BankAccount',
+'CountryCode')
         
 
 
@@ -147,6 +149,20 @@ class SalarySlipSerializer(serializers.ModelSerializer):
                   'LOP',
                   'PaidDays',
                   'Leave',
-                  'GrossPay'
+                  'GrossPay',
+                  'BankAccount'
+)
+        
+
+class MoveOnRegisterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MoveOnRegister
+        fields = ('SortId',
+                  'StaffId',
+'MoveOnRegisterId',
+'MoveOnReason',
+'Notes',
+'MoveOutDateTime',
+'MoveInDateTime',
 
 )

@@ -18,37 +18,7 @@ class UserType(models.Model):
     def __str__(self) :
         return self.UserType
 
-class Designation(models.Model):
-    SortId = models.DateTimeField(editable=False, default=datetime.now)
-    DesignationId = models.CharField(
-        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
-    Designation = models.CharField(max_length=300, blank=True, null=True)
-    def __str__(self) :
-        return self.Designation
 
-class UserGroup(models.Model):
-    SortId = models.DateTimeField(editable=False, default=datetime.now)
-    UserGroupId = models.CharField(
-        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
-    UserGroup = models.CharField(max_length=300, blank=True, null=True)
-    AccessTo = models.TextField(blank=True, null=True)
-
-
-
-class Country(models.Model):
-    SortId = models.DateTimeField(editable=False, default=datetime.now)
-    CountryId = models.CharField(
-        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
-    Country = models.CharField(max_length=300, blank=True, null=True)
-
-
-class State(models.Model):
-    SortId = models.DateTimeField(editable=False, default=datetime.now)
-    StateId = models.CharField(
-        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
-    CountryId = models.CharField(
-        max_length=50, blank=True, null=True)
-    State = models.CharField(max_length=300, blank=True, null=True)
 
 class Currency(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)
@@ -137,3 +107,11 @@ class FollowUpType(models.Model):
 class FollowUpStatus(models.Model):
     StatusId = models.AutoField(primary_key=True, editable=False)
     Status = models.CharField(max_length=300, blank=True, null=True)
+
+
+
+class CountryCode(models.Model):
+    CountryCodeId = models.AutoField(primary_key=True, editable=False)
+    Country = models.CharField(max_length=300, blank=True, null=True)
+    CountryCode = models.CharField(max_length=10, blank=True, null=True)
+    RegularExpression=models.TextField(blank=True, null=True)

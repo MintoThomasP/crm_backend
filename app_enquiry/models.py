@@ -17,6 +17,8 @@ class Enquiry(models.Model):
     CreatedDate=models.DateTimeField(default=datetime.now)
     CreatedBy=models.CharField(max_length=50,null=True, blank=True)
     CompanyId=models.CharField(max_length=50,null=True, blank=True)
+    CountryCode=models.CharField(max_length=10,null=True, blank=True)
+
 
 
 

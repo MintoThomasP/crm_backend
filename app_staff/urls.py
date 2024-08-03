@@ -45,6 +45,9 @@ path('CreateSalarySlip/', views.CreateSalarySlipApi),
 path('CURDSalarySlipApi/', views.CURDSalarySlipApi),
 
 
+    path('moveOnRegister/', views.moveOnRegisterApi),
+    url(r'^moveOnRegister/(?P<StaffId>[0-9a-zA-Z\-]+)$', views.moveOnRegisterApi),
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

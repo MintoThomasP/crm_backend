@@ -39,7 +39,7 @@ def CreateLoginApi(request):
     elif request.method == 'PUT':
         userLoginData = JSONParser().parse(request)
         userLogin = Login.objects.get(
-            userLoginId=userLoginData['LoginId'])
+            LoginId=userLoginData['LoginId'])
         logSerializer = LoginSaveSerializer(
             userLogin, data=userLoginData)
         if logSerializer.is_valid():

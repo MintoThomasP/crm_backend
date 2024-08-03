@@ -15,17 +15,17 @@ class Project(models.Model):
     CompanyId = models.CharField(blank=True, null=True, max_length=50)
     ProjectName = models.CharField(blank=True, null=True, max_length=300)
     Description=models.TextField(blank=True, null=True)
-    StartDate=models.DateTimeField(default=datetime.now)
+    StartDate=models.CharField(blank=True, null=True, max_length=50)
     EndDate=models.CharField(blank=True, null=True, max_length=100)
     Duration=models.IntegerField(default=0)
     Status=models.ForeignKey('app_default.TaskStatus',on_delete=models.CASCADE)
     ClientId=models.CharField(blank=True, null=True, max_length=50)
-    def save(self, *args, **kwargs):
-        if not self.StartDate:
-            # Convert current time to IST
-            ist = pytz.timezone('Asia/Kolkata')
-            self.StartDate = datetime.now(ist)
-        super(Project, self).save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     if not self.StartDate:
+    #         # Convert current time to IST
+    #         ist = pytz.timezone('Asia/Kolkata')
+    #         self.StartDate = datetime.now(ist)
+    #     super(Project, self).save(*args, **kwargs)
 
 class ProjectTask(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)
@@ -50,6 +50,7 @@ class ProjectTask(models.Model):
     VerifiedBy=models.CharField(blank=True, null=True, max_length=50)
     IsRepeated = models.BooleanField(default=False)
     RepeatInterval = models.CharField(max_length=50, blank=True, null=True)
+    ScheduledDays = models.CharField(max_length=50, blank=True, null=True)
     LastAssigned = models.DateTimeField(default=timezone.now, blank=True, null=True)
     ExtraAccess=models.BooleanField(default=False)
     AccessTo =models.TextField(blank=True, null=True)

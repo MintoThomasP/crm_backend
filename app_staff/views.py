@@ -12,15 +12,18 @@ from django.http.response import JsonResponse
 import qrcode
 from PIL import Image
 from io import BytesIO
-from app_default.models import Designation, LeaveStatus, LeaveType
-from app_default.serializers import DesignationSerializer, LeaveStatusSerializer, LeaveTypeSerializer
+from app_default.models import LeaveStatus, LeaveType
+from app_basic.models import Designation
+from app_basic.serializers import DesignationSerializer
+from app_default.serializers import LeaveStatusSerializer, LeaveTypeSerializer
 from app_login.serializers import LoginSerializer
 from app_project.views import CustomPageNumberPagination
 from app_report.views import durationCalculation
 from app_site.models import SiteSettings
-from app_staff.models import LeaveApplication, SalarySlip, Staff, StaffDocuments, StaffGuardian
+from app_site.serializers import SiteSettingsSerializer
+from app_staff.models import LeaveApplication, MoveOnRegister, SalarySlip, Staff, StaffDocuments, StaffGuardian
 import os
-from app_staff.serializers import LeaveApplicationSerializer, SalarySlipSerializer, SaveStaffSerializer, StaffDocumentsSerializer, StaffGuardianSerializer, StaffSerializer, UpdateStaffSerializer, UploadStaffDocumentsSerializer
+from app_staff.serializers import LeaveApplicationSerializer, MoveOnRegisterSerializer, SalarySlipSerializer, SaveStaffSerializer, StaffDocumentsSerializer, StaffGuardianSerializer, StaffSerializer, UpdateStaffSerializer, UploadStaffDocumentsSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -32,7 +35,7 @@ from datetime import datetime
 from django.utils import timezone
 from xhtml2pdf import pisa
 from django.template.loader import get_template
-
+from django.conf import settings
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=SaveStaffSerializer)
 @swagger_auto_schema(method='PUT', request_body=SaveStaffSerializer)
@@ -732,7 +735,7 @@ class leaveApplicationApiByStaffId(generics.ListAPIView):
 
 
 class StaffApiByCompanyId(generics.ListAPIView):
-    queryset =Staff.objects.all()
+    queryset =Staff.objects.all().order_by('-SortId')
     pagination_class = CustomPageNumberPagination
     serializer_class = StaffSerializer 
     def post(self, request, *args, **kwargs):
@@ -827,6 +830,17 @@ def CreateSalarySlipApi(request):
             last_day_str = str(last_day_of_last_month.strftime('%Y-%m-%d'))
             for staff in staffSerializer.data:
                 # try:
+                        first_day_time = datetime.fromisoformat(first_day_str)
+                        last_day_time = datetime.fromisoformat(last_day_str)
+                        joining_date = datetime.fromisoformat(staff['JoinedOn'])
+                        no_working_days=0
+                        if first_day_time<joining_date:
+                            no_working_days=no_working_days+(joining_date - first_day_time).days+1
+                        if staff['LeavingDate']:
+                            relieving_date = datetime.fromisoformat(staff['LeavingDate'])
+                            if last_day_time>relieving_date:
+                                no_working_days=no_working_days+(last_day_time - relieving_date).days+1
+                        total_working_days=days_in_last_month-no_working_days
                         salary=float(staff['Salary'])
                         start_date = timezone.datetime.strptime(first_day_str, '%Y-%m-%d').date()
                         end_date = (timezone.datetime.strptime(last_day_str, '%Y-%m-%d') + timezone.timedelta(days=1)).date()
@@ -834,7 +848,7 @@ def CreateSalarySlipApi(request):
                         leaveApplicationSerializer = LeaveApplicationSerializer(
                             leaveApplication,many=True)
                         LOP=calculate_leave(leaveApplicationSerializer.data,last_month_year,last_month)
-                        PaidDays=days_in_last_month-LOP
+                        PaidDays=total_working_days-LOP
                         Leave=0
                         salaryPay=(float(salary)/float(days_in_last_month)*(PaidDays))
                         BasicPay=salaryPay*.6
@@ -858,11 +872,12 @@ def CreateSalarySlipApi(request):
                             'MedicalAllowance': round(MedicalAllowance,2),
                             'OtherAllowance': round(OtherAllowance,2),
                             'AppreciationBonus': round(AppreciationBonus,2),
-                            'TotalWorkingDays': days_in_last_month,
+                            'TotalWorkingDays': total_working_days,
                             'LOP': LOP,
                             'PaidDays': PaidDays,
                             'Leave': Leave,
                             'GrossPay': round(GrossPay,2),
+                            'BankAccount': staff['BankAccount'],
                         }
                         salarySlip = SalarySlipSerializer(
                             data=data)
@@ -906,19 +921,30 @@ def calculate_leave(leave_entries,target_year,target_month):
 def DownloadSalarySlip(request, Month,Year,StaffId):
         salarySlip = SalarySlip.objects.get(StaffId=StaffId,Year=Year,Month=Month)
         staffData = Staff.objects.get(StaffId=salarySlip.StaffId)
-        companyData = Company.objects.get(CompanyId=staffData.CompanyId)
-        SiteSettingsData = SiteSettings.objects.get(CompanyId=staffData.CompanyId)
+        try:
+            companyData = Company.objects.get(CompanyId=staffData.CompanyId)
+        except:
+            companyData=""
+        
         TotalEarnings=salarySlip.BasicPay+salarySlip.ConveyanceAllowance+salarySlip.MedicalAllowance+salarySlip.OtherAllowance+salarySlip.AppreciationBonus
+        try:
+            siteSettings=SiteSettings.objects.get(CompanyId=staffData.CompanyId)
+            siteSettingsSerializer=SiteSettingsSerializer(siteSettings)
+            logo=os.path.join(settings.BASE_DIR)+siteSettingsSerializer.data['Logo']
+        except:
+            logo=""
+        
         TotalDeductions=0
         NetSalary=TotalEarnings-TotalDeductions
         context = {
             'salarySlip':salarySlip,
             'staff':staffData,
+            'JoinedDate':datetime.strptime(staffData.JoinedOn, '%Y-%m-%d').strftime('%B %d, %Y'),
             'company':companyData,
             'TotalEarnings':TotalEarnings,
             'TotalDeductions':TotalDeductions,
             'NetSalary':NetSalary,
-            'SiteSetting':SiteSettingsData,
+            'logo':logo,
             'Month':  calendar.month_name[int(Month)],
             'Year':Year
         }
@@ -969,3 +995,47 @@ def CURDSalarySlipApi(request):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=MoveOnRegisterSerializer)
+@swagger_auto_schema(method='PUT', request_body=MoveOnRegisterSerializer)
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Move On Register Details",)
+@api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
+def moveOnRegisterApi(request,StaffId=""):
+    try:
+        if request.method == 'GET':
+            try:
+                moveOnRegister = MoveOnRegister.objects.filter(StaffId=StaffId).order_by('-SortId').first()
+                moveOnRegister_serializer = MoveOnRegisterSerializer(
+                    moveOnRegister)  
+                if moveOnRegister_serializer.data['StaffId']:
+                    return JsonResponse(moveOnRegister_serializer.data, safe=False)
+                return JsonResponse([], safe=False)
+            except:
+                return JsonResponse([], safe=False)
+        elif request.method == 'POST':
+            moveOnRegisterData = JSONParser().parse(request)
+            # return JsonResponse(moveOnRegisterData, safe=False)
+            moveOnRegisterSerializer = MoveOnRegisterSerializer(
+                data=moveOnRegisterData)
+            if moveOnRegisterSerializer.is_valid():
+                moveOnRegisterSerializer.save()
+                return JsonResponse(moveOnRegisterSerializer.data['MoveOnRegisterId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            moveOnRegisterData = JSONParser().parse(request)
+            moveOnRegister = MoveOnRegister.objects.get(
+                MoveOnRegisterId=moveOnRegisterData['MoveOnRegisterId'])
+            moveOnRegisterSerializer = MoveOnRegisterSerializer(
+                moveOnRegister, data=moveOnRegisterData)
+            if moveOnRegisterSerializer.is_valid():
+                moveOnRegisterSerializer.save()
+                return JsonResponse(moveOnRegisterSerializer.data['MoveOnRegisterId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("Invalid request", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    

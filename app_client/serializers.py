@@ -19,7 +19,9 @@ class ClientSerializer(serializers.ModelSerializer):
 'Phone2',
 'CustomerType',
 'AdvanceAmount',
-'SetDefaultProject'
+'SetDefaultProject',
+'CountryCode1',
+'CountryCode2'
 )
         
 class ClientOtherDetailsSerializer(serializers.ModelSerializer):

@@ -8,8 +8,8 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
-from app_default.models import Country, State
-from app_default.serializers import CountrySerializer, StateSerializer
+from app_basic.models import Country, State
+from app_basic.serializers import CountrySerializer, StateSerializer
 from app_default.views import retry
 from app_project.views import CustomPageNumberPagination
 from rest_framework import generics
@@ -120,7 +120,7 @@ def ClientByCompanyId(request, CompanyId=""):
 
 
 class ClientApiByCompanyId(generics.ListAPIView):
-    queryset =Client.objects.all()
+    queryset =Client.objects.all().order_by('-SortId')
     pagination_class = CustomPageNumberPagination
     serializer_class = ClientSerializer 
     def post(self, request, *args, **kwargs):

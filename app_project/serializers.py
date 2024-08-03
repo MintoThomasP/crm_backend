@@ -48,6 +48,7 @@ class ProjectTaskSerializer(serializers.ModelSerializer):
 'ExtraAccess',
 'AccessTo',
 'ClientId',
+'ScheduledDays'
         )
 
 

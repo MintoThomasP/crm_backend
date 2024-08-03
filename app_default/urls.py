@@ -7,14 +7,7 @@ urlpatterns = [
     url(r'^TaskStatusById/(?P<StatusId>[0-9a-zA-Z\-]+)$', views.TaskStatusApiById),
     path('get_permissions/',views.get_permissions),
 
-    path('Designation/', views.DesignationApi),
-    url(r'^Designation/(?P<DesignationId>[0-9a-zA-Z\-]+)$',
-        views.DesignationApiById),
-
-    path('UserGroup/', views.UserGroupApi),
-    url(r'^UserGroup/(?P<UserGroupId>[0-9a-zA-Z\-]+)$',
-        views.UserGroupApiById),
-   path('UserType/', views.UserTypeApi),
+path('UserType/', views.UserTypeApi),
 
 
 
@@ -25,18 +18,14 @@ urlpatterns = [
 
 
 
-    path('State/', views.StateApi),
-    url(r'^StateApiById/(?P<StateId>[0-9a-zA-Z\-]+)$', views.StateApiById),
-    url(r'^StateApiByCountryId/(?P<CountryId>[0-9a-zA-Z\-]+)$', views.StateApiByCountryId),
+ 
 
 
    path('StaffStatusApi/', views.StaffStatusApi),
    path('LeaveTypeApi/', views.LeaveTypeApi),
    path('LeaveStatus/', views.LeaveStatusApi),
    
-    path('Country/', views.CountryApi),
-    url(r'^CountryApiById/(?P<CountryId>[0-9a-zA-Z\-]+)$', views.CountryApiById),
-
+ 
 
     path('DocumentTypeApi/', views.DocumentTypeApi),
     path('SectionTypeApi/', views.SectionTypeApi),
@@ -47,5 +36,7 @@ urlpatterns = [
     path('FollowUpStatusApi/', views.FollowUpStatusApi),
     path('FollowUpTypeApi/', views.FollowUpTypeApi),
     path('EnquiryStatusApi/', views.EnquiryStatusApi),
+    path('CountryCodeApi/', views.CountryCodeApi),
+
 
 ]

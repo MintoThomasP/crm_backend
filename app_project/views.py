@@ -96,7 +96,7 @@ def ProjectApiById(request, ProjectId=""):
         return JsonResponse("", safe=False)
     
 class ProjectApiByCompanyId(generics.ListAPIView):
-    queryset =Project.objects.all()
+    queryset =Project.objects.all().order_by('-SortId')
     pagination_class = CustomPageNumberPagination
     serializer_class = ProjectSerializer 
     def post(self, request, *args, **kwargs):
@@ -143,6 +143,9 @@ class ProjectTaskPagination(generics.ListAPIView):
         Keyword = filterData.get('SearchKeyword', '')
         if filterData['TaskAssignedTo']:
             self.queryset = self.queryset.filter(TaskAssignedTo=filterData['TaskAssignedTo'])
+        if filterData['Status']:
+            status=filterData['Status']
+            self.queryset = self.queryset.filter(Status__in=status)
         if filterData['TaskAssignedBy']:
             self.queryset = self.queryset.filter(TaskAssignedBy=filterData['TaskAssignedBy'])
         if filterData['ProjectId']:
@@ -1646,6 +1649,93 @@ def GetAllProjectTaskApiByFiltering(request):
 
 
 
+# @api_view(['GET'])
+# def schedule_repeated_tasks(request):
+    
+#     retries = 3
+#     for _ in range(retries):
+#         try:
+#             now = timezone.now()
+#             repeated_tasks = ProjectTask.objects.filter(IsRepeated=True)
+#             projectTaskSerializer = ProjectTaskSerializer(
+#                     repeated_tasks, many=True)
+#             data=[]
+#             i=0
+#             for task in repeated_tasks:
+#                 next_due_date = None
+        
+#                 if task.RepeatInterval == 'daily':
+#                     next_due_date = task.LastAssigned + timedelta(days=1)
+                    
+#                 elif task.RepeatInterval == 'weekly':
+#                     next_due_date = task.LastAssigned + timedelta(weeks=1)
+#                 elif task.RepeatInterval == 'monthly':
+#                     next_due_date = task.LastAssigned + relativedelta(months=1)
+
+#                 if next_due_date and now <= next_due_date:
+#                     scheduled_deadline = next_due_date.strftime("%Y-%m-%dT%H:%M")
+#                     new_task = {
+#                         "ProjectId":task.ProjectId,
+#                         "TaskAssignedTo":task.TaskAssignedTo,
+#                         "TaskAssignedBy":task.TaskAssignedBy,
+#                         "Title":task.Title,
+#                         "Description":task.Description,
+#                         "Duration":task.Duration,
+#                         "Status":1,
+#                         "CreatedDate":now.strftime("%Y-%m-%d"),
+#                         "ScheduledDeadline":scheduled_deadline,
+#                         "TaskPoint":task.TaskPoint,
+#                         "TaskType":task.TaskType,
+#                         "RefId":task.RefId,
+#                         "IsRepeated":task.IsRepeated,
+#                         'RepeatInterval':task.RepeatInterval,
+#                         "LastAssigned":now
+#                     }
+#                     new_taskserializer = ProjectTaskSerializer(data=new_task)
+                
+#                     if new_taskserializer.is_valid():
+#                         new_taskserializer.save()
+#                         subtasks = ProjectTask.objects.filter(RefId=task.ProjectTaskId)
+#                         subtaskSerializer=ProjectTaskSerializer(subtasks,many=True)
+#                         for subtask in subtaskSerializer.data:
+#                             new_subtask_data = {
+#                                 "ProjectId": subtask['ProjectId'],
+#                                 "TaskAssignedTo": subtask['TaskAssignedTo'],
+#                                 "TaskAssignedBy": subtask['TaskAssignedBy'],
+#                                 "Title": subtask['Title'],
+#                                 "Description": subtask['Description'],
+#                                 "Status": 1,
+#                                 "CreatedDate": now.strftime("%Y-%m-%d"),
+#                                 "ScheduledDeadline": scheduled_deadline,
+#                                 "TaskPoint": subtask['TaskPoint'],
+#                                 "TaskType": subtask['TaskType'],
+#                                 "RefId": new_taskserializer.data['ProjectTaskId']
+
+#                             }
+#                             new_subtaskserializer = ProjectTaskSerializer(data=new_subtask_data)
+#                             if new_subtaskserializer.is_valid():
+#                                 new_subtaskserializer.save()
+#                             else:
+                
+#                                 print(new_subtaskserializer.errors)
+
+#                         i=i+1
+#                         data.append(new_taskserializer.data)
+                    
+
+#             return JsonResponse({"message": "Repeated tasks scheduled successfully.","data":data,"projectTaskSerializer":projectTaskSerializer.data,"count":i},safe=False)
+#         except NotImplementedError as e:
+#             # time.sleep(1)
+#             return JsonResponse({"error": "NotImplementedError occurred"}, status=500)
+#         # except Exception as e:
+#         #     # logger.error("Error: %s", e)
+#         #     return JsonResponse({"error": str(e)}, status=500)
+
+
+
+
+import json
+
 @api_view(['GET'])
 def schedule_repeated_tasks(request):
     
@@ -1656,21 +1746,49 @@ def schedule_repeated_tasks(request):
             repeated_tasks = ProjectTask.objects.filter(IsRepeated=True)
             projectTaskSerializer = ProjectTaskSerializer(
                     repeated_tasks, many=True)
-            data=[]
-            i=0
+            data = []
+            i = 0
             for task in repeated_tasks:
-                next_due_date = None
-        
+                given_date = datetime.now()
+                print(given_date)
+                day_of_week = (given_date.weekday() + 1)
+                next_Schduled_date = None
+                
+                
                 if task.RepeatInterval == 'daily':
-                    next_due_date = task.LastAssigned + timedelta(days=1)
+                    scheduled_days_str = task.ScheduledDays.strip('[] ') 
+                    ScheduledDays = list(map(int, scheduled_days_str.split(',')))
+                    if day_of_week in ScheduledDays:
+                        
+                        next_Schduled_date = task.LastAssigned + timedelta(days=1)
+                        print("next_Schduled_date",next_Schduled_date)
+
+
+                        # for day in ScheduledDays:
+                        #     n=1
+                        #     next_date = given_date + timedelta(days=n)
+                        #     next_day = next_date.weekday() + 1
+                        #     print(next_day,"next_day")
+                        #     n+1
+                        #     if day in ScheduledDays:
+                        #         next_Schduled_date =next_date
+                        #         print(next_Schduled_date)
+                                
+                        #         break
+                        
                     
                 elif task.RepeatInterval == 'weekly':
-                    next_due_date = task.LastAssigned + timedelta(weeks=1)
+                    next_Schduled_date = task.LastAssigned + timedelta(weeks=1)
                 elif task.RepeatInterval == 'monthly':
-                    next_due_date = task.LastAssigned + relativedelta(months=1)
-
-                if next_due_date and now <= next_due_date:
-                    scheduled_deadline = next_due_date.strftime("%Y-%m-%dT%H:%M")
+                    # scheduled_days_str = task.ScheduledDays.strip('[] ') 
+                    # ScheduledDays = list(map(int, scheduled_days_str.split(',')))
+                    # month=
+                    # if month in ScheduledDays:
+                    next_Schduled_date = task.LastAssigned + relativedelta(months=1)
+                
+                if next_Schduled_date and now <= next_Schduled_date:
+                    # scheduled_deadline = next_Schduled_date.strftime("%Y-%m-%dT%H:%M")
+                    scheduled_deadline = now + timedelta(days=1)
                     new_task = {
                         "ProjectId":task.ProjectId,
                         "TaskAssignedTo":task.TaskAssignedTo,
@@ -1679,14 +1797,15 @@ def schedule_repeated_tasks(request):
                         "Description":task.Description,
                         "Duration":task.Duration,
                         "Status":1,
-                        "CreatedDate":now.strftime("%Y-%m-%d"),
-                        "ScheduledDeadline":scheduled_deadline,
+                        "CreatedDate":scheduled_deadline.strftime("%Y-%m-%d"),
+                        "ScheduledDeadline":scheduled_deadline.strftime("%Y-%m-%dT%H:%M"),
                         "TaskPoint":task.TaskPoint,
                         "TaskType":task.TaskType,
                         "RefId":task.RefId,
                         "IsRepeated":task.IsRepeated,
                         'RepeatInterval':task.RepeatInterval,
-                        "LastAssigned":now
+                        "LastAssigned":next_Schduled_date,
+                        "ScheduledDays":task.ScheduledDays
                     }
                     new_taskserializer = ProjectTaskSerializer(data=new_task)
                 
@@ -1713,7 +1832,6 @@ def schedule_repeated_tasks(request):
                             if new_subtaskserializer.is_valid():
                                 new_subtaskserializer.save()
                             else:
-                
                                 print(new_subtaskserializer.errors)
 
                         i=i+1
@@ -1722,13 +1840,8 @@ def schedule_repeated_tasks(request):
 
             return JsonResponse({"message": "Repeated tasks scheduled successfully.","data":data,"projectTaskSerializer":projectTaskSerializer.data,"count":i},safe=False)
         except NotImplementedError as e:
-            # time.sleep(1)
             return JsonResponse({"error": "NotImplementedError occurred"}, status=500)
-        # except Exception as e:
-        #     # logger.error("Error: %s", e)
-        #     return JsonResponse({"error": str(e)}, status=500)
-
-
+        
 # from django_q.tasks import schedule
 # from django_q.models import Schedule
 # from datetime import timedelta

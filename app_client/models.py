@@ -21,6 +21,9 @@ class Client(models.Model):
     CustomerType=models.CharField(max_length=300, blank=True, null=True)
     AdvanceAmount=models.CharField(max_length=15, blank=True, null=True, default="0")
     SetDefaultProject=models.BooleanField(default=True)
+    CountryCode1=models.CharField(blank=True, null=True, max_length=10)
+    CountryCode2=models.CharField(blank=True, null=True, max_length=10)
+
 
 
 class ClientOtherDetails(models.Model):

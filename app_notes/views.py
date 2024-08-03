@@ -129,11 +129,11 @@ def DeleteMeetingDocument(request, MeetingNoteDocumentId=""):
     
 from rest_framework.pagination import PageNumberPagination  
 class CustomNotesPagination(PageNumberPagination):
-    page_size = 10 # Adjust the page size as needed
+    page_size = 40 # Adjust the page size as needed
     page_size_query_param = 'page_size'  
 
 class MeetingNotesApiByCompanyId(generics.ListAPIView):
-    queryset =MeetingNotes.objects.all()
+    queryset =MeetingNotes.objects.all().order_by('-SortId')
     pagination_class = CustomNotesPagination
     serializer_class = MeetingNotesSerializer 
     def post(self, request, *args, **kwargs):
