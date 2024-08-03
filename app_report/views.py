@@ -904,18 +904,22 @@ def StaffTaskReportBasedOnDateinPDFformat(request, StaffId="", StartDate="", End
     current_datetime = timezone.now()
     staff = Staff.objects.get(StaffId=StaffId)
     StaffName = staff.StaffName
-    start_dt = datetime.strptime(StartDate, '%Y-%m-%d').date()
-    end_dt = (datetime.strptime(EndDate, '%Y-%m-%d') + timezone.timedelta(days=1)).date()
+    
 
     response_data_by_date = {}
     # loginHistory = LoginHistory.objects.annotate(LoginTime_cast=Cast('LoginTime', DateTimeField())).filter(
     #     LoginTime_cast__range=(start_dt, end_dt), UserId=StaffId).exclude(LogoutTime_isnull=True).order_by('SortId')
-    loginHistory = LoginHistory.objects.annotate(
-    LoginTime_cast=Cast('LoginTime', DateTimeField())
-).filter(
-    LoginTime_cast__range=(start_dt, end_dt),
-    UserId=StaffId
-).order_by('SortId')
+    if StartDate and EndDate:
+        start_dt = datetime.strptime(StartDate, '%Y-%m-%d').date()
+        end_dt = (datetime.strptime(EndDate, '%Y-%m-%d') + timezone.timedelta(days=1)).date()
+        loginHistory = LoginHistory.objects.annotate(
+        LoginTime_cast=Cast('LoginTime', DateTimeField())
+    ).filter(
+        LoginTime_cast__range=(start_dt, end_dt),
+        UserId=StaffId
+    ).order_by('SortId')
+    else:
+        loginHistory = LoginHistory.objects.filter(UserId=StaffId).order_by('SortId')
     loginHistorySerializer = LoginHistorySerializer(loginHistory, many=True)
     total_login_work_time=0
     totalPoint=0

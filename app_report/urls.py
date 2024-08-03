@@ -14,7 +14,8 @@ urlpatterns = [
 
     path('StaffTaskReportBasedOnDateinPDFformat/<str:StaffId>/<str:StartDate>/<str:EndDate>/', views.StaffTaskReportBasedOnDateinPDFformat),
 
-    
+    path('StaffTaskReportBasedOnDateinPDFformat/<str:StaffId>/', views.StaffTaskReportBasedOnDateinPDFformat),
+
 
     # path('ReportApiBytaskId/', views.ReportApiBytaskId),
 

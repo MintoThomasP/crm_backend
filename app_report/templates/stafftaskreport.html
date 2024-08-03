@@ -163,6 +163,9 @@
         
 </table>
 {%endfor%}
+{%if not sorted_response_data%}
+<p><b>No records found!</b></p>
+{%endif%}
 
 {%if pendingDetails%}
 <p class="head"><b>Pending Tasks as per {{current_datetime}}</b></p>
