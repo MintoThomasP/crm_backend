@@ -143,7 +143,7 @@ class ProjectTaskPagination(generics.ListAPIView):
         Keyword = filterData.get('SearchKeyword', '')
         if filterData['TaskAssignedTo']:
             self.queryset = self.queryset.filter(TaskAssignedTo=filterData['TaskAssignedTo'])
-        if filterData['Status']:
+        if len(filterData['Status']):
             status=filterData['Status']
             self.queryset = self.queryset.filter(Status__in=status)
         if filterData['TaskAssignedBy']:
