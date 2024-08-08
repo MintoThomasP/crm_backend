@@ -54,7 +54,7 @@ urlpatterns = [
     path('api-notes/', include('app_notes.urls')),
     path('api-enquiry/', include('app_enquiry.urls')),
     path('api-basic/', include('app_basic.urls')),
-    
+    path('swagger-json/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger<str:format>', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),

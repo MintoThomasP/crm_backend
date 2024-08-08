@@ -22,7 +22,9 @@ class ClientSerializer(serializers.ModelSerializer):
 'SetDefaultProject',
 'CountryCode1',
 'CountryCode2',
-'ActiveStatus'
+'ActiveStatus',
+'PLLedger',
+'BalanceSheetLedger'
 )
         
 class ClientOtherDetailsSerializer(serializers.ModelSerializer):

@@ -824,7 +824,7 @@ def SalarySlipApi(request,StaffId="",Year="",Month=""):
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def CreateSalarySlipApi(request):
-    try:
+    # try:
         if request.method == 'GET':
             staffDa = Staff.objects.filter(Status=1)
             staffSerializer = StaffSerializer(
@@ -907,8 +907,8 @@ def CreateSalarySlipApi(request):
             return JsonResponse("staffSerializer.data", safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
 
 def calculate_leave(leave_entries,target_year,target_month):
 

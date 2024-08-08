@@ -24,6 +24,8 @@ class Client(models.Model):
     CountryCode1=models.CharField(blank=True, null=True, max_length=10)
     CountryCode2=models.CharField(blank=True, null=True, max_length=10)
     ActiveStatus=models.BooleanField(default=True)
+    PLLedger=models.JSONField(null=True,blank=True)
+    BalanceSheetLedger=models.JSONField(null=True,blank=True)
 
 
 

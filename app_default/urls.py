@@ -17,15 +17,11 @@ path('UserType/', views.UserTypeApi),
     path('InvoiceStatus/', views.InvoiceStatusApi),
 
 
-
- 
-
-
    path('StaffStatusApi/', views.StaffStatusApi),
    path('LeaveTypeApi/', views.LeaveTypeApi),
    path('LeaveStatus/', views.LeaveStatusApi),
    
- 
+
 
     path('DocumentTypeApi/', views.DocumentTypeApi),
     path('SectionTypeApi/', views.SectionTypeApi),
