@@ -14,18 +14,18 @@ from app_default.views import retry
 from app_project.views import CustomPageNumberPagination
 from rest_framework import generics
 from django.db.models import Q
-
+from django.db import transaction   
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=ClientSerializer)
-@swagger_auto_schema(method='PUT', request_body=ClientSerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all client details",)
+@swagger_auto_schema(method='POST', request_body=ClientSerializer,operation_description="NOTE: API for save Client")
+@swagger_auto_schema(method='PUT', request_body=ClientSerializer,operation_description="NOTE: API for edit Client")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all client",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def clientApi(request):
     try:
         if request.method == 'GET':
-            client = Client.objects.all()
+            client = Client.objects.filter(ActiveStatus=1)
             clientSerializer = ClientSerializer(
                     client, many=True)
             return JsonResponse(clientSerializer.data, safe=False)
@@ -53,7 +53,8 @@ def clientApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give ClientId to get one clientdetail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get Client by ClientId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE Client by ClientId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def ClientApiById(request, ClientId=""):
@@ -87,15 +88,17 @@ def ClientApiById(request, ClientId=""):
             return JsonResponse(clientData, safe=False)
         elif request.method == 'DELETE':
             client = Client.objects.get(ClientId=ClientId)
-            client.delete()
+            client.ActiveStatus=0
+            client.save()
             return JsonResponse("Deleted successfully", safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-from django.db import transaction   
+    
+
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give CompanyId to get all project detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get Client by CompanyId",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def ClientByCompanyId(request, CompanyId=""):
@@ -103,7 +106,7 @@ def ClientByCompanyId(request, CompanyId=""):
         if request.method == 'GET':
             BATCH_SIZE = 100
             client = Client.objects.filter(
-                    CompanyId=CompanyId)
+                    CompanyId=CompanyId,ActiveStatus=1)
             total_client=client.count()
             all_serialized_data = []
             for i in range(0, total_client, BATCH_SIZE):
@@ -120,28 +123,31 @@ def ClientByCompanyId(request, CompanyId=""):
 
 
 class ClientApiByCompanyId(generics.ListAPIView):
-    queryset =Client.objects.all().order_by('-SortId')
+    queryset =Client.objects.filter(ActiveStatus=1).order_by('-SortId')
     pagination_class = CustomPageNumberPagination
     serializer_class = ClientSerializer 
     def post(self, request, *args, **kwargs):
-        filterData = JSONParser().parse(request)
-        Keyword = filterData.get('SearchKeyword', '')
-        if filterData['CompanyId']:
-            self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+        try:
+            filterData = JSONParser().parse(request)
+            Keyword = filterData.get('SearchKeyword', '')
+            if filterData['CompanyId']:
+                self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
 
-        if Keyword:
-            self.queryset = self.queryset.filter(Q(CustomerDisplayName__icontains=Keyword)|Q(CompanyName__icontains=Keyword))
-        page = self.paginate_queryset(self.queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+            if Keyword:
+                self.queryset = self.queryset.filter(Q(CustomerDisplayName__icontains=Keyword)|Q(CompanyName__icontains=Keyword))
+            page = self.paginate_queryset(self.queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+        except:
+            return JsonResponse("", safe=False)
 
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=ClientOtherDetailsSerializer)
-@swagger_auto_schema(method='PUT', request_body=ClientOtherDetailsSerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all client details",)
+@swagger_auto_schema(method='POST', request_body=ClientOtherDetailsSerializer,operation_description="NOTE: API for save ClientOtherDetails")
+@swagger_auto_schema(method='PUT', request_body=ClientOtherDetailsSerializer,operation_description="NOTE: API for edit ClientOtherDetails")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all ClientOtherDetails",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def ClientOtherDetailsApi(request):
@@ -175,7 +181,8 @@ def ClientOtherDetailsApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give ClientOtherDetailsId to get one clientOtherDetailsdetail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get ClientOtherDetails by ClientOtherDetailsId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete ClientOtherDetails by ClientOtherDetailsId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def ClientOtherDetailsApiById(request, ClientOtherDetailId=""):
@@ -212,25 +219,12 @@ class UploadClientDocument(APIView):
             return JsonResponse("", safe=False)
 
 
-# @csrf_exempt
-# @swagger_auto_schema(method='GET',operation_description="NOTE: Give ClientOtherDetailsId to get one clientOtherDetailsdetail",)
-# @api_view(['GET','DELETE'])
-# @retry(retries=3, delay=2)
-# def DeleteClientDocument(request, ClientDocumentId=""):
-#     try:
-#         if request.method == 'DELETE':
-#             clientOtherDetails = ClientDocuments.objects.get(ClientDocumentId=ClientDocumentId)
-#             ClientDocuments.objects.get(ClientDocumentId=ClientDocumentId).Document.delete(save=True)
-#             clientOtherDetails.delete()
-#             return JsonResponse("Deleted successfully", safe=False)
-#         else:
-#             return JsonResponse("", safe=False)
-#     except:
-#         return JsonResponse("", safe=False)   
+
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give ClientDocumentId to get one ClientDocument detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get ClientDocument by ClientDocumentId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete ClientDocument by ClientDocumentId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def ClientDocumentApiById(request, ClientDocumentId=""):
@@ -253,9 +247,9 @@ def ClientDocumentApiById(request, ClientDocumentId=""):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=ClientAddressSerializer)
-@swagger_auto_schema(method='PUT', request_body=ClientAddressSerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all client details",)
+@swagger_auto_schema(method='POST', request_body=ClientAddressSerializer,operation_description="NOTE: API for save ClientAddress")
+@swagger_auto_schema(method='PUT', request_body=ClientAddressSerializer,operation_description="NOTE: API for edit ClientAddress")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all ClientAddress",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def ClientAddressApi(request):
@@ -289,7 +283,8 @@ def ClientAddressApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give ClientAddressId to get one clientAddressdetail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get clientAddress by ClientAddressId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE clientAddress by ClientAddressId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def ClientAddressApiById(request, ClientAddressId=""):
@@ -310,7 +305,7 @@ def ClientAddressApiById(request, ClientAddressId=""):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give ClientId to get clientAddressdetail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get ClientAddress by ClientId",)
 @api_view(['GET',])
 @retry(retries=3, delay=2)
 def ClientAddressApiByClientId(request, ClientId=""):
@@ -343,9 +338,9 @@ def ClientAddressApiByClientId(request, ClientId=""):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=ContactPersonSerializer)
-@swagger_auto_schema(method='PUT', request_body=ContactPersonSerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all client details",)
+@swagger_auto_schema(method='POST', request_body=ContactPersonSerializer,operation_description="NOTE: API for save ContactPerson")
+@swagger_auto_schema(method='PUT', request_body=ContactPersonSerializer,operation_description="NOTE: API for edit ContactPerson")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get all ContactPerson",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def ContactPersonApi(request):
@@ -379,7 +374,8 @@ def ContactPersonApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give ContactPersonId to get one contactPersondetail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get ContactPerson by ContactPersonId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete ContactPerson by ContactPersonId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def ContactPersonApiById(request, ContactPersonId=""):

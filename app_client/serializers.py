@@ -21,7 +21,8 @@ class ClientSerializer(serializers.ModelSerializer):
 'AdvanceAmount',
 'SetDefaultProject',
 'CountryCode1',
-'CountryCode2'
+'CountryCode2',
+'ActiveStatus'
 )
         
 class ClientOtherDetailsSerializer(serializers.ModelSerializer):

@@ -36,7 +36,7 @@ def retry(retries=3, delay=2):
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=TaskStatusSerializer)
 @swagger_auto_schema(method='PUT', request_body=TaskStatusSerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all task status",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all task status",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def TaskStatusApi(request):
@@ -70,7 +70,7 @@ def TaskStatusApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give StatusId to get one status",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get TaskStatus by StatusId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def TaskStatusApiById(request, StatusId=""):
@@ -92,7 +92,7 @@ def TaskStatusApiById(request, StatusId=""):
     
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: get all Usertypes",)
+@swagger_auto_schema(method='GET',operation_description="NOTE:API for get all Usertypes",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def UserTypeApi(request):
@@ -142,7 +142,7 @@ def get_permissions(request):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Currency Details",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all Currency",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def CurrencyApi(request):
@@ -155,11 +155,11 @@ def CurrencyApi(request):
         else:
             return JsonResponse("",safe=False)
     except:
-        return JsonResponse("Invalid", safe=False)
+        return JsonResponse("", safe=False)
     
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all PaymentMode Details",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all PaymentMode",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def PaymentModeApi(request):
@@ -172,11 +172,11 @@ def PaymentModeApi(request):
         else:
             return JsonResponse("", safe=False)
     except:
-        return JsonResponse("Invalid", safe=False)
+        return JsonResponse("", safe=False)
     
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all DepositTo Details",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for  Get all DepositTo",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def DepositToApi(request):
@@ -189,11 +189,11 @@ def DepositToApi(request):
         else:
             return JsonResponse("", safe=False)
     except:
-        return JsonResponse("Invalid", safe=False)
+        return JsonResponse("", safe=False)
     
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all InvoiceStatus Details",)
+@swagger_auto_schema(method='GET',operation_description="NOTE:API for Get all InvoiceStatus",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def InvoiceStatusApi(request):
@@ -206,7 +206,7 @@ def InvoiceStatusApi(request):
         else:
             return JsonResponse("", safe=False)
     except:
-        return JsonResponse("Invalid", safe=False)
+        return JsonResponse("", safe=False)
     
 
 
@@ -215,7 +215,7 @@ def InvoiceStatusApi(request):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all StaffStatus Details",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all StaffStatus",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def StaffStatusApi(request):
@@ -228,12 +228,12 @@ def StaffStatusApi(request):
         else:
             return JsonResponse("", safe=False)
     except:
-        return JsonResponse("Invalid", safe=False)
+        return JsonResponse("", safe=False)
     
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all LeaveType Details",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all LeaveType",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def LeaveTypeApi(request):
@@ -246,11 +246,11 @@ def LeaveTypeApi(request):
         else:
             return JsonResponse("", safe=False)
     except:
-        return JsonResponse("Invalid", safe=False)
+        return JsonResponse("", safe=False)
     
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all LeaveStatus Details",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all LeaveStatus",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def LeaveStatusApi(request):
@@ -263,11 +263,11 @@ def LeaveStatusApi(request):
         else:
             return JsonResponse("", safe=False)
     except:
-        return JsonResponse("Invalid", safe=False)
+        return JsonResponse("", safe=False)
     
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all DocumentType Details",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all DocumentType",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def DocumentTypeApi(request):
@@ -280,7 +280,7 @@ def DocumentTypeApi(request):
         else:
             return JsonResponse("", safe=False)
     except:
-        return JsonResponse("Invalid", safe=False)
+        return JsonResponse("", safe=False)
     
 
 
@@ -288,7 +288,7 @@ def DocumentTypeApi(request):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all SectionType Details",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all SectionType",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def SectionTypeApi(request):
@@ -301,12 +301,12 @@ def SectionTypeApi(request):
         else:
             return JsonResponse("", safe=False)
     except:
-        return JsonResponse("Invalid", safe=False)
+        return JsonResponse("", safe=False)
     
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all CategoryType Details",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all CategoryType",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def CategoryTypeApi(request):
@@ -319,12 +319,12 @@ def CategoryTypeApi(request):
         else:
             return JsonResponse("", safe=False)
     except:
-        return JsonResponse("Invalid", safe=False)
+        return JsonResponse("", safe=False)
     
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all ReportType Details",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all ReportType",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def ReportTypeApi(request):
@@ -337,11 +337,11 @@ def ReportTypeApi(request):
         else:
             return JsonResponse("", safe=False)
     except:
-        return JsonResponse("Invalid", safe=False)
+        return JsonResponse("", safe=False)
     
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all MeetingType Details",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all MeetingType",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def MeetingTypeApi(request):
@@ -354,12 +354,12 @@ def MeetingTypeApi(request):
         else:
             return JsonResponse("", safe=False)
     except:
-        return JsonResponse("Invalid", safe=False)
+        return JsonResponse("", safe=False)
     
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all EnquiryType Details",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all EnquiryType",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def EnquiryTypeApi(request):
@@ -372,12 +372,12 @@ def EnquiryTypeApi(request):
         else:
             return JsonResponse("", safe=False)
     except:
-        return JsonResponse("Invalid", safe=False)
+        return JsonResponse("", safe=False)
     
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all FollowUpStatus",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all FollowUpStatus",)
 @api_view(['GET'])
 def FollowUpStatusApi(request):
     try:
@@ -388,11 +388,11 @@ def FollowUpStatusApi(request):
         else:
             return JsonResponse("", safe=False)
     except:
-        return JsonResponse("Invalid", safe=False)
+        return JsonResponse("", safe=False)
     
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all FollowUpType",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all FollowUpType",)
 @api_view(['GET'])
 def FollowUpTypeApi(request):
     try:
@@ -403,11 +403,11 @@ def FollowUpTypeApi(request):
         else:
             return JsonResponse("", safe=False)
     except:
-        return JsonResponse("Invalid", safe=False)
+        return JsonResponse("", safe=False)
     
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all VanDeliveryEnquiryStatus",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all VanDeliveryEnquiryStatus",)
 @api_view(['GET'])
 def EnquiryStatusApi(request):
     try:
@@ -418,13 +418,13 @@ def EnquiryStatusApi(request):
         else:
             return JsonResponse("", safe=False)
     except:
-        return JsonResponse("Invalid", safe=False)
+        return JsonResponse("", safe=False)
     
 
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all CountryCode",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all CountryCode",)
 @api_view(['GET'])
 def CountryCodeApi(request):
     try:
@@ -435,4 +435,4 @@ def CountryCodeApi(request):
         else:
             return JsonResponse("", safe=False)
     except:
-        return JsonResponse("Invalid", safe=False)
+        return JsonResponse("", safe=False)

@@ -19,6 +19,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 
 from app_client.models import Client, ClientAddress
 from app_client.serializers import ClientAddressSerializer, ClientSerializer
+from app_company.models import Company
 from app_default.models import InvoiceStatus, PaymentMode
 from app_basic.models import Country, State
 from app_default.serializers import InvoiceStatusSerializer
@@ -30,6 +31,7 @@ from app_project.serializers import ProjectSerializer
 from app_sale.models import Invoice, InvoiceDocument, InvoiceItem, PaymentReceived, Quotation, QuotationFile, QuotationItem
 from app_sale.serializers import InvoiceDocumentSerializer, InvoiceItemSerializer, InvoiceSerializer, PaymentDocumentSerializer, PaymentReceivedDetailSerializer, PaymentReceivedSerializer, QuotationFileSerializer, QuotationItemSerializer, QuotationSerializer
 from app_site.models import SiteSettings
+from app_site.serializers import SiteSettingsSerializer
 from app_staff.models import Staff
 from app_staff.serializers import StaffSerializer
 from rest_framework.pagination import PageNumberPagination
@@ -58,7 +60,7 @@ def sendCubexizsoftMail(msg=""):
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def QuotationApi(request):
-    # try:
+    try:
         if request.method == 'GET':
             quotation = Quotation.objects.all().order_by('-SortId')
             quotationSerializer = QuotationSerializer(
@@ -106,8 +108,8 @@ def QuotationApi(request):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give QuotationId to get one quotation detail",)
@@ -145,38 +147,41 @@ class QuotationApiByCompanyId(generics.ListAPIView):
     pagination_class = CustomPagination
     serializer_class = QuotationSerializer 
     def post(self, request, *args, **kwargs):
-        filterData = JSONParser().parse(request)
-        Keyword = filterData.get('SearchKeyword', '')
-        if filterData['CompanyId']:
-            self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
-        if Keyword:
-            self.queryset = self.queryset.filter(Subject__icontains=Keyword)
-        page = self.paginate_queryset(self.queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            data = []
+        try:
+            filterData = JSONParser().parse(request)
+            Keyword = filterData.get('SearchKeyword', '')
+            if filterData['CompanyId']:
+                self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+            if Keyword:
+                self.queryset = self.queryset.filter(Subject__icontains=Keyword)
+            page = self.paginate_queryset(self.queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                data = []
 
-            for row in serializer.data:
-                try:
-                    client=Client.objects.get(ClientId=row['ClientId'])
-                    clientSerializer=ClientSerializer(client)
-                    row['ClientName']=clientSerializer.data['CustomerDisplayName']
-                except:
-                    row['ClientName']=[]
-                try:
-                    project=Project.objects.get(ProjectId=row['ProjectId'])
-                    projectSerializer=ProjectSerializer(project)
-                    row['ProjectName']=projectSerializer.data['ProjectName']
-                except:
-                    row['ProjectName']=[]
-                try:
-                    staff=Staff.objects.get(StaffId=row['SalesPerson'])
-                    staffSerializer=StaffSerializer(staff)
-                    row['StaffName']=staffSerializer.data['StaffName']
-                except:
-                    row['StaffName']=[]
-                data.append(row)
-            return self.get_paginated_response(data)
+                for row in serializer.data:
+                    try:
+                        client=Client.objects.get(ClientId=row['ClientId'])
+                        clientSerializer=ClientSerializer(client)
+                        row['ClientName']=clientSerializer.data['CustomerDisplayName']
+                    except:
+                        row['ClientName']=[]
+                    try:
+                        project=Project.objects.get(ProjectId=row['ProjectId'])
+                        projectSerializer=ProjectSerializer(project)
+                        row['ProjectName']=projectSerializer.data['ProjectName']
+                    except:
+                        row['ProjectName']=[]
+                    try:
+                        staff=Staff.objects.get(StaffId=row['SalesPerson'])
+                        staffSerializer=StaffSerializer(staff)
+                        row['StaffName']=staffSerializer.data['StaffName']
+                    except:
+                        row['StaffName']=[]
+                    data.append(row)
+                return self.get_paginated_response(data)
+        except:
+            return JsonResponse("", safe=False)
         
 
 
@@ -285,7 +290,7 @@ def QuotationFileApiById(request, QuotationFileId=""):
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def InvoiceApi(request):
-    # try:
+    try:
         if request.method == 'GET':
             invoice = Invoice.objects.all().order_by('-SortId')
             invoiceSerializer = InvoiceSerializer(
@@ -332,8 +337,8 @@ def InvoiceApi(request):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give InvoiceId to get one invoice detail",)
@@ -374,36 +379,38 @@ class InvoiceApiByCompanyId(generics.ListAPIView):
     pagination_class = CustomPagination
     serializer_class = InvoiceSerializer 
     def post(self, request, *args, **kwargs):
-        filterData = JSONParser().parse(request)
-        if filterData['CompanyId']:
-            self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
-        page = self.paginate_queryset(self.queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            data = []
+        try:
+            filterData = JSONParser().parse(request)
+            if filterData['CompanyId']:
+                self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+            page = self.paginate_queryset(self.queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                data = []
 
-            for row in serializer.data:
-                try:
-                    client=Client.objects.get(ClientId=row['ClientId'])
-                    clientSerializer=ClientSerializer(client)
-                    row['ClientName']=clientSerializer.data['CustomerDisplayName']
-                except:
-                    row['ClientName']=[]
-                try:
-                    invoiceStatus = InvoiceStatus.objects.get(InvoiceStatusId=row['Status'])
-                    invoiceStatusSerializer = InvoiceStatusSerializer(invoiceStatus)
-                    row['StatusName']=invoiceStatusSerializer.data['InvoiceStatus']
-                except:
-                    row['StatusName']=[]
-                try:
-                    staff=Staff.objects.get(StaffId=row['SalesPerson'])
-                    staffSerializer=StaffSerializer(staff)
-                    row['StaffName']=staffSerializer.data['StaffName']
-                except:
-                    row['StaffName']=[]
-                data.append(row)
-            return self.get_paginated_response(data)
-
+                for row in serializer.data:
+                    try:
+                        client=Client.objects.get(ClientId=row['ClientId'])
+                        clientSerializer=ClientSerializer(client)
+                        row['ClientName']=clientSerializer.data['CustomerDisplayName']
+                    except:
+                        row['ClientName']=[]
+                    try:
+                        invoiceStatus = InvoiceStatus.objects.get(InvoiceStatusId=row['Status'])
+                        invoiceStatusSerializer = InvoiceStatusSerializer(invoiceStatus)
+                        row['StatusName']=invoiceStatusSerializer.data['InvoiceStatus']
+                    except:
+                        row['StatusName']=[]
+                    try:
+                        staff=Staff.objects.get(StaffId=row['SalesPerson'])
+                        staffSerializer=StaffSerializer(staff)
+                        row['StaffName']=staffSerializer.data['StaffName']
+                    except:
+                        row['StaffName']=[]
+                    data.append(row)
+                return self.get_paginated_response(data)
+        except:
+            return JsonResponse("", safe=False)
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=InvoiceItemSerializer)
 @swagger_auto_schema(method='PUT', request_body=InvoiceItemSerializer)
@@ -597,29 +604,33 @@ class PaymentReceivedApiCompanyId(generics.ListAPIView):
     pagination_class = CustomPagination
     serializer_class = PaymentReceivedSerializer 
     def post(self, request, *args, **kwargs):
-        filterData = JSONParser().parse(request)
-        if filterData['CompanyId']:
-            self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
-        page = self.paginate_queryset(self.queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            data = []
+        try:
+            filterData = JSONParser().parse(request)
+            if filterData['CompanyId']:
+                self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+            page = self.paginate_queryset(self.queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                data = []
 
-            for row in serializer.data:
-                try:
-                    client=Client.objects.get(ClientId=row['ClientId'])
-                    clientSerializer=ClientSerializer(client)
-                    row['ClientName']=clientSerializer.data['CustomerDisplayName']
-                except:
-                    row['ClientName']=[]
-                try:
-                    staff=Staff.objects.get(StaffId=row['StaffId'])
-                    staffSerializer=StaffSerializer(staff)
-                    row['StaffName']=staffSerializer.data['StaffName']
-                except:
-                    row['StaffName']=[]
-                data.append(row)
-            return self.get_paginated_response(data)
+                for row in serializer.data:
+                    try:
+                        client=Client.objects.get(ClientId=row['ClientId'])
+                        clientSerializer=ClientSerializer(client)
+                        row['ClientName']=clientSerializer.data['CustomerDisplayName']
+                    except:
+                        row['ClientName']=[]
+                    try:
+                        staff=Staff.objects.get(StaffId=row['StaffId'])
+                        staffSerializer=StaffSerializer(staff)
+                        row['StaffName']=staffSerializer.data['StaffName']
+                    except:
+                        row['StaffName']=[]
+                    data.append(row)
+                return self.get_paginated_response(data)
+        except:
+            return JsonResponse("", safe=False)
+
         
         
 
@@ -673,20 +684,27 @@ class DownloadPDF(View):
                 InvoiceId=InvoiceId)
         invoiceItems=InvoiceItem.objects.filter(InvoiceId=InvoiceId).order_by('OrderNo')
         client=Client.objects.get(ClientId=invoice.ClientId)
+        company=Company.objects.get(CompanyId=invoice.CompanyId)
         clientadrress=ClientAddress.objects.get(ClientId=invoice.ClientId)
         billingAddress=json.loads(invoice.BillingAddress)
         totalAmount=Decimal(invoice.TotalAmount)
         amountinwords=decimal_number_to_words(totalAmount)
         
-        siteSettings = SiteSettings.objects.get(
-                    CompanyId=invoice.CompanyId)
+        try:
+            siteSettings=SiteSettings.objects.get(CompanyId=invoice.CompanyId)
+            siteSettingsSerializer=SiteSettingsSerializer(siteSettings)
+            logo=os.path.join(settings.BASE_DIR)+siteSettingsSerializer.data['Logo']
+        except:
+            logo=""
         context = {'invoice': invoice,
                    'invoiceItems': invoiceItems,
                    'clientadrress':clientadrress,
                    'siteSettings':siteSettings,
                    'billingAddress':billingAddress,
                    'amountinwords':amountinwords,
-                   'client':client}
+                   'company':company,
+                   'client':client,
+                   'logo':logo}
         if siteSettings.InvoiceTemplate=='invoice.html':
             pdf = render_to_pdf('invoice.html', context)
 
@@ -761,23 +779,28 @@ def ViewPDF(request, InvoiceId=""):
         if request.method == 'GET':
             invoice = Invoice.objects.get(InvoiceId=InvoiceId)
             invoiceItems = InvoiceItem.objects.filter(InvoiceId=InvoiceId).order_by('OrderNo')
+            company=Company.objects.get(CompanyId=invoice.CompanyId)
             client=Client.objects.get(ClientId=invoice.ClientId)
             clientaddress = ClientAddress.objects.get(ClientId=invoice.ClientId)
             billingAddress=json.loads(invoice.BillingAddress)
             totalAmount= Decimal(invoice.TotalAmount)
             amountinwords=decimal_number_to_words(totalAmount)
-            last_id = SiteSettings.objects.aggregate(
-                Max('SiteSettingsId'))['SiteSettingsId__max']
-            siteSettings = SiteSettings.objects.get(
-                    SiteSettingsId=last_id)
+            try:
+                siteSettings=SiteSettings.objects.get(CompanyId=invoice.CompanyId)
+                siteSettingsSerializer=SiteSettingsSerializer(siteSettings)
+                logo=os.path.join(settings.BASE_DIR)+siteSettingsSerializer.data['Logo']
+            except:
+                logo=""
             context = {
                 'invoice': invoice,
                 'invoiceItems': invoiceItems,
                 'clientaddress': clientaddress,
+                'logo':logo,
                 'amountinwords':amountinwords,
                 'siteSettings':siteSettings,
                 'billingAddress':billingAddress,
-                'client':client
+                'client':client,
+                'company':company
             }
             if siteSettings.InvoiceTemplate=='invoice.html':
                 
@@ -811,7 +834,7 @@ import json
 @retry(retries=3, delay=2)
 def SendInvoice(request):
 
-    # try:
+    try:
         if request.method == 'POST':
             requestData = JSONParser().parse(request)
             CCEmail = requestData.get('CCEmailId', '').split(',')
@@ -819,6 +842,7 @@ def SendInvoice(request):
             InvoiceId=requestData['InvoiceId']
             # client=Client.objects.get(ClientId=invoice.ClientId)
             invoice = Invoice.objects.get(InvoiceId=InvoiceId)
+            company=Company.objects.get(CompanyId=invoice.CompanyId)
             invoiceItems = InvoiceItem.objects.filter(InvoiceId=InvoiceId).order_by('OrderNo')
             invoiceItemSerializer=InvoiceItemSerializer(invoiceItems,many=True)
             Itemdata=[]
@@ -829,10 +853,12 @@ def SendInvoice(request):
                 Itemdata.append(item_details)
             itemdata_json = json.dumps(Itemdata)
             billingAddress=json.loads(invoice.BillingAddress)
-            last_id = SiteSettings.objects.aggregate(
-                Max('SiteSettingsId'))['SiteSettingsId__max']
-            siteSettings = SiteSettings.objects.get(
-                    SiteSettingsId=last_id)
+            try:
+                siteSettings=SiteSettings.objects.get(CompanyId=invoice.CompanyId)
+                siteSettingsSerializer=SiteSettingsSerializer(siteSettings)
+                logo=os.path.join(settings.BASE_DIR)+siteSettingsSerializer.data['Logo']
+            except:
+                logo=""
             try:
                 clientaddress = ClientAddress.objects.get(ClientId=invoice.ClientId)
             except:
@@ -847,6 +873,8 @@ def SendInvoice(request):
                 'billingAddress':billingAddress,
                 'siteSettings':siteSettings,
                 'invoiceId':invoiceId,
+                'logo':logo,
+                'company':company
                 # 'client':client
             }
             if siteSettings.InvoiceTemplate=='invoice.html':
@@ -883,7 +911,8 @@ def SendInvoice(request):
             data = data.replace("{{InvoiceId}}", invoiceId)
             data = data.replace("{{InvoiceNumber}}", InvoiceNumber)
             data = data.replace("{{TotalAmount}}", TotalAmount)
-            data = data.replace("{{InvoiceDate}}", Invoicedate.strftime('%Y-%m-%d'))
+            data = data.replace("{{InvoiceDate}}", Invoicedate)
+            # data = data.replace("{{logo}}", logo)
             # all_item_details = ""
             # for item in invoiceItems:
             #     all_item_details += item.ItemDetails + "\n"
@@ -895,11 +924,9 @@ def SendInvoice(request):
 
             # Replace the placeholder for ItemDetails in the email template
             data = data.replace("<ul>{{Itemdetails}}</ul>", f"<ul>{all_item_details}</ul>")
-            data = data.replace("{{DueDate}}", DueDate.strftime('%Y-%m-%d'))
-            data = data.replace("{{Logo}}", settings.WEBBUREAU_LOGO)
-            # data = data.replace("{{InvoiceDate}}", InvoiceDate)
-            data = data.replace("{{BestRegrads}}",
-                                settings.CUBEXIZSOFT_MAIL_REGRADS)
+            data = data.replace("{{DueDate}}", DueDate)
+            data = data.replace("{{InvoiceDate}}", Invoicedate)
+           
             msg.set_content(data, subtype="plain", charset='us-ascii')
             msg.add_alternative(data, subtype='html')
 
@@ -907,8 +934,8 @@ def SendInvoice(request):
             return JsonResponse("Success", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("Invalid", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 
 
@@ -1178,6 +1205,7 @@ def ViewPaymentPDF(request, PaymentReceivedId=""):
         if request.method == 'GET':
             payment = PaymentReceived.objects.get(PaymentReceivedId=PaymentReceivedId)
             paymentMode=PaymentMode.objects.get(PaymentModeId=payment.PaymentMode)
+            company=Company.objects.get(CompanyId=payment.CompanyId)
             billingAdress=ClientAddress.objects.get(ClientId=payment.ClientId)
             billingAdressSerializer=ClientAddressSerializer(billingAdress)
             billingaddressdata=billingAdressSerializer.data
@@ -1198,15 +1226,19 @@ def ViewPaymentPDF(request, PaymentReceivedId=""):
 
             
             # amountinwords=decimal_number_to_words(totalAmount)
-            last_id = SiteSettings.objects.aggregate(
-                Max('SiteSettingsId'))['SiteSettingsId__max']
-            siteSettings = SiteSettings.objects.get(
-                    SiteSettingsId=last_id)
+            try:
+                siteSettings=SiteSettings.objects.get(CompanyId=payment.CompanyId)
+                siteSettingsSerializer=SiteSettingsSerializer(siteSettings)
+                logo=os.path.join(settings.BASE_DIR)+siteSettingsSerializer.data['Logo']
+            except:
+                logo=""
             context = {
                 'payment': payment,
+                'company':company,
                 'paymentMode':paymentMode,
                 'billingaddressdata':billingaddressdata,
-                'client':client
+                'client':client,
+                'logo':logo
                 
             }
            
@@ -1229,21 +1261,26 @@ def ViewPaymentPDF(request, PaymentReceivedId=""):
 class DownloadPaymentPDF(View):
     def get(self, request, PaymentReceivedId="", *args, **kwargs):
         payment = PaymentReceived.objects.get(PaymentReceivedId=PaymentReceivedId)
+        company=Company.objects.get(CompanyId=payment.CompanyId)
         paymentMode=PaymentMode.objects.get(PaymentModeId=payment.PaymentMode)
         billingAdress=ClientAddress.objects.get(ClientId=payment.ClientId)
         client=Client.objects.get(ClientId=payment.ClientId)
 
         
         # amountinwords=decimal_number_to_words(totalAmount)
-        last_id = SiteSettings.objects.aggregate(
-            Max('SiteSettingsId'))['SiteSettingsId__max']
-        siteSettings = SiteSettings.objects.get(
-                SiteSettingsId=last_id)
+        try:
+            siteSettings=SiteSettings.objects.get(CompanyId=payment.CompanyId)
+            siteSettingsSerializer=SiteSettingsSerializer(siteSettings)
+            logo=os.path.join(settings.BASE_DIR)+siteSettingsSerializer.data['Logo']
+        except:
+            logo=""
         context = {
             'payment': payment,
             'paymentMode':paymentMode,
             'billingAdress':billingAdress,
-            'client':client
+            'client':client,
+            'company':company,
+            'logo':logo
             
         }
         pdf = render_to_pdf('Payment.html', context)

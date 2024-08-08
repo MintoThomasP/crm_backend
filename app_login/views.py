@@ -24,8 +24,8 @@ from datetime import datetime, timedelta, timezone
 
 
 @csrf_exempt
-@swagger_auto_schema(method='PUT', request_body=LoginSaveSerializer)
-@swagger_auto_schema(method='POST', request_body=LoginSaveSerializer)
+@swagger_auto_schema(method='PUT', request_body=LoginSaveSerializer,operation_description="NOTE: API for edit Login")
+@swagger_auto_schema(method='POST', request_body=LoginSaveSerializer,operation_description="NOTE: API for save Login")
 @api_view(['POST','PUT'])
 @retry(retries=3, delay=2)
 def CreateLoginApi(request):
@@ -49,7 +49,8 @@ def CreateLoginApi(request):
         return JsonResponse("Failed to Update", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: get login details by UserId",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get login details by UserId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE login details by UserId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def UserLoginApiById(request, UserId=""):
@@ -68,8 +69,8 @@ def UserLoginApiById(request, UserId=""):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=LoginAuthSerializer)
-@swagger_auto_schema(method='PUT', request_body=LoginUpdateSerializer)
+@swagger_auto_schema(method='POST', request_body=LoginAuthSerializer,operation_description="NOTE: API for Login, payload { EmailId, Password}")
+@swagger_auto_schema(method='PUT', request_body=LoginUpdateSerializer,operation_description="NOTE: API for Update Login by EmailId and UserType")
 @api_view(['POST','PUT'])
 @retry(retries=3, delay=2)
 def loginApi(request):
@@ -153,6 +154,7 @@ def loginApi(request):
 
 
 @csrf_exempt
+@swagger_auto_schema(method='POST',operation_description="NOTE: API for Update UserType")
 @api_view(['POST'])
 @retry(retries=3, delay=2)
 def UpdateUserTypeApi(request, pk=""):
@@ -176,13 +178,13 @@ def UpdateUserTypeApi(request, pk=""):
     
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=LoginHistorySerializer)
-@swagger_auto_schema(method='PUT', request_body=LoginHistorySerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all LoginHistory Details",)
+@swagger_auto_schema(method='POST', request_body=LoginHistorySerializer,operation_description="NOTE: API for save LoginHistory")
+@swagger_auto_schema(method='PUT', request_body=LoginHistorySerializer,operation_description="NOTE: API for edit LoginHistory")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all LoginHistory Details",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def LoginHistoryApi(request):
-    # try:
+    try:
         if request.method == 'GET':
             loginHistory = LoginHistory.objects.all().order_by('-SortId')
             loginHistorySerializer = LoginHistorySerializer(
@@ -220,9 +222,6 @@ def LoginHistoryApi(request):
                     login.save()
                 except:
                     p=""
-
-
-
                 try:
                     projectTask=ProjectTask.objects.filter(TaskAssignedTo=loginHistoryData['UserId'])
                     projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
@@ -246,11 +245,12 @@ def LoginHistoryApi(request):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("jj", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give LoginHistoryId to get one loginHistory detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get loginHistory by LoginHistoryId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete loginHistory by LoginHistoryId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def LoginHistoryApiById(request, LoginHistoryId=""):
@@ -274,7 +274,7 @@ def LoginHistoryApiById(request, LoginHistoryId=""):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give UserId to get one loginHistory detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get loginHistory by UserId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def LoginHistoryApiByUserId(request, UserId=""):
@@ -293,7 +293,7 @@ def LoginHistoryApiByUserId(request, UserId=""):
     
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=LoginAuthSerializer)
+@swagger_auto_schema(method='POST', request_body=LoginAuthSerializer,operation_description="NOTE: API for Login by using Token. payload { Token,UserId}")
 @api_view(['POST'])
 @retry(retries=3, delay=2)
 def loginByTokenApi(request):
@@ -367,7 +367,7 @@ def loginByTokenApi(request):
 
 from datetime import datetime
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give UserId to get one loginHistory detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for auto logout",)
 @api_view(['GET'])
 def AutoLogout(request, UserId=""):
     try:

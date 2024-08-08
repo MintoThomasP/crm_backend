@@ -208,5 +208,5 @@ CUBEXIZSOFT_MAIL_REGRADS="""Best Regards,
         <br/>
         
         <br/>
-        Cubexizsoft"""
+        """
 

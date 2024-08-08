@@ -18,9 +18,9 @@ from app_staff.serializers import StaffSerializer
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=EnquirySerializer)
-@swagger_auto_schema(method='PUT', request_body=EnquirySerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Enquiry Details",)
+@swagger_auto_schema(method='POST', request_body=EnquirySerializer,operation_description="NOTE: API for save Enquiry")
+@swagger_auto_schema(method='PUT', request_body=EnquirySerializer,operation_description="NOTE: API for edit Enquiry")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all Enquiry Details",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def EnquiryApi(request):
@@ -55,7 +55,8 @@ def EnquiryApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give EnquiryId to get one enquiry detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get Enquiry by EnquiryId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE Enquiry by EnquiryId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def EnquiryApiById(request, EnquiryId=""):
@@ -81,43 +82,46 @@ class EnquiryApiByCompanyId(generics.ListAPIView):
     pagination_class = CustomPageNumberPagination
     serializer_class = EnquirySerializer 
     def post(self, request, *args, **kwargs):
-        filterData = JSONParser().parse(request)
-        Keyword = filterData.get('SearchKeyword', '')
-        if filterData['CompanyId']:
-            self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
-        
-        if Keyword:
+        try:
+            filterData = JSONParser().parse(request)
+            Keyword = filterData.get('SearchKeyword', '')
+            if filterData['CompanyId']:
+                self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+            
+            if Keyword:
                 self.queryset = self.queryset.filter(Description__icontains=Keyword)
-        
-        page = self.paginate_queryset(self.queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            data = []
+            
+            page = self.paginate_queryset(self.queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                data = []
 
-            for row in serializer.data:
-                try:
-                    enquiryType = EnquiryType.objects.get(EnquiryTypeId=row['EnquiryType'])
-                    enquiryType_serializer = EnquiryTypeSerializer(
-                    enquiryType)
-                    row['EnquiryTypeName']=enquiryType_serializer.data['EnquiryType']
-                except:
-                    row['EnquiryTypeName']=""
-                try:
-                    enquiryStatus = EnquiryStatus.objects.get(StatusId=row['Status'])
-                    enquiryStatus_serializer = EnquiryStatusSerializer(
-                    enquiryStatus)
-                    row['EnquiryStatusName']=enquiryStatus_serializer.data['Status']
-                except:
-                    row['EnquiryStatusName']=""
-                data.append(row)
-            return self.get_paginated_response(data)
+                for row in serializer.data:
+                    try:
+                        enquiryType = EnquiryType.objects.get(EnquiryTypeId=row['EnquiryType'])
+                        enquiryType_serializer = EnquiryTypeSerializer(
+                        enquiryType)
+                        row['EnquiryTypeName']=enquiryType_serializer.data['EnquiryType']
+                    except:
+                        row['EnquiryTypeName']=""
+                    try:
+                        enquiryStatus = EnquiryStatus.objects.get(StatusId=row['Status'])
+                        enquiryStatus_serializer = EnquiryStatusSerializer(
+                        enquiryStatus)
+                        row['EnquiryStatusName']=enquiryStatus_serializer.data['Status']
+                    except:
+                        row['EnquiryStatusName']=""
+                    data.append(row)
+                return self.get_paginated_response(data)
+        except:
+            return JsonResponse("", safe=False)
 
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get FollowUp details",)
-@swagger_auto_schema(method='POST', request_body=FollowUpSerializer)
-@swagger_auto_schema(method='PUT', request_body=FollowUpSerializer)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get all FollowUp",)
+@swagger_auto_schema(method='POST', request_body=FollowUpSerializer,operation_description="NOTE: API for save FollowUp")
+@swagger_auto_schema(method='PUT', request_body=FollowUpSerializer,operation_description="NOTE: API for edit FollowUp")
 @api_view(['GET','POST','PUT'])
 def CURDFollowUpApi(request):
     try:
@@ -151,7 +155,8 @@ def CURDFollowUpApi(request):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get van FollowUp details by ID",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get FollowUp by FollowUpId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE FollowUp by FollowUpId",)
 @api_view(['GET','DELETE'])
 def CURDFollowUpApiById(request, FollowUpId=""):
     try:
@@ -172,7 +177,7 @@ def CURDFollowUpApiById(request, FollowUpId=""):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get van FollowUp details by ID",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get FollowUp by EnquiryId",)
 @api_view(['GET'])
 def CURDFollowUpApiByEnquiryId(request, EnquiryId=""):
     try:

@@ -4,16 +4,16 @@ from django.views.decorators.csrf import csrf_exempt
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 
-from app_basic.models import Country, Designation, State, UserGroup
-from app_basic.serializers import CountrySerializer, DesignationSerializer, StateSerializer, UserGroupSerializer
+from app_basic.models import Country, Designation, State, UserGroup, UserPermission
+from app_basic.serializers import CountrySerializer, DesignationSerializer, StateSerializer, UserGroupSerializer, UserPermissionSerializer
 from app_default.views import retry
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=DesignationSerializer)
-@swagger_auto_schema(method='PUT', request_body=DesignationSerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Designation Details",)
+@swagger_auto_schema(method='POST', request_body=DesignationSerializer,operation_description="NOTE: API for save Designation")
+@swagger_auto_schema(method='PUT', request_body=DesignationSerializer,operation_description="NOTE: API for edit Designation")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all Designation",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def DesignationApi(request):
@@ -50,7 +50,8 @@ def DesignationApi(request):
     
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give DesignationId to get one detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get Designation by DesignationId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE Designation by DesignationId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def DesignationApiById(request, DesignationId=""):
@@ -73,7 +74,7 @@ def DesignationApiById(request, DesignationId=""):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give CompanyId to get one detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get Designation by CompanyId",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def DesignationByCompanyId(request, CompanyId=""):
@@ -89,9 +90,9 @@ def DesignationByCompanyId(request, CompanyId=""):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=UserGroupSerializer)
-@swagger_auto_schema(method='PUT', request_body=UserGroupSerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Usergroup Details",)
+@swagger_auto_schema(method='POST', request_body=UserGroupSerializer,operation_description="NOTE: API for save UserGroup")
+@swagger_auto_schema(method='PUT', request_body=UserGroupSerializer,operation_description="NOTE: API for edit UserGroup")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all UserGroup",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def UserGroupApi(request):
@@ -127,7 +128,8 @@ def UserGroupApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give UserGroupId to get one detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get UserGroup by UserGroupId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE UserGroup by UserGroupId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def UserGroupApiById(request, UserGroupId=""):
@@ -148,7 +150,7 @@ def UserGroupApiById(request, UserGroupId=""):
     
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give CompanyId to get one detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get UserGroup by CompanyId",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def UserGroupByCompanyId(request, CompanyId=""):
@@ -165,9 +167,9 @@ def UserGroupByCompanyId(request, CompanyId=""):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=CountrySerializer)
-@swagger_auto_schema(method='PUT', request_body=CountrySerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Country Details",)
+@swagger_auto_schema(method='POST', request_body=CountrySerializer,operation_description="NOTE: API for save Country")
+@swagger_auto_schema(method='PUT', request_body=CountrySerializer,operation_description="NOTE: API for edit Country")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all Country",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def CountryApi(request):
@@ -203,7 +205,8 @@ def CountryApi(request):
     
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give CountryId to get one detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get Country by CountryId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE Country by CountryId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def CountryApiById(request, CountryId=""):
@@ -225,9 +228,9 @@ def CountryApiById(request, CountryId=""):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=StateSerializer)
-@swagger_auto_schema(method='PUT', request_body=StateSerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all State Details",)
+@swagger_auto_schema(method='POST', request_body=StateSerializer,operation_description="NOTE: API for save State")
+@swagger_auto_schema(method='PUT', request_body=StateSerializer,operation_description="NOTE: API for edit State")
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all State Details")
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def StateApi(request):
@@ -263,7 +266,8 @@ def StateApi(request):
     
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give StateId to get one detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get state by StateId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE state by StateId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def StateApiById(request, StateId=""):
@@ -284,11 +288,11 @@ def StateApiById(request, StateId=""):
     
 
 
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all State by CountryId",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: APi for Get all State by CountryId",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def StateApiByCountryId(request,CountryId=""):
-    # try:
+    try:
         if request.method == 'GET':
             state = State.objects.filter(CountryId=CountryId)
             state_serializer = StateSerializer(
@@ -296,5 +300,41 @@ def StateApiByCountryId(request,CountryId=""):
             return JsonResponse(state_serializer.data, safe=False)
         else:
             return JsonResponse("Invalid request", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=StateSerializer,operation_description="NOTE: API for save UserPermission")
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all UserPermission")
+@api_view(['GET','POST'])
+@retry(retries=3, delay=2)
+def UserPermissionApi(request):
+    try:
+        if request.method == 'GET':
+            userPermission = UserPermission.objects.all()
+            userPermission_serializer = UserPermissionSerializer(
+                userPermission, many=True)  
+            return JsonResponse(userPermission_serializer.data, safe=False)
+
+        elif request.method == 'POST':
+            userPermissionData = JSONParser().parse(request)
+            userPermissionSerializer = UserPermissionSerializer(
+                data=userPermissionData)
+            if userPermissionSerializer.is_valid():
+                userPermissionSerializer.save()
+                return JsonResponse(userPermissionSerializer.data['UserPermissionId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+      
+        else:
+            return JsonResponse("Invalid request", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+    

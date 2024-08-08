@@ -3,6 +3,8 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from app_client.models import Client
 from app_client.serializers import ClientSerializer
+from app_company.models import Company
+from app_company.serializers import CompanySerializer
 from app_default.models import MeetingType
 from app_default.serializers import MeetingTypeSerializer
 from app_default.views import retry
@@ -25,9 +27,9 @@ from django.utils import timezone
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=MeetingNotesSerializer)
-@swagger_auto_schema(method='PUT', request_body=MeetingNotesSerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all MeetingNotes Details",)
+@swagger_auto_schema(method='POST', request_body=MeetingNotesSerializer,operation_description="NOTE: API for save MeetingNotes")
+@swagger_auto_schema(method='PUT', request_body=MeetingNotesSerializer,operation_description="NOTE: API for edit MeetingNotes")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all MeetingNotes",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def MeetingNotesApi(request):
@@ -62,7 +64,8 @@ def MeetingNotesApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give MeetingNotesId to get one meetingNotes detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get MeetingNotes by MeetingNotesId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE MeetingNotes by MeetingNotesId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def MeetingNotesApiById(request, MeetingNoteId=""):
@@ -109,6 +112,7 @@ class UploadMeetingNoteDocument(APIView):
         
 
 @csrf_exempt
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE MeetingNoteDocument by MeetingNoteDocumentId",)
 @api_view(['DELETE'])
 @retry(retries=3, delay=2)
 def DeleteMeetingDocument(request, MeetingNoteDocumentId=""):
@@ -137,86 +141,68 @@ class MeetingNotesApiByCompanyId(generics.ListAPIView):
     pagination_class = CustomNotesPagination
     serializer_class = MeetingNotesSerializer 
     def post(self, request, *args, **kwargs):
-        filterData = JSONParser().parse(request)
-        
-        Keyword = filterData.get('SearchKeyword', '')
-        if Keyword:
-            self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
-        if filterData['CompanyId']:
-            self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
-        if filterData['CreatedBy']:
-            self.queryset = self.queryset.filter(CreatedBy=filterData['CreatedBy'])
+        try:
+            filterData = JSONParser().parse(request)
             
-        if filterData['MeetingType']:
-            self.queryset = self.queryset.filter(MeetingType=filterData['MeetingType'])
-        if filterData['ParticipatedBy']:
-            self.queryset = self.queryset.filter(TeamParticipants__icontains=filterData['ParticipatedBy'])
-        if filterData['StartDate'] and filterData['EndDate']:
-            # start_date=datetime.strptime(filterData['StartDate'], '%Y-%m-%d').date()
-            # end_date=datetime.strptime(filterData['EndDate'], '%Y-%m-%d').date()
-            start_date = timezone.datetime.strptime(filterData['StartDate'], '%Y-%m-%d').date()
-            end_date = (timezone.datetime.strptime(filterData['EndDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
-            print(start_date)
-            self.queryset = self.queryset.filter(CreatedDate__range=(start_date,end_date))
-            print(self.queryset)
-        page = self.paginate_queryset(self.queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            data = []
+            Keyword = filterData.get('SearchKeyword', '')
+            if Keyword:
+                self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
+            if filterData['CompanyId']:
+                self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+            if filterData['CreatedBy']:
+                self.queryset = self.queryset.filter(CreatedBy=filterData['CreatedBy'])
+                
+            if filterData['MeetingType']:
+                self.queryset = self.queryset.filter(MeetingType=filterData['MeetingType'])
+            if filterData['ParticipatedBy']:
+                self.queryset = self.queryset.filter(TeamParticipants__icontains=filterData['ParticipatedBy'])
+            if filterData['StartDate'] and filterData['EndDate']:
+                # start_date=datetime.strptime(filterData['StartDate'], '%Y-%m-%d').date()
+                # end_date=datetime.strptime(filterData['EndDate'], '%Y-%m-%d').date()
+                start_date = timezone.datetime.strptime(filterData['StartDate'], '%Y-%m-%d').date()
+                end_date = (timezone.datetime.strptime(filterData['EndDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
+                print(start_date)
+                self.queryset = self.queryset.filter(CreatedDate__range=(start_date,end_date))
+                print(self.queryset)
+            page = self.paginate_queryset(self.queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                data = []
 
-            for row in serializer.data:
-                try:
-                    staff=Staff.objects.get(StaffId=row['CreatedBy'])
-                    staffSerializer=StaffSerializer(staff)
-                    row['CreatedByName']=staffSerializer.data['StaffName']
-                except:
-                    row['CreatedByName']=""
-                try:
-                    meetingType=MeetingType.objects.get(MeetingTypeId=row['MeetingType'])
-                    meetingTypeSerializer=MeetingTypeSerializer(meetingType)
-                    row['MeetingTypevalue']=meetingTypeSerializer.data['MeetingType']
-                except:
-                    row['MeetingTypevalue']=""
-                try:
-                    client=Client.objects.get(ClientId=row['ClientId'])
-                    clientSerializer=ClientSerializer(client)
-                    row['ClientName']=clientSerializer.data['CustomerDisplayName']
-                except:
-                    row['ClientName']=""
-                try:
-                    meetingDocument=MeetingNoteDocument.objects.filter(MeetingNoteId=row['MeetingNoteId'])
-                    meetingDocumentSerializer=MeetingNoteDocumentSerializer(meetingDocument,many=True)
-                    row['MeetingDocuments']=meetingDocumentSerializer.data
-                except:
-                    row['MeetingDocuments']=""
-                data.append(row)
+                for row in serializer.data:
+                    try:
+                        try:
+                            staff=Staff.objects.get(StaffId=row['CreatedBy'])
+                            staffSerializer=StaffSerializer(staff)
+                            row['CreatedByName']=staffSerializer.data['StaffName']
+                        except:
+                            company=Company.objects.get(CompanyId=row['CreatedBy'])
+                            companySerializer=CompanySerializer(company)
+                            row['CreatedByName']=companySerializer.data['CompanyName']
+                    except:
+                        row['CreatedByName']=""
+                    try:
+                        meetingType=MeetingType.objects.get(MeetingTypeId=row['MeetingType'])
+                        meetingTypeSerializer=MeetingTypeSerializer(meetingType)
+                        row['MeetingTypevalue']=meetingTypeSerializer.data['MeetingType']
+                    except:
+                        row['MeetingTypevalue']=""
+                    try:
+                        client=Client.objects.get(ClientId=row['ClientId'])
+                        clientSerializer=ClientSerializer(client)
+                        row['ClientName']=clientSerializer.data['CustomerDisplayName']
+                    except:
+                        row['ClientName']=""
+                    try:
+                        meetingDocument=MeetingNoteDocument.objects.filter(MeetingNoteId=row['MeetingNoteId'])
+                        meetingDocumentSerializer=MeetingNoteDocumentSerializer(meetingDocument,many=True)
+                        row['MeetingDocuments']=meetingDocumentSerializer.data
+                    except:
+                        row['MeetingDocuments']=""
+                    data.append(row)
 
-            return self.get_paginated_response(data)
+                return self.get_paginated_response(data)
+        except:
+            return JsonResponse("", safe=False)
         
 
-from datetime import datetime
-@csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all MeetingNotes Details",)
-@api_view(['GET'])
-@retry(retries=3, delay=2)
-def UpdateCreatedDateinMeetingNotes(request):
-    try:
-        if request.method == 'GET':
-            meetingNotes = MeetingNotes.objects.all().order_by('-SortId')
-            meetingNotesSerializer = MeetingNotesSerializer(
-                    meetingNotes, many=True)
-            for row in meetingNotes:
-                parsed_datetime=datetime.strptime(row.StartTime, '%Y-%m-%dT%H:%M')
-                
-                formatted_datetime = parsed_datetime.strftime('%Y-%m-%dT%H:%M:%S%z')
-               
-                
-                row.CreatedDate=formatted_datetime
-                row.save()
-               
-                
-            return JsonResponse("date changed", safe=False)
-        else:
-            return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)

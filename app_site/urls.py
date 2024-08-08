@@ -18,7 +18,7 @@ urlpatterns = [
 
 path('GetNotificationByToUser/', views.GetNotificationByToUser.as_view()),
     
-    path('dateconversion/', views.dateconversion),
+  
 
 ]
 if settings.DEBUG:

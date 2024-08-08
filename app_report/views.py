@@ -39,6 +39,7 @@ from django.db.models import Sum
 
 
 @csrf_exempt
+@swagger_auto_schema(method='POST', operation_description="NOTE: API for get project report by ProjectId. payalod { ProjectId, StartDate, EndDate}")
 @api_view(['POST'])
 @retry(retries=3, delay=2)
 def ProjectReportApiByProjectId(request):
@@ -93,6 +94,7 @@ def ProjectReportApiByProjectId(request):
 
 
 @csrf_exempt
+@swagger_auto_schema(method='POST', operation_description="NOTE: API for get all project report. payalod { StartDate, EndDate}")
 @api_view(['POST'])
 @retry(retries=3, delay=2)
 def getAllProjectReport(request):
@@ -147,6 +149,7 @@ def getAllProjectReport(request):
 
 
 @csrf_exempt
+@swagger_auto_schema(method='POST', operation_description="NOTE: API for get all staff report StaffId. payalod {StaffId, StartDate, EndDate}")
 @api_view(['POST'])
 @retry(retries=3, delay=2)
 def StaffReportApiByStaffId(request):
@@ -284,6 +287,7 @@ def pointCalculation(projectTask):
 
 
 @csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get staff daily report")
 @api_view(['GET'])
 def StaffDailyReportinPDFformat(request, StaffId=""):
     current_date = timezone.now().date()
@@ -612,6 +616,7 @@ def get_report_data(category_id, startDate, startYear, endDate, endYear):
 
 
 @csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get FinanceReport in PDF format")
 @api_view(['GET'])
 def FinanceReportPDF(request, startdate="", enddate="",ClientId="",ReportType="",NoOfMonths=""):
     context = getFinanceReport(request, startdate, enddate,ClientId ,ReportType,NoOfMonths)
@@ -626,6 +631,7 @@ def FinanceReportPDF(request, startdate="", enddate="",ClientId="",ReportType=""
         return HttpResponse(pdf.content, content_type='application/pdf')
   
 @csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get FinanceReport")
 @api_view(['GET'])
 def FinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""):
     context = getFinanceReport(request, startdate, enddate,ClientId ,ReportType)
@@ -902,6 +908,7 @@ from django.db.models.functions import Cast
 
 import os
 @csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get Staff task report in pdf format based on date")
 @api_view(['GET'])
 def StaffTaskReportBasedOnDateinPDFformat(request, StaffId="", StartDate="", EndDate=""):
     
@@ -1095,6 +1102,7 @@ from openpyxl.styles import Alignment, PatternFill, Font
 from openpyxl.utils import get_column_letter
 from openpyxl.cell import MergedCell
 @csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get FinanceReport in Excel format")
 @api_view(['GET'])
 def FinanceReportExcel(request, startdate="", enddate="",ClientId="",ReportType="",NoOfMonths=""):
     context = getFinanceReport(request, startdate, enddate,ClientId ,ReportType,NoOfMonths)

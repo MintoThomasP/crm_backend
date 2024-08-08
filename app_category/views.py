@@ -19,8 +19,8 @@ from app_default.serializers import CategoryTypeSerializer
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=CategorySerializer)
-@swagger_auto_schema(method='PUT', request_body=CategorySerializer)
+@swagger_auto_schema(method='POST', request_body=CategorySerializer,operation_description="NOTE: API for save category")
+@swagger_auto_schema(method='PUT', request_body=CategorySerializer,operation_description="NOTE: API for edit category")
 @api_view(['POST', 'PUT'])
 def CategoryApi(request):
     try:
@@ -61,7 +61,8 @@ def CategoryApi(request):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET', operation_description="NOTE: give CategoryId to get one Category Detail",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get Category by CategoryId",)
+@swagger_auto_schema(method='DELETE', operation_description="NOTE: API for delete Category by CategoryId",)
 @api_view(['GET', 'DELETE'])
 def CategoryApiById(request, CategoryId=""):
     try:
@@ -101,6 +102,7 @@ def get_subcategoriesbysectiontype(category_id):
     return subcategory_data
 
 @csrf_exempt
+@swagger_auto_schema(method='POST', operation_description="NOTE: API for get Category by SectionType",)
 @api_view(['POST'])
 def GetAllCategoryBySectionTypeApi(request):
     try:
@@ -142,11 +144,11 @@ def GetAllCategoryBySectionTypeApi(request):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=ReportSerializer)
-@swagger_auto_schema(method='PUT', request_body=ReportSerializer)
+@swagger_auto_schema(method='POST', request_body=ReportSerializer,operation_description="NOTE: API for save Report")
+@swagger_auto_schema(method='PUT', request_body=ReportSerializer,operation_description="NOTE: API for edit Report")
 @api_view(['POST', 'PUT'])
 def ReportApi(request):
-    # try:
+    try:
         # if request.method == 'GET':
         #     report = Report.objects.all()
         #     reportSerializer = ReportSerializer(
@@ -170,12 +172,13 @@ def ReportApi(request):
             return JsonResponse("ok", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("Invalid", safe=False)
+    except:
+        return JsonResponse("", safe=False)
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET', operation_description="NOTE: give ReportId to get one Report Detail",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get report by ReportId",)
+@swagger_auto_schema(method='DELETE', operation_description="NOTE: API for DELETE report by ReportId",)
 @api_view(['GET', 'DELETE'])
 def ReportApiById(request, ReportId=""):
     try:
@@ -222,9 +225,10 @@ def get_report_data(category_id):
     return report_serializer.data
 
 @csrf_exempt
+@swagger_auto_schema(method='POST', operation_description="NOTE: API for get category and subcategories by CategoryType",)
 @api_view(['POST'])
 def GetCategoryandSubCategoriesByCategoryType(request):
-    # try:
+    try:
         if request.method == 'POST':
             category_data = JSONParser().parse(request)
             categoryType=CategoryType.objects.filter(CategoryTypeId__in=category_data['CategoryType'])
@@ -255,10 +259,11 @@ def GetCategoryandSubCategoriesByCategoryType(request):
             return JsonResponse(data, safe=False)
         else:
             return JsonResponse([], safe=False)
-    # except:
-    #     return JsonResponse("Invalid", safe=False)
+    except:
+        return JsonResponse("", safe=False)
 
 @csrf_exempt
+@swagger_auto_schema(method='POST', operation_description="NOTE: API for get category and subcategories and report details by SectionType",)
 @api_view(['POST'])
 def GetAllCategoryandSubCategories(request):
     try:
@@ -289,6 +294,7 @@ def GetAllCategoryandSubCategories(request):
         return JsonResponse("Invalid", safe=False)
 
 @csrf_exempt
+@swagger_auto_schema(method='POST', operation_description="NOTE: API for get Monthly Client report",)
 @api_view(['POST'])
 @retry(retries=3, delay=2)
 def GetClientReportMonthly(request):
@@ -465,6 +471,7 @@ class BulkCreateReportView(APIView):
 
 
 @csrf_exempt
+@swagger_auto_schema(method='DELETE', operation_description="NOTE: API for delete report ref file by ReportRefFileId",)
 @api_view(['DELETE'])
 def DeleteReportRefFileById(request, ReportRefFileId=""):
     try:

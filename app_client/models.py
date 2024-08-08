@@ -23,6 +23,7 @@ class Client(models.Model):
     SetDefaultProject=models.BooleanField(default=True)
     CountryCode1=models.CharField(blank=True, null=True, max_length=10)
     CountryCode2=models.CharField(blank=True, null=True, max_length=10)
+    ActiveStatus=models.BooleanField(default=True)
 
 
 

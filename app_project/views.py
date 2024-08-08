@@ -1,6 +1,8 @@
 from django.dispatch import receiver
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from app_company.models import Company
+from app_company.serializers import CompanySerializer
 from app_default.views import retry
 from app_login.models import Login
 from rest_framework.parsers import JSONParser
@@ -100,17 +102,20 @@ class ProjectApiByCompanyId(generics.ListAPIView):
     pagination_class = CustomPageNumberPagination
     serializer_class = ProjectSerializer 
     def post(self, request, *args, **kwargs):
-        filterData = JSONParser().parse(request)
-        Keyword = filterData.get('SearchKeyword', '')
-        if filterData['CompanyId']:
-            self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+        try:
+            filterData = JSONParser().parse(request)
+            Keyword = filterData.get('SearchKeyword', '')
+            if filterData['CompanyId']:
+                self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
 
-        if Keyword:
-            self.queryset = self.queryset.filter(Q(ProjectName__icontains=Keyword)|Q(Description__icontains=Keyword))
-        page = self.paginate_queryset(self.queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            return self.get_paginated_response(serializer.data)
+            if Keyword:
+                self.queryset = self.queryset.filter(Q(ProjectName__icontains=Keyword)|Q(Description__icontains=Keyword))
+            page = self.paginate_queryset(self.queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                return self.get_paginated_response(serializer.data)
+        except:
+            return JsonResponse("", safe=False)
 
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Give CompanyId to get all project detail",)
@@ -139,106 +144,114 @@ class ProjectTaskPagination(generics.ListAPIView):
     pagination_class = CustomPageNumberPagination
     serializer_class = ProjectTaskSerializer 
     def post(self, request, *args, **kwargs):
-        filterData = JSONParser().parse(request)
-        Keyword = filterData.get('SearchKeyword', '')
-        if filterData['TaskAssignedTo']:
-            self.queryset = self.queryset.filter(TaskAssignedTo=filterData['TaskAssignedTo'])
-        if len(filterData['Status']):
-            status=filterData['Status']
-            self.queryset = self.queryset.filter(Status__in=status)
-        if filterData['TaskAssignedBy']:
-            self.queryset = self.queryset.filter(TaskAssignedBy=filterData['TaskAssignedBy'])
-        if filterData['ProjectId']:
-            self.queryset = self.queryset.filter(ProjectId=filterData['ProjectId'])
-        if Keyword:
-                self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
-        if filterData['CreatedDate']:
-            created_date_str = filterData['CreatedDate']
-            created_date = datetime.strptime(created_date_str, '%Y-%m-%d').date()
-            self.queryset = self.queryset.filter(CreatedDate__startswith=created_date)
-        if filterData['EndDate']:
-            end_date_str = filterData['EndDate']
-            end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
-            self.queryset = self.queryset.filter(EndDate__startswith=end_date)
+        try:
+            filterData = JSONParser().parse(request)
+            Keyword = filterData.get('SearchKeyword', '')
+            if filterData['TaskAssignedTo']:
+                self.queryset = self.queryset.filter(TaskAssignedTo=filterData['TaskAssignedTo'])
+            if len(filterData['Status']):
+                status=filterData['Status']
+                self.queryset = self.queryset.filter(Status__in=status)
+            if filterData['TaskAssignedBy']:
+                self.queryset = self.queryset.filter(TaskAssignedBy=filterData['TaskAssignedBy'])
+            if filterData['ProjectId']:
+                self.queryset = self.queryset.filter(ProjectId=filterData['ProjectId'])
+            if Keyword:
+                    self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
+            if filterData['CreatedDate']:
+                created_date_str = filterData['CreatedDate']
+                created_date = datetime.strptime(created_date_str, '%Y-%m-%d').date()
+                self.queryset = self.queryset.filter(CreatedDate__startswith=created_date)
+            if filterData['EndDate']:
+                end_date_str = filterData['EndDate']
+                end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
+                self.queryset = self.queryset.filter(EndDate__startswith=end_date)
 
-            
-        
-        page = self.paginate_queryset(self.queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            data = []
-
-            for row in serializer.data:
-               
-                try:
-                    projectTask = ProjectTask.objects.filter(
-                        RefId=row['ProjectTaskId'],TaskType='Ticket').order_by('-SortId')
-                    projectTaskSerializer=ProjectTaskSerializer(projectTask, many=True)
-                    row['Tickets']=projectTaskSerializer.data[0]
-                except:
-                    row['Tickets']=[]
-                try:
-                    projectTask = ProjectTask.objects.filter(RefId=row['ProjectTaskId'],TaskType='Subtask').order_by('-SortId')
-                    projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
-                    subTasks=[]
-                    for subtask in projectTaskSerializer.data:
-                        try:                      
-                            taskStatus=TaskStatus.objects.get(StatusId=subtask['Status'])
-                            taskStatusSerializer=TaskStatusSerializer(taskStatus)
-                            subtask['StatusName']=taskStatusSerializer.data['Status']
-                        except:
-                            subtask['StatusName']=""
-                        subTasks.append(subtask)
-
-                    row['SubTask'] = subTasks
-                except:
-                    row['SubTask'] =[]
                 
-                try:
-                    project=Project.objects.get(ProjectId=row['ProjectId'])
-                    projectSerializer=ProjectSerializer(project)
-                    row['ProjectName']=projectSerializer.data['ProjectName']
-                except:
-                    row['ProjectName']=""
-                try:
-                    staff=Staff.objects.get(StaffId=row['TaskAssignedTo'])
-                    staffSerializer=StaffSerializer(staff)
-                    row['AssignedTo']=staffSerializer.data['StaffName']
-                except:
-                    row['AssignedTo']=""
+            
+            page = self.paginate_queryset(self.queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                data = []
 
-                try:
-                    staff=Staff.objects.get(StaffId=row['TaskAssignedBy'])
-                    staffSerializer=StaffSerializer(staff)
-                    row['AssignedBy']=staffSerializer.data['StaffName']
-                except:
-                    row['AssignedBy']=""
+                for row in serializer.data:
+                
+                    try:
+                        projectTask = ProjectTask.objects.filter(
+                            RefId=row['ProjectTaskId'],TaskType='Ticket').order_by('-SortId')
+                        projectTaskSerializer=ProjectTaskSerializer(projectTask, many=True)
+                        row['Tickets']=projectTaskSerializer.data[0]
+                    except:
+                        row['Tickets']=[]
+                    try:
+                        projectTask = ProjectTask.objects.filter(RefId=row['ProjectTaskId'],TaskType='Subtask').order_by('-SortId')
+                        projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
+                        subTasks=[]
+                        for subtask in projectTaskSerializer.data:
+                            try:                      
+                                taskStatus=TaskStatus.objects.get(StatusId=subtask['Status'])
+                                taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                                subtask['StatusName']=taskStatusSerializer.data['Status']
+                            except:
+                                subtask['StatusName']=""
+                            subTasks.append(subtask)
+
+                        row['SubTask'] = subTasks
+                    except:
+                        row['SubTask'] =[]
+                    
+                    try:
+                        project=Project.objects.get(ProjectId=row['ProjectId'])
+                        projectSerializer=ProjectSerializer(project)
+                        row['ProjectName']=projectSerializer.data['ProjectName']
+                    except:
+                        row['ProjectName']=""
+                    try:
+                        staff=Staff.objects.get(StaffId=row['TaskAssignedTo'])
+                        staffSerializer=StaffSerializer(staff)
+                        row['AssignedTo']=staffSerializer.data['StaffName']
+                    except:
+                        row['AssignedTo']=""
+
+                    try:
+                        try:
+                            staff=Staff.objects.get(StaffId=row['TaskAssignedBy'])
+                            staffSerializer=StaffSerializer(staff)
+                            row['AssignedBy']=staffSerializer.data['StaffName']
+                        except:
+                            company=Company.objects.get(CompanyId=row['TaskAssignedBy'])
+                            companySerializer=CompanySerializer(company)
+                            row['AssignedBy']=companySerializer.data['CompanyName']
+                    except:
+                        row['AssignedBy']=""
 
 
-                try:
-                    staff=Staff.objects.get(StaffId=row['VerifiedBy'])
-                    staffSerializer=StaffSerializer(staff)
-                    row['VerifiedByName']=staffSerializer.data['StaffName']
-                except:
-                    row['VerifiedByName']= ""
-                try:
-                    taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
-                    taskStatusSerializer=TaskStatusSerializer(taskStatus)
-                    row['StatusName']=taskStatusSerializer.data['Status']
-                except:
-                    row['StatusName']=""
+                    try:
+                        staff=Staff.objects.get(StaffId=row['VerifiedBy'])
+                        staffSerializer=StaffSerializer(staff)
+                        row['VerifiedByName']=staffSerializer.data['StaffName']
+                    except:
+                        row['VerifiedByName']= ""
+                    try:
+                        taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                        taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                        row['StatusName']=taskStatusSerializer.data['Status']
+                    except:
+                        row['StatusName']=""
 
 
-                try:
-                    projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
-                    projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
-                    row['ProjectTaskFiles']=projectTaskFileSerializer.data
-                except:
-                    row['ProjectTaskFiles']=""
+                    try:
+                        projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+                        projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
+                        row['ProjectTaskFiles']=projectTaskFileSerializer.data
+                    except:
+                        row['ProjectTaskFiles']=""
 
-                data.append(row)
-            return self.get_paginated_response(data)
-        
+                    data.append(row)
+                return self.get_paginated_response(data)
+        except:
+            return JsonResponse("", safe=False)
+            
 
 
 
@@ -525,6 +538,13 @@ def ProjectTaskApi(request):
                 data=projectTaskData)
             if projectTaskSerializer.is_valid():
                 projectTaskSerializer.save()
+                if projectTaskSerializer.data['IsRepeated'] == 1:
+                    RepeatInterval=projectTaskSerializer.data['RepeatInterval']
+                    Interval=projectTaskSerializer.data['Interval']
+                    next_Scheduled_date=calculateNextScheduledDate(RepeatInterval,Interval)
+                    projectTask=ProjectTask.objects.get(ProjectTaskId=projectTaskSerializer.data['ProjectTaskId'])
+                    projectTask.NextScheduledDate=next_Scheduled_date
+                    projectTask.save()
                 if projectTaskSerializer.data['TaskType']=="Task" or projectTaskSerializer.data['TaskType']=="Ticket":
 
                     login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedTo'])
@@ -551,6 +571,13 @@ def ProjectTaskApi(request):
                 projectTask,data=projectTaskData)
             if projectTaskSerializer.is_valid():
                 projectTaskSerializer.save()
+                if projectTaskSerializer.data['IsRepeated'] == 1:
+                    RepeatInterval=projectTaskSerializer.data['RepeatInterval']
+                    Interval=projectTaskSerializer.data['Interval']
+                    next_Scheduled_date=calculateNextScheduledDate(RepeatInterval,Interval)
+                    projectScheduleDate=ProjectTask.objects.get(ProjectTaskId=projectTaskData['ProjectTaskId'])
+                    projectScheduleDate.NextScheduledDate=next_Scheduled_date
+                    projectScheduleDate.save()
                 if projectTaskSerializer.data['TaskType']!='Subtask':
                     if projectTaskData['Status']=='7' or  projectTaskData['Status']=='8' or  projectTaskData['Status']=='9' or projectTaskData['Status']==7 or  projectTaskData['Status']==8 or  projectTaskData['Status']==9:
                         projectTaskPoint = ProjectTask.objects.get(
@@ -641,9 +668,14 @@ def ProjectTaskApiById(request, ProjectTaskId=""):
             except:
                 ProjectTaskData['ProjectName']=""
             try:
-                staff = Staff.objects.get(StaffId=projectTaskSerializer.data['TaskAssignedBy'])
-                staffSerializer = StaffSerializer(staff)
-                ProjectTaskData['AssignedBy'] = staffSerializer.data['StaffName']
+                try:
+                    staff = Staff.objects.get(StaffId=projectTaskSerializer.data['TaskAssignedBy'])
+                    staffSerializer = StaffSerializer(staff)
+                    ProjectTaskData['AssignedBy'] = staffSerializer.data['StaffName']
+                except:
+                    company = Company.objects.get(CompanyId=projectTaskSerializer.data['TaskAssignedBy'])
+                    companySerializer = CompanySerializer(company)
+                    ProjectTaskData['AssignedBy'] =companySerializer.data['CompanyName']
             except:
                 ProjectTaskData['AssignedBy']=""
             
@@ -1733,9 +1765,133 @@ def GetAllProjectTaskApiByFiltering(request):
 
 
 
+# from datetime import datetime
+# import json
+# from datetime import date
+# @api_view(['GET'])
+# def schedule_repeated_tasks(request):
+    
+#     retries = 3
+#     for _ in range(retries):
+#         try:
+#             now = timezone.now()
+#             repeated_tasks = ProjectTask.objects.filter(IsRepeated=True)
+#             projectTaskSerializer = ProjectTaskSerializer(
+#                     repeated_tasks, many=True)
+#             data = []
+#             i = 0
+#             for task in repeated_tasks:
+#                 given_date = datetime.now()
+#                 day_of_week = int((given_date.weekday()+ 1))
+              
+#                 next_Schduled_date = None
+#                 scheduled_deadline = None
+#                 if task.RepeatInterval == 'daily':
+#                     scheduled_days_str = task.ScheduledDays.strip('[] ') 
+#                     ScheduledDays = list(map(int, scheduled_days_str.split(',')))
+#                     if day_of_week in ScheduledDays:
+#                         next_Schduled_date = now + timedelta(days=1)
+#                         scheduled_deadline = now + timedelta(days=1)
+#                         # next_Schduled_date = (timezone.now() + timedelta(days=1))
+#                         # scheduled_deadline = now + timedelta(days=1)
+#                         # next_Schduled_date = next_Schduled_date.date()
+#                         # for day in ScheduledDays:
+#                         #     n=1
+#                         #     next_date = given_date + timedelta(days=n)
+#                         #     next_day = next_date.weekday() + 1
+#                         #     print(next_day,"next_day")
+#                         #     n+1
+#                         #     if day in ScheduledDays:
+#                         #         next_Schduled_date =next_date
+#                         #         print(next_Schduled_date)
+                                
+#                         #         break
+                        
+                    
+#                 elif task.RepeatInterval == 'weekly':
+#                     next_Schduled_date = task.LastAssigned + timedelta(weeks=1)
+#                     scheduled_deadline = now + timedelta(weeks=1)
+#                 elif task.RepeatInterval == 'monthly':
+#                     # now=date.today()
+#                     scheduled_days_str = task.ScheduledDays.strip('[] ') 
+#                     ScheduledDays = list(map(int, scheduled_days_str.split(',')))
+#                     month=int(given_date.strftime("%m"))
+#                     day=given_date.strftime("%d")
+#                     year=given_date.strftime("%Y")
+#                     if month in ScheduledDays:
+#                         createdDay=(task.SortId).strftime("%d")
+#                         if createdDay == day:
+#                             next_Schduled_date = date(year=int(year), month=int(month), day=int(day))
+#                             next_Schduled_date = datetime.combine(next_Schduled_date, datetime.min.time())
+#                             scheduled_deadline =  now + relativedelta(months=1)
+#                             # next_Schduled_date=f"{year}-{month}-{day}"
+#                             # next_Schduled_date = datetime.date(datetime.strptime(next_Schduled_date, '%Y-%m-%d'))
+                           
 
+                        
+#                             # next_Schduled_date = task.LastAssigned + relativedelta(months=1)
+#                             # scheduled_deadline = next_Schduled_date.strftime("%Y-%m-%dT%H:%M")
+#                             # print(scheduled_deadline)
+                
+#                 if next_Schduled_date and now <= next_Schduled_date:
+#                     # scheduled_deadline = timezone.now() + relativedelta(months=1)
+                    
+#                     new_task = {
+#                         "ProjectId":task.ProjectId,
+#                         "TaskAssignedTo":task.TaskAssignedTo,
+#                         "TaskAssignedBy":task.TaskAssignedBy,
+#                         "Title":task.Title,
+#                         "Description":task.Description,
+#                         "Duration":task.Duration,
+#                         "Status":1,
+#                         "CreatedDate":given_date.strftime("%Y-%m-%dT%H:%M:%S%z"),
+#                         "ScheduledDeadline":scheduled_deadline.strftime("%Y-%m-%dT%H:%M"),
+#                         "TaskPoint":task.TaskPoint,
+#                         "TaskType":task.TaskType,
+#                         "RefId":task.RefId,
+#                         "LastAssigned":given_date,
+#                         "ClientId":task.ClientId
+#                     }
+                    
+#                     new_taskserializer = ProjectTaskSerializer(data=new_task)
+                   
+#                     if new_taskserializer.is_valid():
+#                         new_taskserializer.save()
+#                         subtasks = ProjectTask.objects.filter(RefId=task.ProjectTaskId)
+#                         subtaskSerializer=ProjectTaskSerializer(subtasks,many=True)
+#                         for subtask in subtaskSerializer.data:
+#                             new_subtask_data = {
+#                                 "ProjectId": subtask['ProjectId'],
+#                                 "TaskAssignedTo": subtask['TaskAssignedTo'],
+#                                 "TaskAssignedBy": subtask['TaskAssignedBy'],
+#                                 "Title": subtask['Title'],
+#                                 "Description": subtask['Description'],
+#                                 "Status": 1,
+#                                 "CreatedDate": given_date,
+#                                 "ScheduledDeadline": scheduled_deadline,
+#                                 "TaskPoint": subtask['TaskPoint'],
+#                                 "TaskType": subtask['TaskType'],
+#                                 "RefId": new_taskserializer.data['ProjectTaskId']
+
+#                             }
+#                             new_subtaskserializer = ProjectTaskSerializer(data=new_subtask_data)
+#                             if new_subtaskserializer.is_valid():
+#                                 new_subtaskserializer.save()
+#                             else:
+#                                 print(new_subtaskserializer.errors)
+
+#                         i=i+1
+#                         data.append(new_taskserializer.data)
+                    
+
+#             return JsonResponse({"message": "Repeated tasks scheduled successfully.","data":data,"projectTaskSerializer":projectTaskSerializer.data,"count":i},safe=False)
+#         except NotImplementedError as e:
+#             return JsonResponse({"error": "NotImplementedError occurred"}, status=500)
+    
+
+from datetime import datetime
 import json
-
+from datetime import date
 @api_view(['GET'])
 def schedule_repeated_tasks(request):
     
@@ -1746,49 +1902,69 @@ def schedule_repeated_tasks(request):
             repeated_tasks = ProjectTask.objects.filter(IsRepeated=True)
             projectTaskSerializer = ProjectTaskSerializer(
                     repeated_tasks, many=True)
+         
             data = []
             i = 0
             for task in repeated_tasks:
                 given_date = datetime.now()
-                print(given_date)
-                day_of_week = (given_date.weekday() + 1)
+                day_of_week = int((given_date.weekday()+ 1))
+               
                 next_Schduled_date = None
+                scheduled_deadline = None
                 
-                
-                if task.RepeatInterval == 'daily':
-                    scheduled_days_str = task.ScheduledDays.strip('[] ') 
-                    ScheduledDays = list(map(int, scheduled_days_str.split(',')))
-                    if day_of_week in ScheduledDays:
-                        
-                        next_Schduled_date = task.LastAssigned + timedelta(days=1)
-                        print("next_Schduled_date",next_Schduled_date)
-
-
-                        # for day in ScheduledDays:
-                        #     n=1
-                        #     next_date = given_date + timedelta(days=n)
-                        #     next_day = next_date.weekday() + 1
-                        #     print(next_day,"next_day")
-                        #     n+1
-                        #     if day in ScheduledDays:
-                        #         next_Schduled_date =next_date
-                        #         print(next_Schduled_date)
-                                
-                        #         break
-                        
+                currentDate=given_date.strftime("%Y-%m-%d")
+                currentScheduledDate=task.NextScheduledDate.strftime("%Y-%m-%d")
+               
+                if task.RepeatInterval == 'daily' and currentDate == currentScheduledDate:
                     
-                elif task.RepeatInterval == 'weekly':
-                    next_Schduled_date = task.LastAssigned + timedelta(weeks=1)
-                elif task.RepeatInterval == 'monthly':
-                    # scheduled_days_str = task.ScheduledDays.strip('[] ') 
-                    # ScheduledDays = list(map(int, scheduled_days_str.split(',')))
-                    # month=
-                    # if month in ScheduledDays:
-                    next_Schduled_date = task.LastAssigned + relativedelta(months=1)
+                    interval=task.Interval
+                    if day_of_week == 7:
+                        interval=interval+1
+                        next_Schduled_date = now + timedelta(days=interval)
+                        
+                        scheduled_deadline = next_Schduled_date + timedelta(days=interval)
+                        
+                        
+                    else:
+                        next_Schduled_date = now + timedelta(days=interval)
+                        scheduled_deadline = next_Schduled_date + timedelta(days=interval)
+                        
+                elif task.RepeatInterval == 'weekly' and currentDate == currentScheduledDate:
+                    
+                    interval=task.Interval
+                    if day_of_week == 7:
+                        interval=interval+1
+                        next_Schduled_date = now + timedelta(weeks=interval)
+                        scheduled_deadline = next_Schduled_date + timedelta(weeks=interval)
+                    else:
+                        next_Schduled_date = now + timedelta(weeks=interval)
+                        scheduled_deadline = next_Schduled_date + timedelta(weeks=interval)
+                        
+                elif task.RepeatInterval == 'monthly' and currentDate == currentScheduledDate:
+                 
+                    interval=task.Interval
+                    if day_of_week == 7:
+                        interval=interval+1
+                        next_Schduled_date = now + relativedelta(months=interval)
+                        scheduled_deadline = next_Schduled_date + relativedelta(months=interval)
+                    else:
+                        next_Schduled_date = now + relativedelta(months=interval)
+                        scheduled_deadline = next_Schduled_date + relativedelta(months=interval)
+                        
+                elif task.RepeatInterval == 'yearly' and currentDate == currentScheduledDate:
+                    interval = task.Interval
+                    if day_of_week == 7:
+                        interval=interval+1
+                        next_Scheduled_date = now + relativedelta(years=interval)
+                        scheduled_deadline = next_Scheduled_date + relativedelta(years=interval)
+                    else:
+                        next_Scheduled_date = now + relativedelta(years=interval)
+                        scheduled_deadline = next_Scheduled_date + relativedelta(years=interval)
+   
+                           
                 
-                if next_Schduled_date and now <= next_Schduled_date:
-                    # scheduled_deadline = next_Schduled_date.strftime("%Y-%m-%dT%H:%M")
-                    scheduled_deadline = now + timedelta(days=1)
+                if currentDate == currentScheduledDate and (task.RepeatInterval == 'daily' or task.RepeatInterval == 'weekly' or task.RepeatInterval == 'monthly'):
+                  
                     new_task = {
                         "ProjectId":task.ProjectId,
                         "TaskAssignedTo":task.TaskAssignedTo,
@@ -1797,18 +1973,21 @@ def schedule_repeated_tasks(request):
                         "Description":task.Description,
                         "Duration":task.Duration,
                         "Status":1,
-                        "CreatedDate":scheduled_deadline.strftime("%Y-%m-%d"),
+                        "CreatedDate":given_date.strftime("%Y-%m-%dT%H:%M:%S%z"),
                         "ScheduledDeadline":scheduled_deadline.strftime("%Y-%m-%dT%H:%M"),
                         "TaskPoint":task.TaskPoint,
                         "TaskType":task.TaskType,
                         "RefId":task.RefId,
-                        "IsRepeated":task.IsRepeated,
-                        'RepeatInterval':task.RepeatInterval,
-                        "LastAssigned":next_Schduled_date,
-                        "ScheduledDays":task.ScheduledDays
+                        "NextScheduledDate":next_Schduled_date,
+                        "Interval":task.Interval,
+                        "ClientId":task.ClientId,
+                        "IsRepeated":True,
+                        "RepeatInterval":task.RepeatInterval
+
                     }
+                    
                     new_taskserializer = ProjectTaskSerializer(data=new_task)
-                
+                   
                     if new_taskserializer.is_valid():
                         new_taskserializer.save()
                         subtasks = ProjectTask.objects.filter(RefId=task.ProjectTaskId)
@@ -1821,7 +2000,7 @@ def schedule_repeated_tasks(request):
                                 "Title": subtask['Title'],
                                 "Description": subtask['Description'],
                                 "Status": 1,
-                                "CreatedDate": now.strftime("%Y-%m-%d"),
+                                "CreatedDate": given_date,
                                 "ScheduledDeadline": scheduled_deadline,
                                 "TaskPoint": subtask['TaskPoint'],
                                 "TaskType": subtask['TaskType'],
@@ -1841,6 +2020,8 @@ def schedule_repeated_tasks(request):
             return JsonResponse({"message": "Repeated tasks scheduled successfully.","data":data,"projectTaskSerializer":projectTaskSerializer.data,"count":i},safe=False)
         except NotImplementedError as e:
             return JsonResponse({"error": "NotImplementedError occurred"}, status=500)
+        
+
         
 # from django_q.tasks import schedule
 # from django_q.models import Schedule
@@ -1884,9 +2065,6 @@ def send_notification(request):
     
 
 
-
-
-    
 
 def sendNotification(notifyData):
 
@@ -2150,84 +2328,86 @@ class GetAllTicketsApi(generics.ListAPIView):
     pagination_class = CustomPageNumberPagination
     serializer_class = ProjectTaskSerializer 
     def post(self, request, *args, **kwargs):
-        filterData = JSONParser().parse(request)
-        Keyword = filterData.get('SearchKeyword', '')
-        if filterData['TaskAssignedTo']:
-            self.queryset = self.queryset.filter(TaskAssignedTo=filterData['TaskAssignedTo'])
-        if filterData['TaskAssignedBy']:
-            self.queryset = self.queryset.filter(TaskAssignedBy=filterData['TaskAssignedBy'])
-        if filterData['ProjectId']:
-            self.queryset = self.queryset.filter(ProjectId=filterData['ProjectId'])
-        if filterData['Status']:
-            self.queryset = self.queryset.filter(Status=filterData['Status'])
-        if Keyword:
-                self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
-        if filterData['CreatedDate']:
-            created_date_str = filterData['CreatedDate']
-            created_date = datetime.strptime(created_date_str, '%Y-%m-%d').date()
-            self.queryset = self.queryset.filter(CreatedDate__startswith=created_date)
-       
-        page = self.paginate_queryset(self.queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            data = []
-
-            for row in serializer.data:
-                row['Tickets']=[]
-                try:
-                    projectTask = ProjectTask.objects.get(
-                        RefId=row['ProjectTaskId'])
-                    projectTaskSerializer=ProjectTaskSerializer(projectTask)
-                    row['Tickets']=projectTaskSerializer.data
-                except:
-                    row['Tickets']=[]
-                try:
-                    project=Project.objects.get(ProjectId=row['ProjectId'])
-                    projectSerializer=ProjectSerializer(project)
-                    row['ProjectName']=projectSerializer.data['ProjectName']
-                except:
-                    row['ProjectName']=""
-                try:
-                    staff=Staff.objects.get(StaffId=row['TaskAssignedTo'])
-                    staffSerializer=StaffSerializer(staff)
-                    row['AssignedTo']=staffSerializer.data['StaffName']
-                except:
-                    row['AssignedTo']=""
-
-                try:
-                    staff=Staff.objects.get(StaffId=row['TaskAssignedBy'])
-                    staffSerializer=StaffSerializer(staff)
-                    row['AssignedBy']=staffSerializer.data['StaffName']
-                except:
-                    row['AssignedBy']=""
-
-
-                try:
-                    staff=Staff.objects.get(StaffId=row['VerifiedBy'])
-                    staffSerializer=StaffSerializer(staff)
-                    row['VerifiedByName']=staffSerializer.data['StaffName']
-                except:
-                    row['VerifiedByName']= ""
-                try:
-                    taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
-                    taskStatusSerializer=TaskStatusSerializer(taskStatus)
-                    row['StatusName']=taskStatusSerializer.data['Status']
-                except:
-                    row['StatusName']=""
-
-
-                try:
-                    projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
-                    projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
-                    row['ProjectTaskFiles']=projectTaskFileSerializer.data
-                except:
-                    row['ProjectTaskFiles']=""
-
-                data.append(row)
-            
-
-            return self.get_paginated_response(data)
+        try:
+            filterData = JSONParser().parse(request)
+            Keyword = filterData.get('SearchKeyword', '')
+            if filterData['TaskAssignedTo']:
+                self.queryset = self.queryset.filter(TaskAssignedTo=filterData['TaskAssignedTo'])
+            if filterData['TaskAssignedBy']:
+                self.queryset = self.queryset.filter(TaskAssignedBy=filterData['TaskAssignedBy'])
+            if filterData['ProjectId']:
+                self.queryset = self.queryset.filter(ProjectId=filterData['ProjectId'])
+            if filterData['Status']:
+                self.queryset = self.queryset.filter(Status=filterData['Status'])
+            if Keyword:
+                    self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
+            if filterData['CreatedDate']:
+                created_date_str = filterData['CreatedDate']
+                created_date = datetime.strptime(created_date_str, '%Y-%m-%d').date()
+                self.queryset = self.queryset.filter(CreatedDate__startswith=created_date)
         
+            page = self.paginate_queryset(self.queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                data = []
+
+                for row in serializer.data:
+                    row['Tickets']=[]
+                    try:
+                        projectTask = ProjectTask.objects.get(
+                            RefId=row['ProjectTaskId'])
+                        projectTaskSerializer=ProjectTaskSerializer(projectTask)
+                        row['Tickets']=projectTaskSerializer.data
+                    except:
+                        row['Tickets']=[]
+                    try:
+                        project=Project.objects.get(ProjectId=row['ProjectId'])
+                        projectSerializer=ProjectSerializer(project)
+                        row['ProjectName']=projectSerializer.data['ProjectName']
+                    except:
+                        row['ProjectName']=""
+                    try:
+                        staff=Staff.objects.get(StaffId=row['TaskAssignedTo'])
+                        staffSerializer=StaffSerializer(staff)
+                        row['AssignedTo']=staffSerializer.data['StaffName']
+                    except:
+                        row['AssignedTo']=""
+
+                    try:
+                        staff=Staff.objects.get(StaffId=row['TaskAssignedBy'])
+                        staffSerializer=StaffSerializer(staff)
+                        row['AssignedBy']=staffSerializer.data['StaffName']
+                    except:
+                        row['AssignedBy']=""
+
+
+                    try:
+                        staff=Staff.objects.get(StaffId=row['VerifiedBy'])
+                        staffSerializer=StaffSerializer(staff)
+                        row['VerifiedByName']=staffSerializer.data['StaffName']
+                    except:
+                        row['VerifiedByName']= ""
+                    try:
+                        taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                        taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                        row['StatusName']=taskStatusSerializer.data['Status']
+                    except:
+                        row['StatusName']=""
+
+
+                    try:
+                        projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+                        projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
+                        row['ProjectTaskFiles']=projectTaskFileSerializer.data
+                    except:
+                        row['ProjectTaskFiles']=""
+
+                    data.append(row)
+                
+
+                return self.get_paginated_response(data)
+        except:
+            return JsonResponse("", safe=False)   
 
 
 
@@ -2393,6 +2573,49 @@ def TicketsByTaskAssignedBy(request, TaskAssignedBy=""):
 
 
 
-    
+def calculateNextScheduledDate(RepeatInterval="",Interval=""):
+    given_date = datetime.now()
+    day_of_week = int((given_date.weekday()+ 1))
+    now = timezone.now()
+    if RepeatInterval == 'daily':
+        interval=Interval
+        if day_of_week == 7:
+            interval=interval+1
+            next_Schduled_date = now + timedelta(days=interval)
+            
+            
+        else:
+            next_Schduled_date = now + timedelta(days=interval)
+           
+    elif RepeatInterval == 'weekly':
+        interval=Interval
+        if day_of_week == 7:
+            interval=interval+1
+            next_Schduled_date = now + timedelta(weeks=interval)
+            
+        else:
+            next_Schduled_date = now + timedelta(weeks=interval)
+            
+
+    elif RepeatInterval == 'monthly':
+        interval=Interval
+        if day_of_week == 7:
+            interval=interval+1
+            next_Schduled_date = now + relativedelta(months=interval)
+            
+        else:
+            next_Schduled_date = now + relativedelta(months=interval)
+            
+    elif RepeatInterval == 'yearly':
+        interval = Interval
+        if day_of_week == 7:
+            interval=interval+1
+            next_Scheduled_date = now + relativedelta(years=interval)
+           
+        else:
+            next_Scheduled_date = now + relativedelta(years=interval)
+    return next_Schduled_date
+          
+
 
 

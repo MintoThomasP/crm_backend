@@ -12,9 +12,9 @@ from app_company.models import Company, CompanyDocuments
 from app_company.serializers import CompanyDocumentsSerializer, CompanySerializer, SaveCompanyDocumentsSerializer, UploadCompanyDocumentsSerializer
 from app_default.views import retry
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=CompanySerializer)
-@swagger_auto_schema(method='PUT', request_body=CompanySerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all company details",)
+@swagger_auto_schema(method='POST', request_body=CompanySerializer,operation_description="NOTE: API for save Company")
+@swagger_auto_schema(method='PUT', request_body=CompanySerializer,operation_description="NOTE: API for edit Company")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all company",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def CompanyApi(request):
@@ -61,7 +61,8 @@ def CompanyApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give CompanyId to get one companydetail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get Company by CompanyId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE Company by CompanyId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def CompanyApiById(request, CompanyId=""):
@@ -95,9 +96,9 @@ def CompanyApiById(request, CompanyId=""):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=CompanyDocumentsSerializer)
-@swagger_auto_schema(method='PUT', request_body=CompanyDocumentsSerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all company details",)
+@swagger_auto_schema(method='POST', request_body=CompanyDocumentsSerializer,operation_description="NOTE: API for save CompanyDocuments")
+@swagger_auto_schema(method='PUT', request_body=CompanyDocumentsSerializer,operation_description="NOTE: API for edit CompanyDocuments")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all company Documents",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def CompanyDocumentsApi(request):
@@ -131,7 +132,8 @@ def CompanyDocumentsApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give CompanyDocumentId to get one companyDocumentsdetail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get companyDocumentsdetail by CompanyDocumentId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE companyDocuments by CompanyDocumentId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def CompanyDocumentsApiById(request, CompanyDocumentId=""):

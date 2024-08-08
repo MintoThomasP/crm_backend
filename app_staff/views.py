@@ -37,13 +37,13 @@ from xhtml2pdf import pisa
 from django.template.loader import get_template
 from django.conf import settings
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=SaveStaffSerializer)
-@swagger_auto_schema(method='PUT', request_body=SaveStaffSerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Staff",)
+@swagger_auto_schema(method='POST', request_body=SaveStaffSerializer,operation_description="NOTE: API for save staff")
+@swagger_auto_schema(method='PUT', request_body=SaveStaffSerializer,operation_description="NOTE: API for edit staff")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all Staff",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def staffApi(request):
-    # try:
+    try:
         if request.method == 'GET':
            
             staff = Staff.objects.all().order_by('-SortId')
@@ -131,11 +131,13 @@ def staffApi(request):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
 from datetime import datetime,date, timedelta   
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give StaffId to get one staffdetail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get Staff by StaffId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE Staff by StaffId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def StaffApiById(request, StaffId=""):
@@ -145,10 +147,13 @@ def StaffApiById(request, StaffId=""):
                     StaffId=StaffId)
             staffSerializer = StaffSerializer(
                     staff)
-            designation=Designation.objects.get(DesignationId=staffSerializer.data['Designation'])
-            designationSerializer=DesignationSerializer(designation)
             designationData=staffSerializer.data
-            designationData['DesignationName']=designationSerializer.data['Designation']
+            try:
+                designation=Designation.objects.get(DesignationId=staffSerializer.data['Designation'])
+                designationSerializer=DesignationSerializer(designation)
+                designationData['DesignationName']=designationSerializer.data['Designation']
+            except:
+                designationData['DesignationName']=""
 
             projectTask=ProjectTask.objects.filter(TaskAssignedTo=staffSerializer.data['StaffId'],TaskType='Task')
             projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
@@ -214,13 +219,13 @@ def StaffApiById(request, StaffId=""):
     
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=StaffGuardianSerializer)
-@swagger_auto_schema(method='PUT', request_body=StaffGuardianSerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Staff's guardian details",)
+@swagger_auto_schema(method='POST', request_body=StaffGuardianSerializer,operation_description="NOTE: API for save Staff Guardian")
+@swagger_auto_schema(method='PUT', request_body=StaffGuardianSerializer,operation_description="NOTE: API for edit Staff Guardian")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all Staff's guardian details",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def staffGuardianApi(request):
-    # try:
+    try:
         if request.method == 'GET':
             staffGuardian = StaffGuardian.objects.all().order_by('-SortId')
             staffGuardianSerializer = StaffGuardianSerializer(
@@ -246,15 +251,16 @@ def staffGuardianApi(request):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give staffGuardianId to get one Guardian detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get StaffGuardian by staffGuardianId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE StaffGuardian by staffGuardianId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def staffGuardianApiById(request, StaffGuardianId=""):
-    # try:
+    try:
         if request.method == 'GET': 
             staffGuardian = StaffGuardian.objects.get(
                     StaffGuardianId=StaffGuardianId)
@@ -267,12 +273,12 @@ def staffGuardianApiById(request, StaffGuardianId=""):
             return JsonResponse("Deleted successfully", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give staffId to get all guardian details",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get StaffGuardian by StaffId",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def staffGuardianApiByStaffId(request, StaffId=""):
@@ -325,7 +331,7 @@ class  uploadStaffProfileImage(APIView):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give staffId to get all guardian details",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get Staff by StaffCode",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def staffApiByStaffCode(request, StaffCode=""):
@@ -397,9 +403,9 @@ def staffApiByStaffCode(request, StaffCode=""):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=StaffDocumentsSerializer)
-@swagger_auto_schema(method='PUT', request_body=StaffDocumentsSerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Staff's Documents details",)
+@swagger_auto_schema(method='POST', request_body=StaffDocumentsSerializer,operation_description="NOTE: API for save StaffDocument")
+@swagger_auto_schema(method='PUT', request_body=StaffDocumentsSerializer,operation_description="NOTE: API for edit StaffDocument")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all Staff's Documents details",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def staffDocumentsApi(request):
@@ -434,11 +440,12 @@ def staffDocumentsApi(request):
     #     return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give staffDocumentsId to get one Documents detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get StaffDocument by StaffDocumentId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE StaffDocument by StaffDocumentId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def staffDocumentsApiById(request, StaffDocumentId=""):
-    # try:
+    try:
         if request.method == 'GET': 
             staffDocuments = StaffDocuments.objects.get(
                     StaffDocumentId=StaffDocumentId)
@@ -451,8 +458,8 @@ def staffDocumentsApiById(request, StaffDocumentId=""):
             return JsonResponse("Deleted successfully", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
         
 
 
@@ -483,7 +490,7 @@ class  uploadStaffDocuments(APIView):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give staffId to get all StaffDocuments details",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get StaffDocuments by StaffId",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def staffDocumentsApiByStaffId(request, StaffId=""):
@@ -501,8 +508,7 @@ def staffDocumentsApiByStaffId(request, StaffId=""):
     
 
 @csrf_exempt
-
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all active Staff",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all active Staff based on CompanyId",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def GetAllActiveStaffListApi(request,CompanyId=""):
@@ -530,6 +536,7 @@ def GetAllActiveStaffListApi(request,CompanyId=""):
 
 
 @csrf_exempt
+@swagger_auto_schema(method='POST',operation_description="NOTE: API for Staff salary by performance",)
 @api_view(['POST'])
 @retry(retries=3, delay=2)
 def staffSalaryByPerformanceApi(request):
@@ -543,7 +550,7 @@ def staffSalaryByPerformanceApi(request):
         end_date = start_date.replace(day=1, month=start_date.month % 12 + 1) - timedelta(days=1)
         
         
-        projectTask = ProjectTask.objects.filter(TaskAssignedTo=requestData['StaffId'],TaskType='Task', ScheduledDeadline__range=(start_date, end_date))
+        projectTask = ProjectTask.objects.filter((Q(Status='7')|Q(Status='8')|Q(Status='9')),TaskAssignedTo=requestData['StaffId'],TaskType='Task',ScheduledDeadline__range=(start_date, end_date))
         projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
         
         
@@ -553,14 +560,13 @@ def staffSalaryByPerformanceApi(request):
         for row in projectTaskSerializer.data:
             
             TaskPoint += int(row['TaskPoint'])
-   
-            CompletedPoint += int(row['CompletionPoint'])
+            CompletedPoint += float(row['CompletionPoint'])
 
         staff = Staff.objects.get(StaffId=requestData['StaffId'])
         staffSerializer = StaffSerializer(staff)
         
         try:
-            Salary = int(staffSerializer.data['Salary'])
+            Salary = float(staffSerializer.data['Salary'])
         except:
             Salary = 0
         if CompletedPoint < 0:
@@ -573,9 +579,9 @@ def staffSalaryByPerformanceApi(request):
         return JsonResponse(Payment, safe=False)
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=LeaveApplicationSerializer)
-@swagger_auto_schema(method='PUT', request_body=LeaveApplicationSerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Staff's Documents details",)
+@swagger_auto_schema(method='POST', request_body=LeaveApplicationSerializer,operation_description="NOTE: API for save LeaveApplication")
+@swagger_auto_schema(method='PUT', request_body=LeaveApplicationSerializer,operation_description="NOTE: API for edit LeaveApplication")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all LeaveApplication",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def leaveApplicationApi(request):
@@ -631,7 +637,8 @@ def leaveApplicationApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give leaveApplicationId to get one Documents detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: APi for get LeaveApplication by LeaveApplicationId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE LeaveApplication by LeaveApplicationId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def leaveApplicationApiById(request, LeaveApplicationId=""):
@@ -656,89 +663,94 @@ class GetAllLeaveApplicationByCompanyId(generics.ListAPIView):
     pagination_class = CustomPageNumberPagination
     serializer_class = LeaveApplicationSerializer 
     def post(self, request, *args, **kwargs):
-        filterData = JSONParser().parse(request)
-        Keyword = filterData.get('SearchKeyword', '')
-        if filterData['CompanyId']:
-            self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+        try:
+            filterData = JSONParser().parse(request)
+            Keyword = filterData.get('SearchKeyword', '')
+            if filterData['CompanyId']:
+                self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
 
-        if Keyword:
-            self.queryset = self.queryset.filter(Q(Subject__icontains=Keyword)|Q(Description__icontains=Keyword))
-        page = self.paginate_queryset(self.queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            data = []
+            if Keyword:
+                self.queryset = self.queryset.filter(Q(Subject__icontains=Keyword)|Q(Description__icontains=Keyword))
+            page = self.paginate_queryset(self.queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                data = []
 
-            for row in serializer.data:
-                try:
-                    leaveStatus = LeaveStatus.objects.get(StatusId=row['Status'])
-                    leaveStatus_serializer = LeaveStatusSerializer(leaveStatus)
-                    row['StatusName']=leaveStatus_serializer.data['Status']
-                except:
-                    row['StatusName']=""
-                try:
-                    leaveType = LeaveType.objects.get(LeaveTypeId=row['LeaveType'])
-                    leaveType_serializer = LeaveTypeSerializer(leaveType)
-                    row['LeaveTypeName']=leaveType_serializer.data['LeaveType']
-                except:
-                    row['LeaveTypeName']=""
-                try:
-                    staff = Staff.objects.get(StaffId=row['StaffId'])
-                    staff_serializer = StaffSerializer(staff)
-                    row['StaffName']=staff_serializer.data['StaffName']
-                except:
-                    row['StaffName']=""
-                data.append(row)
-            return self.get_paginated_response(data)
-        
+                for row in serializer.data:
+                    try:
+                        leaveStatus = LeaveStatus.objects.get(StatusId=row['Status'])
+                        leaveStatus_serializer = LeaveStatusSerializer(leaveStatus)
+                        row['StatusName']=leaveStatus_serializer.data['Status']
+                    except:
+                        row['StatusName']=""
+                    try:
+                        leaveType = LeaveType.objects.get(LeaveTypeId=row['LeaveType'])
+                        leaveType_serializer = LeaveTypeSerializer(leaveType)
+                        row['LeaveTypeName']=leaveType_serializer.data['LeaveType']
+                    except:
+                        row['LeaveTypeName']=""
+                    try:
+                        staff = Staff.objects.get(StaffId=row['StaffId'])
+                        staff_serializer = StaffSerializer(staff)
+                        row['StaffName']=staff_serializer.data['StaffName']
+                    except:
+                        row['StaffName']=""
+                    data.append(row)
+                return self.get_paginated_response(data)
+        except:
+            return JsonResponse("", safe=False)
 
 class leaveApplicationApiByStaffId(generics.ListAPIView):
     queryset =LeaveApplication.objects.all().order_by('-SortId')
     pagination_class = CustomPageNumberPagination
     serializer_class = LeaveApplicationSerializer 
     def post(self, request, *args, **kwargs):
-        filterData = JSONParser().parse(request)
-        Keyword = filterData.get('SearchKeyword', '')
-        if filterData['StaffId']:
-            self.queryset = self.queryset.filter(StaffId=filterData['StaffId'])
+        try:
+            filterData = JSONParser().parse(request)
+            Keyword = filterData.get('SearchKeyword', '')
+            if filterData['StaffId']:
+                self.queryset = self.queryset.filter(StaffId=filterData['StaffId'])
 
-        if Keyword:
-            self.queryset = self.queryset.filter(Q(Subject__icontains=Keyword)|Q(Description__icontains=Keyword))
-        page = self.paginate_queryset(self.queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            data = []
+            if Keyword:
+                self.queryset = self.queryset.filter(Q(Subject__icontains=Keyword)|Q(Description__icontains=Keyword))
+            page = self.paginate_queryset(self.queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                data = []
 
-            for row in serializer.data:
-                try:
-                    leaveStatus = LeaveStatus.objects.get(StatusId=row['Status'])
-                    leaveStatus_serializer = LeaveStatusSerializer(leaveStatus)
-                    row['StatusName']=leaveStatus_serializer.data['Status']
-                except:
-                    row['StatusName']=""
-                try:
+                for row in serializer.data:
+                    try:
+                        leaveStatus = LeaveStatus.objects.get(StatusId=row['Status'])
+                        leaveStatus_serializer = LeaveStatusSerializer(leaveStatus)
+                        row['StatusName']=leaveStatus_serializer.data['Status']
+                    except:
+                        row['StatusName']=""
+                    try:
 
-                    leaveType = LeaveType.objects.get(LeaveTypeId=row['LeaveType'])
-                    leaveType_serializer = LeaveTypeSerializer(leaveType)
-                    row['LeaveTypeName']=leaveType_serializer.data['LeaveType']
-                except:
-                    row['LeaveTypeName']=""
-                try:
+                        leaveType = LeaveType.objects.get(LeaveTypeId=row['LeaveType'])
+                        leaveType_serializer = LeaveTypeSerializer(leaveType)
+                        row['LeaveTypeName']=leaveType_serializer.data['LeaveType']
+                    except:
+                        row['LeaveTypeName']=""
+                    try:
 
-                    staff = Staff.objects.get(StaffId=row['StaffId'])
-                    staff_serializer = StaffSerializer(staff)
-                    row['StaffName']=staff_serializer.data['StaffName']
-                except:
-                    row['StaffName']=""
+                        staff = Staff.objects.get(StaffId=row['StaffId'])
+                        staff_serializer = StaffSerializer(staff)
+                        row['StaffName']=staff_serializer.data['StaffName']
+                    except:
+                        row['StaffName']=""
 
-                data.append(row)
-            return self.get_paginated_response(data)
-
+                    data.append(row)
+                return self.get_paginated_response(data)
+        except:
+            return JsonResponse("", safe=False)
 
 class StaffApiByCompanyId(generics.ListAPIView):
     queryset =Staff.objects.all().order_by('-SortId')
     pagination_class = CustomPageNumberPagination
     serializer_class = StaffSerializer 
     def post(self, request, *args, **kwargs):
+        try:
             filterData = JSONParser().parse(request)
             Keyword = filterData.get('SearchKeyword', '')
             if filterData['CompanyId']:
@@ -752,9 +764,12 @@ class StaffApiByCompanyId(generics.ListAPIView):
                 serializer = self.get_serializer(page, many=True)
                 data = []
                 for row in serializer.data:
-                    designation=Designation.objects.get(DesignationId=row['Designation'])
-                    designationSerializer=DesignationSerializer(designation)
-                    row['DesignationName']=designationSerializer.data['Designation']
+                    try:
+                        designation=Designation.objects.get(DesignationId=row['Designation'])
+                        designationSerializer=DesignationSerializer(designation)
+                        row['DesignationName']=designationSerializer.data['Designation']
+                    except:
+                        row['DesignationName']=""
 
                     projectTask=ProjectTask.objects.filter(TaskAssignedTo=row['StaffId'])
                     projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
@@ -783,7 +798,8 @@ class StaffApiByCompanyId(generics.ListAPIView):
                     row['WorkStatusCount'] = work_status_count
                     data.append(row)
                 return self.get_paginated_response(data)
-                
+        except:
+            return JsonResponse("", safe=False)      
  
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all SalarySlip Details",)
@@ -836,7 +852,7 @@ def CreateSalarySlipApi(request):
                         no_working_days=0
                         if first_day_time<joining_date:
                             no_working_days=no_working_days+(joining_date - first_day_time).days+1
-                        if staff['LeavingDate']:
+                        if staff['LeavingDate'] is not None:
                             relieving_date = datetime.fromisoformat(staff['LeavingDate'])
                             if last_day_time>relieving_date:
                                 no_working_days=no_working_days+(last_day_time - relieving_date).days+1

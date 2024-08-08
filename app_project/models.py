@@ -39,7 +39,7 @@ class ProjectTask(models.Model):
     Duration=models.CharField(default='0:10',max_length=50)
     TotalDuration=models.CharField(blank=True, null=True, max_length=50)
     Status=models.CharField(max_length=50)
-    CreatedDate=models.CharField(blank=True, null=True, max_length=50)
+    CreatedDate=models.CharField(blank=True, null=True, max_length=100)
     ScheduledDeadline=models.CharField(max_length=100,default=datetime.now)
     StartDate=models.CharField(blank=True, null=True, max_length=100)
     EndDate=models.CharField(blank=True, null=True, max_length=100)
@@ -51,10 +51,11 @@ class ProjectTask(models.Model):
     IsRepeated = models.BooleanField(default=False)
     RepeatInterval = models.CharField(max_length=50, blank=True, null=True)
     ScheduledDays = models.CharField(max_length=50, blank=True, null=True)
-    LastAssigned = models.DateTimeField(default=timezone.now, blank=True, null=True)
+    NextScheduledDate=models.DateTimeField(default=datetime.now)
     ExtraAccess=models.BooleanField(default=False)
     AccessTo =models.TextField(blank=True, null=True)
     ClientId=models.CharField(blank=True, null=True, max_length=50)
+    Interval=models.IntegerField(default=1)
     
 class ProjectTaskTiming(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)

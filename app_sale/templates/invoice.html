@@ -280,10 +280,12 @@
         <div class="invoice_header">
             <table>
                 <tr style=" padding-bottom: 10px;">
-                    <td style="width: 80%; padding-right:10px;"><img src="./static/images/logo.png"
+                    <td style="width: 80%; padding-right:10px;"><img src="{{logo}}"
                             style="width: 200px;" />
                         <div class="header_div">
-                            <p><b>WEB BUREAU WEB-DESIGN CO LLC</b><br>Dubai<br>United Arab Emirates</p>
+                            <p><b>{{company.CompanyName}}</b></p>
+                            <p>{{company.Address}}</p>
+                            <!-- <p><b>WEB BUREAU WEB-DESIGN CO LLC</b><br>Dubai<br>United Arab Emirates</p> -->
                         </div>
                     </td>
                     <td style="width:20%; padding-left:5px; text-align: right;">
@@ -331,12 +333,12 @@
 
                 <tr style="width:20%;">
                     <td style="vertical-align: top; width:20%;">Invoice Date:</b></td>
-                    <td style="vertical-align: top;">{{invoice.InvoiceDate|date:"d-m-Y"}}</b></td>
+                    <td style="vertical-align: top;">{{invoice.InvoiceDate}}</b></td>
                 </tr>
 
                 <tr>
                     <td style="vertical-align: top;">Due Date:</b></td>
-                    <td style="vertical-align: top;">{{invoice.DueDate|date:"d-m-Y"}}</b></td>
+                    <td style="vertical-align: top;">{{invoice.DueDate}}</b></td>
                 </tr>
 
             </table>

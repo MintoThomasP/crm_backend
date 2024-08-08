@@ -37,3 +37,12 @@ class State(models.Model):
     CountryId = models.CharField(
         max_length=50, blank=True, null=True)
     State = models.CharField(max_length=300, blank=True, null=True)
+
+
+
+
+
+
+class UserPermission(models.Model):
+    UserPermissionId = models.AutoField(primary_key=True, editable=False)
+    UserPermission = models.CharField(max_length=300, blank=True, null=True)
