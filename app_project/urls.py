@@ -55,7 +55,7 @@ urlpatterns = [
     url(r'^ProjectTaskTimingCalculationById/(?P<ProjectTaskTimingId>[0-9a-zA-Z\-]+)$', views.ProjectTaskTimingCalculationById),
 
 
-    path('ProjectTaskTotalDurationCalculation/', views.ProjectTaskTotalDurationCalculation),
+    # path('ProjectTaskTotalDurationCalculation/', views.ProjectTaskTotalDurationCalculation),
     path('GetAllTicketsApi/', views.GetAllTicketsApi.as_view()), # only using this API for get all tickets, and tickets assigned by me and filteration
 
     url(r'^TicketsByTaskAssignedTo/(?P<TaskAssignedTo>[0-9a-zA-Z\-]+)$', views.TicketsByTaskAssignedTo),

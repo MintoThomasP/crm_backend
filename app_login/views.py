@@ -50,7 +50,7 @@ def CreateLoginApi(request):
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get login details by UserId",)
-@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE login details by UserId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete login details by UserId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def UserLoginApiById(request, UserId=""):

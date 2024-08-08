@@ -54,7 +54,7 @@ def clientApi(request):
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get Client by ClientId",)
-@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE Client by ClientId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete Client by ClientId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def ClientApiById(request, ClientId=""):
@@ -284,7 +284,7 @@ def ClientAddressApi(request):
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get clientAddress by ClientAddressId",)
-@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE clientAddress by ClientAddressId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete clientAddress by ClientAddressId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def ClientAddressApiById(request, ClientAddressId=""):

@@ -16,7 +16,7 @@ urlpatterns = [
     path('GetAllCategoryandSubCategories/', views.GetAllCategoryandSubCategories),
     path('GetCategoryandSubCategoriesByCategoryType/', views.GetCategoryandSubCategoriesByCategoryType),
     path('GetClientReportMonthly/', views.GetClientReportMonthly),
-
+    path('GetAllLedgerCategory/', views.GetAllLedgerCategory),
 
     path('SaveReport/', views.BulkCreateReportView.as_view()),
 

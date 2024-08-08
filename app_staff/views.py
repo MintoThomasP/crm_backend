@@ -137,7 +137,7 @@ def staffApi(request):
 from datetime import datetime,date, timedelta   
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get Staff by StaffId",)
-@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE Staff by StaffId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete Staff by StaffId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def StaffApiById(request, StaffId=""):
@@ -256,7 +256,7 @@ def staffGuardianApi(request):
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get StaffGuardian by staffGuardianId",)
-@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE StaffGuardian by staffGuardianId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete StaffGuardian by staffGuardianId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def staffGuardianApiById(request, StaffGuardianId=""):
@@ -335,7 +335,7 @@ class  uploadStaffProfileImage(APIView):
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def staffApiByStaffCode(request, StaffCode=""):
-    # try:
+    try:
         if request.method == 'GET': 
             staff = Staff.objects.get(
                     StaffCode=StaffCode)
@@ -395,8 +395,8 @@ def staffApiByStaffCode(request, StaffCode=""):
             return JsonResponse(StaffData, safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 
 
@@ -409,7 +409,7 @@ def staffApiByStaffCode(request, StaffCode=""):
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def staffDocumentsApi(request):
-    # try:
+    try:
         if request.method == 'GET':
            
             staffDocuments = StaffDocuments.objects.all().order_by('-SortId')
@@ -436,12 +436,12 @@ def staffDocumentsApi(request):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get StaffDocument by StaffDocumentId",)
-@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE StaffDocument by StaffDocumentId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete StaffDocument by StaffDocumentId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def staffDocumentsApiById(request, StaffDocumentId=""):
@@ -637,8 +637,8 @@ def leaveApplicationApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: APi for get LeaveApplication by LeaveApplicationId",)
-@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE LeaveApplication by LeaveApplicationId",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get LeaveApplication by LeaveApplicationId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete LeaveApplication by LeaveApplicationId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def leaveApplicationApiById(request, LeaveApplicationId=""):
@@ -802,7 +802,9 @@ class StaffApiByCompanyId(generics.ListAPIView):
             return JsonResponse("", safe=False)      
  
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all SalarySlip Details",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all SalarySlip Details",)
+@swagger_auto_schema(method='POST',operation_description="NOTE: API for Save SalarySlip",)
+@swagger_auto_schema(method='PUT',operation_description="NOTE: API for edit SalarySlip",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def SalarySlipApi(request,StaffId="",Year="",Month=""):
@@ -818,11 +820,11 @@ def SalarySlipApi(request,StaffId="",Year="",Month=""):
         return JsonResponse("", safe=False)
    
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all SalarySlip Details",)
-@api_view(['GET','POST','PUT'])
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Create salary slip")
+@api_view(['GET'])
 @retry(retries=3, delay=2)
 def CreateSalarySlipApi(request):
-    # try:
+    try:
         if request.method == 'GET':
             staffDa = Staff.objects.filter(Status=1)
             staffSerializer = StaffSerializer(
@@ -905,8 +907,8 @@ def CreateSalarySlipApi(request):
             return JsonResponse("staffSerializer.data", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
 
 def calculate_leave(leave_entries,target_year,target_month):
 
@@ -933,6 +935,7 @@ def calculate_leave(leave_entries,target_year,target_month):
 
 
 @csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for download salary slip")
 @api_view(['GET'])
 def DownloadSalarySlip(request, Month,Year,StaffId):
         salarySlip = SalarySlip.objects.get(StaffId=StaffId,Year=Year,Month=Month)
@@ -985,6 +988,8 @@ def render_to_pdf(template_src, context_dict={}):
 
 
 @csrf_exempt
+@swagger_auto_schema(method='POST', operation_description="NOTE: API for save salary slip")
+@swagger_auto_schema(method='PUT', operation_description="NOTE: API for edit salary slip")
 @api_view(['POST','PUT'])
 @retry(retries=3, delay=2)
 def CURDSalarySlipApi(request):
@@ -1014,8 +1019,8 @@ def CURDSalarySlipApi(request):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=MoveOnRegisterSerializer)
-@swagger_auto_schema(method='PUT', request_body=MoveOnRegisterSerializer)
+@swagger_auto_schema(method='POST', request_body=MoveOnRegisterSerializer,operation_description="NOTE: API for save MoveOnRegister")
+@swagger_auto_schema(method='PUT', request_body=MoveOnRegisterSerializer,operation_description="NOTE: API for edit MoveOnRegister")
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all Move On Register Details",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)

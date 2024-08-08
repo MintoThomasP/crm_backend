@@ -51,7 +51,7 @@ def DesignationApi(request):
 
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get Designation by DesignationId",)
-@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE Designation by DesignationId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete Designation by DesignationId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def DesignationApiById(request, DesignationId=""):
@@ -129,7 +129,7 @@ def UserGroupApi(request):
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get UserGroup by UserGroupId",)
-@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE UserGroup by UserGroupId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete UserGroup by UserGroupId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def UserGroupApiById(request, UserGroupId=""):
@@ -206,7 +206,7 @@ def CountryApi(request):
 
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get Country by CountryId",)
-@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE Country by CountryId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete Country by CountryId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def CountryApiById(request, CountryId=""):
@@ -267,7 +267,7 @@ def StateApi(request):
 
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get state by StateId",)
-@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE state by StateId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete state by StateId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def StateApiById(request, StateId=""):
@@ -288,7 +288,7 @@ def StateApiById(request, StateId=""):
     
 
 
-@swagger_auto_schema(method='GET',operation_description="NOTE: APi for Get all State by CountryId",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all State by CountryId",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def StateApiByCountryId(request,CountryId=""):

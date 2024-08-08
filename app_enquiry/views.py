@@ -56,7 +56,7 @@ def EnquiryApi(request):
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get Enquiry by EnquiryId",)
-@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE Enquiry by EnquiryId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete Enquiry by EnquiryId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def EnquiryApiById(request, EnquiryId=""):
@@ -156,7 +156,7 @@ def CURDFollowUpApi(request):
 
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get FollowUp by FollowUpId",)
-@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE FollowUp by FollowUpId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete FollowUp by FollowUpId",)
 @api_view(['GET','DELETE'])
 def CURDFollowUpApiById(request, FollowUpId=""):
     try:

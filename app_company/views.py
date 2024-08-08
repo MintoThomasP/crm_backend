@@ -62,7 +62,7 @@ def CompanyApi(request):
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get Company by CompanyId",)
-@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE Company by CompanyId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete Company by CompanyId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def CompanyApiById(request, CompanyId=""):
@@ -133,7 +133,7 @@ def CompanyDocumentsApi(request):
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get companyDocumentsdetail by CompanyDocumentId",)
-@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE companyDocuments by CompanyDocumentId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete companyDocuments by CompanyDocumentId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def CompanyDocumentsApiById(request, CompanyDocumentId=""):

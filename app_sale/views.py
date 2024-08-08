@@ -54,8 +54,8 @@ def sendCubexizsoftMail(msg=""):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=QuotationSerializer)
-@swagger_auto_schema(method='PUT', request_body=QuotationSerializer)
+@swagger_auto_schema(method='POST', request_body=QuotationSerializer,operation_description="NOTE: API for save Quotation")
+@swagger_auto_schema(method='PUT', request_body=QuotationSerializer,operation_description="NOTE: API for edit Quotation")
 @swagger_auto_schema(method='GET',operation_description="NOTE: Get all Quotation Details",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
@@ -112,7 +112,8 @@ def QuotationApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give QuotationId to get one quotation detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get Quotation by QuotationId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete Quotation by QuotationId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def QuotationApiById(request, QuotationId=""):
@@ -186,9 +187,9 @@ class QuotationApiByCompanyId(generics.ListAPIView):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=QuotationItemSerializer)
-@swagger_auto_schema(method='PUT', request_body=QuotationItemSerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all QuotationItem Details",)
+@swagger_auto_schema(method='POST', request_body=QuotationItemSerializer,operation_description="NOTE: API for save QuotationItem")
+@swagger_auto_schema(method='PUT', request_body=QuotationItemSerializer,operation_description="NOTE: API for edit QuotationItem")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all QuotationItem Details")
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def QuotationItemApi(request):
@@ -222,7 +223,8 @@ def QuotationItemApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give QuotationItemId to get one quotationItem detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get quotationItem by QuotationItemId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete quotationItem by QuotationItemId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def QuotationItemApiById(request, QuotationItemId=""):
@@ -260,7 +262,8 @@ class UploadQuotationFile(APIView):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give QuotationFileId to get one quotationItem detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get QuotationFile by QuotationFileId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete QuotationFile by QuotationFileId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def QuotationFileApiById(request, QuotationFileId=""):
@@ -284,9 +287,9 @@ def QuotationFileApiById(request, QuotationFileId=""):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=InvoiceSerializer)
-@swagger_auto_schema(method='PUT', request_body=InvoiceSerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all Invoice Details",)
+@swagger_auto_schema(method='POST', request_body=InvoiceSerializer,operation_description="NOTE: API for save Invoice")
+@swagger_auto_schema(method='PUT', request_body=InvoiceSerializer,operation_description="NOTE: API for edit Invoice")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all Invoice Details",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def InvoiceApi(request):
@@ -341,7 +344,8 @@ def InvoiceApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give InvoiceId to get one invoice detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get Invoice by InvoiceId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete Invoice by InvoiceId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def InvoiceApiById(request, InvoiceId=""):
@@ -412,9 +416,9 @@ class InvoiceApiByCompanyId(generics.ListAPIView):
         except:
             return JsonResponse("", safe=False)
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=InvoiceItemSerializer)
-@swagger_auto_schema(method='PUT', request_body=InvoiceItemSerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all InvoiceItem Details",)
+@swagger_auto_schema(method='POST', request_body=InvoiceItemSerializer,operation_description="NOTE: API for save InvoiceItem")
+@swagger_auto_schema(method='PUT', request_body=InvoiceItemSerializer,operation_description="NOTE: API for edit InvoiceItem")
+@swagger_auto_schema(method='GET',operation_description="NOTE:API for Get all InvoiceItem Details",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def InvoiceItemApi(request):
@@ -448,7 +452,8 @@ def InvoiceItemApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give InvoiceItemId to get one invoiceItem detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get InvoiceItem by InvoiceItemId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete InvoiceItem by InvoiceItemId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def InvoiceItemApiById(request, InvoiceItemId=""):
@@ -488,7 +493,8 @@ class UploadInvoiceDocument(APIView):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give QuotationFileId to get one quotationItem detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get InvoiceDocument by InvoiceDocumentId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete InvoiceDocument by InvoiceDocumentId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def InvoiceDocumentApiById(request, InvoiceDocumentId=""):
@@ -513,9 +519,9 @@ def InvoiceDocumentApiById(request, InvoiceDocumentId=""):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=PaymentReceivedSerializer)
-@swagger_auto_schema(method='PUT', request_body=PaymentReceivedSerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all InvoiceDocument Details",)
+@swagger_auto_schema(method='POST', request_body=PaymentReceivedSerializer,operation_description="NOTE: API for save PaymentReceived")
+@swagger_auto_schema(method='PUT', request_body=PaymentReceivedSerializer,operation_description="NOTE: API for edit PaymentReceived")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all PaymentReceived",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def PaymentReceivedApi(request):
@@ -565,7 +571,8 @@ def PaymentReceivedApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give PaymentReceivedId to get one paymentReceived detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get paymentReceived by PaymentReceivedId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete paymentReceived by PaymentReceivedId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def PaymentReceivedApiById(request, PaymentReceivedId=""):
@@ -635,7 +642,8 @@ class PaymentReceivedApiCompanyId(generics.ListAPIView):
         
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give QuotationFileId to get one quotationItem detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get PaymentDocument by PaymentDocumentId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete PaymentDocument by PaymentDocumentId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def PaymentDocumentApiById(request, PaymentDocumentId=""):
@@ -773,9 +781,10 @@ from django.core.files.base import ContentFile
 #save and print
 from decimal import Decimal
 @csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for view invoice PDF",)
 @api_view(['GET'])
 def ViewPDF(request, InvoiceId=""):
-    # try:
+    try:
         if request.method == 'GET':
             invoice = Invoice.objects.get(InvoiceId=InvoiceId)
             invoiceItems = InvoiceItem.objects.filter(InvoiceId=InvoiceId).order_by('OrderNo')
@@ -820,8 +829,8 @@ def ViewPDF(request, InvoiceId=""):
 
         else:
             return JsonResponse({"error": "Invalid method"}, status=405)
-    # except Exception as e:
-    #     return JsonResponse({"error": str(e)}, status=500)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 
@@ -830,6 +839,7 @@ def ViewPDF(request, InvoiceId=""):
 
 import json
 @csrf_exempt
+@swagger_auto_schema(method='POST',operation_description="NOTE: API for send invoice by email. paylaod {CCEmailId,InvoiceId,EmailId }",)
 @api_view(['POST'])
 @retry(retries=3, delay=2)
 def SendInvoice(request):
@@ -940,9 +950,9 @@ def SendInvoice(request):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=PaymentReceivedDetailSerializer)
-@swagger_auto_schema(method='PUT', request_body=PaymentReceivedDetailSerializer)
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all InvoiceDocument Details",)
+@swagger_auto_schema(method='POST', request_body=PaymentReceivedDetailSerializer,operation_description="NOTE: API for save PaymentReceivedDetail")
+@swagger_auto_schema(method='PUT', request_body=PaymentReceivedDetailSerializer,operation_description="NOTE: API for edit PaymentReceivedDetail")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get all PaymentReceivedDetail",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def PaymentReceivedDetailApi(request):
@@ -976,7 +986,8 @@ def PaymentReceivedDetailApi(request):
         return JsonResponse("", safe=False)
     
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Give PaymentReceivedDetailId to get one paymentReceivedDetail detail",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get PaymentReceivedDetail by PaymentReceivedDetailId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete PaymentReceivedDetail by PaymentReceivedDetailId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def PaymentReceivedDetailApiById(request, PaymentReceivedDetailId=""):
@@ -1001,37 +1012,12 @@ def PaymentReceivedDetailApiById(request, PaymentReceivedDetailId=""):
 
 
 
-# @csrf_exempt
-# @swagger_auto_schema(method='GET',operation_description="NOTE: Get All Unpaid Invoice By ClientId",)
-# @api_view(['GET'])
-# def GetAllUnpaidInvoiceByClientIdApi(request,ClientId=""):
-#     try:
-#         if request.method == 'GET':
-#             invoice = Invoice.objects.filter(Q(Status=2) | Q(Status=3), ClientId=ClientId)
-#             invoiceSerializer = InvoiceSerializer(
-#                     invoice, many=True)
-#             invoiceData=[]
-#             PendingAmount=0
-#             for row in invoiceSerializer.data:
-#                 client=Client.objects.get(ClientId=row['ClientId'])
-#                 clientSerializer=ClientSerializer(client)
-#                 row['ExcessAmount']=clientSerializer.data['AdvanceAmount']
-#                 invoiceData.append(row)
-
-#                 PendingAmount += int(row['AmountDue'])
-#                 invoiceData.append({'PendingAmount': PendingAmount})
-
-#             return JsonResponse(invoiceData, safe=False)
-#         else:
-#             return JsonResponse("", safe=False)
-#     except:
-#         return JsonResponse("", safe=False)
 
 
 from django.db.models import Sum
 
 @csrf_exempt
-@swagger_auto_schema(method='GET', operation_description="NOTE: Get All Unpaid Invoice By ClientId")
+@swagger_auto_schema(method='GET', operation_description="NOTE:API for Get All Unpaid Invoice By ClientId")
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def GetAllUnpaidInvoiceByClientIdApi(request, ClientId=""):
@@ -1111,6 +1097,7 @@ def decimal_number_to_words(number):
 
 
 @csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE:API for view woodsinteriors invoice PDF")
 @api_view(['GET'])
 def ViewPDFWoodsInteriors(request, InvoiceId=""):
     try:
@@ -1177,7 +1164,7 @@ def fetch_resources(uri, rel):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: Get all InvoiceDocument Details",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get PaymentReceivedDetail by ClientId",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def PaymentReceivedApClientId(request,ClientId=""):
@@ -1199,6 +1186,7 @@ def PaymentReceivedApClientId(request,ClientId=""):
 
 
 @csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for View payment PDF",)
 @api_view(['GET'])
 def ViewPaymentPDF(request, PaymentReceivedId=""):
     try:

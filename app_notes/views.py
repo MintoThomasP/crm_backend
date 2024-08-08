@@ -65,7 +65,7 @@ def MeetingNotesApi(request):
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get MeetingNotes by MeetingNotesId",)
-@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE MeetingNotes by MeetingNotesId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete MeetingNotes by MeetingNotesId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def MeetingNotesApiById(request, MeetingNoteId=""):
@@ -112,7 +112,7 @@ class UploadMeetingNoteDocument(APIView):
         
 
 @csrf_exempt
-@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for DELETE MeetingNoteDocument by MeetingNoteDocumentId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete MeetingNoteDocument by MeetingNoteDocumentId",)
 @api_view(['DELETE'])
 @retry(retries=3, delay=2)
 def DeleteMeetingDocument(request, MeetingNoteDocumentId=""):

@@ -64,6 +64,7 @@ def CategoryApi(request):
 @swagger_auto_schema(method='GET', operation_description="NOTE: API for get Category by CategoryId",)
 @swagger_auto_schema(method='DELETE', operation_description="NOTE: API for delete Category by CategoryId",)
 @api_view(['GET', 'DELETE'])
+@retry(retries=3, delay=2)
 def CategoryApiById(request, CategoryId=""):
     try:
         if request.method == 'GET':
@@ -87,6 +88,31 @@ def CategoryApiById(request, CategoryId=""):
     except:
         return JsonResponse("Invalid", safe=False)
 
+# .exclude(SectionType='3')
+    
+# def get_subcategoriesbysectiontype(category_id):
+#     subcategories = Category.objects.filter(RefId=category_id, ActiveStatus=1).order_by('-SortId')
+#     subcategory_serializer = CategorySerializer(subcategories, many=True)
+#     subcategory_data = []
+#     nextsubcategory = True  
+ 
+#     for subcategory in subcategory_serializer.data:
+#         if subcategory['SectionType'] == '3':
+#             subcategory['nextsubcategory'] = False
+#             continue
+ 
+#         children = get_subcategoriesbysectiontype(subcategory['CategoryId'])
+#         if children:
+#             subcategory['Subcategory'] = children
+#         else:
+#             subcategory['Subcategory'] = []
+ 
+#         subcategory_data.append(subcategory)
+ 
+    
+#     return subcategory_data,nextsubcategory
+ 
+
 
 def get_subcategoriesbysectiontype(category_id):
     subcategories = Category.objects.filter(RefId=category_id, ActiveStatus=1).order_by('-SortId')
@@ -101,9 +127,12 @@ def get_subcategoriesbysectiontype(category_id):
         subcategory_data.append(subcategory)
     return subcategory_data
 
+
+
 @csrf_exempt
 @swagger_auto_schema(method='POST', operation_description="NOTE: API for get Category by SectionType",)
 @api_view(['POST'])
+@retry(retries=3, delay=2)
 def GetAllCategoryBySectionTypeApi(request):
     try:
         if request.method == 'POST':
@@ -121,8 +150,10 @@ def GetAllCategoryBySectionTypeApi(request):
                 except:
                     row['CategoryTypeName']=""
                 subcategories = get_subcategoriesbysectiontype(row['CategoryId'])
+               
                 if subcategories:
                     row['Subcategory'] = subcategories
+                    
                 else:
                    
                     row['Subcategory'] = []
@@ -134,9 +165,34 @@ def GetAllCategoryBySectionTypeApi(request):
         else:
             return JsonResponse("", safe=False)
     except:
-        return JsonResponse("Invalid", safe=False)
+        return JsonResponse("", safe=False)
     
 
+@csrf_exempt
+@retry(retries=3, delay=2)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get all ledger category",)
+@api_view(['GET'])
+def GetAllLedgerCategory(request):
+    try:
+        if request.method == 'GET':
+            category = Category.objects.filter(ActiveStatus=1,SectionType='3').order_by('-SortId')
+            categorySerializer = CategorySerializer(
+                category, many=True)
+            categoryData=[]
+            for row in categorySerializer.data:
+                try:
+                    categoryType=CategoryType.objects.get(CategoryTypeId=row['CategoryType'])
+                    categoryTypeSerializer=CategoryTypeSerializer(categoryType)
+                    row['CategoryTypeName']=categoryTypeSerializer.data['CategoryType']
+                except:
+                    row['CategoryTypeName']=""
+               
+                categoryData.append(row)
+            return JsonResponse(categorySerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
 
 
 
@@ -178,7 +234,7 @@ def ReportApi(request):
 
 @csrf_exempt
 @swagger_auto_schema(method='GET', operation_description="NOTE: API for get report by ReportId",)
-@swagger_auto_schema(method='DELETE', operation_description="NOTE: API for DELETE report by ReportId",)
+@swagger_auto_schema(method='DELETE', operation_description="NOTE: API for delete report by ReportId",)
 @api_view(['GET', 'DELETE'])
 def ReportApiById(request, ReportId=""):
     try:

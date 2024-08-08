@@ -85,29 +85,29 @@ class UploadSiteSettingsImage(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
     def post(self, request, SiteSettingsId="", *args, **kwargs):
-        # try:
+        try:
 
-                projectTaskFile = SiteSettings.objects.get(
-                    SiteSettingsId=SiteSettingsId)
-                try:
-                    if request.data['Logo']:
+            projectTaskFile = SiteSettings.objects.get(
+                SiteSettingsId=SiteSettingsId)
+            try:
+                if request.data['Logo']:
+                    SiteSettings.objects.get(
+                        SiteSettingsId=SiteSettingsId).Logo.delete(save=True)
+                if request.data['FavIcon']:
                         SiteSettings.objects.get(
-                            SiteSettingsId=SiteSettingsId).Logo.delete(save=True)
-                    if request.data['FavIcon']:
-                         SiteSettings.objects.get(
-                            SiteSettingsId=SiteSettingsId).FavIcon.delete(save=True)
-                    
-                except:
-                    p = ""
-                Serializer = UploadSiteSettingsSerializer(
-                    projectTaskFile, data=request.data)
-                if Serializer.is_valid():
-                    Serializer.save()
-                    return JsonResponse("Uploaded", safe=False)
-                else:
-                    return JsonResponse("", safe=False)
-        # except:
-        #     return JsonResponse("Invalid", safe=False)
+                        SiteSettingsId=SiteSettingsId).FavIcon.delete(save=True)
+                
+            except:
+                p = ""
+            Serializer = UploadSiteSettingsSerializer(
+                projectTaskFile, data=request.data)
+            if Serializer.is_valid():
+                Serializer.save()
+                return JsonResponse("Uploaded", safe=False)
+            else:
+                return JsonResponse("", safe=False)
+        except:
+            return JsonResponse("Invalid", safe=False)
         
 
 
