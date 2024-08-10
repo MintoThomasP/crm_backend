@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script> -->
+    <style>
+        /* @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@200;300;400;500;600;700;800;900&family=Roboto:wght@100;300;400;500;700;900&display=swap'); */
+
+        /* html {
+            font-family: 'Roboto', sans-serif;
+            color: rgba(0, 0, 0, 0);
+            font-weight:450;
+        }
+        @media print {
+            html {
+                color: rgba(0, 0, 0, 0);
+                text-shadow: 0 0 0 #000000;
+                font-weight:450;
+               
+            }
+
+            @media print and (-webkit-min-device-pixel-ratio:0) {
+                html {
+                color: #000000;
+                -webkit-print-color-adjust: exact;
+                font-weight:450;
+                
+                }
+            }
+        } */
+        th {
+            font-size: 12px;
+            vertical-align: middle;
+            padding-top: 5px;
+            padding-bottom: 0px;
+        }
+
+        td {
+            font-size: 12px;
+            vertical-align: middle;
+            padding-top: 5px;
+            padding-bottom: 0px;
+
+        }
+
+        h2 {
+            font-size: 25px;
+            margin-bottom: 0px;
+        }
+
+        .head {
+            font-size: 15px;
+            margin-bottom: 0px;
+
+        }
+        .head1 {
+            font-size: 18px;
+            margin-bottom: 0px;
+
+        }
+
+        .sub_table1 {
+            border: 1px solid #131212;
+            border-collapse: collapse;
+            padding: 5px 5px;
+            margin-top: 10px;
+            margin-bottom: 15px;
+
+        }
+
+        .sub_table2 {
+            border: 1px solid #131212;
+            border-collapse: collapse;
+            padding: 5px 5px;
+            margin-top: 10px;
+
+        }
+
+        .thead {
+            vertical-align: middle;
+        }
+        div {
+    white-space: pre-wrap;
+}
+pre {font-family: "Consolas",serif}
+    </style>
+</head>
+
+<body>
+
+    <table>
+        <tr>
+           
+            <td style="width:30%"><img src="{{logo}}" alt=""></td>
+            <td style="width:45%"></td>
+            <td style="width:25%; text-align: right;"><b>{{Companydetails.CompanyName}}</b><br><p style='white-space:pre'>{{Companydetails.Address}}</p>
+            </td>
+        </tr>
+    </table>
+    <h2 style="text-align: center;">Report</h2>
+    <table>
+        <tr>
+            <td style="width:30%"></td>
+
+            <td style="width:50%"></td>
+            <td style="width:30%; text-align: right;" class="head"><b>Name:</b> {{StaffDetails.StaffName}}</td>
+
+        </tr>
+        
+        <tr>
+            {%if StartDate and EndDate%}
+            <td style="width:70%; text-align: left;"><b>Report:</b> {{StartDate}} - {{EndDate}}</td>
+            {%else%}
+            <td><b>Report:</b>{{JoinedDate}}-{{CurrentDate}}</td>
+            {%endif%}
+            <td style="text-align: left;"><b>Total Points:</b>{{totalPoint}}</td>
+            <td style="text-align: right;"><b>Performance:</b>{{performance}}</td>
+        </tr>
+        
+
+
+    </table>
+    
+
+
+    <table class="sub_table2">
+        <tr>
+            <th style="width:5%">SlNo</th>
+            <th style="width:15%">Project Name</th>
+            <th style="width:13%">No. of Task</th>
+            <th style="width:12%">Due Task</th>
+            <th style="width:20%">Completed Task</th>
+            <th style="width:25%">On TimeCompleted Task</th>
+            <th style="width:10%">Score</th>
+        </tr>
+
+        {%for row in StaffDetails.Projects%}
+        <tr>
+            <td>{{forloop.counter}}</td>
+            <td>{{row.ProjectName}}</td>
+            <td>{{row.TotalNumberofTask}}</td>
+            <td>{{row.DueTaskCount}}</td>
+            <td>{{row.CompletedTaskCount}}</td>
+            <td>{{row.OnTimeCompletedTaskCount}}</td>
+            <td>{{row.TotalCompletedPoints}}</td>
+
+        </tr>
+        {%endfor%}
+       
+    </table>
+ 
+</body>
+
+</html>

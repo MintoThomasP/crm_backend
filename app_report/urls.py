@@ -26,6 +26,9 @@ urlpatterns = [
     path('FinanceReportPDF/<str:startdate>/<str:enddate>/<str:ClientId>/<ReportType>/<NoOfMonths>', views.FinanceReportPDF),
     path('FinanceReportExcel/<str:startdate>/<str:enddate>/<str:ClientId>/<ReportType>/<NoOfMonths>', views.FinanceReportExcel),
 
-    
+
+    path('DownloadSummarizedStaffReportByStaffId/<str:StaffId>/', views.DownloadSummarizedStaffReportByStaffId),
+        path('DownloadSummarizedStaffReportByStaffId/<str:StaffId>/<str:StartDate>/<str:EndDate>', views.DownloadSummarizedStaffReportByStaffId),
+
 #  path('report/', views.report_view, name='report_view'),
 ]

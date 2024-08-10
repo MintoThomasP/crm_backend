@@ -855,9 +855,12 @@ def CreateSalarySlipApi(request):
                         if first_day_time<joining_date:
                             no_working_days=no_working_days+(joining_date - first_day_time).days+1
                         if staff['LeavingDate'] is not None:
-                            relieving_date = datetime.fromisoformat(staff['LeavingDate'])
-                            if last_day_time>relieving_date:
-                                no_working_days=no_working_days+(last_day_time - relieving_date).days+1
+                            try:
+                                relieving_date = datetime.fromisoformat(staff['LeavingDate'])
+                                if last_day_time>relieving_date:
+                                    no_working_days=no_working_days+(last_day_time - relieving_date).days+1
+                            except:
+                                p=0
                         total_working_days=days_in_last_month-no_working_days
                         salary=float(staff['Salary'])
                         start_date = timezone.datetime.strptime(first_day_str, '%Y-%m-%d').date()
@@ -925,7 +928,7 @@ def calculate_leave(leave_entries,target_year,target_month):
 
         # Calculate the number of leave days if there's an overlap
         if start_date <= end_date:
-            if leave_type == 'half day' and start_date.month == target_month:
+            if leave_type == '1' and start_date.month == target_month:
                 total_leave_days += 0.5
             else:
                 leave_days = (end_date - start_date).days + 1
@@ -952,6 +955,12 @@ def DownloadSalarySlip(request, Month,Year,StaffId):
             logo=os.path.join(settings.BASE_DIR)+siteSettingsSerializer.data['Logo']
         except:
             logo=""
+        try:
+            designation=Designation.objects.get(DesignationId=staffData.Designation)
+            designationSerializer=DesignationSerializer(designation)
+            DesignationName=designationSerializer.data['Designation']
+        except:
+            DesignationName=""
         
         TotalDeductions=0
         NetSalary=TotalEarnings-TotalDeductions
@@ -960,6 +969,7 @@ def DownloadSalarySlip(request, Month,Year,StaffId):
             'staff':staffData,
             'JoinedDate':datetime.strptime(staffData.JoinedOn, '%Y-%m-%d').strftime('%B %d, %Y'),
             'company':companyData,
+            'DesignationName':DesignationName,
             'TotalEarnings':TotalEarnings,
             'TotalDeductions':TotalDeductions,
             'NetSalary':NetSalary,

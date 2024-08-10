@@ -21,5 +21,13 @@ urlpatterns = [
     path('SaveReport/', views.BulkCreateReportView.as_view()),
 
     url(r'^DeleteReportRefFileById/(?P<ReportRefFileId>[0-9a-zA-Z\-]+)$', views.DeleteReportRefFileById),
+    url(r'^GetMainCategorybySubCategoryId/(?P<CategoryId>[0-9a-zA-Z\-]+)$', views.GetMainCategorybySubCategoryId),
+    # url(r'^GetMainCategorybyClientId/(?P<ClientId>[0-9a-zA-Z\-]+)/(?P<ReportType>[0-9a-zA-Z\-]+)/$', views.GetMainCategorybyClientId),
+
+    url(r'^GetMainCategorybyClientId/(?P<ClientId>[0-9a-zA-Z\-]+)/(?P<ReportType>[0-9a-zA-Z\-]+)/$',
+        views.GetMainCategorybyClientId),
+    url(r'^saveClientLedgerId/(?P<ClientId>[0-9a-zA-Z\-]+)/(?P<ReportType>[0-9a-zA-Z\-]+)/$',
+        views.saveClientLedgerId),
+    # path('GetMainCategorybyClientId/', views.GetMainCategorybyClientId),
 
 ]

@@ -120,7 +120,7 @@
                 <td colspan="3" class="text-right">
                     {{company.CompanyName}}
                     <br/>
-                    {{company.Address}}
+                    <p style='white-space:pre'>{{company.Address}}</p>
                 </td>
             </tr>
         </thead>
@@ -131,7 +131,7 @@
             <tr>
                 <td class="ItemName">Employee ID</td>
                 <td class="ItemValue">{{staff.StaffCode}}</td>
-                <td class="ItemName" rowspan="5" colspan="2">
+                <td class="ItemName" rowspan="4" colspan="2">
                     Bank Details
                     <br/>
                     {{staff.BankAccount}}
@@ -143,18 +143,18 @@
             </tr>
             <tr>
                 <td class="ItemName">Designation</td>
-                <td class="ItemValue">{{staff.StaffCode}}</td>
+                <td class="ItemValue">{{DesignationName}}</td>
             </tr>
-            <tr>
+            <!-- <tr>
                 <td class="ItemName">Department</td>
-                <td class="ItemValue">{{staff.StaffCode}}</td>
-            </tr>
+                <td class="ItemValue"></td>
+            </tr> -->
             <tr>
                 <td class="ItemName">Date of Joining</td>
                 <td class="ItemValue">{{JoinedDate}}</td>
             </tr> 
             <tr>
-                <td colspan="4">
+                <td colspan="3">
                     <br/>
                     <br/>
                     <br/>

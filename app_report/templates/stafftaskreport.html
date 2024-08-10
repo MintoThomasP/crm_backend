@@ -166,6 +166,11 @@
             <td><b>Logout:</b></td>
             <td colspan="4">{{login.LogoutTime }} </td>
         </tr>
+        {%for move in login.MoveOn%}
+        <tr>
+            <td colspan="5"><b>Moveout Reason</b>: {{move.MoveOnReason}}</td>
+        </tr>
+        {%endfor%}
 {%endfor%}
         
 </table>

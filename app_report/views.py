@@ -22,8 +22,8 @@ from app_project.serializers import ProjectSerializer, ProjectTaskSerializer, Pr
 from app_sale.views import render_to_pdf
 from app_site.models import SiteSettings
 from app_site.serializers import SiteSettingsSerializer
-from app_staff.models import Staff
-from app_staff.serializers import StaffSerializer
+from app_staff.models import MoveOnRegister, Staff
+from app_staff.serializers import MoveOnRegisterSerializer, StaffSerializer
 # Create your views here.
 from django.utils import timezone
 import openpyxl
@@ -454,8 +454,6 @@ def StaffDailyReportinPDFformat(request, StaffId=""):
  
  
         if scheduled_deadline:
-            print(current_date)
-            print(scheduled_deadline)
             if col['Status'] == '10':
                 col['StatusName'] = "Pause"
  
@@ -625,7 +623,6 @@ def FinanceReportPDF(request, startdate="", enddate="",ClientId="",ReportType=""
         # return JsonResponse(context,safe=False)
         return HttpResponse(pdf.content, content_type='application/pdf')
     elif ReportType=='2':
-        print(context)
         pdf = render_to_pdf('balance_report.html', context)
         # return JsonResponse(context,safe=False)
         return HttpResponse(pdf.content, content_type='application/pdf')
@@ -636,7 +633,245 @@ def FinanceReportPDF(request, startdate="", enddate="",ClientId="",ReportType=""
 def FinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""):
     context = getFinanceReport(request, startdate, enddate,ClientId ,ReportType)
     return JsonResponse(context,safe=False)
-    
+
+# def getFinanceReport(request, startdate="", enddate="", ClientId="", ReportType="", NoOfMonths="0"):
+#     if request.method == 'GET':
+#         expectField = ['OrderNo', 'Level', 'RefId', 'CategoryId']
+        
+#         # Extract start and end dates
+#         start_date = startdate.split('-')
+#         startDate = start_date[0]  # month
+#         startYear = start_date[1]  # year
+#         end_date = enddate.split('-')
+#         endDate = end_date[0]  # month
+#         endYear = end_date[1]  # year
+        
+#         # Initialize date and header
+#         current_year = int(startYear)
+#         current_month = int(startDate)
+#         end_year = int(endYear)
+#         end_month = int(endDate)
+#         header = ["Item"]
+        
+#         while current_year < end_year or (current_year == end_year and current_month <= end_month):
+#             header.append(f"{current_year}-{current_month}")
+#             if current_month == 12:
+#                 current_month = 1
+#                 current_year += 1
+#             else:
+#                 current_month += 1
+#             if ReportType == '1':
+#                 header.append("%")
+        
+#         if ReportType == '1':
+#             header.append("YTD-" + str(timezone.now().year))
+#             header.append("%")
+        
+#         formatted_data = [{i: header[i] for i in range(len(header))}]
+#         responsedata = []  
+#         category_data_dict = {}
+
+#         for col in formatted_data:
+#             for key, value in col.items():
+#                 if value in ['Item']:
+#                     continue
+#                 split_values = value.split('-')
+#                 if len(split_values) == 2:
+#                     year, month = split_values
+#                     reportData = []
+#                     if year == 'YTD' and ReportType == '1':
+#                         reportData = getYTD(ClientId, ReportType)
+#                     else:
+#                         reports = Report.objects.filter(Month=month, Year=year, ClientId=ClientId, ReportType=ReportType).order_by('OrderNo')
+#                         reportSerializer = ReportSerializer(reports, many=True)
+#                         reportData = reportSerializer.data
+                    
+#                     for row in reportData:
+#                         category_id = row['CategoryId']
+#                         amount = row['Amount']
+#                         OrderNo = row['OrderNo']
+#                         Level = row['Level']
+                        
+#                         if category_id not in category_data_dict:
+#                             category_data_dict[category_id] = {key: "" for key in range(1, len(header))}
+#                             category_data_dict[category_id]['OrderNo'] = None
+                        
+#                         category_data_dict[category_id][key] = amount
+                        
+#                         if category_data_dict[category_id]['OrderNo'] is None or OrderNo > category_data_dict[category_id]['OrderNo']:
+#                             category_data_dict[category_id]['OrderNo'] = OrderNo
+#                             category_data_dict[category_id]['Level'] = Level
+
+#         cell_length = 2
+#         LevelAmount = {}
+#         BaseValue = {}
+#         LevelIndex = ""
+#         isFirst = True
+#         isBaseValue = False
+        
+#         for category_id, data in category_data_dict.items():
+#             if data['OrderNo'] is None:
+#                 continue
+            
+#             try:
+#                 category = Category.objects.get(CategoryId=category_id)
+#                 categorySerializer = CategorySerializer(category)
+#                 cell_length = len(data.items()) - 1
+#                 RefId = categorySerializer.data['RefId'] or categorySerializer.data['CategoryType']
+#                 Categorydata = {
+#                     'OrderNo': data['OrderNo'],
+#                     '0': categorySerializer.data['Category'],
+#                     'Level': data['Level'],
+#                     'RefId': RefId,
+#                     'CategoryId': categorySerializer.data['CategoryId'],
+#                     **{k: v for k, v in data.items() if k not in expectField and k != '0'}
+#                 }
+#             except:
+#                 if not isFirst and not isBaseValue:
+#                     Categorydata = {
+#                         'OrderNo': data['OrderNo'],
+#                         '0': "Total",
+#                         'Level': 1,
+#                         'RefId': "",
+#                         'CategoryId': "TOTALID",
+#                         **{k: v for k, v in LevelAmount[LevelIndex].items() if k not in expectField and k != '0'}
+#                     }
+#                     responsedata.append(Categorydata)
+                
+#                 LevelIndex = "level-" + category_id
+#                 LevelAmount[LevelIndex] = {}
+                
+#                 category = CategoryType.objects.get(CategoryTypeId=category_id)
+#                 categorySerializer = CategoryTypeSerializer(category)
+                
+#                 if categorySerializer.data['UsageType'] == "Base Value":
+#                     print(categorySerializer.data['UsageType'])
+#                     isBaseValue = True
+#                 elif isFirst and BaseValue:
+#                     isBaseValue = False
+#                     isFirst = False
+#                     Categorydata = {
+#                         'OrderNo': data['OrderNo'],
+#                         '0': "Total",
+#                         'Level': 1,
+#                         'RefId': "",
+#                         'CategoryId': "TOTALID",
+#                         **{k: v for k, v in BaseValue.items() if k not in expectField and k != '0'}
+#                     }
+#                     responsedata.append(Categorydata)
+#                 elif ReportType == '2':
+#                     isBaseValue = False
+#                     isFirst = False
+                
+#                 cell_length = len(data.items()) - 1
+                
+#                 Categorydata = {
+#                     'OrderNo': data['OrderNo'],
+#                     '0': categorySerializer.data['CategoryType'],
+#                     'Level': data['Level'],
+#                     'RefId': "",
+#                     'CategoryId': str(categorySerializer.data['CategoryTypeId']),
+#                     **{k: v for k, v in data.items() if k not in expectField and k != '0'}
+#                 }
+            
+#             for k, v in data.items():
+#                 if k not in expectField and k != '0' and v not in [None, 'null']:
+#                     try:
+#                         amount = int(v)
+#                     except ValueError:
+#                         amount = 0 
+                    
+#                     # Ensure LevelIndex is initialized in LevelAmount
+#                     if LevelIndex not in LevelAmount:
+#                         LevelAmount[LevelIndex] = {}
+
+#                     # Initialize the key k in LevelAmount[LevelIndex] if it doesn't exist
+#                     if k not in LevelAmount[LevelIndex]:
+#                         LevelAmount[LevelIndex][k] = 0
+
+#                     # Safely update the value
+#                     LevelAmount[LevelIndex][k] += amount
+            
+#             responsedata.append(Categorydata)
+        
+#         if LevelAmount:
+#             Categorydata = {
+#                 'OrderNo': len(responsedata) + 1,
+#                 '0': "Total",
+#                 'Level': 1,
+#                 'RefId': "",
+#                 'CategoryId': "TOTALID",
+#                 **{k: v for k, v in LevelAmount[LevelIndex].items() if k not in expectField and k != '0'}
+#             }
+#             responsedata.append(Categorydata)
+        
+#         responsedata = sorted(responsedata, key=lambda x: x['OrderNo'])
+        
+#         data = []
+#         if responsedata:
+#             for cat_data in responsedata:
+#                 item = {}
+#                 amount = 0.00
+#                 key = ""
+                
+#                 for k, v in cat_data.items():
+#                     item[k] = ""
+#                     if k in expectField:
+#                         item[k] = v
+#                         continue
+                    
+#                     if v not in [None, 'null']:
+#                         amount = v
+#                         key = k
+#                         item[k] = v
+                    
+#                     elif int(k) % 2 == 0 and key and ReportType == '1':
+#                         base_value = BaseValue.get(key, None)
+#                         if base_value:
+#                             try:
+#                                 v = round((amount / float(base_value)) * 100, 2)
+#                             except ValueError:
+#                                 v = 0.00
+#                         else:
+#                             v = 0.00
+#                         item[k] = f"{v}%" if v != 0.0 else ""
+                
+#                 data.append(item)
+
+#             context = {
+#                 "formatted_data": formatted_data[0],
+#                 "responsedata": responsedata,
+#                 "cell_length": cell_length,
+#                 "BaseValue": BaseValue,
+#                 "expectField": expectField,
+#                 "NoOfMonths": int(NoOfMonths),
+#             }
+#             return context
+        
+#         return "NODATA"
+# def getYTD(ClientId="",ReportType="",year="",month=""):
+#     if year=="":
+#         year = timezone.now().year
+#     if month=="":
+#         month = timezone.now().month
+#     queryset = Report.objects.filter(
+#             Month__gte=1, Month__lte=month,ClientId=ClientId,ReportType=ReportType,
+#             Year=year
+#         ).values(
+#             'CategoryId', 'OrderNo', 'Level',
+#             'ReportType',
+#             'ClientId',
+#             'CategoryId',
+#             'Comment',
+#             'OrderNo',
+#             'Level'
+#         ).annotate(
+#             Amount=Sum('Amount')
+#         ).order_by('OrderNo')
+#     queryset_list  = sorted(list(queryset), key=lambda x: x['OrderNo'])
+#     return queryset_list
+
+
 def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType="",NoOfMonths="0"):
     try :
         if request.method == 'GET':
@@ -717,6 +952,7 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
             LevelIndex=""
             isFirst=True
             isBaseValue=False
+            MainCategoryName=""
             for category_id, data in category_data_dict.items():
                 if data['OrderNo'] is None:
                     continue 
@@ -738,11 +974,11 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
                         **{k: v for k, v in data.items() if k not in expectField and k!='0'}  
                     }
                 except:
-                    if isFirst ==False and isBaseValue==False:
+                    if isFirst ==False:
 
                         Categorydata = {
                             'OrderNo': data['OrderNo'], 
-                            '0': "Total",
+                            '0': "Total "+MainCategoryName,
                             'Level': 1,
                             'RefId': "",
                             'CategoryId':  "TOTALID",
@@ -762,7 +998,7 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
                         isFirst=False
                         Categorydata = {
                             'OrderNo': data['OrderNo'], 
-                            '0': "Total",
+                            '0': "Total "+MainCategoryName,
                             'Level': 1,
                             'RefId': "",
                             'CategoryId':  "TOTALID",
@@ -782,28 +1018,32 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
                         'CategoryId':  str(categorySerializer.data['CategoryTypeId']),
                         **{k: v for k, v in data.items() if k not in expectField and k!='0'}  
                     }
+                    MainCategoryName=categorySerializer.data['CategoryType']
                 for k, v in data.items():
                     amount=0
-                    if k not in expectField and k !='0' and k !=0 and v!='null' and v and v is not None:
-                        amount=v
-                    try:
-                        if isBaseValue:
-                            BaseValue[k]=int(BaseValue[k])+int(amount)
+                    if k not in expectField and k !='0' and k !=0:
+                        if v:
+                            amount=v
                         else:
-                            LevelAmount[LevelIndex][k]=int(LevelAmount[LevelIndex][k])+int(amount)
-                    except:
-                        if isBaseValue:
-                            BaseValue[k]=0
-                            BaseValue[k]=int(BaseValue[k])+int(amount)
-                        else:
-                            LevelAmount[LevelIndex][k]=0
-                            LevelAmount[LevelIndex][k]=int(LevelAmount[LevelIndex][k])+int(amount)
+                            amount=0
+                        try:
+                            if isBaseValue:
+                                BaseValue[k]=int(BaseValue[k])+int(amount)
+                            else:
+                                LevelAmount[LevelIndex][k]=int(LevelAmount[LevelIndex][k])+int(amount)
+                        except:
+                            if isBaseValue:
+                                BaseValue.setdefault(k, 0)
+                                BaseValue[k]=int(BaseValue[k])+int(amount)
+                            else:
+                                LevelAmount[LevelIndex].setdefault(k, 0)
+                                LevelAmount[LevelIndex][k]=int(LevelAmount[LevelIndex][k])+int(amount)
                         
                 responsedata.append(Categorydata)
             if len(LevelAmount):
                 Categorydata = {
                     'OrderNo': len(responsedata)+1, 
-                    '0': "Total",
+                    '0': "Total "+MainCategoryName,
                     'Level': 1,
                     'RefId': "",
                     'CategoryId':  "TOTALID",
@@ -905,7 +1145,7 @@ def getYTD(ClientId="",ReportType="",year="",month=""):
 from django.conf import settings
 from django.db.models import DateTimeField
 from django.db.models.functions import Cast
-
+import time
 import os
 @csrf_exempt
 @swagger_auto_schema(method='GET', operation_description="NOTE: API for get Staff task report in pdf format based on date")
@@ -969,6 +1209,12 @@ def StaffTaskReportBasedOnDateinPDFformat(request, StaffId="", StartDate="", End
         # Ensure the date key exists in the dictionary
         if login_date not in response_data_by_date:
             response_data_by_date[login_date] = []
+
+        logout=datetime.strptime(logout_time, "%Y-%m-%dT%H:%M:%S%z").strftime("%Y-%m-%dT%H:%M")
+        moveon=MoveOnRegister.objects.filter(StaffId=StaffId,MoveOutDateTime__startswith=logout)
+        moveonSerializer=MoveOnRegisterSerializer(moveon,many=True)
+        login['MoveOn']=moveonSerializer.data
+      
        
         projectTask = ProjectTask.objects.filter(
             TaskAssignedTo=StaffId,
@@ -1020,9 +1266,8 @@ def StaffTaskReportBasedOnDateinPDFformat(request, StaffId="", StartDate="", End
         except:
             login['LogoutTime']=""
 
-        
-        
         login['Tasks'] = taskData
+        
         response_data_by_date[login_date].append(login)
 
     sorted_response_data = []
@@ -1076,9 +1321,10 @@ def StaffTaskReportBasedOnDateinPDFformat(request, StaffId="", StartDate="", End
     context = {
         "StaffName": StaffName,
         "logo":logo,
+        
         'CompanyName':CompanyName,
         "CompanyAddress":CompanyAddress,
-        'totalPoint':totalPoint,
+        'totalPoint':round(totalPoint,2),
         'total_duration':total_duration,
         'current_datetime':current_datetime,
         'pendingDetails':pendingDetails,
@@ -1179,7 +1425,112 @@ def FinanceReportExcel(request, startdate="", enddate="",ClientId="",ReportType=
 
 
 
-def fixCampaignerPhone(phone):
-    if pd.isnull(phone):
-        phone = ''
-    return phone
+@csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get all staff report StaffId. {StaffId, StartDate, EndDate}")
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def DownloadSummarizedStaffReportByStaffId(request,StaffId="",StartDate="",EndDate=""):
+    try:
+        staff = Staff.objects.get(StaffId=StaffId)
+        staffSerializer = StaffSerializer(staff)
+        StaffDetails = staffSerializer.data
+        StaffName=staffSerializer.data['StaffName']
+    except:
+        p=""
+    currentDate=datetime.now()
+    currentDate=timezone.datetime.strptime(StartDate, '%Y-%m-%d').date()
+    try:
+        siteSettings=SiteSettings.objects.get(CompanyId=staff.CompanyId)
+        siteSettingsSerializer=SiteSettingsSerializer(siteSettings)
+        logo=os.path.join(settings.BASE_DIR)+siteSettingsSerializer.data['Logo']
+    except:
+        logo=""
+    try:
+        company=Company.objects.get(CompanyId=staff.CompanyId)
+        companySerializer=CompanySerializer(company)
+        
+        Companydetails=companySerializer.data
+
+    except:
+        Companydetails=""
+       
+    if StartDate and EndDate:
+        start_date = timezone.datetime.strptime(StartDate, '%Y-%m-%d').date()
+        end_date = (timezone.datetime.strptime(EndDate, '%Y-%m-%d') + timezone.timedelta(days=1)).date()
+        project_tasks = ProjectTask.objects.filter(TaskAssignedTo=StaffId,CreatedDate__range=(start_date, end_date),TaskType='Task')
+    else:
+        project_tasks = ProjectTask.objects.filter(TaskAssignedTo=StaffId,TaskType='Task')
+        
+    project_ids = project_tasks.values_list('ProjectId', flat=True).distinct()
+    projects = Project.objects.filter(ProjectId__in=project_ids)
+    totalPoint=0
+    noOftask=0
+    staff_projects = []
+    for project in projects:
+        project_details = {
+            'ProjectId': project.ProjectId,
+            'ProjectName': project.ProjectName,
+            'TotalCompletedPoints': 0.00,
+            'TotalNumberofTask': 0,
+            'DueTaskCount': 0,
+            'CompletedTaskCount': 0,
+            'OnTimeCompletedTaskCount': 0
+        }
+        if StartDate and EndDate:
+            project_tasks_filtered = project_tasks.filter(ProjectId=project.ProjectId,CreatedDate__range=(start_date, end_date),TaskType='Task')
+        else:
+            project_tasks_filtered = project_tasks.filter(ProjectId=project.ProjectId,TaskType='Task')
+           
+        project_task_serializer = ProjectTaskSerializer(project_tasks_filtered, many=True)
+        for task_data in project_task_serializer.data:
+            project_details['TotalNumberofTask'] += 1
+            project_details['TotalCompletedPoints'] =float(project_details['TotalCompletedPoints'])+ float(task_data['CompletionPoint'])
+            
+            if task_data['Status'] == '1' or task_data['Status'] == '2' or task_data['Status'] == '4' or task_data['Status'] == '5' or task_data['Status'] == '6':
+                project_details['DueTaskCount'] += 1
+            elif task_data['Status'] == '7' or task_data['Status'] == '8' or task_data['Status'] == '9':
+                project_details['CompletedTaskCount'] += 1
+            if  task_data['Status'] == '9':
+                project_details['OnTimeCompletedTaskCount'] += 1
+
+        staff_projects.append(project_details)
+        for point in staff_projects:
+            totalPoint+=point['TotalCompletedPoints']
+            noOftask+=point['TotalNumberofTask']
+        performance=totalPoint/noOftask
+
+    StaffDetails['Projects'] = staff_projects
+    
+    if StartDate and EndDate:
+        start_date = timezone.datetime.strptime(StartDate, '%Y-%m-%d').date()
+        end_date = (timezone.datetime.strptime(EndDate, '%Y-%m-%d')).date()
+        Start_Date=start_date.strftime('%B %d, %Y')
+        End_Date=end_date.strftime('%B %d, %Y')
+    else:
+        Start_Date=""
+        End_Date=""
+    
+
+    context = {
+        'StartDate':Start_Date,
+        'JoinedDate':datetime.strptime(staff.JoinedOn, '%Y-%m-%d').strftime('%B %d, %Y'),
+        'CurrentDate':currentDate.strftime('%B %d, %Y'),
+        'EndDate':End_Date,
+        'totalPoint':round(totalPoint,2),
+        'performance':round(performance,2),
+        'StaffName':StaffName,
+        'StaffDetails':StaffDetails,
+        'logo':logo,
+        'Companydetails':Companydetails
+    }
+    # return JsonResponse(context,safe=False)
+    pdf = render_to_pdf('summarized_staff_report.html', context)
+    watermark_pdf = create_watermark("CRM")
+ 
+    input_pdf = PdfReader(BytesIO(pdf.content))
+    output_pdf_stream = add_watermark(input_pdf, watermark_pdf)
+ 
+    response = HttpResponse(output_pdf_stream.read(), content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename={context["StaffName"]}.pdf'
+    return HttpResponse(pdf.content, content_type='application/pdf')
+

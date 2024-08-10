@@ -80,6 +80,7 @@ class CategoryType(models.Model):
     CategoryType=models.CharField(max_length=300, blank=True, null=True)
     UsageType=models.CharField(max_length=300, blank=True, null=True)
     Ref=models.CharField(max_length=10, blank=True, null=True)
+    OrderNo=models.IntegerField(default=0)
 
 
 class ReportType(models.Model):

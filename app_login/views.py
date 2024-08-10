@@ -292,78 +292,147 @@ def LoginHistoryApiByUserId(request, UserId=""):
         return JsonResponse("", safe=False)
     
 
+# @csrf_exempt
+# @swagger_auto_schema(method='POST', request_body=LoginAuthSerializer,operation_description="NOTE: API for Login by using Token. payload { Token,UserId}")
+# @api_view(['POST'])
+# @retry(retries=3, delay=2)
+# def loginByTokenApi(request):
+#     # try:
+#         if request.method == 'POST':
+#             login_data = JSONParser().parse(request)
+#             # try:
+#             login = Login.objects.filter(
+#                 Token=login_data['Token'],UserId=login_data['UserId'])
+#             # except:
+#             #     return JsonResponse("FAILED",safe=False)
+            
+#             Data = []
+#             login_serializer = LoginAuthSerializer(login,many=True)
+          
+#             UserData = []
+#             if not login_serializer.data:
+#                 login = Login.objects.filter(
+#                     EmailId=login_data['Token'],UserId=login_data['UserId'])
+#                 login_serializer = LoginAuthSerializer(login, many=True)
+#                 if not login_serializer.data:
+#                     Data.append('FAILED')
+#                     Data.append(
+#                         'Please check the username/password and try again.')
+#                 else:
+#                     Data.append('FAILED')
+#                     Data.append(login_serializer.data[0])
+#             else:
+#                 userType = UserType.objects.get(UserTypeId=login_serializer.data['UserType'])
+#                 userType_serializer = UserTypeSerializer(userType)
+#                 status=""
+#                 message=""
+#                 if userType_serializer.data['UserType'] == 'Team' or userType_serializer.data['UserType'] == 'Admin' or userType_serializer.data['UserType'] == 'Super Admin':
+#                     staff = Staff.objects.get(
+#                         StaffId=login_serializer.data['UserId'])
+                   
+#                     staff_serializer = StaffSerializer(staff)
+#                     # if staff_serializer.data['Status'] == -1:
+#                     #     status="FAILED"
+#                     #     message='Your account has been blocked. Please contact administrator.'
+#                     # else:
+#                     status="SUCCESS"
+#                     message='Successfully logged in'
+#                     UserData = staff_serializer.data
+#                 elif userType_serializer.data['UserType'] == 'Company':
+#                     company = Company.objects.get(
+#                         CompanyId=login_serializer.data['UserId'])
+                    
+#                     company_serializer = CompanySerializer(company)
+#                     # if staff_serializer.data['Status'] == -1:
+#                     #     status="FAILED"
+#                     #     message='Your account has been blocked. Please contact administrator.'
+#                     # else:
+#                     status="SUCCESS"
+#                     message='Successfully logged in'
+#                     UserData = company_serializer.data
+#                 else:
+#                     status="SUCCESS"
+#                     message='Successfully logged in'
+                    
+#                 Data.append(status)
+#                 Data.append(login_serializer.data)
+#                 Data.append(message)
+#             Data.append(UserData)
+#             return JsonResponse(Data, safe=False)
+#         else:
+#             return JsonResponse("", safe=False)
+#     # except:
+#     #     return JsonResponse("", safe=False)
+    
+
+
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=LoginAuthSerializer,operation_description="NOTE: API for Login by using Token. payload { Token,UserId}")
+@swagger_auto_schema(method='POST', request_body=LoginAuthSerializer,operation_description="NOTE: API for Login, payload { EmailId, Password}")
 @api_view(['POST'])
 @retry(retries=3, delay=2)
 def loginByTokenApi(request):
     try:
         if request.method == 'POST':
             login_data = JSONParser().parse(request)
-            try:
-                login = Login.objects.get(
-                Token=login_data['Token'],UserId=login_data['UserId'])
-            except:
-                return JsonResponse("FAILED",safe=False)
-            
             Data = []
-            login_serializer = LoginAuthSerializer(login)
-          
-            UserData = []
-            if not login_serializer.data:
-                login = Login.objects.filter(
-                    EmailId=login_data['Token'],UserId=login_data['UserId'])
-                login_serializer = LoginAuthSerializer(login, many=True)
+            try:
+                login = Login.objects.get(Token=login_data['Token'],UserId=login_data['UserId'])
+                login_serializer = LoginAuthSerializer(login)
+            
+                UserData = []
                 if not login_serializer.data:
-                    Data.append('FAILED')
-                    Data.append(
-                        'Please check the username/password and try again.')
+                    login = Login.objects.filter(
+                        Token=login_data['Token'])
+                    login_serializer = LoginAuthSerializer(login, many=True)
+                    if not login_serializer.data:
+                        Data.append('FAILED')
+                        Data.append(
+                            'Please check the username/password and try again.')
+                    else:
+                        Data.append('FAILED')
+                        Data.append(login_serializer.data[0])
                 else:
-                    Data.append('FAILED')
-                    Data.append(login_serializer.data[0])
-            else:
-                userType = UserType.objects.get(UserTypeId=login_serializer.data['UserType'])
-                userType_serializer = UserTypeSerializer(userType)
-                status=""
-                message=""
-                if userType_serializer.data['UserType'] == 'Team' or userType_serializer.data['UserType'] == 'Admin' or userType_serializer.data['UserType'] == 'Super Admin':
-                    staff = Staff.objects.get(
-                        StaffId=login_serializer.data['UserId'])
-                   
-                    staff_serializer = StaffSerializer(staff)
-                    # if staff_serializer.data['Status'] == -1:
-                    #     status="FAILED"
-                    #     message='Your account has been blocked. Please contact administrator.'
-                    # else:
-                    status="SUCCESS"
-                    message='Successfully logged in'
-                    UserData = staff_serializer.data
-                elif userType_serializer.data['UserType'] == 'Company':
-                    company = Company.objects.get(
-                        CompanyId=login_serializer.data['UserId'])
+                    userType = UserType.objects.get(UserTypeId=login_serializer.data['UserType'])
+                    userType_serializer = UserTypeSerializer(userType)
+                    status=""
+                    message=""
                     
-                    company_serializer = CompanySerializer(company)
-                    # if staff_serializer.data['Status'] == -1:
-                    #     status="FAILED"
-                    #     message='Your account has been blocked. Please contact administrator.'
-                    # else:
-                    status="SUCCESS"
-                    message='Successfully logged in'
-                    UserData = company_serializer.data
-                else:
-                    status="SUCCESS"
-                    message='Successfully logged in'
+                    if userType_serializer.data['UserType'] == 'Team' or userType_serializer.data['UserType'] == 'Admin' or userType_serializer.data['UserType'] == 'Super Admin':
+                        staff = Staff.objects.get(
+                            StaffId=login_serializer.data['UserId'])
                     
-                Data.append(status)
-                Data.append(login_serializer.data)
-                Data.append(message)
-            Data.append(UserData)
-            return JsonResponse(Data, safe=False)
-        else:
-            return JsonResponse("", safe=False)
+                        staff_serializer = StaffSerializer(staff)
+                        
+                        status="SUCCESS"
+                        message='Successfully logged in'
+                        UserData = staff_serializer.data
+                    elif userType_serializer.data['UserType'] == 'Company':
+                        company = Company.objects.get(
+                            CompanyId=login_serializer.data['UserId'])
+                        
+                        company_serializer = CompanySerializer(company)
+                        
+                        status="SUCCESS"
+                        message='Successfully logged in'
+                        UserData = company_serializer.data
+                    else:
+                        status="SUCCESS"
+                        message='Successfully logged in'
+                        
+                    Data.append(status)
+                    Data.append(login_serializer.data)
+                    Data.append(message)
+                Data.append(UserData)
+                return JsonResponse(Data, safe=False)
+            except:
+                Data.append('FAILED')
+                Data.append(
+                    'Please check the username/password and try again.')
+                return JsonResponse(Data, safe=False)
     except:
         return JsonResponse("", safe=False)
-    
+        
+
 
 from datetime import datetime
 @csrf_exempt
