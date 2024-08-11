@@ -99,11 +99,16 @@ def get_subcategoriesbysectiontype(category_id):
     subcategory_data = []
     for subcategory in subcategory_serializer.data:
         children = get_subcategoriesbysectiontype(subcategory['CategoryId'])
-        if children:
-            subcategory['Subcategory'] = children
-        else:
-            subcategory['Subcategory']=[]
+        subcategory['Subcategory'] = children
+        subcategory['Ledger']=get_ledger_by_categoryid(subcategory['CategoryId'])
         subcategory_data.append(subcategory)
+    return subcategory_data
+
+
+def get_ledger_by_categoryid(category_id):
+    subcategories = Category.objects.filter(RefId=category_id,SectionType=3).order_by('-SortId')
+    subcategory_serializer = CategorySerializer(subcategories, many=True)
+    subcategory_data = subcategory_serializer.data
     return subcategory_data
 
 
@@ -128,14 +133,8 @@ def GetAllCategoryBySectionTypeApi(request):
                     row['CategoryTypeName']=categoryTypeSerializer.data['CategoryType']
                 except:
                     row['CategoryTypeName']=""
-                subcategories = get_subcategoriesbysectiontype(row['CategoryId'])
-               
-                if subcategories:
-                    row['Subcategory'] = subcategories
-                    
-                else:
-                   
-                    row['Subcategory'] = []
+                row['Subcategory']  = get_subcategoriesbysectiontype(row['CategoryId'])
+                row['Ledger']=get_ledger_by_categoryid(row['CategoryId'])
                 # report_data = get_report_data(row['CategoryId'])
                 # if report_data:
                 #     row['Report'] = report_data

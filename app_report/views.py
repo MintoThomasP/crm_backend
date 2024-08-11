@@ -9,6 +9,8 @@ from django.http import HttpResponse
 from app_category.models import Category, Report
 from app_category.serializers import CategorySerializer, ReportSerializer
 import pandas as pd
+from app_client.models import Client
+from app_client.serializers import ClientSerializer
 from app_company.models import Company
 from app_company.serializers import CompanySerializer
 from app_default.models import CategoryType, TaskStatus
@@ -90,6 +92,60 @@ def ProjectReportApiByProjectId(request):
     # StaffDetails.append(staff_item)
 
     return JsonResponse(ProjectDetails, safe=False)
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', operation_description="NOTE: API for get client report by ClientId. payalod { ClientId, StartDate, EndDate}")
+@api_view(['POST'])
+@retry(retries=3, delay=2)
+def ClientReportApiByClientId(request):
+    staffData = JSONParser().parse(request)
+    project = Client.objects.get(ClientId=staffData['ClientId'])
+    projectSerializer = ClientSerializer(project)
+    ClientDetails = projectSerializer.data
+
+    Client_id = staffData['ClientId']
+    staff_projects = []
+
+    if staffData.get('StartDate') and staffData.get('EndDate'):
+       
+        start_date = timezone.datetime.strptime(staffData['StartDate'], '%Y-%m-%d').date()
+        end_date = (timezone.datetime.strptime(staffData['EndDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
+        projects = ProjectTask.objects.filter(ClientId=Client_id, ScheduledDeadline__range=(start_date, end_date)).values('TaskAssignedTo').distinct()
+    else:
+        projects = ProjectTask.objects.filter(ClientId=Client_id).values('TaskAssignedTo').distinct()
+
+    for project in projects:
+        staff_name = project['TaskAssignedTo']
+        if staffData.get('StartDate') and staffData.get('EndDate'):
+            project_tasks = ProjectTask.objects.filter(ClientId=Client_id, TaskAssignedTo=staff_name,ScheduledDeadline__range=(start_date, end_date))
+        else:
+            project_tasks = ProjectTask.objects.filter(ClientId=Client_id, TaskAssignedTo=staff_name)
+        project_task_serializer = ProjectTaskSerializer(project_tasks, many=True)
+        staff=Staff.objects.get(StaffId=staff_name)
+        Staff_details = {
+            'StaffId': staff_name,
+           'StaffName': staff.StaffName,
+            'TotalCompletedPoints': 0,
+            'TotalNumberofTask': 0,
+            'DueTaskCount': 0,
+            'CompletedTaskCount': 0,
+            'OnTimeCompletedTaskCount': 0
+        }
+       
+        for task_data in project_task_serializer.data:
+            Staff_details['TotalNumberofTask'] += 1
+            
+            Staff_details['TotalCompletedPoints'] =float(Staff_details['TotalCompletedPoints'])+ float(task_data['CompletionPoint'])
+            if task_data['Status'] == '1' or task_data['Status'] == '2' or task_data['Status'] == '4' or task_data['Status'] == '5' or task_data['Status'] == '6':
+                Staff_details['DueTaskCount'] += 1
+            elif task_data['Status'] == '7' or task_data['Status'] == '8' or task_data['Status'] == '9':
+                Staff_details['CompletedTaskCount'] += 1
+        staff_projects.append(Staff_details)
+    ClientDetails['Projects'] = staff_projects
+    # StaffDetails.append(staff_item)
+
+    return JsonResponse(ClientDetails, safe=False)
 
 
 

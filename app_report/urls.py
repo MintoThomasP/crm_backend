@@ -6,6 +6,7 @@ urlpatterns = [
     # path('StaffReportApiByStaffId/', views.StaffReportApiByStaffId),
     # path('AllStaffReport/', views.AllStaffReportApi),
     path('ProjectReportApiByProjectId/', views.ProjectReportApiByProjectId),
+    path('ClientReportApiByClientId/', views.ClientReportApiByClientId),
 
    
     path('getAllProjectReport/', views.getAllProjectReport),
