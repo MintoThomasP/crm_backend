@@ -19,6 +19,11 @@ urlpatterns = [
 path('GetNotificationByToUser/', views.GetNotificationByToUser.as_view()),
     
   
+    path('CURDSiteMessage/', views.CURDSiteMessage),
+    url(r'^CURDSiteMessage/(?P<CompanyId>[0-9a-zA-Z\-]+)/(?P<SiteMessageId>[0-9a-zA-Z\-]+)$',
+        views.SiteMessageById),
+    url(r'^CURDSiteMessage/(?P<CompanyId>[0-9a-zA-Z\-]+)$',
+        views.SiteMessageByCompanyId),
 
 ]
 if settings.DEBUG:

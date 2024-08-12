@@ -11,8 +11,8 @@ from app_login.models import LoginHistory
 from app_project.models import ProjectTask, ProjectTaskTiming
 from app_project.serializers import ProjectTaskSerializer
 from app_project.views import CustomPageNumberPagination
-from app_site.models import Notification, SiteSettings
-from app_site.serializers import NotificationSerializer, SaveSiteSettingsSerializer, SiteSettingsSerializer, UploadSiteSettingsSerializer
+from app_site.models import Notification, SiteMessage, SiteSettings
+from app_site.serializers import NotificationSerializer, SaveSiteSettingsSerializer, SiteMessageSerializer, SiteSettingsSerializer, UploadSiteSettingsSerializer
 from django.db.models import Max
 from django.db.models import F
 from app_staff.models import Staff
@@ -174,3 +174,74 @@ class GetNotificationByToUser(generics.ListAPIView):
         except:
             return JsonResponse("", safe=False)
 
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=SiteMessageSerializer,operation_description="NOTE: API for save SiteMessage")
+@swagger_auto_schema(method='PUT', request_body=SiteMessageSerializer,operation_description="NOTE: API for edit SiteMessage")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all SiteMessage",)
+@api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
+def CURDSiteMessage(request):
+    try:
+        if request.method == 'POST':
+            siteMessageData = JSONParser().parse(request)
+            # return JsonResponse(siteMessageData, safe=False)
+            siteMessageSerializer = SiteMessageSerializer(
+                data=siteMessageData)
+            if siteMessageSerializer.is_valid():
+                siteMessageSerializer.save()
+                return JsonResponse(siteMessageSerializer.data['SiteMessageId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            siteMessageData = JSONParser().parse(request)
+            siteMessage = SiteMessage.objects.get(
+                SiteMessageId=siteMessageData['SiteMessageId'])
+            siteMessageSerializer = SiteMessageSerializer(
+                siteMessage, data=siteMessageData)
+            if siteMessageSerializer.is_valid():
+                siteMessageSerializer.save()
+                return JsonResponse(siteMessageSerializer.data['SiteMessageId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("Invalid request", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get SiteMessage by SiteMessageId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete SiteMessage by SiteMessageId",)
+@api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
+def SiteMessageById(request, SiteMessageId=""):
+    try:
+        if request.method == 'GET':
+            siteMessage = SiteMessage.objects.get(SiteMessageId=SiteMessageId)
+            siteMessageSerializer = SiteMessageSerializer(siteMessage)
+            return JsonResponse(siteMessageSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            siteMessage = SiteMessage.objects.get(
+                SiteMessageId=SiteMessageId)
+            siteMessage.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("Invalid request", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get SiteMessage by CompanyId",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def SiteMessageByCompanyId(request,CompanyId=""):
+    try:
+        if request.method == 'GET':
+            siteMessage = SiteMessage.objects.filter(CompanyId=CompanyId)
+            siteMessageSerializer = SiteMessageSerializer(siteMessage,many=True)
+            return JsonResponse(siteMessageSerializer.data, safe=False)
+        else:
+            return JsonResponse("Invalid request", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    

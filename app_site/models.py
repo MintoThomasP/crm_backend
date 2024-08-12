@@ -41,3 +41,12 @@ class Notification(models.Model):
 
 
 
+
+class SiteMessage(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    SiteMessageId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    CompanyId=models.CharField(blank=True, null=True, max_length=50) 
+    SiteMessage = models.CharField(max_length=300, blank=True, null=True)
+    ExpiryDate = models.TextField(blank=True, null=True)
+
