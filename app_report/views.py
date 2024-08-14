@@ -1527,7 +1527,7 @@ def DownloadSummarizedStaffReportByStaffId(request,StaffId="",StartDate="",EndDa
         project_details = {
             'ProjectId': project.ProjectId,
             'ProjectName': project.ProjectName,
-            'TotalCompletedPoints': 0.00,
+            'TotalCompletedPoints': round(0.00,2),  
             'TotalNumberofTask': 0,
             'DueTaskCount': 0,
             'CompletedTaskCount': 0,

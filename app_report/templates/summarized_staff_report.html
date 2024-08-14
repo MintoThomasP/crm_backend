@@ -115,9 +115,9 @@ pre {font-family: "Consolas",serif}
         
         <tr>
             {%if StartDate and EndDate%}
-            <td style="width:60%; text-align: left;"><b>Report:</b> {{StartDate}} - {{EndDate}}</td>
+            <td style="width:60%; text-align: left;"><b>Report:</b>{{StartDate}}- {{EndDate}}</td>
             {%else%}
-            <td><b>Report:</b>{{JoinedDate}}-{{CurrentDate}}</td>
+            <td style="width:60%; text-align: left;"><b>Report:</b>{{JoinedDate}}-{{CurrentDate}}</td>
             {%endif%}
             <td style="text-align: left;"><b>Total Points:</b>{{totalPoint}}</td>
             <td style="text-align: right;"><b>Performance:</b>{{performance}}</td>
