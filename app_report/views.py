@@ -1493,8 +1493,8 @@ def DownloadSummarizedStaffReportByStaffId(request,StaffId="",StartDate="",EndDa
         StaffName=staffSerializer.data['StaffName']
     except:
         p=""
-    currentDate=datetime.now()
-    currentDate=timezone.datetime.strptime(currentDate, '%Y-%m-%d').date()
+    currentDate=datetime.now().date()
+    # currentDate=datetime.strptime(currentDate, '%Y-%m-%dT%H:%M:%S%z').date()
     try:
         siteSettings=SiteSettings.objects.get(CompanyId=staff.CompanyId)
         siteSettingsSerializer=SiteSettingsSerializer(siteSettings)
@@ -1521,6 +1521,7 @@ def DownloadSummarizedStaffReportByStaffId(request,StaffId="",StartDate="",EndDa
     projects = Project.objects.filter(ProjectId__in=project_ids)
     totalPoint=0
     noOftask=0
+    performance=0
     staff_projects = []
     for project in projects:
         project_details = {
@@ -1540,7 +1541,7 @@ def DownloadSummarizedStaffReportByStaffId(request,StaffId="",StartDate="",EndDa
         project_task_serializer = ProjectTaskSerializer(project_tasks_filtered, many=True)
         for task_data in project_task_serializer.data:
             project_details['TotalNumberofTask'] += 1
-            project_details['TotalCompletedPoints'] =round(float(project_details['TotalCompletedPoints'])+ float(task_data['CompletionPoint']),2)
+            project_details['TotalCompletedPoints'] =(float(project_details['TotalCompletedPoints'])+ float(task_data['CompletionPoint']),2)
             
             if task_data['Status'] == '1' or task_data['Status'] == '2' or task_data['Status'] == '4' or task_data['Status'] == '5' or task_data['Status'] == '6':
                 project_details['DueTaskCount'] += 1
@@ -1551,7 +1552,7 @@ def DownloadSummarizedStaffReportByStaffId(request,StaffId="",StartDate="",EndDa
 
         staff_projects.append(project_details)
         for point in staff_projects:
-            totalPoint+=point['TotalCompletedPoints']
+            totalPoint+=round(point['TotalCompletedPoints'],2)
             noOftask+=point['TotalNumberofTask']
         performance=totalPoint/noOftask
 

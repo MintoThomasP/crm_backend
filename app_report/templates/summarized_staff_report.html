@@ -99,7 +99,7 @@ pre {font-family: "Consolas",serif}
            
             <td style="width:30%"><img src="{{logo}}" alt=""></td>
             <td style="width:20%"></td>
-            <td style="width:50%; text-align: right;"><b>{{Companydetails.CompanyName}}</b><p style='white-space:pre'>{{Companydetails.Address}}</p>
+            <td style="width:50%; text-align: right;"><b>{{Companydetails.CompanyName}}</b><br><span style='white-space:pre'>{{Companydetails.Address}}</span>
             </td>
         </tr>
     </table>
@@ -115,7 +115,7 @@ pre {font-family: "Consolas",serif}
         
         <tr>
             {%if StartDate and EndDate%}
-            <td style="width:70%; text-align: left;"><b>Report:</b> {{StartDate}} - {{EndDate}}</td>
+            <td style="width:60%; text-align: left;"><b>Report:</b> {{StartDate}} - {{EndDate}}</td>
             {%else%}
             <td><b>Report:</b>{{JoinedDate}}-{{CurrentDate}}</td>
             {%endif%}
