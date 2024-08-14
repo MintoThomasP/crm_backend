@@ -1541,7 +1541,7 @@ def DownloadSummarizedStaffReportByStaffId(request,StaffId="",StartDate="",EndDa
         project_task_serializer = ProjectTaskSerializer(project_tasks_filtered, many=True)
         for task_data in project_task_serializer.data:
             project_details['TotalNumberofTask'] += 1
-            project_details['TotalCompletedPoints'] =round(float(project_details['TotalCompletedPoints']),2) + round(float(task_data['CompletionPoint']),2)
+            project_details['TotalCompletedPoints'] =round((round(float(project_details['TotalCompletedPoints']),2) + round(float(task_data['CompletionPoint']),2)),2)
             
             if task_data['Status'] == '1' or task_data['Status'] == '2' or task_data['Status'] == '4' or task_data['Status'] == '5' or task_data['Status'] == '6':
                 project_details['DueTaskCount'] += 1
