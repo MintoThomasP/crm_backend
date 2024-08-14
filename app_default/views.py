@@ -34,8 +34,8 @@ def retry(retries=3, delay=2):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=TaskStatusSerializer)
-@swagger_auto_schema(method='PUT', request_body=TaskStatusSerializer)
+@swagger_auto_schema(method='POST', request_body=TaskStatusSerializer,operation_description="NOTE: API for save TaskStatus")
+@swagger_auto_schema(method='PUT', request_body=TaskStatusSerializer,operation_description="NOTE: API for edit TaskStatus")
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all task status",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
@@ -71,6 +71,7 @@ def TaskStatusApi(request):
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get TaskStatus by StatusId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete TaskStatus by StatusId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def TaskStatusApiById(request, StatusId=""):

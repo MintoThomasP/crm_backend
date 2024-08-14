@@ -182,7 +182,7 @@ class GetNotificationByToUser(generics.ListAPIView):
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def CURDSiteMessage(request):
-    try:
+    # try:
         if request.method == 'POST':
             siteMessageData = JSONParser().parse(request)
             # return JsonResponse(siteMessageData, safe=False)
@@ -204,8 +204,8 @@ def CURDSiteMessage(request):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("Invalid request", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
 
 @csrf_exempt

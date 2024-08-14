@@ -552,7 +552,7 @@ def get_maincategories(category_id, data=[]):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET', operation_description="NOTE: ",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get main category by CategoryId",)
 @api_view(['GET'])
 def GetMainCategorybySubCategoryId(request, CategoryId=""):
     if request.method == 'GET':
@@ -563,7 +563,7 @@ def GetMainCategorybySubCategoryId(request, CategoryId=""):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', operation_description="NOTE: ")
+@swagger_auto_schema(method='POST', operation_description="NOTE: API for save ClientLedgerId")
 @api_view(['POST'])
 def saveClientLedgerId(request, ClientId="", ReportType=""):
     clientData = JSONParser().parse(request)
@@ -584,7 +584,7 @@ def saveClientLedgerId(request, ClientId="", ReportType=""):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET', operation_description="NOTE: ")
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get Main category by ClientId")
 @api_view(['GET'])
 def GetMainCategorybyClientId(request, ClientId="", ReportType=""):
     if request.method == 'GET':

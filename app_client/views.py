@@ -306,7 +306,7 @@ def ClientAddressApiById(request, ClientAddressId=""):
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get ClientAddress by ClientId",)
-@api_view(['GET',])
+@api_view(['GET'])
 @retry(retries=3, delay=2)
 def ClientAddressApiByClientId(request, ClientId=""):
     try:

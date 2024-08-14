@@ -1494,7 +1494,7 @@ def DownloadSummarizedStaffReportByStaffId(request,StaffId="",StartDate="",EndDa
     except:
         p=""
     currentDate=datetime.now()
-    currentDate=timezone.datetime.strptime(StartDate, '%Y-%m-%d').date()
+    currentDate=timezone.datetime.strptime(currentDate, '%Y-%m-%d').date()
     try:
         siteSettings=SiteSettings.objects.get(CompanyId=staff.CompanyId)
         siteSettingsSerializer=SiteSettingsSerializer(siteSettings)
@@ -1540,7 +1540,7 @@ def DownloadSummarizedStaffReportByStaffId(request,StaffId="",StartDate="",EndDa
         project_task_serializer = ProjectTaskSerializer(project_tasks_filtered, many=True)
         for task_data in project_task_serializer.data:
             project_details['TotalNumberofTask'] += 1
-            project_details['TotalCompletedPoints'] =float(project_details['TotalCompletedPoints'])+ float(task_data['CompletionPoint'])
+            project_details['TotalCompletedPoints'] =round(float(project_details['TotalCompletedPoints'])+ float(task_data['CompletionPoint']),2)
             
             if task_data['Status'] == '1' or task_data['Status'] == '2' or task_data['Status'] == '4' or task_data['Status'] == '5' or task_data['Status'] == '6':
                 project_details['DueTaskCount'] += 1
