@@ -161,9 +161,9 @@ class MeetingNotesApiByCompanyId(generics.ListAPIView):
                 # end_date=datetime.strptime(filterData['EndDate'], '%Y-%m-%d').date()
                 start_date = timezone.datetime.strptime(filterData['StartDate'], '%Y-%m-%d').date()
                 end_date = (timezone.datetime.strptime(filterData['EndDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
-                print(start_date)
+                
                 self.queryset = self.queryset.filter(CreatedDate__range=(start_date,end_date))
-                print(self.queryset)
+                
             page = self.paginate_queryset(self.queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)

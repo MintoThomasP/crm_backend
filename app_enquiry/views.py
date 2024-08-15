@@ -4,6 +4,8 @@ from django.http.response import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
+from app_company.models import Company
+from app_company.serializers import CompanySerializer
 from app_default.models import EnquiryStatus, EnquiryType, FollowUpStatus, FollowUpType
 from app_default.serializers import EnquiryStatusSerializer, EnquiryTypeSerializer, FollowUpStatusSerializer, FollowUpTypeSerializer
 from app_default.views import retry
@@ -69,6 +71,7 @@ def EnquiryApiById(request, EnquiryId=""):
             return JsonResponse(enquirySerializer.data, safe=False)
         elif request.method == 'DELETE':
             enquiry = Enquiry.objects.get(EnquiryId=EnquiryId)
+            FollowUp.objects.filter(EnquiryId=EnquiryId).delete()
             enquiry.delete()
             return JsonResponse("Deleted successfully", safe=False)
         else:
@@ -182,21 +185,31 @@ def CURDFollowUpApiById(request, FollowUpId=""):
 def CURDFollowUpApiByEnquiryId(request, EnquiryId=""):
     try:
         if request.method == 'GET':
-            followUp = FollowUp.objects.filter(EnquiryId=EnquiryId)
+            followUp = FollowUp.objects.filter(EnquiryId=EnquiryId).order_by('SortId')
             followUpSerializer = FollowUpSerializer(
                 followUp,many=True)
             followUpData=[]
             for row in followUpSerializer.data:
                 try:
-                    staff=Staff.objects.get(StaffId=row['ScheduledBy'])
-                    staffSerializer=StaffSerializer(staff)
-                    row['ScheduledByName']=staffSerializer.data['StaffName']
+                    try:
+                        staff=Staff.objects.get(StaffId=row['ScheduledTo'])
+                        staffSerializer=StaffSerializer(staff)
+                        row['ScheduledToName']=staffSerializer.data['StaffName']
+                    except:
+                        company=Company.objects.get(CompanyId=row['ScheduledTo'])
+                        companySerializer=CompanySerializer(company)
+                        row['ScheduledToName']=companySerializer.data['CompanyName']
                 except:
-                    row['ScheduledByName']=""
+                    row['ScheduledToName']=""
                 try:
-                    staff=Staff.objects.get(StaffId=row['UserId'])
-                    staffSerializer=StaffSerializer(staff)
-                    row['UserName']=staffSerializer.data['StaffName']
+                    try:
+                        staff=Staff.objects.get(StaffId=row['UserId'])
+                        staffSerializer=StaffSerializer(staff)
+                        row['UserName']=staffSerializer.data['StaffName']
+                    except:
+                        company=Company.objects.get(CompanyId=row['UserId'])
+                        companySerializer=CompanySerializer(company)
+                        row['UserName']=companySerializer.data['CompanyName']
                 except:
                     row['UserName']=""
                 try:

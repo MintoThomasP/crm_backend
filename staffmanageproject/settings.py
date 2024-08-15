@@ -56,7 +56,8 @@ INSTALLED_APPS = [
     'app_category',
     'app_notes',
     'app_enquiry',
-    'app_basic'
+    'app_basic',
+    'app_todo'
     
     
 ]
