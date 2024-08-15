@@ -230,3 +230,33 @@ def CURDFollowUpApiByEnquiryId(request, EnquiryId=""):
     except:
         return JsonResponse("Invalid", safe=False)
     
+
+
+
+    
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get FollowUp by EnquiryId",)
+@api_view(['GET'])
+def EnquiryByScheduledTo(request, ScheduledTo=""):
+    try:
+        if request.method == 'GET':
+            followUp = FollowUp.objects.filter(ScheduledTo=ScheduledTo).order_by('SortId')
+            followUpSerializer = FollowUpSerializer(
+                followUp,many=True)
+            followUpData=[]
+            enquiryId=[]
+            for row in followUpSerializer.data:
+                try:
+                    enquiry=Enquiry.objects.get(EnquiryId=row['EnquiryId'])
+                    enquirySerializer=EnquirySerializer(enquiry)
+                    if not enquirySerializer.data['EnquiryId'] in enquiryId:
+                        enquiryId.append(enquirySerializer.data['EnquiryId'])
+                    
+                        row['Enquiry']=enquirySerializer.data
+                        followUpData.append(row)
+                except:
+                    p=""
+            return JsonResponse(followUpData, safe=False)    
+       
+    except:
+        return JsonResponse("Invalid", safe=False)
