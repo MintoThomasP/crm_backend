@@ -63,7 +63,16 @@ class UpdateStaffSerializer(serializers.ModelSerializer):
 'StaffId',
 'ProfilePhoto'
 )
+class StaffPerformanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Staff
+        fields = ('SortId',
+'StaffId',
+'StaffName',
+'StaffCode',
+'CompanyId',
 
+)
 
 class StaffGuardianSerializer(serializers.ModelSerializer):
     class Meta:

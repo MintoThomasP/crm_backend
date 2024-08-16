@@ -12,7 +12,8 @@ urlpatterns = [
     url(r'^Staff/(?P<StaffId>[0-9a-zA-Z\-]+)$', views.StaffApiById),
     url(r'^staffByStaffCode/(?P<StaffCode>[0-9a-zA-Z\-]+)$', views.staffApiByStaffCode),
     path('StaffApiByCompanyId/', views.StaffApiByCompanyId.as_view()), # pagination for staff manage table
-   
+       url(r'^StaffPerformanceByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.StaffPerformanceByCompanyId),
+
 
     path('StaffGuardian/', views.staffGuardianApi),
     url(r'^StaffGuardian/(?P<StaffGuardianId>[0-9a-zA-Z\-]+)$', views.staffGuardianApiById),
@@ -47,6 +48,7 @@ path('CURDSalarySlipApi/', views.CURDSalarySlipApi),
 
     path('moveOnRegister/', views.moveOnRegisterApi),
     url(r'^moveOnRegister/(?P<StaffId>[0-9a-zA-Z\-]+)$', views.moveOnRegisterApi),
+    path('StaffPerformanceByCompanyId/<str:CompanyId>/', views.StaffPerformanceByCompanyId),
 
 ]
 if settings.DEBUG:

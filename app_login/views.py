@@ -198,7 +198,7 @@ def LoginHistoryApi(request):
                 loginHistoryOld = LoginHistory.objects.get(Q(Q(LogoutTime__isnull=True) | Q(LogoutTime='')) & Q(UserId=loginHistoryData['UserId']))
                 loginHistoryOld.LogoutTime=loginHistoryData['LoginTime']
                 loginHistoryOld.save()
-            except BaseException as error:
+            except:
                 p=""
             if loginHistorySerializer.is_valid():
                 loginHistorySerializer.save()
@@ -244,7 +244,7 @@ def LoginHistoryApi(request):
                 return JsonResponse(loginHistorySerializer.data['LoginHistoryId'], safe=False)
             return JsonResponse("Failed to Update", safe=False)
         else:
-            return JsonResponse("jj", safe=False)
+            return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
     

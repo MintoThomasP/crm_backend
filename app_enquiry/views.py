@@ -90,6 +90,8 @@ class EnquiryApiByCompanyId(generics.ListAPIView):
             Keyword = filterData.get('SearchKeyword', '')
             if filterData['CompanyId']:
                 self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+            if filterData['UserId']:
+                self.queryset = self.queryset.filter(CreatedBy=filterData['UserId'])
             
             if Keyword:
                 self.queryset = self.queryset.filter(Description__icontains=Keyword)
@@ -234,42 +236,99 @@ def CURDFollowUpApiByEnquiryId(request, EnquiryId=""):
 
 
     
-@csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for get FollowUp by EnquiryId",)
-@api_view(['GET'])
-def EnquiryByScheduledTo(request, ScheduledTo=""):
-    try:
-        if request.method == 'GET':
-            followUp = FollowUp.objects.filter(ScheduledTo=ScheduledTo).order_by('SortId')
-            followUpSerializer = FollowUpSerializer(
-                followUp,many=True)
-            followUpData=[]
-            enquiryId=[]
-            for row in followUpSerializer.data:
-                try:
-                    enquiry=Enquiry.objects.get(EnquiryId=row['EnquiryId'])
-                    enquirySerializer=EnquirySerializer(enquiry)
-                    if not enquirySerializer.data['EnquiryId'] in enquiryId:
-                        enquiryId.append(enquirySerializer.data['EnquiryId'])
+# @csrf_exempt
+# @swagger_auto_schema(method='GET',operation_description="NOTE: API for get FollowUp by EnquiryId",)
+# @api_view(['GET'])
+# def EnquiryByScheduledTo(request, ScheduledTo=""):
+#     try:
+#         if request.method == 'GET':
+#             followUp = FollowUp.objects.filter(ScheduledTo=ScheduledTo).order_by('SortId')
+#             followUpSerializer = FollowUpSerializer(
+#                 followUp,many=True)
+#             followUpData=[]
+#             enquiryId=[]
+#             for row in followUpSerializer.data:
+#                 try:
+#                     enquiry=Enquiry.objects.get(EnquiryId=row['EnquiryId'])
+#                     enquirySerializer=EnquirySerializer(enquiry)
+#                     if not enquirySerializer.data['EnquiryId'] in enquiryId:
+#                         enquiryId.append(enquirySerializer.data['EnquiryId'])
                     
-                        # row['Enquiry']=enquirySerializer.data
-                        followUpData.append(enquirySerializer.data)
-                except:
-                    p=""
-            return JsonResponse(followUpData, safe=False)    
+#                         # row['Enquiry']=enquirySerializer.data
+#                         followUpData.append(enquirySerializer.data)
+#                 except:
+#                     p=""
+#             return JsonResponse(followUpData, safe=False)    
        
-    except:
-        return JsonResponse("Invalid", safe=False)
-  
-@csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for get FollowUp by EnquiryId",)
-@api_view(['GET'])
-def EnquiryByUserId(request, UserId=""):
-    try:
-        if request.method == 'GET':
-            enquiry=Enquiry.objects.filter(CreatedBy=UserId)
-            enquirySerializer=EnquirySerializer(enquiry,many=True)
-            return JsonResponse(enquirySerializer.data, safe=False)    
+#     except:
+#         return JsonResponse("Invalid", safe=False)
+
+
+
+# @csrf_exempt
+# @swagger_auto_schema(method='GET',operation_description=" API for get FollowUp by EnquiryId",)
+# @api_view(['GET'])
+# def EnquiryByUserId(request, UserId=""):
+#     try:
+#         if request.method == 'GET':
+#             enquiry=Enquiry.objects.filter(CreatedBy=UserId)
+#             enquirySerializer=EnquirySerializer(enquiry,many=True)
+#             return JsonResponse(enquirySerializer.data, safe=False)    
        
-    except:
-        return JsonResponse("Invalid", safe=False)
+#     except:
+#         return JsonResponse("Invalid", safe=False)
+
+
+
+
+class EnquiryByScheduledTo(generics.ListAPIView):
+    queryset =FollowUp.objects.all().order_by('SortId')
+    pagination_class = CustomPageNumberPagination
+    serializer_class = FollowUpSerializer 
+    def post(self, request, *args, **kwargs):
+        try:
+            filterData = JSONParser().parse(request)
+            Keyword = filterData.get('SearchKeyword', '')
+            if filterData['ScheduledTo']:
+                self.queryset = self.queryset.filter(ScheduledTo=filterData['ScheduledTo'])
+            
+            if Keyword:
+                self.queryset = self.queryset.filter(Description__icontains=Keyword)
+            page = self.paginate_queryset(self.queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                followUpData=[]
+                enquiryId=[]
+
+                for row in serializer.data:
+                    try:
+                        enquiry=Enquiry.objects.get(EnquiryId=row['EnquiryId'])
+                        enquirySerializer=EnquirySerializer(enquiry)
+                        if not enquirySerializer.data['EnquiryId'] in enquiryId:
+                            enquiryId.append(enquirySerializer.data['EnquiryId'])
+                        
+                            # row['Enquiry']=enquirySerializer.data
+                            followUpData.append(enquirySerializer.data)
+                    except:
+                        p=""
+                    data=[]
+                    for col in followUpData:
+                        try:
+                            enquiryType = EnquiryType.objects.get(EnquiryTypeId=col['EnquiryType'])
+                            enquiryType_serializer = EnquiryTypeSerializer(
+                            enquiryType)
+                            col['EnquiryTypeName']=enquiryType_serializer.data['EnquiryType']
+                        except:
+                            col['EnquiryTypeName']=""
+                        try:
+                            enquiryStatus = EnquiryStatus.objects.get(StatusId=col['Status'])
+                            enquiryStatus_serializer = EnquiryStatusSerializer(
+                            enquiryStatus)
+                            col['EnquiryStatusName']=enquiryStatus_serializer.data['Status']
+                        except:
+                            col['EnquiryStatusName']=""
+                    data.append(col)
+                    
+                return self.get_paginated_response(data)
+        except:
+            return JsonResponse("", safe=False)

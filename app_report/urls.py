@@ -32,4 +32,6 @@ urlpatterns = [
         path('DownloadSummarizedStaffReportByStaffId/<str:StaffId>/<str:StartDate>/<str:EndDate>', views.DownloadSummarizedStaffReportByStaffId),
 
 #  path('report/', views.report_view, name='report_view'),
+    path('getAllProjectReportofClientByCompanyId/<str:CompanyId>/', views.getAllProjectReportofClientByCompanyId),
+
 ]

@@ -1,11 +1,13 @@
 import calendar
+from django.db.models import DateTimeField
+from django.db.models.functions import Cast
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from app_company.models import Company
 from app_company.serializers import CompanySerializer
 from app_default.views import retry
-from app_project.models import ProjectTask
+from app_project.models import Project, ProjectTask
 from app_project.serializers import ProjectTaskSerializer
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
@@ -23,7 +25,7 @@ from app_site.models import SiteSettings
 from app_site.serializers import SiteSettingsSerializer
 from app_staff.models import LeaveApplication, MoveOnRegister, SalarySlip, Staff, StaffDocuments, StaffGuardian
 import os
-from app_staff.serializers import LeaveApplicationSerializer, MoveOnRegisterSerializer, SalarySlipSerializer, SaveStaffSerializer, StaffDocumentsSerializer, StaffGuardianSerializer, StaffSerializer, UpdateStaffSerializer, UploadStaffDocumentsSerializer
+from app_staff.serializers import LeaveApplicationSerializer, MoveOnRegisterSerializer, SalarySlipSerializer, SaveStaffSerializer, StaffDocumentsSerializer, StaffGuardianSerializer, StaffPerformanceSerializer, StaffSerializer, UpdateStaffSerializer, UploadStaffDocumentsSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -775,9 +777,13 @@ class StaffApiByCompanyId(generics.ListAPIView):
                     projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
                     work_status_count = {'Pending': 0, 'Completed': 0, 'Due': 0, 'Not Completed': 0, 'Finished': 0, 'Delay Finished': 0}
                     current_date = str(date.today())
-                
+                    total_points_gain=0
+                    count=0
                     for task in projectTaskSerializer.data:
-                        if task['Status'] == '1' or task['Status'] == '2':
+                        if task['Status'] == '7' or task['Status'] == '8' or task['Status'] == '9' :
+                            total_points_gain=total_points_gain+float(task['CompletionPoint'])
+                            count=count+1
+                        if task['Status'] == '1' or task['Status'] == '2' or task['Status'] == '10':
                             work_status_count['Pending'] += 1
                     
                         if task['Status'] == '3':
@@ -794,6 +800,10 @@ class StaffApiByCompanyId(generics.ListAPIView):
 
                         if task['Status'] == '7':
                             work_status_count['Finished'] += 1
+                    work_status_count['Performance']=0
+                    if count:
+                        
+                        work_status_count['Performance']=total_points_gain/count
 
                     row['WorkStatusCount'] = work_status_count
                     data.append(row)
@@ -1070,3 +1080,106 @@ def moveOnRegisterApi(request,StaffId=""):
     except:
         return JsonResponse("", safe=False)
     
+
+
+# @csrf_exempt
+# @swagger_auto_schema(method='GET',operation_description="NOTE: Get all Move On Register Details",)
+# @api_view(['GET'])
+# @retry(retries=3, delay=2)
+# def StaffPerformanceByCompanyId(request,CompanyId=""):
+#     try:
+#         if request.method == 'GET':
+#             data=AllStaffPerformancebyCompany(CompanyId)
+
+
+#             return JsonResponse(data, safe=False)
+#         else:
+#             return JsonResponse("", safe=False)
+               
+#     except:
+#         return JsonResponse("", safe=False)   
+    
+
+
+
+def AllStaffPerformancebyCompany(CompanyId=""):
+    staff=Staff.objects.filter(CompanyId=CompanyId)
+    staffSerializer=StaffPerformanceSerializer(staff,many=True)
+    data = []
+    for row in staffSerializer.data:
+        try:
+            designation=Designation.objects.get(DesignationId=row['Designation'])
+            designationSerializer=DesignationSerializer(designation)
+            row['DesignationName']=designationSerializer.data['Designation']
+        except:
+            row['DesignationName']=""
+
+        projectTask=ProjectTask.objects.filter(TaskAssignedTo=row['StaffId'])
+        projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
+        work_status_count = {'Performance': 0}
+        current_date = str(date.today())
+        total_points_gain=0
+        count=0
+        Performance=0
+        for task in projectTaskSerializer.data:
+            if task['Status'] == '7' or task['Status'] == '8' or task['Status'] == '9' :
+                total_points_gain=total_points_gain+float(task['CompletionPoint'])
+                count=count+1
+        
+        if count:
+            Performance=total_points_gain/count
+
+        row['Performance'] = Performance
+        data.append(row)
+    return data
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get all project report. payload { StartDate, EndDate }")
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def StaffPerformanceByCompanyId(request, CompanyId=""):
+    if request.method == 'GET':
+       
+        currentMonthYear = date.today().strftime("%Y-%m")
+        startDate = f"{currentMonthYear}-01"
+        endDate = f"{currentMonthYear}-{date.today().strftime('%d')}"
+
+        start_date = datetime.strptime(startDate, '%Y-%m-%d')
+        end_date = datetime.strptime(endDate, '%Y-%m-%d')
+        client = Staff.objects.filter(CompanyId=CompanyId)
+        clientSerializer = StaffSerializer(client, many=True)
+        projectData = []
+
+        date_iter = start_date
+        while date_iter <= end_date:
+            total_points_gain = 0
+            total_count = 0
+
+            for row in clientSerializer.data:
+                task = ProjectTask.objects.annotate(
+                    ScheduledDeadline_cast=Cast('ScheduledDeadline', DateTimeField())
+                ).filter(
+                    ScheduledDeadline_cast__date=date_iter.date(),
+                    TaskAssignedTo=row['StaffId']
+                )
+                
+                taskSerializer = ProjectTaskSerializer(task, many=True)
+
+                for task in taskSerializer.data:
+                    if task['Status'] in ['7', '8', '9']:
+                        total_points_gain += float(task['CompletionPoint'])
+                        total_count += 1
+            
+           
+            Performance = total_points_gain / total_count if total_count > 0 else 0
+
+            projectData.append({
+                'date': date_iter.strftime('%d'),
+                'overall_performance': Performance
+            })
+
+            date_iter += timedelta(days=1)
+
+        return JsonResponse(projectData, safe=False)

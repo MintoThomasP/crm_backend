@@ -29,7 +29,7 @@ from app_staff.serializers import MoveOnRegisterSerializer, StaffSerializer
 # Create your views here.
 from django.utils import timezone
 import openpyxl
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from django.db.models import Q
 from datetime import datetime
 from PyPDF2 import PdfReader, PdfWriter
@@ -1591,3 +1591,117 @@ def DownloadSummarizedStaffReportByStaffId(request,StaffId="",StartDate="",EndDa
     response['Content-Disposition'] = f'attachment; filename={context["StaffName"]}.pdf'
     return HttpResponse(pdf.content, content_type='application/pdf')
 
+
+
+
+
+
+# @csrf_exempt
+# @swagger_auto_schema(method='GET', operation_description="NOTE: API for get all project report. payalod { StartDate, EndDate}")
+# @api_view(['GET'])
+# @retry(retries=3, delay=2)
+# def getAllProjectReportofClientByCompanyId(request,CompanyId=""):
+#     # try:
+#         if request.method == 'GET':
+#             client=Client.objects.filter(CompanyId=CompanyId)
+#             clientSerializer=ClientSerializer(client,many=True)
+#             projectData=[]
+#             for row in clientSerializer.data:
+#                 client_report = {
+#                 'clientName': row['CustomerDisplayName'],
+#                 'performanceData': []
+#             }
+#                 project = Project.objects.filter(ClientId=row['ClientId'])
+#                 projectSerializer = ProjectSerializer(project,many=True)
+         
+#                 for pro in projectSerializer.data:
+#                     task=ProjectTask.objects.filter(ProjectId=pro['ProjectId'])
+#                     taskSerializer=ProjectTaskSerializer(task,many=True)
+#                     taskData=[]
+#                     total_points_gain=0
+#                     count=0
+#                     Performance=0
+#                     for task in taskSerializer.data:
+#                         if task['Status'] == '7' or task['Status'] == '8' or task['Status'] == '9' :
+#                             total_point=+float(task['TaskPoint'])
+#                             total_points_gain=total_points_gain+float(task['CompletionPoint'])
+#                             count=count+1
+#                     if count:
+#                         Performance=total_points_gain/count
+#                     client_report['performanceData'].append({
+#                     'date': '02-08-2024',
+#                     'performance': Performance
+#                 })
+
+#                 projectData.append(client_report)
+
+
+#             return JsonResponse(projectData, safe=False)
+#     # except:
+#     #     return JsonResponse("", safe=False)
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get all project report. payload { StartDate, EndDate }")
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def getAllProjectReportofClientByCompanyId(request, CompanyId=""):
+    try:
+        if request.method == 'GET':
+            currentMonthYear = date.today().strftime("%Y-%m")
+            startDate = f"{currentMonthYear}-01"
+            endDate = f"{currentMonthYear}-{date.today().strftime('%d')}"
+
+            start_date = datetime.strptime(startDate, '%Y-%m-%d')
+            end_date = datetime.strptime(endDate, '%Y-%m-%d')
+
+            client = Client.objects.filter(CompanyId=CompanyId)
+            clientSerializer = ClientSerializer(client, many=True)
+            projectData = []
+
+            for row in clientSerializer.data:
+                client_report = {
+                    'clientName': row['CustomerDisplayName'],
+                    'performanceData': []
+                }
+
+                project = Project.objects.filter(ClientId=row['ClientId'])
+                projectSerializer = ProjectSerializer(project, many=True)
+
+                for pro in projectSerializer.data:
+                    date_iter = start_date
+                    while date_iter <= end_date:
+                        task = ProjectTask.objects.annotate(
+                            ScheduledDeadline_cast=Cast('ScheduledDeadline', DateTimeField())
+                        ).filter(
+                            ScheduledDeadline_cast__date=date_iter.date(),
+                            ProjectId=pro['ProjectId']
+                        )
+                       
+                        taskSerializer = ProjectTaskSerializer(task, many=True)
+
+                        total_points_gain = 0
+                        count = 0
+                        Performance = 0
+
+                        for task in taskSerializer.data:
+                            if task['Status'] in ['7', '8', '9']:
+                                total_points_gain += float(task['CompletionPoint'])
+                                count += 1
+
+                        if count:
+                            Performance = total_points_gain / count
+
+                        client_report['performanceData'].append({
+                            'date': date_iter.strftime('%d'),
+                            'performance': Performance
+                        })
+
+                        date_iter += timedelta(days=1)  # Increment by one day
+
+                projectData.append(client_report)
+
+            return JsonResponse(projectData, safe=False)
+    except:
+        return JsonResponse("", safe=False)

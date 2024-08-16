@@ -1,3 +1,4 @@
+from datetime import date, datetime
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
@@ -11,6 +12,9 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from app_company.models import Company, CompanyDocuments
 from app_company.serializers import CompanyDocumentsSerializer, CompanySerializer, SaveCompanyDocumentsSerializer, UploadCompanyDocumentsSerializer
 from app_default.views import retry
+from app_project.models import Project, ProjectTask
+from app_project.serializers import ProjectSerializer, ProjectTaskSerializer
+from app_staff.views import AllStaffPerformancebyCompany
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=CompanySerializer,operation_description="NOTE: API for save Company")
 @swagger_auto_schema(method='PUT', request_body=CompanySerializer,operation_description="NOTE: API for edit Company")
@@ -80,8 +84,7 @@ def CompanyApiById(request, CompanyId=""):
                     companyDocuments,many=True)
                 companyData['DocumentDetails']=companyDocumentsSerializer.data
             except:
-                companyData['DocumentDetails']=""
-            
+                companyData['DocumentDetails']=""    
             return JsonResponse(companyData, safe=False)
         elif request.method == 'DELETE':
             company = Company.objects.get(CompanyId=CompanyId)
@@ -181,3 +184,64 @@ class UploadCompanyDocuments(APIView):
                     return JsonResponse("", safe=False)
         except:
             return JsonResponse("", safe=False)
+        
+
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get Company by CompanyId",)
+@api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
+def CompanyPerformanceById(request, CompanyId=""):
+    try:
+        if request.method == 'GET': 
+            company = Company.objects.get(
+                    CompanyId=CompanyId)
+            companySerializer = CompanySerializer(
+                    company)
+            companyData=companySerializer.data
+           
+            projects = Project.objects.filter(CompanyId=CompanyId)
+            projectSerializer = ProjectSerializer(projects, many=True)
+
+            total_work_status_count = {'Pending': 0, 'Performance': 0}
+            total_points_gain = 0
+            total_count = 0
+
+            for project in projectSerializer.data:
+                currentMonthYear=date.today().strftime("%Y-%m")
+                startDate=f"{currentMonthYear}-1"
+                endDate=f"{currentMonthYear}-31"
+                start_date = datetime.strptime(startDate, '%Y-%m-%d')
+                end_date = datetime.strptime(endDate, '%Y-%m-%d')
+
+                projectTasks = ProjectTask.objects.filter(CreatedDate__range=(start_date,end_date),ProjectId=project['ProjectId'])
+                projectTaskSerializer = ProjectTaskSerializer(projectTasks, many=True)
+                
+                work_status_count = {'Pending': 0, 'Performance': 0}
+                for task in projectTaskSerializer.data:
+                    
+                    
+                    if task['Status'] in ['7', '8', '9']:
+                        total_points_gain += float(task['CompletionPoint'])
+                        total_count += 1
+                    if task['Status'] in ['1', '2', '10']:
+                        work_status_count['Pending'] += 1
+                        
+                    companyData['DashboardData'] = work_status_count  
+                
+                if total_count > 0:
+                    work_status_count['Performance'] = total_points_gain / total_count
+                bestPerformer=AllStaffPerformancebyCompany(CompanyId)
+                companyData['bestPerformer'] = max(bestPerformer, key=lambda ev: ev['Performance'])
+                
+            return JsonResponse(companyData, safe=False)
+        elif request.method == 'DELETE':
+            company = Company.objects.get(CompanyId=CompanyId)
+            company.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)

@@ -19,12 +19,15 @@ from django.utils import timezone
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=TodoSerializer,operation_description="NOTE:API for save Todo")
 @swagger_auto_schema(method='PUT', request_body=TodoSerializer,operation_description="NOTE:API for edit Todo")
-@api_view(['POST','PUT'])
+@api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def TodoApi(request):
     try:
-        
-        if request.method == 'POST':
+        if request.method == 'GET':
+            todo=Todo.objects.filter(Status=0)
+            todoSerializer=TodoSerializer(todo,many=True)
+            return JsonResponse(todoSerializer.data, safe=False)
+        elif request.method == 'POST':
             todoData = JSONParser().parse(request)
             todoSerializer = TodoSerializer(
                 data=todoData)
@@ -88,8 +91,6 @@ class TodoPagination(generics.ListAPIView):
             if filterData['StartDate'] and filterData['EndDate']:
                 start_date = timezone.datetime.strptime(filterData['StartDate'], '%Y-%m-%d').date()
                 end_date = (timezone.datetime.strptime(filterData['EndDate'], '%Y-%m-%d')).date()
-
-                
                 self.queryset = self.queryset.filter(ScheduledOn__range=(start_date,end_date))
             page = self.paginate_queryset(self.queryset)
             if page is not None:
