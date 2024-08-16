@@ -252,11 +252,24 @@ def EnquiryByScheduledTo(request, ScheduledTo=""):
                     if not enquirySerializer.data['EnquiryId'] in enquiryId:
                         enquiryId.append(enquirySerializer.data['EnquiryId'])
                     
-                        row['Enquiry']=enquirySerializer.data
-                        followUpData.append(row)
+                        # row['Enquiry']=enquirySerializer.data
+                        followUpData.append(enquirySerializer.data)
                 except:
                     p=""
             return JsonResponse(followUpData, safe=False)    
+       
+    except:
+        return JsonResponse("Invalid", safe=False)
+  
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get FollowUp by EnquiryId",)
+@api_view(['GET'])
+def EnquiryByUserId(request, UserId=""):
+    try:
+        if request.method == 'GET':
+            enquiry=Enquiry.objects.filter(CreatedBy=UserId)
+            enquirySerializer=EnquirySerializer(enquiry,many=True)
+            return JsonResponse(enquirySerializer.data, safe=False)    
        
     except:
         return JsonResponse("Invalid", safe=False)

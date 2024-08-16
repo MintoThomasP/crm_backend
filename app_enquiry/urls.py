@@ -11,5 +11,6 @@ path('CURDFollowUpApi/', views.CURDFollowUpApi),
 url(r'^CURDFollowUpApiById/(?P<FollowUpId>[0-9a-zA-Z\-]+)$', views.CURDFollowUpApiById),
 url(r'^CURDFollowUpApiByEnquiryId/(?P<EnquiryId>[0-9a-zA-Z\-]+)$', views.CURDFollowUpApiByEnquiryId),
 url(r'^EnquiryByScheduledTo/(?P<ScheduledTo>[0-9a-zA-Z\-]+)$', views.EnquiryByScheduledTo),
+url(r'^EnquiryByUserId/(?P<UserId>[0-9a-zA-Z\-]+)$', views.EnquiryByUserId),
 
 ]
