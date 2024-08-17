@@ -690,248 +690,11 @@ def FinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""):
     context = getFinanceReport(request, startdate, enddate,ClientId ,ReportType)
     return JsonResponse(context,safe=False)
 
-# def getFinanceReport(request, startdate="", enddate="", ClientId="", ReportType="", NoOfMonths="0"):
-#     if request.method == 'GET':
-#         expectField = ['OrderNo', 'Level', 'RefId', 'CategoryId']
-        
-#         # Extract start and end dates
-#         start_date = startdate.split('-')
-#         startDate = start_date[0]  # month
-#         startYear = start_date[1]  # year
-#         end_date = enddate.split('-')
-#         endDate = end_date[0]  # month
-#         endYear = end_date[1]  # year
-        
-#         # Initialize date and header
-#         current_year = int(startYear)
-#         current_month = int(startDate)
-#         end_year = int(endYear)
-#         end_month = int(endDate)
-#         header = ["Item"]
-        
-#         while current_year < end_year or (current_year == end_year and current_month <= end_month):
-#             header.append(f"{current_year}-{current_month}")
-#             if current_month == 12:
-#                 current_month = 1
-#                 current_year += 1
-#             else:
-#                 current_month += 1
-#             if ReportType == '1':
-#                 header.append("%")
-        
-#         if ReportType == '1':
-#             header.append("YTD-" + str(timezone.now().year))
-#             header.append("%")
-        
-#         formatted_data = [{i: header[i] for i in range(len(header))}]
-#         responsedata = []  
-#         category_data_dict = {}
-
-#         for col in formatted_data:
-#             for key, value in col.items():
-#                 if value in ['Item']:
-#                     continue
-#                 split_values = value.split('-')
-#                 if len(split_values) == 2:
-#                     year, month = split_values
-#                     reportData = []
-#                     if year == 'YTD' and ReportType == '1':
-#                         reportData = getYTD(ClientId, ReportType)
-#                     else:
-#                         reports = Report.objects.filter(Month=month, Year=year, ClientId=ClientId, ReportType=ReportType).order_by('OrderNo')
-#                         reportSerializer = ReportSerializer(reports, many=True)
-#                         reportData = reportSerializer.data
-                    
-#                     for row in reportData:
-#                         category_id = row['CategoryId']
-#                         amount = row['Amount']
-#                         OrderNo = row['OrderNo']
-#                         Level = row['Level']
-                        
-#                         if category_id not in category_data_dict:
-#                             category_data_dict[category_id] = {key: "" for key in range(1, len(header))}
-#                             category_data_dict[category_id]['OrderNo'] = None
-                        
-#                         category_data_dict[category_id][key] = amount
-                        
-#                         if category_data_dict[category_id]['OrderNo'] is None or OrderNo > category_data_dict[category_id]['OrderNo']:
-#                             category_data_dict[category_id]['OrderNo'] = OrderNo
-#                             category_data_dict[category_id]['Level'] = Level
-
-#         cell_length = 2
-#         LevelAmount = {}
-#         BaseValue = {}
-#         LevelIndex = ""
-#         isFirst = True
-#         isBaseValue = False
-        
-#         for category_id, data in category_data_dict.items():
-#             if data['OrderNo'] is None:
-#                 continue
-            
-#             try:
-#                 category = Category.objects.get(CategoryId=category_id)
-#                 categorySerializer = CategorySerializer(category)
-#                 cell_length = len(data.items()) - 1
-#                 RefId = categorySerializer.data['RefId'] or categorySerializer.data['CategoryType']
-#                 Categorydata = {
-#                     'OrderNo': data['OrderNo'],
-#                     '0': categorySerializer.data['Category'],
-#                     'Level': data['Level'],
-#                     'RefId': RefId,
-#                     'CategoryId': categorySerializer.data['CategoryId'],
-#                     **{k: v for k, v in data.items() if k not in expectField and k != '0'}
-#                 }
-#             except:
-#                 if not isFirst and not isBaseValue:
-#                     Categorydata = {
-#                         'OrderNo': data['OrderNo'],
-#                         '0': "Total",
-#                         'Level': 1,
-#                         'RefId': "",
-#                         'CategoryId': "TOTALID",
-#                         **{k: v for k, v in LevelAmount[LevelIndex].items() if k not in expectField and k != '0'}
-#                     }
-#                     responsedata.append(Categorydata)
-                
-#                 LevelIndex = "level-" + category_id
-#                 LevelAmount[LevelIndex] = {}
-                
-#                 category = CategoryType.objects.get(CategoryTypeId=category_id)
-#                 categorySerializer = CategoryTypeSerializer(category)
-                
-#                 if categorySerializer.data['UsageType'] == "Base Value":
-#                     print(categorySerializer.data['UsageType'])
-#                     isBaseValue = True
-#                 elif isFirst and BaseValue:
-#                     isBaseValue = False
-#                     isFirst = False
-#                     Categorydata = {
-#                         'OrderNo': data['OrderNo'],
-#                         '0': "Total",
-#                         'Level': 1,
-#                         'RefId': "",
-#                         'CategoryId': "TOTALID",
-#                         **{k: v for k, v in BaseValue.items() if k not in expectField and k != '0'}
-#                     }
-#                     responsedata.append(Categorydata)
-#                 elif ReportType == '2':
-#                     isBaseValue = False
-#                     isFirst = False
-                
-#                 cell_length = len(data.items()) - 1
-                
-#                 Categorydata = {
-#                     'OrderNo': data['OrderNo'],
-#                     '0': categorySerializer.data['CategoryType'],
-#                     'Level': data['Level'],
-#                     'RefId': "",
-#                     'CategoryId': str(categorySerializer.data['CategoryTypeId']),
-#                     **{k: v for k, v in data.items() if k not in expectField and k != '0'}
-#                 }
-            
-#             for k, v in data.items():
-#                 if k not in expectField and k != '0' and v not in [None, 'null']:
-#                     try:
-#                         amount = int(v)
-#                     except ValueError:
-#                         amount = 0 
-                    
-#                     # Ensure LevelIndex is initialized in LevelAmount
-#                     if LevelIndex not in LevelAmount:
-#                         LevelAmount[LevelIndex] = {}
-
-#                     # Initialize the key k in LevelAmount[LevelIndex] if it doesn't exist
-#                     if k not in LevelAmount[LevelIndex]:
-#                         LevelAmount[LevelIndex][k] = 0
-
-#                     # Safely update the value
-#                     LevelAmount[LevelIndex][k] += amount
-            
-#             responsedata.append(Categorydata)
-        
-#         if LevelAmount:
-#             Categorydata = {
-#                 'OrderNo': len(responsedata) + 1,
-#                 '0': "Total",
-#                 'Level': 1,
-#                 'RefId': "",
-#                 'CategoryId': "TOTALID",
-#                 **{k: v for k, v in LevelAmount[LevelIndex].items() if k not in expectField and k != '0'}
-#             }
-#             responsedata.append(Categorydata)
-        
-#         responsedata = sorted(responsedata, key=lambda x: x['OrderNo'])
-        
-#         data = []
-#         if responsedata:
-#             for cat_data in responsedata:
-#                 item = {}
-#                 amount = 0.00
-#                 key = ""
-                
-#                 for k, v in cat_data.items():
-#                     item[k] = ""
-#                     if k in expectField:
-#                         item[k] = v
-#                         continue
-                    
-#                     if v not in [None, 'null']:
-#                         amount = v
-#                         key = k
-#                         item[k] = v
-                    
-#                     elif int(k) % 2 == 0 and key and ReportType == '1':
-#                         base_value = BaseValue.get(key, None)
-#                         if base_value:
-#                             try:
-#                                 v = round((amount / float(base_value)) * 100, 2)
-#                             except ValueError:
-#                                 v = 0.00
-#                         else:
-#                             v = 0.00
-#                         item[k] = f"{v}%" if v != 0.0 else ""
-                
-#                 data.append(item)
-
-#             context = {
-#                 "formatted_data": formatted_data[0],
-#                 "responsedata": responsedata,
-#                 "cell_length": cell_length,
-#                 "BaseValue": BaseValue,
-#                 "expectField": expectField,
-#                 "NoOfMonths": int(NoOfMonths),
-#             }
-#             return context
-        
-#         return "NODATA"
-# def getYTD(ClientId="",ReportType="",year="",month=""):
-#     if year=="":
-#         year = timezone.now().year
-#     if month=="":
-#         month = timezone.now().month
-#     queryset = Report.objects.filter(
-#             Month__gte=1, Month__lte=month,ClientId=ClientId,ReportType=ReportType,
-#             Year=year
-#         ).values(
-#             'CategoryId', 'OrderNo', 'Level',
-#             'ReportType',
-#             'ClientId',
-#             'CategoryId',
-#             'Comment',
-#             'OrderNo',
-#             'Level'
-#         ).annotate(
-#             Amount=Sum('Amount')
-#         ).order_by('OrderNo')
-#     queryset_list  = sorted(list(queryset), key=lambda x: x['OrderNo'])
-#     return queryset_list
-
 
 def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType="",NoOfMonths="0"):
     try :
         if request.method == 'GET':
-            expectField=['OrderNo', 'Level','RefId','CategoryId']
+            expectField=['OrderNo', 'Level','RefId','CategoryId','itemsumorder']
             start_date = startdate.split('-')
             startDate = start_date[0]  # month
             startYear = start_date[1]  # year
@@ -962,7 +725,7 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
             responsedata = []  
             category_data_dict = {}
             datcount=0
-
+            data=[]
             for col in formatted_data:
                 reportSerializerData=[]
                 for key, value in col.items(): 
@@ -977,6 +740,7 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
                             reports = Report.objects.filter(Month=month, Year=year,ClientId=ClientId,ReportType=ReportType).order_by('OrderNo')
                             reportSerializer = ReportSerializer(reports, many=True)
                             reportData=reportSerializer.data
+                            data.append(reportData)
                         for row in reportData:
                             category_id = row['CategoryId']
                             amount = row['Amount']
@@ -1008,6 +772,7 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
             LevelIndex=""
             isFirst=True
             isBaseValue=False
+            itemsumorder=""
             MainCategoryName=""
             for category_id, data in category_data_dict.items():
                 if data['OrderNo'] is None:
@@ -1025,6 +790,7 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
                         'OrderNo': data['OrderNo'], 
                         '0': categorySerializer.data['Category'],
                         'Level': data['Level'],
+                            'itemsumorder':  0,
                         'RefId':  RefId,
                         'CategoryId':  categorySerializer.data['CategoryId'],
                         **{k: v for k, v in data.items() if k not in expectField and k!='0'}  
@@ -1037,7 +803,8 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
                             '0': "Total "+MainCategoryName,
                             'Level': 1,
                             'RefId': "",
-                            'CategoryId':  "TOTALID",
+                            'itemsumorder':  itemsumorder,
+                            'CategoryId':  "TOTALID", 
                             **{k: v for k, v in LevelAmount[LevelIndex].items() if k not in expectField and k!='0'}  
                         }
                         responsedata.append(Categorydata)
@@ -1057,6 +824,7 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
                             '0': "Total "+MainCategoryName,
                             'Level': 1,
                             'RefId': "",
+                            'itemsumorder':  itemsumorder,
                             'CategoryId':  "TOTALID",
                             **{k: v for k, v in BaseValue.items() if k not in expectField and k!='0'}  
                         }
@@ -1071,9 +839,11 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
                         '0': categorySerializer.data['CategoryType'],
                         'Level': data['Level'],
                         'RefId': "",
+                            'itemsumorder':  0,
                         'CategoryId':  str(categorySerializer.data['CategoryTypeId']),
                         **{k: v for k, v in data.items() if k not in expectField and k!='0'}  
                     }
+                    itemsumorder=categorySerializer.data['OrderNo']
                     MainCategoryName=categorySerializer.data['CategoryType']
                 for k, v in data.items():
                     amount=0
@@ -1102,16 +872,75 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
                     '0': "Total "+MainCategoryName,
                     'Level': 1,
                     'RefId': "",
+                            'itemsumorder':  itemsumorder,
                     'CategoryId':  "TOTALID",
                     **{k: v for k, v in LevelAmount[LevelIndex].items() if k not in expectField and k!='0'}  
                 }
                 responsedata.append(Categorydata)
             responsedata = sorted(responsedata, key=lambda x: x['OrderNo'])
+            
             # data = []
             data = []
+            categoryTypeAmount={}
+            finaldata=[]
             if len(responsedata):
 
                 for cat_data in responsedata:
+                    cat_data['OrderNo'] = len(finaldata) + 1
+                    finaldata.append(cat_data)
+                    
+                    if cat_data['itemsumorder'] in ['1',1]:
+                        for k, v in cat_data.items():
+                            if k in expectField or k in ['0',0]:
+                                continue
+                            if v == "":
+                                v = 0
+                            categoryTypeAmount[k] = int(v)
+                    
+                    elif cat_data['itemsumorder'] in ['2',2]:
+                        for k, v in cat_data.items():
+                            if k in expectField or k in ['0',0]:
+                                continue
+                            if v == "":
+                                v = 0
+                            categoryTypeAmount[k] = categoryTypeAmount.get(k, 0) -  int(cat_data.get(k, 0))
+                        finaldata.append({
+                            'OrderNo': len(finaldata) + 1,
+                            '0': "Gross Profit",
+                            'Level': 1,
+                            'RefId': "",
+                            'itemsumorder': cat_data['itemsumorder'],
+                            'CategoryId': "TOTALID",
+                            **{k: v for k, v in categoryTypeAmount.items() if k not in expectField and k != '0'}
+                        })
+                    
+                    elif cat_data['itemsumorder'] in ['3',3]:
+                        for k, v in cat_data.items():
+                            if k in expectField or k in ['0',0]:
+                                continue
+                            if v == "":
+                                v = 0
+                            categoryTypeAmount[k] = categoryTypeAmount.get(k, 0) -  int(cat_data.get(k, 0))
+                    
+                    elif cat_data['itemsumorder'] in ['4',4]:
+                        for k, v in cat_data.items():
+                            if k in expectField or k in ['0',0]:
+                                continue
+                            if v == "":
+                                v = 0
+                            categoryTypeAmount[k] = categoryTypeAmount.get(k, 0) +  int(cat_data.get(k, 0))
+                    print(cat_data['itemsumorder'])
+                if ReportType=='1':
+                    finaldata.append({
+                        'OrderNo': len(finaldata) + 1,
+                        '0': "Net Profit/Loss",
+                        'Level': 1,
+                        'RefId': "",
+                        'itemsumorder': '',
+                        'CategoryId': "TOTALID",
+                        **{k: v for k, v in categoryTypeAmount.items() if k not in expectField and k != '0'}
+                    })
+                for cat_data in finaldata:
                     amount = 0.00
                     key = ""
                     item = {}
@@ -1161,7 +990,7 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
 
                 context = {
                     "formatted_data": formatted_data[0],
-                    "responsedata": responsedata,
+                    "responsedata": finaldata,
                     "cell_length":cell_length,
                     "BaseValue":BaseValue,
                     "expectField":expectField,
