@@ -109,7 +109,7 @@ def staffApi(request):
                 loginData={
                     "UserId":staffSerializer.data['StaffId'],
                     "EmailId":staffSerializer.data['EmailId'],
-                    "UserType":"db031447-2f11-463b-8582-f49dbe4a634f",
+                    "UserType":staffSerializer.data['UserType'],
                     "Password":staffSerializer.data['StaffCode']
 
 
