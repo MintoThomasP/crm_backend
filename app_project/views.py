@@ -459,20 +459,22 @@ def ProjectTaskApi(request):
                     projectTask.NextScheduledDate=next_Scheduled_date
                     projectTask.save()
                 if projectTaskSerializer.data['TaskType']=="Task" or projectTaskSerializer.data['TaskType']=="Ticket":
+                    try:
+                        login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedTo'])
+                        if login.Token:
+                            title="New task added"
+                            if projectTaskSerializer.data['TaskType']=="Ticket":
+                                title="New ticket raised"
+                            sendNotification({
+                                "title":title,
+                                "body":projectTaskSerializer.data['Title'],
+                                "token":login.Token,
+                                "fromuser":projectTaskSerializer.data['TaskAssignedBy'],
+                                "touser":projectTaskSerializer.data['TaskAssignedTo']
+                            })
 
-                    login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedTo'])
-                    if login.Token:
-                        title="New task added"
-                        if projectTaskSerializer.data['TaskType']=="Ticket":
-                            title="New ticket raised"
-                        sendNotification({
-                            "title":title,
-                            "body":projectTaskSerializer.data['Title'],
-                            "token":login.Token,
-                            "fromuser":projectTaskSerializer.data['TaskAssignedBy'],
-                            "touser":projectTaskSerializer.data['TaskAssignedTo']
-                        })
-
+                    except:
+                        p=""
 
                 return JsonResponse(projectTaskSerializer.data['ProjectTaskId'], safe=False)
             return JsonResponse("Failed to add", safe=False)
