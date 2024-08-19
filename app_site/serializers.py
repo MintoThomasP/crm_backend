@@ -27,7 +27,9 @@ class SiteSettingsSerializer(serializers.ModelSerializer):
                   'Logo',
                   'PrimaryColor',
                   'SecondaryColor',
-                  'FavIcon'
+                  'FavIcon',
+                  'StaffCodePrefix',
+                  'DefaultMobilePrefix'
         )
 
 
@@ -54,7 +56,9 @@ class SaveSiteSettingsSerializer(serializers.ModelSerializer):
                   'MobilePattern',
                   'WhatsAppPattern',
                   'PrimaryColor',
-                  'SecondaryColor',          
+                  'SecondaryColor',
+                  'StaffCodePrefix',
+                  'DefaultMobilePrefix'        
         )
 
 

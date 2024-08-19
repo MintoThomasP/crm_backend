@@ -15,6 +15,8 @@ class Category(models.Model):
     SectionType=models.CharField(blank=True, null=True, max_length=300) # Product,Finance
     CategoryType=models.CharField(blank=True, null=True, max_length=300)# data from default table
     ActiveStatus=models.BooleanField(default=True)
+    CompanyId=models.CharField(blank=True, null=True, max_length=50)
+
 
 
 class Report(models.Model):
@@ -30,6 +32,7 @@ class Report(models.Model):
     Comment=models.TextField(blank=True, null=True)
     OrderNo=models.IntegerField(default=1)
     Level=models.IntegerField(default=1)#its the level of category
+    Status=models.IntegerField(default=0)
 
 
 

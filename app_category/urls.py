@@ -4,7 +4,7 @@ from app_category import views
 
 urlpatterns = [
     path('CURDCategory/', views.CategoryApi),
-    url(r'^CURDCategory/(?P<CategoryId>[0-9a-zA-Z\-]+)$', views.CategoryApiById),
+    url(r'^CURDCategory/(?P<CompanyId>[0-9a-zA-Z\-]+)/(?P<CategoryId>[0-9a-zA-Z\-]+)$', views.CategoryApiById),
     path('GetAllCategoryBySectionTypeApi/', views.GetAllCategoryBySectionTypeApi),
 
 
@@ -17,6 +17,7 @@ urlpatterns = [
     path('GetCategoryandSubCategoriesByCategoryType/', views.GetCategoryandSubCategoriesByCategoryType),
     path('GetClientReportMonthly/', views.GetClientReportMonthly),
     path('GetAllLedgerCategory/', views.GetAllLedgerCategory),
+    url(r'^GetAllLedgerCategory/(?P<CompanyId>[0-9a-zA-Z\-]+)/$', views.GetAllLedgerCategory),
 
     path('SaveReport/', views.BulkCreateReportView.as_view()),
 

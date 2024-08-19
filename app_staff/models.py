@@ -8,7 +8,7 @@ class Staff(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)
     StaffId = models.CharField(
         max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
-    StaffCode=models.CharField(max_length=15,default="01",blank=True, null=True, )
+    StaffCode=models.CharField(max_length=15 )
     CompanyId=models.CharField(blank=True, null=True, max_length=50)
     StaffName = models.CharField(blank=True, null=True, max_length=300)
     PhoneNumber = models.CharField(blank=True, null=True, max_length=30)

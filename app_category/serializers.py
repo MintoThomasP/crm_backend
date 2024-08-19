@@ -14,7 +14,8 @@ class CategorySerializer(serializers.ModelSerializer):
             'Category',
             'SectionType',
             'CategoryType',
-            'ActiveStatus'
+            'ActiveStatus',
+            'CompanyId'
         )
 
 
@@ -34,7 +35,8 @@ class ReportSaveSerializer(serializers.ModelSerializer):
             'Amount',
             'Comment',
             'OrderNo',
-            'Level'
+            'Level',
+            'Status'
         )
         
 class ReportRefFileSerializer(serializers.ModelSerializer):

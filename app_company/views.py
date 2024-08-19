@@ -229,12 +229,14 @@ def CompanyPerformanceById(request, CompanyId=""):
                     if task['Status'] in ['1', '2', '10']:
                         work_status_count['Pending'] += 1
                         
-                    companyData['DashboardData'] = work_status_count  
+                companyData['DashboardData'] = work_status_count  
                 
                 if total_count > 0:
                     work_status_count['Performance'] = total_points_gain / total_count
                 bestPerformer=AllStaffPerformancebyCompany(CompanyId)
-                companyData['bestPerformer'] = max(bestPerformer, key=lambda ev: ev['Performance'])
+                companyData['bestPerformer']="N/A"
+                if bestPerformer:
+                    companyData['bestPerformer'] = max(bestPerformer, key=lambda ev: ev['Performance'])
                 
             return JsonResponse(companyData, safe=False)
         elif request.method == 'DELETE':

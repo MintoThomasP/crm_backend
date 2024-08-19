@@ -697,6 +697,13 @@ class GetAllLeaveApplicationByCompanyId(generics.ListAPIView):
                         row['StaffName']=staff_serializer.data['StaffName']
                     except:
                         row['StaffName']=""
+                    try:
+
+                        staff = Staff.objects.get(StaffId=row['StaffId'])
+                        staff_serializer = StaffSerializer(staff)
+                        row['StaffName']=staff_serializer.data['StaffName']
+                    except:
+                        row['StaffName']=""
                     data.append(row)
                 return self.get_paginated_response(data)
         except:

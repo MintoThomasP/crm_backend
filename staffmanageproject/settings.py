@@ -57,7 +57,8 @@ INSTALLED_APPS = [
     'app_notes',
     'app_enquiry',
     'app_basic',
-    'app_todo'
+    'app_todo',
+    'app_website_email'
     
     
 ]
@@ -110,10 +111,10 @@ DATABASES = {
      'default': {
         'ENGINE': 'dj_db_conn_pool.backends.mysql',
         'NAME': 'staffmanage_db',
-        # 'USER': 'root',
-        # 'PASSWORD': '',
-        'USER': 'python_user',
-        'PASSWORD': 'Kq#oCWJN0sAR',
+        'USER': 'root',
+        'PASSWORD': '',
+        # 'USER': 'python_user',
+        # 'PASSWORD': 'Kq#oCWJN0sAR',
         'HOST': 'localhost',
         'PORT': '3306',
         'POOL_OPTIONS' : {

@@ -45,6 +45,7 @@ class ProjectTaskSerializer(serializers.ModelSerializer):
 'IsRepeated',
 'RepeatInterval',
 'ExtraAccess',
+'NeedVerification',
 'AccessTo',
 'ClientId',
 'ScheduledDays',

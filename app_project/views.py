@@ -150,6 +150,15 @@ class ProjectTaskPagination(generics.ListAPIView):
             Keyword = filterData.get('SearchKeyword', '')
             if filterData['TaskAssignedTo']:
                 self.queryset = self.queryset.filter(TaskAssignedTo=filterData['TaskAssignedTo'])
+            if filterData['CompanyId']:
+                project = Project.objects.filter(
+                        CompanyId=filterData['CompanyId'])
+                projectSerializer = ProjectSerializer(
+                        project,many=True)
+                projectId=[]
+                for row in projectSerializer.data:
+                    projectId.append(row['ProjectId'])
+                self.queryset = self.queryset.filter(ProjectId__in=projectId)
             if len(filterData['Status']):
                 status=filterData['Status']
                 self.queryset = self.queryset.filter(Status__in=status)
@@ -454,7 +463,7 @@ def ProjectTaskApi(request):
                 if projectTaskSerializer.data['IsRepeated'] == 1:
                     RepeatInterval=projectTaskSerializer.data['RepeatInterval']
                     Interval=projectTaskSerializer.data['Interval']
-                    next_Scheduled_date=calculateNextScheduledDate(RepeatInterval,Interval)
+                    next_Scheduled_date=calculateNextScheduledDate(RepeatInterval,Interval,projectTaskData['ScheduledOn'])
                     projectTask=ProjectTask.objects.get(ProjectTaskId=projectTaskSerializer.data['ProjectTaskId'])
                     projectTask.NextScheduledDate=next_Scheduled_date
                     projectTask.save()
@@ -2208,6 +2217,15 @@ class GetAllTicketsApi(generics.ListAPIView):
         try:
             filterData = JSONParser().parse(request)
             Keyword = filterData.get('SearchKeyword', '')
+            if filterData['CompanyId']:
+                project = Project.objects.filter(
+                        CompanyId=filterData['CompanyId'])
+                projectSerializer = ProjectSerializer(
+                        project,many=True)
+                projectId=[]
+                for row in projectSerializer.data:
+                    projectId.append(row['ProjectId'])
+                self.queryset = self.queryset.filter(ProjectId__in=projectId)
             if filterData['TaskAssignedTo']:
                 self.queryset = self.queryset.filter(TaskAssignedTo=filterData['TaskAssignedTo'])
             if filterData['TaskAssignedBy']:
@@ -2450,48 +2468,51 @@ def TicketsByTaskAssignedBy(request, TaskAssignedBy=""):
 
 
 
-def calculateNextScheduledDate(RepeatInterval="",Interval=""):
-    given_date = datetime.now()
-    day_of_week = int((given_date.weekday()+ 1))
-    now = timezone.now()
-    if RepeatInterval == 'daily':
-        interval=Interval
-        if day_of_week == 7:
-            interval=interval+1
-            next_Schduled_date = now + timedelta(days=interval)
+def calculateNextScheduledDate(RepeatInterval="",Interval="",date= ""):
+    if date:
+        given_date=datetime.fromisoformat(date)
+    else:
+        given_date=datetime.now()
+        day_of_week = int((given_date.weekday()+ 1))
+        now = timezone.now()
+        if RepeatInterval == 'daily':
+            interval=Interval
+            if day_of_week == 7:
+                interval=interval+1
+                next_Schduled_date = now + timedelta(days=interval)
+                
+                
+            else:
+                next_Schduled_date = now + timedelta(days=interval)
             
-            
-        else:
-            next_Schduled_date = now + timedelta(days=interval)
-           
-    elif RepeatInterval == 'weekly':
-        interval=Interval
-        if day_of_week == 7:
-            interval=interval+1
-            next_Schduled_date = now + timedelta(weeks=interval)
-            
-        else:
-            next_Schduled_date = now + timedelta(weeks=interval)
-            
+        elif RepeatInterval == 'weekly':
+            interval=Interval
+            if day_of_week == 7:
+                interval=interval+1
+                next_Schduled_date = now + timedelta(weeks=interval)
+                
+            else:
+                next_Schduled_date = now + timedelta(weeks=interval)
+                
 
-    elif RepeatInterval == 'monthly':
-        interval=Interval
-        if day_of_week == 7:
-            interval=interval+1
-            next_Schduled_date = now + relativedelta(months=interval)
+        elif RepeatInterval == 'monthly':
+            interval=Interval
+            if day_of_week == 7:
+                interval=interval+1
+                next_Schduled_date = now + relativedelta(months=interval)
+                
+            else:
+                next_Schduled_date = now + relativedelta(months=interval)
+                
+        elif RepeatInterval == 'yearly':
+            interval = Interval
+            if day_of_week == 7:
+                interval=interval+1
+                next_Scheduled_date = now + relativedelta(years=interval)
             
-        else:
-            next_Schduled_date = now + relativedelta(months=interval)
-            
-    elif RepeatInterval == 'yearly':
-        interval = Interval
-        if day_of_week == 7:
-            interval=interval+1
-            next_Scheduled_date = now + relativedelta(years=interval)
-           
-        else:
-            next_Scheduled_date = now + relativedelta(years=interval)
-    return next_Schduled_date
+            else:
+                next_Scheduled_date = now + relativedelta(years=interval)
+        return next_Schduled_date
           
 
 

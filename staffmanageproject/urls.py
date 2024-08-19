@@ -55,6 +55,7 @@ urlpatterns = [
     path('api-enquiry/', include('app_enquiry.urls')),
     path('api-basic/', include('app_basic.urls')),
     path('api-todo/', include('app_todo.urls')),
+    path('api-website-email/', include('app_website_email.urls')),
     path('swagger-json/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger<str:format>', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

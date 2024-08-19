@@ -68,11 +68,11 @@ def CategoryApi(request):
 @swagger_auto_schema(method='DELETE', operation_description="NOTE: API for delete Category by CategoryId",)
 @api_view(['GET', 'DELETE'])
 @retry(retries=3, delay=2)
-def CategoryApiById(request, CategoryId=""):
+def CategoryApiById(request,CompanyId="", CategoryId=""):
     try:
         if request.method == 'GET':
             category = Category.objects.get(
-                CategoryId=CategoryId)
+                CategoryId=CategoryId,CompanyId=CompanyId)
             categorySerializer = CategorySerializer(
                 category)
             categoryData=categorySerializer.data
@@ -82,7 +82,7 @@ def CategoryApiById(request, CategoryId=""):
            
             return JsonResponse(categoryData, safe=False)
         elif request.method == 'DELETE':
-            category = Category.objects.get(CategoryId=CategoryId)
+            category = Category.objects.get(CategoryId=CategoryId,CompanyId=CompanyId)
             category.ActiveStatus=0
             category.save()
             return JsonResponse("Deleted successfully", safe=False)
@@ -122,7 +122,7 @@ def GetAllCategoryBySectionTypeApi(request):
         if request.method == 'POST':
             categoryData = JSONParser().parse(request)
             category = Category.objects.filter(
-                Q(RefId__isnull=True) | Q(RefId=""),ActiveStatus=1,SectionType=categoryData['SectionType']).order_by('-SortId')
+                Q(RefId__isnull=True) | Q(RefId=""),ActiveStatus=1,SectionType=categoryData['SectionType'],CompanyId=categoryData['CompanyId']).order_by('-SortId')
             categorySerializer = CategorySerializer(
                 category, many=True)
             categoryData=[]
@@ -150,14 +150,15 @@ def GetAllCategoryBySectionTypeApi(request):
 @retry(retries=3, delay=2)
 @swagger_auto_schema(method='GET', operation_description="NOTE: API for get all ledger category",)
 @api_view(['GET'])
-def GetAllLedgerCategory(request):
-    try:
+def GetAllLedgerCategory(request,CompanyId=""):
+    # try:
         if request.method == 'GET':
-            category = Category.objects.filter(ActiveStatus=1,SectionType='3').order_by('-SortId')
+            category = Category.objects.filter(ActiveStatus=1,SectionType='3',CompanyId=CompanyId).order_by('-SortId')
             categorySerializer = CategorySerializer(
                 category, many=True)
             categoryData=[]
             for row in categorySerializer.data:
+                row['CategoryPath']=get_category_path(get_maincategories(row['RefId']))
                 try:
                     categoryType=CategoryType.objects.get(CategoryTypeId=row['CategoryType'])
                     categoryTypeSerializer=CategoryTypeSerializer(categoryType)
@@ -169,13 +170,15 @@ def GetAllLedgerCategory(request):
             return JsonResponse(categorySerializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
 
 
-
-
-
+def get_category_path(category):
+    path=""
+    for data in category:
+        path=data['Category'] + " \ " + get_category_path(data['Subcategory'])
+    return path
 
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=ReportSerializer,operation_description="NOTE: API for save Report")
@@ -262,7 +265,7 @@ def get_report_data(category_id):
 @swagger_auto_schema(method='POST', operation_description="NOTE: API for get category and subcategories by CategoryType",)
 @api_view(['POST'])
 def GetCategoryandSubCategoriesByCategoryType(request):
-    try:
+    # try:
         if request.method == 'POST':
             category_data = JSONParser().parse(request)
             categoryType=CategoryType.objects.filter(CategoryTypeId__in=category_data['CategoryType'])
@@ -273,6 +276,7 @@ def GetCategoryandSubCategoriesByCategoryType(request):
                     Q(RefId__isnull=True) | Q(RefId=""),
                     ActiveStatus=1,
                     SectionType=category_data['SectionType'],CategoryType=category_type['CategoryTypeId']
+                    ,CompanyId=category_data['CompanyId']
                 ).order_by('CategoryType')
                 category_serializer = CategorySerializer(categories, many=True)
                 
@@ -293,8 +297,8 @@ def GetCategoryandSubCategoriesByCategoryType(request):
             return JsonResponse(data, safe=False)
         else:
             return JsonResponse([], safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
 
 @csrf_exempt
 @swagger_auto_schema(method='POST', operation_description="NOTE: API for get category and subcategories and report details by SectionType",)
@@ -307,6 +311,7 @@ def GetAllCategoryandSubCategories(request):
                 Q(RefId__isnull=True) | Q(RefId=""),
                 ActiveStatus=1,
                 SectionType=category_data['SectionType'],
+                CompanyId=category_data['CompanyId'],
             ).order_by('-SortId')
             category_serializer = CategorySerializer(categories, many=True)
             category_data = []

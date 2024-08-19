@@ -53,6 +53,7 @@ class ProjectTask(models.Model):
     ScheduledDays = models.CharField(max_length=50, blank=True, null=True)
     NextScheduledDate=models.DateTimeField(default=datetime.now)
     ExtraAccess=models.BooleanField(default=False)
+    NeedVerification=models.BooleanField(default=True)
     AccessTo =models.TextField(blank=True, null=True)
     ClientId=models.CharField(blank=True, null=True, max_length=50)
     Interval=models.IntegerField(default=1)
