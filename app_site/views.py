@@ -212,14 +212,14 @@ def CURDSiteMessage(request):
 @swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete SiteMessage by SiteMessageId",)
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
-def SiteMessageById(request, SiteMessageId=""):
+def SiteMessageById(request,CompanyId="", SiteMessageId=""):
     try:
         if request.method == 'GET':
-            siteMessage = SiteMessage.objects.get(SiteMessageId=SiteMessageId)
+            siteMessage = SiteMessage.objects.get(CompanyId=CompanyId,SiteMessageId=SiteMessageId)
             siteMessageSerializer = SiteMessageSerializer(siteMessage)
             return JsonResponse(siteMessageSerializer.data, safe=False)
         elif request.method == 'DELETE':
-            siteMessage = SiteMessage.objects.get(
+            siteMessage = SiteMessage.objects.get(CompanyId=CompanyId,
                 SiteMessageId=SiteMessageId)
             siteMessage.delete()
             return JsonResponse("Deleted successfully", safe=False)
