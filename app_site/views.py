@@ -69,7 +69,6 @@ def CURDSiteSettingsApi(request, pk=""):
 def CURDSiteSettingsApiCompanyId(request, CompanyId=""):
     try:
         if request.method == 'GET':
-           
             siteSettings = SiteSettings.objects.get(
                     CompanyId=CompanyId)
             siteSettingsSerializer = SiteSettingsSerializer(

@@ -50,7 +50,9 @@ class ProjectTaskSerializer(serializers.ModelSerializer):
 'ClientId',
 'ScheduledDays',
 'NextScheduledDate',
-'Interval'
+'Interval',
+'IsTemplate',
+'CompanyId'
         )
 
 
@@ -80,6 +82,7 @@ class SaveProjectTaskFileSerializer(serializers.ModelSerializer):
         fields = ( 'SortId',
                   'ProjectTaskFileId',
                   'ProjectTaskId',
+                  'TaskFile'
                   )
         
 class UploadProjectTaskFileSerializer(serializers.ModelSerializer):

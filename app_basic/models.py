@@ -39,6 +39,9 @@ class State(models.Model):
     State = models.CharField(max_length=300, blank=True, null=True)
 
 
+class PermissionSection(models.Model):
+    PermissionSectionId = models.AutoField(primary_key=True, editable=False)
+    SectionName = models.CharField(max_length=300, blank=True, null=True)
 
 
 
@@ -46,3 +49,7 @@ class State(models.Model):
 class UserPermission(models.Model):
     UserPermissionId = models.AutoField(primary_key=True, editable=False)
     UserPermission = models.CharField(max_length=300, blank=True, null=True)
+    PermissionSectionId= models.CharField(max_length=10, blank=True, null=True)
+    DisplayName = models.CharField(max_length=300, blank=True, null=True)
+    OrderNo=models.IntegerField(default=1)
+  

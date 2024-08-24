@@ -63,6 +63,11 @@ urlpatterns = [
 
 
     path('RestTaskPoint/', views.RestTaskPoint),
+    url(r'^GetallTaskTemplate/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.GetallTaskTemplate),
 
+    path('GetAllTemplatesByPagination/', views.GetAllTemplatesByPagination.as_view()),
 
+    url(r'^copy_image/(?P<ProjectTaskFileId>[0-9a-zA-Z\-]+)$', views.copy_image),
+
+ path('savecopy_image/', views.savecopy_image),
 ]

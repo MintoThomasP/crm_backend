@@ -3,5 +3,5 @@ from app_website_email import views
 
 urlpatterns = [
     
-    path('customerSignUpSuccess/', views.customerSignUpSuccess),
+    path('mailforwebsite/', views.mailforwebsite),
 ]

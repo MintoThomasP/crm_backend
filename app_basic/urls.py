@@ -23,4 +23,5 @@ urlpatterns = [
     url(r'^CountryApiById/(?P<CountryId>[0-9a-zA-Z\-]+)$', views.CountryApiById),
 
     path('UserPermissionApi/', views.UserPermissionApi),
+    path('UserPermissionbySectionType/', views.UserPermissionbySectionTypeApi),
 ]

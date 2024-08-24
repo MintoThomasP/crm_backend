@@ -9,12 +9,23 @@ from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 
+from app_basic.models import Designation, UserGroup
+from app_category.models import Category, Report, ReportRefFile
+from app_client.models import Client, ClientAddress, ClientDocuments, ClientOtherDetails, ContactPerson
 from app_company.models import Company, CompanyDocuments
 from app_company.serializers import CompanyDocumentsSerializer, CompanySerializer, SaveCompanyDocumentsSerializer, UploadCompanyDocumentsSerializer
+from app_credential.models import Credentials
 from app_default.views import retry
-from app_project.models import Project, ProjectTask
+from app_enquiry.models import Enquiry, FollowUp
+from app_login.models import Login, LoginHistory
+from app_notes.models import MeetingNoteDocument, MeetingNotes
+from app_project.models import CommentFile, Comments, Project, ProjectTask, ProjectTaskFile, ProjectTaskTiming, TaskReviews
 from app_project.serializers import ProjectSerializer, ProjectTaskSerializer
+from app_sale.models import Invoice, InvoiceDocument, InvoiceItem, PaymentDocument, PaymentReceived, PaymentReceivedDetail, Quotation, QuotationFile, QuotationItem
+from app_site.models import Notification
+from app_staff.models import LeaveApplication, MoveOnRegister, SalarySlip, Staff, StaffDocuments, StaffGuardian
 from app_staff.views import AllStaffPerformancebyCompany
+from app_todo.models import Todo
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=CompanySerializer,operation_description="NOTE: API for save Company")
 @swagger_auto_schema(method='PUT', request_body=CompanySerializer,operation_description="NOTE: API for edit Company")
@@ -247,3 +258,138 @@ def CompanyPerformanceById(request, CompanyId=""):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
+    
+
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get Company by CompanyId",)
+@api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
+def DeleteCompanyDataByCompanyId(request, CompanyId=""):
+    try:
+        if request.method == 'GET':          
+            category=Category.objects.filter(CompanyId=CompanyId)
+            for cate in category:
+                report=Report.objects.filter(CategoryId=cate.CategoryId)
+                for rep in report:
+                    reportRefFiles=ReportRefFile.objects.filter(ReportId=rep.ReportId)
+                    for refFiles in reportRefFiles:
+                        refFiles.ReportRefFile.delete(save=True)
+                        refFiles.delete()
+                    rep.delete()
+                cate.delete()
+
+
+            client=Client.objects.filter(CompanyId=CompanyId)
+            for cli in client:
+                clientOtherDetails=ClientOtherDetails.objects.filter(ClientId=cli.ClientId)
+                for details in clientOtherDetails:
+                    clientDocuments=ClientDocuments.objects.filter(ClientOtherDetailId=details.ClientOtherDetailId)
+                    for clientdoc in clientDocuments:
+                        clientdoc.Document.delete(save=True)
+                        clientdoc.delete()
+                    details.delete()
+                
+                clientAddress=ClientAddress.objects.filter(ClientId=cli.ClientId).delete()
+                contactPerson=ContactPerson.objects.filter(ClientId=cli.ClientId).delete()
+                cli.delete()
+            
+
+            credentials=Credentials.objects.filter(CompanyId=CompanyId).delete()
+
+            enquiry=Enquiry.objects.filter(CompanyId=CompanyId)
+            for enq in enquiry:
+                followUp=FollowUp.objects.filter(EnquiryId=enq.EnquiryId).delete()
+                enq.delete()
+
+
+            notes=MeetingNotes.objects.filter(CompanyId=CompanyId)
+            for note in notes:
+                noteDocument=MeetingNoteDocument.objects.filter(MeetingNoteId=note.MeetingNoteId)
+                for notedoc in noteDocument:
+                    notedoc.Document.delete(save=True)
+                    notedoc.delete()
+                note.delete()
+
+            project=Project.objects.filter(CompanyId=CompanyId)
+            for proj in project:
+                projectTask=ProjectTask.objects.filter(ProjectId=proj.ProjectId)
+                for task in projectTask:
+                    projectTaskTiming=ProjectTaskTiming.objects.filter(ProjectTaskId=task.ProjectTaskId).delete()
+                    projectTaskFile=ProjectTaskFile.objects.filter(ProjectTaskId=task.ProjectTaskId)
+                    for file in projectTaskFile:
+                        file.TaskFile.delete(save=True)
+                        file.delete()
+                    TaskReviews.objects.filter(ProjectTaskId=task.ProjectTaskId).delete()
+
+                    comments=Comments.objects.filter(ProjectTaskId=task.ProjectTaskId)
+                    for com in comments:
+                        commentFile=CommentFile.objects.filter(CommentId=com.CommentId)
+                        for comfile in commentFile:
+                            comfile.CommentFile.delete(save=True)
+                            comfile.delete()
+                        com.delete()
+                    task.delete()
+                proj.delete()
+            
+            quotation=Quotation.objects.filter(CompanyId=CompanyId)
+            for quot in quotation:
+                QuotationItem.objects.filter(QuotationId=quot.QuotationId).delete()
+                quotationFile=QuotationFile.objects.filter(QuotationId=quot.QuotationId)
+                for quotfile in quotationFile:
+                    quotfile.QuoteFile.delete(save=True)
+                    quotfile.delete()
+                quot.delete()
+
+            invoice=Invoice.objects.filter(CompanyId=CompanyId)
+            for inv in invoice:
+                InvoiceItem.objects.filter(InvoiceId=inv.InvoiceId).delete()
+                invoiceDocument=InvoiceDocument.objects.filter(InvoiceId=inv.InvoiceId)
+                for invfile in invoiceDocument:
+                    invfile.Document.delete(save=True)
+                    invfile.delete()
+                inv.delete()
+
+
+            paymentReceived=PaymentReceived.objects.filter(CompanyId=CompanyId)
+            for payment in paymentReceived:
+                PaymentReceivedDetail.objects.filter(PaymentReceivedId=payment.PaymentReceivedId).delete()
+                paymentDocument=PaymentDocument.objects.filter(PaymentReceivedId=payment.PaymentReceivedId)
+                for payfile in paymentDocument:
+                    payfile.Document.delete(save=True)
+                    payfile.delete()
+                payment.delete()
+
+            staff=Staff.objects.filter(CompanyId=CompanyId)
+            for user in staff:
+                StaffGuardian.objects.filter(StaffId=user.StaffId).delete()
+                LeaveApplication.objects.filter(StaffId=user.StaffId).delete()
+                SalarySlip.objects.filter(StaffId=user.StaffId).delete()
+                MoveOnRegister.objects.filter(StaffId=user.StaffId).delete()
+                staffdocuments=StaffDocuments.objects.filter(StaffId=user.StaffId)
+                for staffdoc in staffdocuments:
+                    staffdoc.Document.delete(save=True)
+                    staffdoc.delete()
+                notification=Notification.objects.filter(FromUser=user.StaffId).delete()
+                Todo.objects.filter(UserId=user.StaffId).delete()
+                Login.objects.filter(UserId=user.StaffId).delete()
+                LoginHistory.objects.filter(UserId=user.StaffId).delete()
+                user.delete()
+            Designation.objects.filter(CompanyId=CompanyId).delete()
+            UserGroup.objects.filter(CompanyId=CompanyId).delete()
+            return JsonResponse("Deleted Successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+            
+
+
+
+
+
+
+
+

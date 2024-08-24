@@ -1,7 +1,7 @@
 
 from rest_framework import serializers
 
-from app_basic.models import Country, Designation, UserGroup,State, UserPermission
+from app_basic.models import Country, Designation, PermissionSection, UserGroup,State, UserPermission
 
 class DesignationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -44,6 +44,14 @@ class StateSerializer(serializers.ModelSerializer):
                   'State'
                   )
         
+class PermissionSectionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PermissionSection
+        fields = (
+                  'PermissionSectionId',
+                  'SectionName' 
+                  )
+
 
 class UserPermissionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -51,4 +59,7 @@ class UserPermissionSerializer(serializers.ModelSerializer):
         fields = (
                   'UserPermissionId',
                   'UserPermission',
+                  'PermissionSectionId',
+                  'DisplayName',
+                  'OrderNo'
                   )

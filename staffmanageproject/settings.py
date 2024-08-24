@@ -58,7 +58,8 @@ INSTALLED_APPS = [
     'app_enquiry',
     'app_basic',
     'app_todo',
-    'app_website_email'
+    'app_website_email',
+    'app_credential'
     
     
 ]

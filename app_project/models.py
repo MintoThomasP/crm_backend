@@ -57,6 +57,8 @@ class ProjectTask(models.Model):
     AccessTo =models.TextField(blank=True, null=True)
     ClientId=models.CharField(blank=True, null=True, max_length=50)
     Interval=models.IntegerField(default=1)
+    IsTemplate=models.BooleanField(default=False)
+    CompanyId=models.CharField(max_length=50, blank=True, null=True)
     
 class ProjectTaskTiming(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)

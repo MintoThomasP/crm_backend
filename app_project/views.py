@@ -502,7 +502,7 @@ def ProjectTaskApi(request):
                     projectScheduleDate=ProjectTask.objects.get(ProjectTaskId=projectTaskData['ProjectTaskId'])
                     projectScheduleDate.NextScheduledDate=next_Scheduled_date
                     projectScheduleDate.save()
-                if projectTaskSerializer.data['TaskType']!='Subtask':
+                if projectTaskSerializer.data['TaskType']!='Subtask' and projectTaskSerializer.data['TaskType']!='Ticket':
                     if projectTaskData['Status']=='7' or  projectTaskData['Status']=='8' or  projectTaskData['Status']=='9' or projectTaskData['Status']==7 or  projectTaskData['Status']==8 or  projectTaskData['Status']==9:
                         projectTaskPoint = ProjectTask.objects.get(
                             ProjectTaskId=projectTaskData['ProjectTaskId'])
@@ -558,7 +558,7 @@ def ProjectTaskApi(request):
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def ProjectTaskApiById(request, ProjectTaskId=""):
-    try:
+    # try:
         if request.method == 'GET': 
             projectTask = ProjectTask.objects.get(
                     ProjectTaskId=ProjectTaskId)
@@ -650,10 +650,12 @@ def ProjectTaskApiById(request, ProjectTaskId=""):
                 p=""
             try:
                 taskFile=ProjectTaskFile.objects.filter(ProjectTaskId=ProjectTaskId)
-                for row in taskFile:
-                    ProjectTaskFile.objects.get(
-                        ProjectTaskFileId=row['ProjectTaskFileId']).TaskFile.delete(save=True)
-                    row.delete()
+                projectTaskSerializer = ProjectTaskFileSerializer(
+                    taskFile,many=True)
+                for row in projectTaskSerializer.data:
+                    project_task_file_obj = ProjectTaskFile.objects.get(ProjectTaskFileId=row['ProjectTaskFileId'])
+                    project_task_file_obj.TaskFile.delete(save=True)
+                    project_task_file_obj.delete()
             except:
                 p=""
             try:
@@ -668,8 +670,8 @@ def ProjectTaskApiById(request, ProjectTaskId=""):
             return JsonResponse("Deleted successfully", safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get ProjectTask by ProjectId",)
@@ -1851,7 +1853,6 @@ def schedule_repeated_tasks(request):
                         
                         scheduled_deadline = next_Schduled_date + timedelta(days=interval)
                         
-                        
                     else:
                         next_Schduled_date = now + timedelta(days=interval)
                         scheduled_deadline = next_Schduled_date + timedelta(days=interval)
@@ -1882,11 +1883,11 @@ def schedule_repeated_tasks(request):
                     interval = task.Interval
                     if day_of_week == 7:
                         interval=interval+1
-                        next_Scheduled_date = now + relativedelta(years=interval)
-                        scheduled_deadline = next_Scheduled_date + relativedelta(years=interval)
+                        next_Schduled_date = now + relativedelta(years=interval)
+                        scheduled_deadline = next_Schduled_date + relativedelta(years=interval)
                     else:
-                        next_Scheduled_date = now + relativedelta(years=interval)
-                        scheduled_deadline = next_Scheduled_date + relativedelta(years=interval)
+                        next_Schduled_date = now + relativedelta(years=interval)
+                        scheduled_deadline = next_Schduled_date + relativedelta(years=interval)
    
                            
                 
@@ -2508,12 +2509,277 @@ def calculateNextScheduledDate(RepeatInterval="",Interval="",date= ""):
             interval = Interval
             if day_of_week == 7:
                 interval=interval+1
-                next_Scheduled_date = now + relativedelta(years=interval)
+                next_Schduled_date = now + relativedelta(years=interval)
             
             else:
-                next_Scheduled_date = now + relativedelta(years=interval)
+                next_Schduled_date = now + relativedelta(years=interval)
         return next_Schduled_date
           
 
 
 
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get My Task",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def GetallTaskTemplate(request,CompanyId=""):
+    try:
+        if request.method == 'GET':
+            # project = Project.objects.filter(
+            #             CompanyId=CompanyId)
+            # projectSerializer = ProjectSerializer(
+            #         project,many=True)
+            # projectId=[]
+            # for row in projectSerializer.data:
+            #     projectId.append(row['ProjectId'])
+
+            projectTask = ProjectTask.objects.filter(IsTemplate=1,CompanyId=CompanyId).order_by('-SortId')
+            projectTaskSerializer = ProjectTaskSerializer(
+                    projectTask,many=True)
+            taskStatusName=[]
+            for row in projectTaskSerializer.data:
+                try:
+                    projectTask = ProjectTask.objects.filter(RefId=row['ProjectTaskId'],TaskType='Subtask').order_by('-SortId')
+                    projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
+                    subTasks=[]
+                    for subtask in projectTaskSerializer.data:
+                        try:                      
+                            taskStatus=TaskStatus.objects.get(StatusId=subtask['Status'])
+                            taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                            subtask['StatusName']=taskStatusSerializer.data['Status']
+                        except:
+                            subtask['StatusName']=""
+                        subTasks.append(subtask)
+
+                    row['SubTask'] = subTasks
+                except:
+                    row['SubTask'] =[]
+
+
+                try:                      
+                    taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                    taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                    row['StatusName']=taskStatusSerializer.data['Status']
+                except:
+                    row['StatusName']=""
+
+                try:
+                    project = Project.objects.get(ProjectId=row['ProjectId'])
+                    projectSerializer = ProjectSerializer(project)
+                    row['ProjectName'] = projectSerializer.data['ProjectName']
+                except:
+                    row['ProjectName'] = ""
+                try:
+                    staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
+                    staffSerializer = StaffSerializer(staff)
+                    row['StaffName'] = staffSerializer.data['StaffName']
+                except:
+                    row['StaffName'] =""
+                try:
+                    staff = Staff.objects.get(StaffId=row['TaskAssignedBy'])
+                    staffSerializer = StaffSerializer(staff)
+                    row['TaskAssignedByName'] = staffSerializer.data['StaffName']
+                except:
+                    row['TaskAssignedByName'] =""
+
+
+                try:
+                    staff=Staff.objects.get(StaffId=row['VerifiedBy'])
+                    staffSerializer=StaffSerializer(staff)
+                    row['VerifiedByName']=staffSerializer.data['StaffName']
+                except:
+                    row['VerifiedByName']= ""
+                try:
+                    projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+                    projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
+                    row['ProjectTaskFiles']=projectTaskFileSerializer.data
+                except:
+                    row['ProjectTaskFiles']=""
+                
+                
+                taskStatusName.append(row)
+          
+
+            return JsonResponse(taskStatusName, safe=False)
+            
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+
+
+
+
+
+class GetAllTemplatesByPagination(generics.ListAPIView):
+    queryset =ProjectTask.objects.filter(IsTemplate=1).order_by('-SortId')
+    pagination_class = CustomPageNumberPagination
+    serializer_class = ProjectTaskSerializer 
+    def post(self, request, *args, **kwargs):
+        try:
+            filterData = JSONParser().parse(request)
+            Keyword = filterData.get('SearchKeyword', '')
+            if filterData['CompanyId']:
+                # project = Project.objects.filter(
+                #         CompanyId=filterData['CompanyId'])
+                # projectSerializer = ProjectSerializer(
+                #         project,many=True)
+                # projectId=[]
+                # for row in projectSerializer.data:
+                #     projectId.append(row['ProjectId'])
+                self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+            if Keyword:
+                self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
+            page = self.paginate_queryset(self.queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                data = []
+
+                for row in serializer.data:
+                    try:
+                        projectTask = ProjectTask.objects.filter(RefId=row['ProjectTaskId'],TaskType='Subtask').order_by('-SortId')
+                        projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
+                        subTasks=[]
+                        for subtask in projectTaskSerializer.data:
+                            try:                      
+                                taskStatus=TaskStatus.objects.get(StatusId=subtask['Status'])
+                                taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                                subtask['StatusName']=taskStatusSerializer.data['Status']
+                            except:
+                                subtask['StatusName']=""
+                            subTasks.append(subtask)
+
+                        row['SubTask'] = subTasks
+                    except:
+                        row['SubTask'] =[]
+
+
+                    try:                      
+                        taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
+                        taskStatusSerializer=TaskStatusSerializer(taskStatus)
+                        row['StatusName']=taskStatusSerializer.data['Status']
+                    except:
+                        row['StatusName']=""
+
+                    try:
+                        project = Project.objects.get(ProjectId=row['ProjectId'])
+                        projectSerializer = ProjectSerializer(project)
+                        row['ProjectName'] = projectSerializer.data['ProjectName']
+                    except:
+                        row['ProjectName'] = ""
+                    try:
+                        staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
+                        staffSerializer = StaffSerializer(staff)
+                        row['StaffName'] = staffSerializer.data['StaffName']
+                    except:
+                        row['StaffName'] =""
+                    try:
+                        staff = Staff.objects.get(StaffId=row['TaskAssignedBy'])
+                        staffSerializer = StaffSerializer(staff)
+                        row['TaskAssignedByName'] = staffSerializer.data['StaffName']
+                    except:
+                        row['TaskAssignedByName'] =""
+
+
+                    try:
+                        staff=Staff.objects.get(StaffId=row['VerifiedBy'])
+                        staffSerializer=StaffSerializer(staff)
+                        row['VerifiedByName']=staffSerializer.data['StaffName']
+                    except:
+                        row['VerifiedByName']= ""
+                    try:
+                        projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
+                        projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)
+                        row['ProjectTaskFiles']=projectTaskFileSerializer.data
+                    except:
+                        row['ProjectTaskFiles']=""
+                    data.append(row)
+                return self.get_paginated_response(data)
+        except:
+            return JsonResponse("", safe=False)
+
+
+
+
+# class SaveProjectTaskFile(APIView):
+#     parser_classes = (MultiPartParser, FormParser)
+#     def post(self, request,  *args, **kwargs):
+#         # try:
+#                 Serializer = SaveProjectTaskFileSerializer(
+#                     data=request.data)
+#                 if Serializer.is_valid():
+#                     Serializer.save()
+#                     return JsonResponse(Serializer.data['ProjectTaskFileId'], safe=False)
+#                 else:
+#                     return JsonResponse("", safe=False)
+#         # except:
+#         #     return JsonResponse("", safe=False)     
+                    
+import os
+import shutil
+
+@csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get My Task")
+@api_view(['GET'])
+def copy_image(request, ProjectTaskFileId=""):
+    try:
+       
+        projecttaskFile = ProjectTaskFile.objects.get(ProjectTaskFileId=ProjectTaskFileId)
+        source_relative_path = projecttaskFile.TaskFile.name
+       
+        source_path = os.path.join(settings.MEDIA_ROOT, source_relative_path)
+        
+        
+        destination_folder = os.path.join(settings.MEDIA_ROOT, 'Template')
+        # destination_path = os.path.join(destination_folder, 'image.jpg')
+        destination_path = os.path.join(destination_folder, os.path.basename(source_relative_path))
+        
+      
+        if not os.path.exists(destination_folder):
+            os.makedirs(destination_folder)
+        shutil.copy2(source_path, destination_path)
+        
+        
+        return JsonResponse(destination_path,safe=False)
+    
+    except:
+        return JsonResponse("",safe=False)
+
+
+
+
+from django.core.files.base import ContentFile
+import base64
+import uuid
+@csrf_exempt
+@swagger_auto_schema(method='POST', operation_description="NOTE: API for get My Task")
+@api_view(['POST'])
+def savecopy_image(request,):
+    try:
+        if request.method == 'POST':
+            projectdata = JSONParser().parse(request)
+            projecttaskFile = ProjectTaskFile.objects.get(ProjectTaskFileId=projectdata['ProjectTaskFileId'])
+            
+           
+            if 'TaskFile' in projectdata:
+                image_data = projectdata['TaskFile']
+                
+               
+                if isinstance(image_data, str) and image_data.startswith('data:image'):
+                    
+                    format, imgstr = image_data.split(';base64,')
+                    ext = format.split('/')[-1]  
+                    image_data = ContentFile(base64.b64decode(imgstr), name=f"{uuid.uuid4()}.{ext}")
+                
+                projecttaskFile.TaskFile = image_data
+                projecttaskFile.save()
+                return JsonResponse("updated", safe=False)
+            
+            return JsonResponse("TaskFile not provided", safe=False)
+    
+    except ProjectTaskFile.DoesNotExist:
+        return JsonResponse("ProjectTaskFile not found", safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, safe=False)

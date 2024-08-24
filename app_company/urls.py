@@ -14,4 +14,8 @@ urlpatterns = [
 
     url(r'^UploadCompanyDocuments/(?P<CompanyDocumentId>[0-9a-zA-Z\-]+)$',
         views.UploadCompanyDocuments.as_view()),
+
+
+    url(r'^DeleteCompanyDataByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.DeleteCompanyDataByCompanyId),
+
 ]

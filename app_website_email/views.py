@@ -61,10 +61,10 @@ def random_with_N_digits(n):
 
 
 def sendPAINTMail(msg=""):
-    EMAIL_ADDRESS = settings.EMAIL_HOST_USER
-    EMAIL_PASSWORD = settings.EMAIL_HOST_PASSWORD
-    with smtplib.SMTP(settings.EMAIL_HOST, settings.EMAIL_PORT) as server:
-        server.connect(settings.EMAIL_HOST, settings.EMAIL_PORT)
+    EMAIL_ADDRESS = 'webgroup-master@outlook.com'
+    EMAIL_PASSWORD = 'webgroup@123'
+    with smtplib.SMTP('smtp.office365.com', 587) as server:
+        server.connect('smtp.office365.com', 587)
         server.ehlo()
         server.starttls()
         server.ehlo()
@@ -76,23 +76,24 @@ def sendPAINTMail(msg=""):
 @csrf_exempt
 @swagger_auto_schema(method='POST',operation_description="NOTE: API for send Customer sign up success mail",)
 @api_view(['POST'])
-def customerSignUpSuccess(request):
+def mailforwebsite(request):
 
-    # try:
+    try:
         if request.method == 'POST':
             requestData = JSONParser().parse(request)
-            customerName = requestData['customerName']
-            customerMailId = requestData['EmailId']
+            
+            customerMailId = requestData['ToMail']
+            payload=requestData['Content']
+            subject=requestData['Subject']
             msg = EmailMessage()
             msg['In-Reply-To'] = ''
-            msg['Subject'] = 'Let`s Empower your Media!'
-            msg['From'] = settings.EMAIL_HOST_USER_NAME + \
-                " <"+settings.EMAIL_HOST_USER+">"
-            msg['To'] = [customerName + " <"+customerMailId+">"]
+            msg['Subject'] = subject
+            msg['From'] = "webgroup-master@outlook.com"
+            msg['To'] = [" <"+customerMailId+">"]
             f = codecs.open(os.path.join(os.path.dirname(os.path.dirname(
                 __file__)), "emailtemplates/app/customerSignUpConfirmation.html"), 'r')
-            data = f.read().replace("{{customerName}}", customerName)
-            data = data.replace("{{BestRegrads}}", settings.CUBEXIZSOFT_MAIL_REGRADS)
+            data = f.read().replace("{{payload}}", payload)
+            
             msg.set_content(data, subtype="plain", charset='us-ascii')
             msg.add_alternative(data, subtype='html')
 
@@ -101,5 +102,5 @@ def customerSignUpSuccess(request):
             return JsonResponse("Success", safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("Invalid", safe=False)
+    except:
+        return JsonResponse("Invalid", safe=False)

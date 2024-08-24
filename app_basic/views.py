@@ -4,8 +4,8 @@ from django.views.decorators.csrf import csrf_exempt
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 
-from app_basic.models import Country, Designation, State, UserGroup, UserPermission
-from app_basic.serializers import CountrySerializer, DesignationSerializer, StateSerializer, UserGroupSerializer, UserPermissionSerializer
+from app_basic.models import Country, Designation, PermissionSection, State, UserGroup, UserPermission
+from app_basic.serializers import CountrySerializer, DesignationSerializer, PermissionSectionSerializer, StateSerializer, UserGroupSerializer, UserPermissionSerializer
 from app_default.views import retry
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
@@ -316,9 +316,11 @@ def StateApiByCountryId(request,CountryId=""):
 def UserPermissionApi(request):
     try:
         if request.method == 'GET':
+
             userPermission = UserPermission.objects.all()
             userPermission_serializer = UserPermissionSerializer(
-                userPermission, many=True)  
+                userPermission, many=True)
+            
             return JsonResponse(userPermission_serializer.data, safe=False)
 
         elif request.method == 'POST':
@@ -337,4 +339,27 @@ def UserPermissionApi(request):
     
 
 
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Get all UserPermission")
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def UserPermissionbySectionTypeApi(request):
+    try:
+        if request.method == 'GET':
+            permissionSection=PermissionSection.objects.all()
+            userPermissionSerializer=PermissionSectionSerializer(permissionSection,many=True)
+            permissionData=[]
+            for row in userPermissionSerializer.data:
+                userPermission = UserPermission.objects.filter(PermissionSectionId=row['PermissionSectionId']).order_by('OrderNo')
+                userPermission_serializer = UserPermissionSerializer(
+                    userPermission, many=True)
+                row['Permissions']=userPermission_serializer.data
+                permissionData.append(row)
+            return JsonResponse(permissionData, safe=False)
+        else:
+            return JsonResponse("Invalid request", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
