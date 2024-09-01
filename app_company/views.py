@@ -12,6 +12,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from app_basic.models import Designation, UserGroup
 from app_category.models import Category, Report, ReportRefFile
 from app_client.models import Client, ClientAddress, ClientDocuments, ClientOtherDetails, ContactPerson
+from app_client.serializers import ClientSerializer
 from app_company.models import Company, CompanyDocuments
 from app_company.serializers import CompanyDocumentsSerializer, CompanySerializer, SaveCompanyDocumentsSerializer, UploadCompanyDocumentsSerializer
 from app_credential.models import Credentials
@@ -22,8 +23,10 @@ from app_notes.models import MeetingNoteDocument, MeetingNotes
 from app_project.models import CommentFile, Comments, Project, ProjectTask, ProjectTaskFile, ProjectTaskTiming, TaskReviews
 from app_project.serializers import ProjectSerializer, ProjectTaskSerializer
 from app_sale.models import Invoice, InvoiceDocument, InvoiceItem, PaymentDocument, PaymentReceived, PaymentReceivedDetail, Quotation, QuotationFile, QuotationItem
-from app_site.models import Notification
+from app_site.models import Notification, SiteSettings
+from app_site.serializers import SiteSettingsSerializer
 from app_staff.models import LeaveApplication, MoveOnRegister, SalarySlip, Staff, StaffDocuments, StaffGuardian
+from app_staff.serializers import StaffSerializer
 from app_staff.views import AllStaffPerformancebyCompany
 from app_todo.models import Todo
 @csrf_exempt
@@ -200,66 +203,154 @@ class UploadCompanyDocuments(APIView):
 
 
 
+# @csrf_exempt
+# @swagger_auto_schema(method='GET',operation_description="NOTE: API for get Company by CompanyId",)
+# @api_view(['GET','DELETE'])
+# @retry(retries=3, delay=2)
+# def CompanyPerformanceById(request, CompanyId=""):
+#     try:
+#         if request.method == 'GET': 
+#             company = Company.objects.get(
+#                     CompanyId=CompanyId)
+#             companySerializer = CompanySerializer(
+#                     company)
+#             companyData=companySerializer.data
+#             work_status_count = {'Pending': 0, 'Performance': 0}
+#             projects = Project.objects.filter(CompanyId=CompanyId)
+#             projectSerializer = ProjectSerializer(projects, many=True)
+
+            
+#             total_points_gain = 0
+#             total_count = 0
+
+#             for project in projectSerializer.data:
+#                 currentMonthYear=date.today().strftime("%Y-%m")
+#                 startDate=f"{currentMonthYear}-1"
+#                 endDate=f"{currentMonthYear}-31"
+#                 start_date = datetime.strptime(startDate, '%Y-%m-%d')
+#                 end_date = datetime.strptime(endDate, '%Y-%m-%d')
+
+#                 projectTasks = ProjectTask.objects.filter(CreatedDate__range=(start_date,end_date),ProjectId=project['ProjectId'])
+#                 projectTaskSerializer = ProjectTaskSerializer(projectTasks, many=True)
+                
+#                 work_status_count = {'Pending': 0, 'Performance': 0}
+#                 for task in projectTaskSerializer.data:
+                    
+                    
+#                     if task['Status'] in ['7', '8', '9']:
+#                         total_points_gain += float(task['CompletionPoint'])
+#                         total_count += 1
+#                     if task['Status'] in ['1', '2', '10']:
+#                         work_status_count['Pending'] += 1
+                        
+#                 companyData['DashboardData'] = work_status_count  
+                
+#                 if total_count > 0:
+#                     work_status_count['Performance'] = total_points_gain / total_count
+#                 bestPerformer=AllStaffPerformancebyCompany(CompanyId)
+#                 companyData['bestPerformer']="N/A"
+#                 if bestPerformer:
+#                     companyData['bestPerformer'] = max(bestPerformer, key=lambda ev: ev['Performance'])
+                
+#             return JsonResponse(companyData, safe=False)
+    
+#         else:
+#             return JsonResponse("", safe=False)
+#     except:
+#         return JsonResponse("", safe=False)
+    
+import calendar
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for get Company by CompanyId",)
-@api_view(['GET','DELETE'])
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get Company by CompanyId")
+@api_view(['GET'])
 @retry(retries=3, delay=2)
 def CompanyPerformanceById(request, CompanyId=""):
-    try:
+    # try:
         if request.method == 'GET': 
-            company = Company.objects.get(
-                    CompanyId=CompanyId)
-            companySerializer = CompanySerializer(
-                    company)
-            companyData=companySerializer.data
-           
+            company = Company.objects.get(CompanyId=CompanyId)
+            companySerializer = CompanySerializer(company)
+            companyData = companySerializer.data
+            work_status_count = {'Pending': 0, 'Performance': 0}
+
             projects = Project.objects.filter(CompanyId=CompanyId)
             projectSerializer = ProjectSerializer(projects, many=True)
-
-            total_work_status_count = {'Pending': 0, 'Performance': 0}
+            
             total_points_gain = 0
             total_count = 0
 
-            for project in projectSerializer.data:
-                currentMonthYear=date.today().strftime("%Y-%m")
-                startDate=f"{currentMonthYear}-1"
-                endDate=f"{currentMonthYear}-31"
-                start_date = datetime.strptime(startDate, '%Y-%m-%d')
-                end_date = datetime.strptime(endDate, '%Y-%m-%d')
+            if projects.exists():  
+                for project in projectSerializer.data:
+                    currentMonthYear = date.today().strftime("%Y-%m")
+                    year, month = map(int, currentMonthYear.split('-'))
 
-                projectTasks = ProjectTask.objects.filter(CreatedDate__range=(start_date,end_date),ProjectId=project['ProjectId'])
-                projectTaskSerializer = ProjectTaskSerializer(projectTasks, many=True)
-                
+                    # Get the last day of the current month
+                    last_day_of_month = calendar.monthrange(year, month)[1]
+
+                    startDate = f"{currentMonthYear}-01"
+                    endDate = f"{currentMonthYear}-{last_day_of_month}"
+
+                    start_date = datetime.strptime(startDate, '%Y-%m-%d')
+                    end_date = datetime.strptime(endDate, '%Y-%m-%d')
+
+                    projectTasks = ProjectTask.objects.filter(CreatedDate__range=(start_date, end_date), ProjectId=project['ProjectId'])
+                    projectTaskSerializer = ProjectTaskSerializer(projectTasks, many=True)
+                    
+                    if projectTasks.exists():  
+                        for task in projectTaskSerializer.data:
+                            if task['Status'] in ['7', '8', '9']:
+                                total_points_gain += float(task['CompletionPoint'])
+                                total_count += 1
+                            if task['Status'] in ['1', '2', '10']:
+                                work_status_count['Pending'] += 1
+
+                        if total_count > 0:
+                            work_status_count['Performance'] = total_points_gain / total_count
+                    else:
+                       
+                        work_status_count = {'Pending': 0, 'Performance': 0}
+            else:
+               
                 work_status_count = {'Pending': 0, 'Performance': 0}
-                for task in projectTaskSerializer.data:
-                    
-                    
-                    if task['Status'] in ['7', '8', '9']:
-                        total_points_gain += float(task['CompletionPoint'])
-                        total_count += 1
-                    if task['Status'] in ['1', '2', '10']:
-                        work_status_count['Pending'] += 1
-                        
-                companyData['DashboardData'] = work_status_count  
-                
-                if total_count > 0:
-                    work_status_count['Performance'] = total_points_gain / total_count
-                bestPerformer=AllStaffPerformancebyCompany(CompanyId)
-                companyData['bestPerformer']="N/A"
-                if bestPerformer:
-                    companyData['bestPerformer'] = max(bestPerformer, key=lambda ev: ev['Performance'])
-                
+
+            companyData['DashboardData'] = work_status_count
+
+            bestPerformer = AllStaffPerformancebyCompany(CompanyId)
+            companyData['bestPerformer'] = "N/A"
+            if bestPerformer:
+                companyData['bestPerformer'] = max(bestPerformer, key=lambda ev: ev['Performance'])
+            # Fetch staff and clients in bulk
+            staff = Staff.objects.filter(CompanyId=CompanyId)
+            client = Client.objects.filter(CompanyId=CompanyId)
+
+            # Serialize the data
+            staff_count = staff.count()
+            client_count = client.count()
+
+            # Fetch site settings and serialize
+            siteSettings = SiteSettings.objects.filter(CompanyId=CompanyId).first()
+            siteSettings_data = SiteSettingsSerializer(siteSettings).data if siteSettings else {}
+
+            # Determine flags for site settings and logo
+            siteSettings_flag = bool(siteSettings_data.get('StaffCodePrefix'))
+            logo_flag = bool(siteSettings_data.get('Logo'))
+
+            # Compile the account completion data
+            account_completion = {
+                'Staff': staff_count,
+                'Client': client_count,
+                'SiteSettings': siteSettings_flag,
+                'Logo': logo_flag
+            }
+            companyData['account_completion']=account_completion
             return JsonResponse(companyData, safe=False)
-        elif request.method == 'DELETE':
-            company = Company.objects.get(CompanyId=CompanyId)
-            company.delete()
-            return JsonResponse("Deleted successfully", safe=False)
+        
+       
+        
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
     
-
+    # except:
+    #     return JsonResponse("", safe=False)
 
 
 

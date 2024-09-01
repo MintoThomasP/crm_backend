@@ -280,11 +280,11 @@ def CURDFollowUpApiByEnquiryId(request, EnquiryId=""):
 
 
 
-
 class EnquiryByScheduledTo(generics.ListAPIView):
-    queryset =FollowUp.objects.all().order_by('SortId')
+    queryset = FollowUp.objects.all().order_by('SortId')
     pagination_class = CustomPageNumberPagination
-    serializer_class = FollowUpSerializer 
+    serializer_class = FollowUpSerializer
+    
     def post(self, request, *args, **kwargs):
         try:
             filterData = JSONParser().parse(request)
@@ -294,41 +294,41 @@ class EnquiryByScheduledTo(generics.ListAPIView):
             
             if Keyword:
                 self.queryset = self.queryset.filter(Description__icontains=Keyword)
+            
             page = self.paginate_queryset(self.queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
-                followUpData=[]
-                enquiryId=[]
+                followUpData = []
+                enquiryId = []
 
                 for row in serializer.data:
                     try:
-                        enquiry=Enquiry.objects.get(EnquiryId=row['EnquiryId'])
-                        enquirySerializer=EnquirySerializer(enquiry)
-                        if not enquirySerializer.data['EnquiryId'] in enquiryId:
+                        enquiry = Enquiry.objects.get(EnquiryId=row['EnquiryId'])
+                        enquirySerializer = EnquirySerializer(enquiry)
+                        if enquirySerializer.data['EnquiryId'] not in enquiryId:
                             enquiryId.append(enquirySerializer.data['EnquiryId'])
-                        
-                            # row['Enquiry']=enquirySerializer.data
                             followUpData.append(enquirySerializer.data)
                     except:
-                        p=""
-                    data=[]
-                    for col in followUpData:
-                        try:
-                            enquiryType = EnquiryType.objects.get(EnquiryTypeId=col['EnquiryType'])
-                            enquiryType_serializer = EnquiryTypeSerializer(
-                            enquiryType)
-                            col['EnquiryTypeName']=enquiryType_serializer.data['EnquiryType']
-                        except:
-                            col['EnquiryTypeName']=""
-                        try:
-                            enquiryStatus = EnquiryStatus.objects.get(StatusId=col['Status'])
-                            enquiryStatus_serializer = EnquiryStatusSerializer(
-                            enquiryStatus)
-                            col['EnquiryStatusName']=enquiryStatus_serializer.data['Status']
-                        except:
-                            col['EnquiryStatusName']=""
-                    data.append(col)
+                        pass
+                
+                data = []
+                for col in followUpData:
+                    try:
+                        enquiryType = EnquiryType.objects.get(EnquiryTypeId=col['EnquiryType'])
+                        enquiryType_serializer = EnquiryTypeSerializer(enquiryType)
+                        col['EnquiryTypeName'] = enquiryType_serializer.data['EnquiryType']
+                    except:
+                        col['EnquiryTypeName'] = ""
                     
+                    try:
+                        enquiryStatus = EnquiryStatus.objects.get(StatusId=col['Status'])
+                        enquiryStatus_serializer = EnquiryStatusSerializer(enquiryStatus)
+                        col['EnquiryStatusName'] = enquiryStatus_serializer.data['Status']
+                    except:
+                        col['EnquiryStatusName'] = ""
+                    
+                    data.append(col)
+                
                 return self.get_paginated_response(data)
         except:
             return JsonResponse("", safe=False)

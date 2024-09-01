@@ -1147,46 +1147,51 @@ def AllStaffPerformancebyCompany(CompanyId=""):
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def StaffPerformanceByCompanyId(request, CompanyId=""):
-    if request.method == 'GET':
-       
-        currentMonthYear = date.today().strftime("%Y-%m")
-        startDate = f"{currentMonthYear}-01"
-        endDate = f"{currentMonthYear}-{date.today().strftime('%d')}"
+    try:
+        if request.method == 'GET':
+            currentMonthYear = date.today().strftime("%Y-%m")
+            startDate = f"{currentMonthYear}-01"
+            endDate = f"{currentMonthYear}-{date.today().strftime('%d')}"
 
-        start_date = datetime.strptime(startDate, '%Y-%m-%d')
-        end_date = datetime.strptime(endDate, '%Y-%m-%d')
-        client = Staff.objects.filter(CompanyId=CompanyId)
-        clientSerializer = StaffSerializer(client, many=True)
-        projectData = []
+            start_date = datetime.strptime(startDate, '%Y-%m-%d')
+            end_date = datetime.strptime(endDate, '%Y-%m-%d')
+            client = Staff.objects.filter(CompanyId=CompanyId)
+            clientSerializer = StaffSerializer(client, many=True)
+            projectData = []
+            date_iter = start_date
+            while date_iter <= end_date:
+                total_points_gain = 0
+                total_count = 0
+                Performance=0
 
-        date_iter = start_date
-        while date_iter <= end_date:
-            total_points_gain = 0
-            total_count = 0
+                for row in clientSerializer.data:
+                    task = ProjectTask.objects.annotate(
+                        ScheduledDeadline_cast=Cast('ScheduledDeadline', DateTimeField())
+                    ).filter(
+                        ScheduledDeadline_cast__date=date_iter.date(),
+                        TaskAssignedTo=row['StaffId']
+                    )
+                    
+                    taskSerializer = ProjectTaskSerializer(task, many=True)
 
-            for row in clientSerializer.data:
-                task = ProjectTask.objects.annotate(
-                    ScheduledDeadline_cast=Cast('ScheduledDeadline', DateTimeField())
-                ).filter(
-                    ScheduledDeadline_cast__date=date_iter.date(),
-                    TaskAssignedTo=row['StaffId']
-                )
+                    for task in taskSerializer.data:
+                        if task['Status'] in ['7', '8', '9']:
+                            total_points_gain += float(task['CompletionPoint'])
+                            total_count += 1
                 
-                taskSerializer = ProjectTaskSerializer(task, many=True)
-
-                for task in taskSerializer.data:
-                    if task['Status'] in ['7', '8', '9']:
-                        total_points_gain += float(task['CompletionPoint'])
-                        total_count += 1
             
-           
-            Performance = total_points_gain / total_count if total_count > 0 else 0
+                Performance = total_points_gain / total_count if total_count > 0 else 0
 
-            projectData.append({
-                'date': date_iter.strftime('%d'),
-                'overall_performance': Performance
-            })
+                projectData.append({
+                    'date': date_iter.strftime('%d'),
+                    'overall_performance': Performance
+                })
 
-            date_iter += timedelta(days=1)
+                date_iter += timedelta(days=1)
 
-        return JsonResponse(projectData, safe=False)
+            return JsonResponse(projectData, safe=False)
+    except:
+        return JsonResponse("", safe=False)
+
+    
+

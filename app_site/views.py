@@ -69,11 +69,16 @@ def CURDSiteSettingsApi(request, pk=""):
 def CURDSiteSettingsApiCompanyId(request, CompanyId=""):
     try:
         if request.method == 'GET':
-            siteSettings = SiteSettings.objects.get(
-                    CompanyId=CompanyId)
-            siteSettingsSerializer = SiteSettingsSerializer(
-                    siteSettings)
-            return JsonResponse(siteSettingsSerializer.data, safe=False)
+            try:
+                siteSettings = SiteSettings.objects.get(
+                        CompanyId=CompanyId)
+                siteSettingsSerializer = SiteSettingsSerializer(
+                        siteSettings)
+                siteData=siteSettingsSerializer.data
+            except:
+                siteData=[]
+
+            return JsonResponse(siteData, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
