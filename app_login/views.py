@@ -106,13 +106,13 @@ def loginApi(request):
                             StaffId=login_serializer.data['UserId'])
                     
                         staff_serializer = StaffSerializer(staff)
-                        # if staff_serializer.data['Status'] == -1:
-                        #     status="FAILED"
-                        #     message='Your account has been blocked. Please contact administrator.'
-                        # else:
-                        status="SUCCESS"
-                        message='Successfully logged in'
-                        UserData = staff_serializer.data
+                        if staff_serializer.data['Status'] != 1:
+                            status="FAILED"
+                            message='Your account has been blocked. Please contact administrator.'
+                        else:
+                            status="SUCCESS"
+                            message='Successfully logged in'
+                            UserData = staff_serializer.data
                     elif userType_serializer.data['UserType'] == 'Company':
                         company = Company.objects.get(
                             CompanyId=login_serializer.data['UserId'])
@@ -402,10 +402,13 @@ def loginByTokenApi(request):
                             StaffId=login_serializer.data['UserId'])
                     
                         staff_serializer = StaffSerializer(staff)
-                        
-                        status="SUCCESS"
-                        message='Successfully logged in'
-                        UserData = staff_serializer.data
+                        if staff_serializer.data['Status'] != 1:
+                            status="FAILED"
+                            message='Your account has been blocked. Please contact administrator.'
+                        else:
+                            status="SUCCESS"
+                            message='Successfully logged in'
+                            UserData = staff_serializer.data
                     elif userType_serializer.data['UserType'] == 'Company':
                         company = Company.objects.get(
                             CompanyId=login_serializer.data['UserId'])
