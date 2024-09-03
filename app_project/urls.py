@@ -72,4 +72,7 @@ urlpatterns = [
 
  path('savecopy_image/', views.savecopy_image),
   path('UpdateClientandCompanyInTask/', views.UpdateClientandCompanyInTask),
+ path('ProjectTaskTimingCalculation/', views.ProjectTaskTimingCalculation),
+ path('ProjectTaskendatedurationCalculation/', views.ProjectTaskendatedurationCalculation),
+
 ]

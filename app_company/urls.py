@@ -2,7 +2,6 @@
 from django.urls import path, re_path as url
 from app_company import views
 
-
 urlpatterns = [
     path('CompanyApi/', views.CompanyApi),
     url(r'^CompanyApiById/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.CompanyApiById),
@@ -17,5 +16,5 @@ urlpatterns = [
 
 
     url(r'^DeleteCompanyDataByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.DeleteCompanyDataByCompanyId),
-
+     
 ]

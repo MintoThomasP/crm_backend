@@ -127,7 +127,7 @@ def ProjectReportApiByProjectId(request):
             ProjectId=staffData['ProjectId'],
             CreatedDate__range=(month_start_date, month_end_date),
             SortId__month=month_start_date.month
-        )
+        ).exclude(TaskType='Subtask')
         
         totalduration_minutes = 0
         for project in projectduration:
@@ -246,7 +246,7 @@ def ClientReportApiByClientId(request):
             ClientId=Client_id,
             CreatedDate__range=(month_start_date, month_end_date),
             SortId__month=month_start_date.month
-        )
+        ).exclude(TaskType='Subtask')
         
         totalduration_minutes = 0
         for project in projectduration:

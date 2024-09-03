@@ -2854,3 +2854,81 @@ def UpdateClientandCompanyInTask(request):
                 return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
+    
+
+@csrf_exempt
+@api_view(['GET'])
+def ProjectTaskTimingCalculation(request):
+        # TaskTiming = ProjectTaskTiming.objects.get(ProjectTaskTimingId=ProjectTaskTimingId)
+        projectTaskTiming = ProjectTaskTiming.objects.filter(Q(Duration__isnull=True)|Q(Duration=""))
+        projectTaskTimingSerializer = ProjectTaskTimingSerializer(projectTaskTiming, many=True)
+        total_duration_minutes = 0
+        for row in projectTaskTiming:
+            date_format = '%Y-%m-%dT%H:%M:%S%z'
+            start_date = datetime.strptime(row.StartDate, date_format)
+            end_date = datetime.strptime(row.EndDate, date_format)
+
+            total_time_taken = end_date - start_date
+            total_time_taken_in_seconds = total_time_taken.total_seconds()
+            total_time_taken_data = {
+                'hours': round(total_time_taken_in_seconds // 3600),
+                'minutes': round((total_time_taken_in_seconds % 3600) // 60)
+            }
+            duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
+            row.Duration = duration
+            row.save()
+        return JsonResponse("updated", safe=False)
+
+        #     hours, minutes = map(int, duration.split(':'))
+        #     total_duration_minutes += hours * 60 + minutes
+
+        # total_duration_hours = total_duration_minutes // 60
+        # total_duration_remaining_minutes = total_duration_minutes % 60
+        # total_duration = f"{total_duration_hours}:{total_duration_remaining_minutes}"
+
+        # projectTask = ProjectTask.objects.get(ProjectTaskId=ProjectTaskId)
+        # projectTask.TotalDuration = total_duration
+        # projectTask.save()
+
+
+
+@csrf_exempt
+@api_view(['GET'])
+def ProjectTaskendatedurationCalculation(request):
+    projectTasks=ProjectTask.objects.filter(Q(TotalDuration__isnull=True)|Q(TotalDuration="")).exclude(TaskType='Subtask')
+    projectTaskSerializer=ProjectTaskSerializer(projectTasks,many=True)
+    for row in projectTasks:
+        projectTaskTiming = ProjectTaskTiming.objects.filter(ProjectTaskId=row.ProjectTaskId).order_by('-SortId')
+        projectTaskTimingSerializer = ProjectTaskTimingSerializer(projectTaskTiming, many=True)
+        if not projectTaskTiming.exists():
+            continue
+        total_duration_minutes = 0
+        for row in projectTaskTiming:
+            date_format = '%Y-%m-%dT%H:%M:%S%z'
+            start_date = datetime.strptime(row.StartDate, date_format)
+            end_date = datetime.strptime(row.EndDate, date_format)
+
+            total_time_taken = end_date - start_date
+            total_time_taken_in_seconds = total_time_taken.total_seconds()
+            total_time_taken_data = {
+                'hours': round(total_time_taken_in_seconds // 3600),
+                'minutes': round((total_time_taken_in_seconds % 3600) // 60)
+            }
+            duration = f"{total_time_taken_data['hours']}:{total_time_taken_data['minutes']}"
+            row.Duration = duration
+            row.save()
+
+            hours, minutes = map(int, duration.split(':'))
+            total_duration_minutes += hours * 60 + minutes
+
+        total_duration_hours = total_duration_minutes // 60
+        total_duration_remaining_minutes = total_duration_minutes % 60
+        total_duration = f"{total_duration_hours}:{total_duration_remaining_minutes}"
+
+        projectTask = ProjectTask.objects.get(ProjectTaskId=row.ProjectTaskId)
+        print(projectTaskTimingSerializer.data)
+        projectTask.EndDate=projectTaskTimingSerializer.data[0]['EndDate']
+        projectTask.TotalDuration = total_duration
+        projectTask.save()
+    return JsonResponse("updated", safe=False)
+
