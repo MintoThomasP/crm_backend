@@ -46,10 +46,10 @@ from django.db.models import Sum
 @retry(retries=3, delay=2)
 def ProjectReportApiByProjectId(request):
     staffData = JSONParser().parse(request)
-    project = Project.objects.get(ProjectId=staffData['ProjectId'])
-    projectSerializer = ProjectSerializer(project)
+    proj = Project.objects.get(ProjectId=staffData['ProjectId'])
+    projectSerializer = ProjectSerializer(proj)
     ProjectDetails = projectSerializer.data
-    client_Id=project.ClientId
+    client_Id=proj.ClientId
 
     Project_id = staffData['ProjectId']
     staff_projects = []
@@ -90,18 +90,29 @@ def ProjectReportApiByProjectId(request):
             elif task_data['Status'] == '7' or task_data['Status'] == '8' or task_data['Status'] == '9':
                 Staff_details['CompletedTaskCount'] += 1
         staff_projects.append(Staff_details)
-    ProjectDetails['Staff'] = staff_projects
+    if staff_projects:
+        ProjectDetails['Staff'] = staff_projects
+    else:
+        ProjectDetails['Staff'] = {
+            'StaffId': '',
+           'StaffName': '',
+            'TotalCompletedPoints': 0,
+            'TotalNumberofTask': 0,
+            'DueTaskCount': 0,
+            'CompletedTaskCount': 0,
+            'OnTimeCompletedTaskCount': 0
+        }
     if staffData.get('StartDate') and staffData.get('EndDate'):
         start_date = timezone.datetime.strptime(staffData['StartDate'], '%Y-%m-%d').date()
         end_date = (timezone.datetime.strptime(staffData['EndDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
     else:
-        start_date =project.SortId.date() 
+        start_date =proj.SortId.date() 
         end_date = (datetime.now() + timedelta(days=1)).date()
 
 
     work_data = []
     current_date = start_date
-    while current_date <= end_date:
+    while current_date < end_date:
         month_start_date = current_date.replace(day=1)
         next_month = month_start_date.replace(day=28) + timezone.timedelta(days=4)
         month_end_date = next_month - timezone.timedelta(days=next_month.day)            
@@ -112,7 +123,7 @@ def ProjectReportApiByProjectId(request):
             SortId__month=month_start_date.month
         )
         visitRegister = ClientVisitRegister.objects.filter(VisitedDate__range=(month_start_date, month_end_date),ClientId=client_Id)
-        projectduration = ProjectTask.objects.filter(
+        projectduration = ProjectTask.objects.filter((Q(Status='3') | Q(Status='7')| Q(Status='8')| Q(Status='9')| Q(Status='10')),
             ProjectId=staffData['ProjectId'],
             CreatedDate__range=(month_start_date, month_end_date),
             SortId__month=month_start_date.month
@@ -193,7 +204,20 @@ def ClientReportApiByClientId(request):
             elif task_data['Status'] == '7' or task_data['Status'] == '8' or task_data['Status'] == '9':
                 Staff_details['CompletedTaskCount'] += 1
         staff_projects.append(Staff_details)
-    ClientDetails['Projects'] = staff_projects
+    if staff_projects:
+
+        ClientDetails['Staff'] = staff_projects
+    else:
+        ClientDetails['Staff'] = {
+            'StaffId': '',
+           'StaffName': '',
+            'TotalCompletedPoints': 0,
+            'TotalNumberofTask': 0,
+            'DueTaskCount': 0,
+            'CompletedTaskCount': 0,
+            'OnTimeCompletedTaskCount': 0
+        }
+
     if staffData.get('StartDate') and staffData.get('EndDate'):
         start_date = timezone.datetime.strptime(staffData['StartDate'], '%Y-%m-%d').date()
         end_date = (timezone.datetime.strptime(staffData['EndDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
@@ -204,10 +228,13 @@ def ClientReportApiByClientId(request):
 
     work_data = []
     current_date = start_date
-    while current_date <= end_date:
+    while current_date < end_date:
         month_start_date = current_date.replace(day=1)
+       
         next_month = month_start_date.replace(day=28) + timezone.timedelta(days=4)
-        month_end_date = next_month - timezone.timedelta(days=next_month.day)            
+        
+        month_end_date = next_month - timezone.timedelta(days=next_month.day)
+                 
         projects = ProjectTask.objects.filter(
             MarkAsClientVisit=1,
             ClientId=Client_id,
@@ -215,7 +242,7 @@ def ClientReportApiByClientId(request):
             SortId__month=month_start_date.month
         )
         visitRegister = ClientVisitRegister.objects.filter(VisitedDate__range=(month_start_date, month_end_date),ClientId=Client_id)
-        projectduration = ProjectTask.objects.filter(
+        projectduration = ProjectTask.objects.filter((Q(Status='3') | Q(Status='7')| Q(Status='8')| Q(Status='9')| Q(Status='10')),
             ClientId=Client_id,
             CreatedDate__range=(month_start_date, month_end_date),
             SortId__month=month_start_date.month
@@ -240,7 +267,7 @@ def ClientReportApiByClientId(request):
 
         current_date = month_end_date + timezone.timedelta(days=1)
 
-        ClientDetails['WorkData'] = work_data
+    ClientDetails['WorkData'] = work_data
     return JsonResponse(ClientDetails, safe=False)
 
 
@@ -1332,12 +1359,12 @@ from openpyxl.cell import MergedCell
 @swagger_auto_schema(method='GET', operation_description="NOTE: API for get FinanceReport in Excel format")
 @api_view(['GET'])
 def FinanceReportExcel(request, startdate="", enddate="",ClientId="",ReportType="",NoOfMonths=""):
-    context = getFinanceReport(request, startdate, enddate,ClientId ,ReportType,NoOfMonths)
-    
+    context = getFinanceReport(request, startdate, enddate, ClientId ,ReportType,NoOfMonths)
+   
     df = pd.DataFrame(context['responsedata'])
     
     # Drop specific columns if they exist
-    columns_to_drop = ['OrderNo', 'Level', 'RefId', 'CategoryId']
+    columns_to_drop = ['OrderNo', 'Level', 'RefId', 'CategoryId','itemsumorder']
     df = df.drop(columns=[col for col in columns_to_drop if col in df.columns])
     
     # Rename columns based on the context's formatted data
