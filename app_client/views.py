@@ -1,9 +1,10 @@
+from datetime import date
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
-from app_client.models import Client, ClientAddress, ClientDocuments, ClientOtherDetails, ContactPerson
-from app_client.serializers import ClientAddressSerializer, ClientDocumentsSerializer, ClientOtherDetailsSerializer, ClientSerializer, ContactPersonSerializer
+from app_client.models import Client, ClientAddress, ClientDocuments, ClientOtherDetails, ClientVisitRegister, ContactPerson
+from app_client.serializers import ClientAddressSerializer, ClientDocumentsSerializer, ClientOtherDetailsSerializer, ClientSerializer, ClientVisitRegisterSerializer, ContactPersonSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -11,6 +12,8 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from app_basic.models import Country, State
 from app_basic.serializers import CountrySerializer, StateSerializer
 from app_default.views import retry
+from app_project.models import ProjectTask
+from app_project.serializers import ProjectTaskSerializer
 from app_project.views import CustomPageNumberPagination
 from rest_framework import generics
 from django.db.models import Q
@@ -19,16 +22,46 @@ from django.db import transaction
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=ClientSerializer,operation_description="NOTE: API for save Client")
 @swagger_auto_schema(method='PUT', request_body=ClientSerializer,operation_description="NOTE: API for edit Client")
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all client",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all client by company id",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
-def clientApi(request):
+def clientApi(request,CompanyId=""):
     try:
         if request.method == 'GET':
-            client = Client.objects.filter(ActiveStatus=1)
+            client = Client.objects.filter(ActiveStatus=1,CompanyId=CompanyId)
             clientSerializer = ClientSerializer(
                     client, many=True)
-            return JsonResponse(clientSerializer.data, safe=False)
+            clientData=[]
+            for row in clientSerializer.data:
+                projectTask=ProjectTask.objects.filter(ClientId=row['ClientId'],TaskType="Task")
+                projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
+                work_status_count = {'Pending': 0, 'Completed': 0, 'Due': 0, 'Not Completed': 0, 'Finished': 0, 'Delay Finished': 0}
+                current_date = str(date.today())
+            
+                for task in projectTaskSerializer.data:
+                    if task['Status'] == '1' or task['Status'] == '2':
+                        work_status_count['Pending'] += 1
+                
+                    if task['Status'] == '3':
+                        work_status_count['Completed'] += 1
+            
+                    if task['CreatedDate'] < current_date and task['Status'] == '1':
+                        work_status_count['Due'] += 1
+
+                    if task['Status'] == '8' or task['Status'] == '9':
+                        work_status_count['Delay Finished'] += 1
+
+                    if task['Status'] == '4' or task['Status'] == '5' or task['Status'] == '6':
+                        work_status_count['Not Completed'] += 1   
+
+                    if task['Status'] == '7':
+                        work_status_count['Finished'] += 1
+
+                row['WorkStatusCount'] = work_status_count
+                clientData.append(row)
+            
+                
+            return JsonResponse(clientData, safe=False)
         elif request.method == 'POST':
             clientData = JSONParser().parse(request)
             clientSerializer = ClientSerializer(
@@ -394,3 +427,67 @@ def ContactPersonApiById(request, ContactPersonId=""):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
+    
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=ClientVisitRegisterSerializer,operation_description="NOTE: API for save ClientVisitRegister")
+@swagger_auto_schema(method='PUT', request_body=ClientVisitRegisterSerializer,operation_description="NOTE: API for edit ClientVisitRegister")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all ClientVisitRegister by ClientId",)
+@api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
+def ClientVisitRegisterApi(request,ClientId=""):
+    try:
+        if request.method == 'GET':
+            clientVisitRegister = ClientVisitRegister.objects.filter(ClientId=ClientId)
+            clientVisitRegister_serializer = ClientVisitRegisterSerializer(
+                clientVisitRegister, many=True)  
+            return JsonResponse(clientVisitRegister_serializer.data, safe=False)
+
+        elif request.method == 'POST':
+            clientVisitRegisterData = JSONParser().parse(request)
+            # return JsonResponse(clientVisitRegisterData, safe=False)
+            clientVisitRegisterSerializer = ClientVisitRegisterSerializer(
+                data=clientVisitRegisterData)
+            if clientVisitRegisterSerializer.is_valid():
+                clientVisitRegisterSerializer.save()
+                return JsonResponse(clientVisitRegisterSerializer.data['ClientVisitRegisterId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            clientVisitRegisterData = JSONParser().parse(request)
+            clientVisitRegister = ClientVisitRegister.objects.get(
+                ClientVisitRegisterId=clientVisitRegisterData['ClientVisitRegisterId'])
+            clientVisitRegisterSerializer = ClientVisitRegisterSerializer(
+                clientVisitRegister, data=clientVisitRegisterData)
+            if clientVisitRegisterSerializer.is_valid():
+                clientVisitRegisterSerializer.save()
+                return JsonResponse(clientVisitRegisterSerializer.data['ClientVisitRegisterId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("Invalid request", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get ClientVisitRegister by ClientVisitRegisterId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete ClientVisitRegister by ClientVisitRegisterId",)
+@api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
+def ClientVisitRegisterApiById(request, ClientVisitRegisterId=""):
+    try:
+        if request.method == 'GET':
+            clientVisitRegister = ClientVisitRegister.objects.get(ClientVisitRegisterId=ClientVisitRegisterId)
+            clientVisitRegisterSerializer = ClientVisitRegisterSerializer(clientVisitRegister)
+            return JsonResponse(clientVisitRegisterSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            clientVisitRegister = ClientVisitRegister.objects.get(
+                ClientVisitRegisterId=ClientVisitRegisterId)
+            clientVisitRegister.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("Invalid request", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+

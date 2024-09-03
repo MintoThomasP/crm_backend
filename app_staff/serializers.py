@@ -26,7 +26,10 @@ class StaffSerializer(serializers.ModelSerializer):
 'Status',
 'ProfilePhoto',
 'BankAccount',
-'CountryCode'
+'CountryCode',
+'MedicalLeave',
+'CasualLeave',
+'AnnualLeave'
 )
         
 
@@ -52,7 +55,10 @@ class SaveStaffSerializer(serializers.ModelSerializer):
 'Status',
 'CurrentAddress',
 'BankAccount',
-'CountryCode')
+'CountryCode',
+'MedicalLeave',
+'CasualLeave',
+'AnnualLeave')
         
 
 

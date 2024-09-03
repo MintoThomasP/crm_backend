@@ -1,4 +1,4 @@
-from datetime import date, datetime
+from datetime import date, datetime,timedelta
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
@@ -270,11 +270,10 @@ def CompanyPerformanceById(request, CompanyId=""):
             company = Company.objects.get(CompanyId=CompanyId)
             companySerializer = CompanySerializer(company)
             companyData = companySerializer.data
-            work_status_count = {'Pending': 0, 'Performance': 0}
+            
 
             projects = Project.objects.filter(CompanyId=CompanyId)
             projectSerializer = ProjectSerializer(projects, many=True)
-            
             total_points_gain = 0
             total_count = 0
 
@@ -290,12 +289,13 @@ def CompanyPerformanceById(request, CompanyId=""):
                     endDate = f"{currentMonthYear}-{last_day_of_month}"
 
                     start_date = datetime.strptime(startDate, '%Y-%m-%d')
-                    end_date = datetime.strptime(endDate, '%Y-%m-%d')
+                    end_date = datetime.strptime(endDate, '%Y-%m-%d')+ timedelta(days=1)
 
                     projectTasks = ProjectTask.objects.filter(CreatedDate__range=(start_date, end_date), ProjectId=project['ProjectId'])
                     projectTaskSerializer = ProjectTaskSerializer(projectTasks, many=True)
-                    
-                    if projectTasks.exists():  
+                   
+                    if projectTasks.exists(): 
+                        work_status_count = {'Pending': 0, 'Performance': 0}
                         for task in projectTaskSerializer.data:
                             if task['Status'] in ['7', '8', '9']:
                                 total_points_gain += float(task['CompletionPoint'])

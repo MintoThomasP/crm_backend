@@ -26,7 +26,8 @@ class Client(models.Model):
     ActiveStatus=models.BooleanField(default=True)
     PLLedger=models.JSONField(null=True,blank=True)
     BalanceSheetLedger=models.JSONField(null=True,blank=True)
-
+    TotalWorkingHoursPerMonth=models.IntegerField(default=0)
+    TotalVisitPerMonth=models.IntegerField(default=0)
 
 
 class ClientOtherDetails(models.Model):
@@ -75,3 +76,11 @@ class ContactPerson(models.Model):
     Phone2=models.CharField(max_length=15, blank=True, null=True)
 
 
+class ClientVisitRegister(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    ClientVisitRegisterId=models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    ClientId=models.CharField(max_length=50, blank=True, null=True)
+    StaffId=models.CharField(max_length=300, blank=True, null=True)
+    VisitedDate=models.DateTimeField(default=datetime.now)
+    Notes=models.TextField(blank=True, null=True)

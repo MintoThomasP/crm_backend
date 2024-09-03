@@ -52,7 +52,8 @@ class ProjectTaskSerializer(serializers.ModelSerializer):
 'NextScheduledDate',
 'Interval',
 'IsTemplate',
-'CompanyId'
+'CompanyId',
+'MarkAsClientVisit'
         )
 
 

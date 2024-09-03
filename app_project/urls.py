@@ -7,6 +7,7 @@ urlpatterns = [
     url(r'^ProjectById/(?P<ProjectId>[0-9a-zA-Z\-]+)$', views.ProjectApiById),
     path('ProjectApiByCompanyId/', views.ProjectApiByCompanyId.as_view()),
     url(r'^ProjectByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.ProjectByCompanyId),
+    url(r'^getAllProjectReport/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.ProjectApi),
 
     path('ProjectTask/', views.ProjectTaskApi),
     path('ProjectTaskPagination/', views.ProjectTaskPagination.as_view()), #currently using this API for get all Task, my Task, task assigned by me
@@ -70,4 +71,5 @@ urlpatterns = [
     url(r'^copy_image/(?P<ProjectTaskFileId>[0-9a-zA-Z\-]+)$', views.copy_image),
 
  path('savecopy_image/', views.savecopy_image),
+  path('UpdateClientandCompanyInTask/', views.UpdateClientandCompanyInTask),
 ]

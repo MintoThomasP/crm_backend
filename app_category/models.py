@@ -33,6 +33,7 @@ class Report(models.Model):
     OrderNo=models.IntegerField(default=1)
     Level=models.IntegerField(default=1)#its the level of category
     Status=models.IntegerField(default=0)
+    InDraft=models.IntegerField(default=0)#1 is draft
 
 
 

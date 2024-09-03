@@ -7,6 +7,7 @@ urlpatterns = [
     url(r'^ClientById/(?P<ClientId>[0-9a-zA-Z\-]+)$', views.ClientApiById),
     path('ClientApiByCompanyId/', views.ClientApiByCompanyId.as_view()),
     url(r'^ClientByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.ClientByCompanyId),
+    url(r'^getAllClientReport/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.clientApi),
 
     path('ClientOtherDetails/', views.ClientOtherDetailsApi),
     url(r'^ClientOtherDetailsApiById/(?P<ClientOtherDetailId>[0-9a-zA-Z\-]+)$', views.ClientOtherDetailsApiById),
@@ -24,5 +25,10 @@ urlpatterns = [
     path('ContactPerson/', views.ContactPersonApi),
     url(r'^ContactPersonApiById/(?P<ContactPersonId>[0-9a-zA-Z\-]+)$', views.ContactPersonApiById),
 
+    path('ClientVisitRegister/', views.ClientVisitRegisterApi),
+    url(r'^ClientVisitRegisterByClientId/(?P<ClientId>[0-9a-zA-Z\-]+)$',
+        views.ClientVisitRegisterApi),
+    url(r'^ClientVisitRegister/(?P<ClientVisitRegisterId>[0-9a-zA-Z\-]+)$',
+        views.ClientVisitRegisterApiById),
    
 ]

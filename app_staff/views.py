@@ -41,23 +41,23 @@ from django.conf import settings
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=SaveStaffSerializer,operation_description="NOTE: API for save staff")
 @swagger_auto_schema(method='PUT', request_body=SaveStaffSerializer,operation_description="NOTE: API for edit staff")
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all Staff",)
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all Staff by company id",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
-def staffApi(request):
+def staffApi(request,CompanyId=""):
     try:
         if request.method == 'GET':
            
-            staff = Staff.objects.all().order_by('-SortId')
+            staff = Staff.objects.filter(CompanyId=CompanyId).order_by('-SortId')
             staffSerializer = StaffSerializer(
                     staff, many=True)
-            designationData=[]
+            staffData=[]
             for row in staffSerializer.data:
                 designation=Designation.objects.get(DesignationId=row['Designation'])
                 designationSerializer=DesignationSerializer(designation)
                 row['DesignationName']=designationSerializer.data['Designation']
 
-                projectTask=ProjectTask.objects.filter(TaskAssignedTo=row['StaffId'])
+                projectTask=ProjectTask.objects.filter(TaskAssignedTo=row['StaffId'],TaskType="Task")
                 projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
                 work_status_count = {'Pending': 0, 'Completed': 0, 'Due': 0, 'Not Completed': 0, 'Finished': 0, 'Delay Finished': 0}
                 current_date = str(date.today())
@@ -82,10 +82,10 @@ def staffApi(request):
                         work_status_count['Finished'] += 1
 
                 row['WorkStatusCount'] = work_status_count
-                designationData.append(row)
+                staffData.append(row)
             
                 
-            return JsonResponse(designationData, safe=False)
+            return JsonResponse(staffData, safe=False)
         elif request.method == 'POST':
             staffData = JSONParser().parse(request)
             staffSerializer = SaveStaffSerializer(
@@ -514,7 +514,7 @@ def staffDocumentsApiByStaffId(request, StaffId=""):
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def GetAllActiveStaffListApi(request,CompanyId=""):
-    try:
+    # try:
         if request.method == 'GET':
            
             staff = Staff.objects.filter(Status=1,CompanyId=CompanyId)
@@ -532,8 +532,8 @@ def GetAllActiveStaffListApi(request,CompanyId=""):
             return JsonResponse(staffData, safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
 
 

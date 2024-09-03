@@ -36,7 +36,8 @@ class ReportSaveSerializer(serializers.ModelSerializer):
             'Comment',
             'OrderNo',
             'Level',
-            'Status'
+            'Status',
+            'InDraft'
         )
         
 class ReportRefFileSerializer(serializers.ModelSerializer):

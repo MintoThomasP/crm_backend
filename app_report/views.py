@@ -9,7 +9,7 @@ from django.http import HttpResponse
 from app_category.models import Category, Report
 from app_category.serializers import CategorySerializer, ReportSerializer
 import pandas as pd
-from app_client.models import Client
+from app_client.models import Client, ClientVisitRegister
 from app_client.serializers import ClientSerializer
 from app_company.models import Company
 from app_company.serializers import CompanySerializer
@@ -49,18 +49,20 @@ def ProjectReportApiByProjectId(request):
     project = Project.objects.get(ProjectId=staffData['ProjectId'])
     projectSerializer = ProjectSerializer(project)
     ProjectDetails = projectSerializer.data
+    client_Id=project.ClientId
 
     Project_id = staffData['ProjectId']
     staff_projects = []
-
+    start_date=""
+    end_date=""
     if staffData.get('StartDate') and staffData.get('EndDate'):
-       
         start_date = timezone.datetime.strptime(staffData['StartDate'], '%Y-%m-%d').date()
         end_date = (timezone.datetime.strptime(staffData['EndDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
-        projects = ProjectTask.objects.filter(ProjectId=Project_id, ScheduledDeadline__range=(start_date, end_date)).values('TaskAssignedTo').distinct()
     else:
-        projects = ProjectTask.objects.filter(ProjectId=Project_id).values('TaskAssignedTo').distinct()
-
+        start_date =timezone.datetime.strptime(ProjectDetails['StartDate'], '%Y-%m-%d').date() 
+        end_date = date.today()
+    projects = ProjectTask.objects.filter(ProjectId=Project_id, ScheduledDeadline__range=(start_date, end_date)).values('TaskAssignedTo').distinct()
+    
     for project in projects:
         staff_name = project['TaskAssignedTo']
         if staffData.get('StartDate') and staffData.get('EndDate'):
@@ -88,21 +90,70 @@ def ProjectReportApiByProjectId(request):
             elif task_data['Status'] == '7' or task_data['Status'] == '8' or task_data['Status'] == '9':
                 Staff_details['CompletedTaskCount'] += 1
         staff_projects.append(Staff_details)
-    ProjectDetails['Projects'] = staff_projects
+    ProjectDetails['Staff'] = staff_projects
+    if staffData.get('StartDate') and staffData.get('EndDate'):
+        start_date = timezone.datetime.strptime(staffData['StartDate'], '%Y-%m-%d').date()
+        end_date = (timezone.datetime.strptime(staffData['EndDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
+    else:
+        start_date =project.SortId.date() 
+        end_date = (datetime.now() + timedelta(days=1)).date()
+
+
+    work_data = []
+    current_date = start_date
+    while current_date <= end_date:
+        month_start_date = current_date.replace(day=1)
+        next_month = month_start_date.replace(day=28) + timezone.timedelta(days=4)
+        month_end_date = next_month - timezone.timedelta(days=next_month.day)            
+        projects = ProjectTask.objects.filter(
+            MarkAsClientVisit=1,
+            ProjectId=staffData['ProjectId'],
+            CreatedDate__range=(month_start_date, month_end_date),
+            SortId__month=month_start_date.month
+        )
+        visitRegister = ClientVisitRegister.objects.filter(VisitedDate__range=(month_start_date, month_end_date),ClientId=client_Id)
+        projectduration = ProjectTask.objects.filter(
+            ProjectId=staffData['ProjectId'],
+            CreatedDate__range=(month_start_date, month_end_date),
+            SortId__month=month_start_date.month
+        )
+        
+        totalduration_minutes = 0
+        for project in projectduration:
+            totalduration = project.TotalDuration
+            totahours, totalminutes = map(int, totalduration.split(':'))
+            totalduration_minutes += totahours * 60 + totalminutes
+        total_duration_hours = totalduration_minutes // 60
+        remaining_duration_minutes = totalduration_minutes % 60
+        
+
+        work_data.append({
+            'Month': calendar.month_name[month_start_date.month],
+            'NoofVisit': visitRegister.count(),
+            'TotalWorkingHours': f'{total_duration_hours}:{remaining_duration_minutes:02}',
+        })
+
+        current_date = month_end_date + timezone.timedelta(days=1)
+
+        ProjectDetails['WorkData'] = work_data
+
+
+
     # StaffDetails.append(staff_item)
 
     return JsonResponse(ProjectDetails, safe=False)
 
 
+import calendar
 @csrf_exempt
 @swagger_auto_schema(method='POST', operation_description="NOTE: API for get client report by ClientId. payalod { ClientId, StartDate, EndDate}")
 @api_view(['POST'])
 @retry(retries=3, delay=2)
 def ClientReportApiByClientId(request):
     staffData = JSONParser().parse(request)
-    project = Client.objects.get(ClientId=staffData['ClientId'])
-    projectSerializer = ClientSerializer(project)
-    ClientDetails = projectSerializer.data
+    client = Client.objects.get(ClientId=staffData['ClientId'])
+    clientSerializer = ClientSerializer(client)
+    ClientDetails = clientSerializer.data
 
     Client_id = staffData['ClientId']
     staff_projects = []
@@ -143,8 +194,53 @@ def ClientReportApiByClientId(request):
                 Staff_details['CompletedTaskCount'] += 1
         staff_projects.append(Staff_details)
     ClientDetails['Projects'] = staff_projects
-    # StaffDetails.append(staff_item)
+    if staffData.get('StartDate') and staffData.get('EndDate'):
+        start_date = timezone.datetime.strptime(staffData['StartDate'], '%Y-%m-%d').date()
+        end_date = (timezone.datetime.strptime(staffData['EndDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
+    else:
+        start_date = client.SortId.date()  
+        end_date = (datetime.now() + timedelta(days=1)).date()
 
+
+    work_data = []
+    current_date = start_date
+    while current_date <= end_date:
+        month_start_date = current_date.replace(day=1)
+        next_month = month_start_date.replace(day=28) + timezone.timedelta(days=4)
+        month_end_date = next_month - timezone.timedelta(days=next_month.day)            
+        projects = ProjectTask.objects.filter(
+            MarkAsClientVisit=1,
+            ClientId=Client_id,
+            CreatedDate__range=(month_start_date, month_end_date),
+            SortId__month=month_start_date.month
+        )
+        visitRegister = ClientVisitRegister.objects.filter(VisitedDate__range=(month_start_date, month_end_date),ClientId=Client_id)
+        projectduration = ProjectTask.objects.filter(
+            ClientId=Client_id,
+            CreatedDate__range=(month_start_date, month_end_date),
+            SortId__month=month_start_date.month
+        )
+        
+        totalduration_minutes = 0
+        for project in projectduration:
+            totalduration = project.TotalDuration
+            totahours, totalminutes = map(int, totalduration.split(':'))
+            totalduration_minutes += totahours * 60 + totalminutes
+        total_duration_hours = totalduration_minutes // 60
+        remaining_duration_minutes = totalduration_minutes % 60
+        
+
+        work_data.append({
+            'Month': calendar.month_name[month_start_date.month],
+            'TotalVisit': client.TotalVisitPerMonth,
+            'NoofVisit': visitRegister.count(),
+            'TotalAllocatedWorkingHours': client.TotalWorkingHoursPerMonth,
+            'TotalWorkingHours': f'{total_duration_hours}:{remaining_duration_minutes:02}',
+        })
+
+        current_date = month_end_date + timezone.timedelta(days=1)
+
+        ClientDetails['WorkData'] = work_data
     return JsonResponse(ClientDetails, safe=False)
 
 
@@ -651,7 +747,7 @@ def get_subcategories(category_id, startDate, startYear, endDate, endYear):
 def get_report_data(category_id, startDate, startYear, endDate, endYear):
     start_date = datetime(year=int(startYear), month=int(startDate), day=1)
     end_date = datetime(year=int(endYear), month=int(endDate), day=1)
-    reports = Report.objects.filter(
+    reports = Report.objects.filter(Q(InDraft=0),
         Q(Year__gt=start_date.year) | (Q(Year=start_date.year) & Q(Month__gte=start_date.month)),
         Q(Year__lt=end_date.year) | (Q(Year=end_date.year) & Q(Month__lte=end_date.month)),
         CategoryId=category_id,
@@ -737,7 +833,7 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
                         if year=='YTD' and  ReportType=='1':
                             reportData=getYTD(ClientId,ReportType)
                         else:
-                            reports = Report.objects.filter(Month=month, Year=year,ClientId=ClientId,ReportType=ReportType).order_by('OrderNo')
+                            reports = Report.objects.filter(Month=month, Year=year,ClientId=ClientId,ReportType=ReportType,InDraft=0).order_by('OrderNo')
                             reportSerializer = ReportSerializer(reports, many=True)
                             reportData=reportSerializer.data
                             data.append(reportData)
@@ -1009,7 +1105,7 @@ def getYTD(ClientId="",ReportType="",year="",month=""):
         year = timezone.now().year
     if month=="":
         month = timezone.now().month
-    queryset = Report.objects.filter(
+    queryset = Report.objects.filter(InDraft=0,
             Month__gte=1, Month__lte=month,ClientId=ClientId,ReportType=ReportType,
             Year=year
         ).values(

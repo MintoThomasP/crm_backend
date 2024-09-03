@@ -1,6 +1,7 @@
 from django.dispatch import receiver
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from app_client.serializers import ClientVisitRegisterSerializer
 from app_company.models import Company
 from app_company.serializers import CompanySerializer
 from app_default.views import retry
@@ -42,16 +43,48 @@ class CustomPageNumberPagination(PageNumberPagination):
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=ProjectSerializer,operation_description="NOTE:API for save Project")
 @swagger_auto_schema(method='PUT', request_body=ProjectSerializer,operation_description="NOTE:API for edit Project")
-@swagger_auto_schema(method='GET',operation_description="NOTE:API for Get all Project Details",)
+@swagger_auto_schema(method='GET',operation_description="NOTE:API for Get all Project Details by company id",)
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
-def ProjectApi(request):
+def ProjectApi(request,CompanyId=""):
     try:
         if request.method == 'GET':
-            project = Project.objects.all().order_by('-SortId')
+            project = Project.objects.filter(CompanyId=CompanyId).order_by('-SortId')
             projectSerializer = ProjectSerializer(
                     project, many=True)
-            return JsonResponse(projectSerializer.data, safe=False)
+            
+            projectData=[]
+            for row in projectSerializer.data:
+                projectTask=ProjectTask.objects.filter(ProjectId=row['ProjectId'],TaskType="Task")
+                projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
+                work_status_count = {'Pending': 0, 'Completed': 0, 'Due': 0, 'Not Completed': 0, 'Finished': 0, 'Delay Finished': 0}
+                current_date = str(date.today())
+            
+                for task in projectTaskSerializer.data:
+                    if task['Status'] == '1' or task['Status'] == '2':
+                        work_status_count['Pending'] += 1
+                
+                    if task['Status'] == '3':
+                        work_status_count['Completed'] += 1
+            
+                    if task['CreatedDate'] < current_date and task['Status'] == '1':
+                        work_status_count['Due'] += 1
+
+                    if task['Status'] == '8' or task['Status'] == '9':
+                        work_status_count['Delay Finished'] += 1
+
+                    if task['Status'] == '4' or task['Status'] == '5' or task['Status'] == '6':
+                        work_status_count['Not Completed'] += 1   
+
+                    if task['Status'] == '7':
+                        work_status_count['Finished'] += 1
+
+                row['WorkStatusCount'] = work_status_count
+                projectData.append(row)
+            
+                
+            return JsonResponse(projectData, safe=False)
+            
         elif request.method == 'POST':
             projectData = JSONParser().parse(request)
             projectSerializer = ProjectSerializer(
@@ -532,8 +565,19 @@ def ProjectTaskApi(request):
                                 "touser":projectTaskSerializer.data['TaskAssignedTo']
 
                             })
-                    elif projectTaskSerializer.data['Status']=='7' or  projectTaskSerializer.data['Status']=='8' or  projectTaskSerializer.data['Status']=='9':
-                    
+                    elif projectTaskSerializer.data['Status']=='7' or projectTaskSerializer.data['Status']=='8' or projectTaskSerializer.data['Status']=='9':
+                        if projectTaskSerializer.data['ClientId']:
+                            payload={
+                                "ClientVisitRegisterId":"",
+                                "ClientId":projectTaskSerializer.data['ClientId'],
+                                "StaffId":projectTaskSerializer.data['TaskAssignedTo'],
+                                "VisitedDate":projectTaskSerializer.data['EndDate'],
+                                "Notes":"",
+                            }
+                            clientVisitRegisterSerializer = ClientVisitRegisterSerializer(
+                                data=payload)
+                            if clientVisitRegisterSerializer.is_valid():
+                                clientVisitRegisterSerializer.save()
                         login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedTo'])
                         if login.Token :
                             sendNotification({
@@ -2783,3 +2827,30 @@ def savecopy_image(request,):
         return JsonResponse("ProjectTaskFile not found", safe=False)
     except Exception as e:
         return JsonResponse({"error": str(e)}, safe=False)
+    
+
+
+
+
+@csrf_exempt
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def UpdateClientandCompanyInTask(request):
+    try:
+        if request.method == 'GET':
+            project=Project.objects.all()
+            projectSerializer=ProjectSerializer(project,many=True)
+            for row in projectSerializer.data:
+                company_id=row['CompanyId']
+                client_id=row['ClientId']
+                projectTask = ProjectTask.objects.filter(ProjectId=row['ProjectId'])
+                for pro in projectTask:
+                    pro.CompanyId=company_id
+                    pro.ClientId=client_id
+                    pro.save()
+               
+            return JsonResponse("updated", safe=False)
+        else:
+                return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
