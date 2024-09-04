@@ -433,13 +433,13 @@ def TempleteTypeApiById(request, TempleteTypeId=""):
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def TempleteTypeByCompanyId(request, CompanyId=""):
-    try:
+    # try:
         if request.method == 'GET':
             templeteType = TempleteType.objects.filter(CompanyId=CompanyId)
             templeteTypeSerializer = TempleteTypeSerializer(templeteType,many=True)
             return JsonResponse(templeteTypeSerializer.data, safe=False)
         else:
             return JsonResponse("Invalid request", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
 
