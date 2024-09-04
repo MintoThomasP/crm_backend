@@ -69,5 +69,5 @@ class TempleteTypeSerializer(serializers.ModelSerializer):
         fields = ('SortId',
                   'TempleteTypeId',
                   'TempleteType',
-                  'CountryId'
+                  'CompanyId'
                   )
