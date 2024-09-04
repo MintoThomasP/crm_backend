@@ -53,3 +53,11 @@ class UserPermission(models.Model):
     DisplayName = models.CharField(max_length=300, blank=True, null=True)
     OrderNo=models.IntegerField(default=1)
   
+
+class TempleteType(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    TempleteTypeId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    TempleteType = models.CharField(max_length=300, blank=True, null=True)
+    CompanyId=models.CharField(blank=True, null=True, max_length=50) 
+

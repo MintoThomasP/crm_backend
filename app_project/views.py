@@ -1,6 +1,8 @@
 from django.dispatch import receiver
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
+from app_basic.models import TempleteType
+from app_basic.serializers import TempleteTypeSerializer
 from app_client.serializers import ClientVisitRegisterSerializer
 from app_company.models import Company
 from app_company.serializers import CompanySerializer
@@ -2666,13 +2668,6 @@ class GetAllTemplatesByPagination(generics.ListAPIView):
             filterData = JSONParser().parse(request)
             Keyword = filterData.get('SearchKeyword', '')
             if filterData['CompanyId']:
-                # project = Project.objects.filter(
-                #         CompanyId=filterData['CompanyId'])
-                # projectSerializer = ProjectSerializer(
-                #         project,many=True)
-                # projectId=[]
-                # for row in projectSerializer.data:
-                #     projectId.append(row['ProjectId'])
                 self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
             if Keyword:
                 self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
@@ -2682,30 +2677,18 @@ class GetAllTemplatesByPagination(generics.ListAPIView):
                 data = []
 
                 for row in serializer.data:
-                    try:
-                        projectTask = ProjectTask.objects.filter(RefId=row['ProjectTaskId'],TaskType='Subtask').order_by('-SortId')
-                        projectTaskSerializer = ProjectTaskSerializer(projectTask, many=True)
-                        subTasks=[]
-                        for subtask in projectTaskSerializer.data:
-                            try:                      
-                                taskStatus=TaskStatus.objects.get(StatusId=subtask['Status'])
-                                taskStatusSerializer=TaskStatusSerializer(taskStatus)
-                                subtask['StatusName']=taskStatusSerializer.data['Status']
-                            except:
-                                subtask['StatusName']=""
-                            subTasks.append(subtask)
-
-                        row['SubTask'] = subTasks
-                    except:
-                        row['SubTask'] =[]
-
-
                     try:                      
                         taskStatus=TaskStatus.objects.get(StatusId=row['Status'])
                         taskStatusSerializer=TaskStatusSerializer(taskStatus)
                         row['StatusName']=taskStatusSerializer.data['Status']
                     except:
                         row['StatusName']=""
+                    try:                      
+                        templateType=TempleteType.objects.get(TempleteTypeId=row['TempleteType'])
+                        templateTypeSerializer=TempleteTypeSerializer(templateType)
+                        row['TempleteTypeName']=templateTypeSerializer.data['TempleteType']
+                    except:
+                        row['TempleteTypeName']=""
 
                     try:
                         project = Project.objects.get(ProjectId=row['ProjectId'])
@@ -2726,13 +2709,6 @@ class GetAllTemplatesByPagination(generics.ListAPIView):
                     except:
                         row['TaskAssignedByName'] =""
 
-
-                    try:
-                        staff=Staff.objects.get(StaffId=row['VerifiedBy'])
-                        staffSerializer=StaffSerializer(staff)
-                        row['VerifiedByName']=staffSerializer.data['StaffName']
-                    except:
-                        row['VerifiedByName']= ""
                     try:
                         projectTaskFile = ProjectTaskFile.objects.filter(ProjectTaskId=row['ProjectTaskId'])
                         projectTaskFileSerializer = ProjectTaskFileSerializer(projectTaskFile,many=True)

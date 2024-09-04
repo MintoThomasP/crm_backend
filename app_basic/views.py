@@ -4,8 +4,8 @@ from django.views.decorators.csrf import csrf_exempt
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 
-from app_basic.models import Country, Designation, PermissionSection, State, UserGroup, UserPermission
-from app_basic.serializers import CountrySerializer, DesignationSerializer, PermissionSectionSerializer, StateSerializer, UserGroupSerializer, UserPermissionSerializer
+from app_basic.models import Country, Designation, PermissionSection, State, TempleteType, UserGroup, UserPermission
+from app_basic.serializers import CountrySerializer, DesignationSerializer, PermissionSectionSerializer, StateSerializer, TempleteTypeSerializer, UserGroupSerializer, UserPermissionSerializer
 from app_default.views import retry
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
@@ -363,3 +363,83 @@ def UserPermissionbySectionTypeApi(request):
     except:
         return JsonResponse("", safe=False)
     
+    
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=TempleteTypeSerializer,operation_description="NOTE: API for save TempleteType")
+@swagger_auto_schema(method='PUT', request_body=TempleteTypeSerializer,operation_description="NOTE: API for edit TempleteType")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all TempleteType",)
+@api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
+def TempleteTypeApi(request):
+    try:
+        if request.method == 'GET':
+            templeteType = TempleteType.objects.all()
+            templeteType_serializer = TempleteTypeSerializer(
+                templeteType, many=True)  
+            return JsonResponse(templeteType_serializer.data, safe=False)
+
+        elif request.method == 'POST':
+            templeteTypeData = JSONParser().parse(request)
+            # return JsonResponse(templeteTypeData, safe=False)
+            templeteTypeSerializer = TempleteTypeSerializer(
+                data=templeteTypeData)
+            if templeteTypeSerializer.is_valid():
+                templeteTypeSerializer.save()
+                return JsonResponse(templeteTypeSerializer.data['TempleteTypeId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            templeteTypeData = JSONParser().parse(request)
+            templeteType = TempleteType.objects.get(
+                TempleteTypeId=templeteTypeData['TempleteTypeId'])
+            templeteTypeSerializer = TempleteTypeSerializer(
+                templeteType, data=templeteTypeData)
+            if templeteTypeSerializer.is_valid():
+                templeteTypeSerializer.save()
+                return JsonResponse(templeteTypeSerializer.data['TempleteTypeId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("Invalid request", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get TempleteType by TempleteTypeId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete TempleteType by TempleteTypeId",)
+@api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
+def TempleteTypeApiById(request, TempleteTypeId=""):
+    try:
+        if request.method == 'GET':
+            templeteType = TempleteType.objects.get(TempleteTypeId=TempleteTypeId)
+            templeteTypeSerializer = TempleteTypeSerializer(templeteType)
+            return JsonResponse(templeteTypeSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            templeteType = TempleteType.objects.get(
+                TempleteTypeId=TempleteTypeId)
+            templeteType.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("Invalid request", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get TempleteType by CompanyId",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def TempleteTypeByCompanyId(request, CompanyId=""):
+    try:
+        if request.method == 'GET':
+            templeteType = TempleteType.objects.filter(CompanyId=CompanyId)
+            templeteTypeSerializer = TempleteTypeSerializer(templeteType,many=True)
+            return JsonResponse(templeteTypeSerializer.data, safe=False)
+        else:
+            return JsonResponse("Invalid request", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+

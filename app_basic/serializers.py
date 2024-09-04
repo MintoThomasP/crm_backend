@@ -1,7 +1,7 @@
 
 from rest_framework import serializers
 
-from app_basic.models import Country, Designation, PermissionSection, UserGroup,State, UserPermission
+from app_basic.models import Country, Designation, PermissionSection, TempleteType, UserGroup,State, UserPermission
 
 class DesignationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -62,4 +62,12 @@ class UserPermissionSerializer(serializers.ModelSerializer):
                   'PermissionSectionId',
                   'DisplayName',
                   'OrderNo'
+                  )
+class TempleteTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TempleteType
+        fields = ('SortId',
+                  'TempleteTypeId',
+                  'TempleteType',
+                  'CountryId'
                   )

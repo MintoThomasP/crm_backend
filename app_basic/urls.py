@@ -24,4 +24,10 @@ urlpatterns = [
 
     path('UserPermissionApi/', views.UserPermissionApi),
     path('UserPermissionbySectionType/', views.UserPermissionbySectionTypeApi),
+    
+    path('TempleteType/', views.TempleteTypeApi),
+    url(r'^TempleteType/(?P<TempleteTypeId>[0-9a-zA-Z\-]+)$',
+        views.TempleteTypeApiById),
+    url(r'^TempleteTypeByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$',
+        views.TempleteTypeByCompanyId),
 ]

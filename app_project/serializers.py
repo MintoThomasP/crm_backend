@@ -53,7 +53,8 @@ class ProjectTaskSerializer(serializers.ModelSerializer):
 'Interval',
 'IsTemplate',
 'CompanyId',
-'MarkAsClientVisit'
+'MarkAsClientVisit',
+'TempleteType'
         )
 
 
