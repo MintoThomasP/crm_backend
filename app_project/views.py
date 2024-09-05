@@ -495,13 +495,16 @@ def ProjectTaskApi(request):
                 data=projectTaskData)
             if projectTaskSerializer.is_valid():
                 projectTaskSerializer.save()
+                
                 if projectTaskSerializer.data['IsRepeated'] == 1:
                     RepeatInterval=projectTaskSerializer.data['RepeatInterval']
                     Interval=projectTaskSerializer.data['Interval']
                     next_Scheduled_date=calculateNextScheduledDate(RepeatInterval,Interval,projectTaskData['ScheduledOn'])
+                    
                     projectTask=ProjectTask.objects.get(ProjectTaskId=projectTaskSerializer.data['ProjectTaskId'])
                     projectTask.NextScheduledDate=next_Scheduled_date
                     projectTask.save()
+                 
                 if projectTaskSerializer.data['TaskType']=="Task" or projectTaskSerializer.data['TaskType']=="Ticket":
                     try:
                         login = Login.objects.get(UserId=projectTaskSerializer.data['TaskAssignedTo'])
@@ -2516,50 +2519,52 @@ def TicketsByTaskAssignedBy(request, TaskAssignedBy=""):
 
 
 def calculateNextScheduledDate(RepeatInterval="",Interval="",date= ""):
+    
     if date:
         given_date=datetime.fromisoformat(date)
     else:
         given_date=datetime.now()
-        day_of_week = int((given_date.weekday()+ 1))
-        now = timezone.now()
-        if RepeatInterval == 'daily':
-            interval=Interval
-            if day_of_week == 7:
-                interval=interval+1
-                next_Schduled_date = now + timedelta(days=interval)
-                
-                
-            else:
-                next_Schduled_date = now + timedelta(days=interval)
+    day_of_week = int((given_date.weekday()+ 1))
+    now = timezone.now()
+    if RepeatInterval == 'daily':
+        interval=Interval
+        if day_of_week == 7:
+            interval=interval+1
+            next_Schduled_date = now + timedelta(days=interval)
             
-        elif RepeatInterval == 'weekly':
-            interval=Interval
-            if day_of_week == 7:
-                interval=interval+1
-                next_Schduled_date = now + timedelta(weeks=interval)
-                
-            else:
-                next_Schduled_date = now + timedelta(weeks=interval)
-                
+            
+        else:
+            next_Schduled_date = now + timedelta(days=interval)
+        
+    elif RepeatInterval == 'weekly':
+        interval=Interval
+        if day_of_week == 7:
+            interval=interval+1
+            next_Schduled_date = now + timedelta(weeks=interval)
+            
+        else:
+            next_Schduled_date = now + timedelta(weeks=interval)
+            
 
-        elif RepeatInterval == 'monthly':
-            interval=Interval
-            if day_of_week == 7:
-                interval=interval+1
-                next_Schduled_date = now + relativedelta(months=interval)
-                
-            else:
-                next_Schduled_date = now + relativedelta(months=interval)
-                
-        elif RepeatInterval == 'yearly':
-            interval = Interval
-            if day_of_week == 7:
-                interval=interval+1
-                next_Schduled_date = now + relativedelta(years=interval)
+    elif RepeatInterval == 'monthly':
+        
+        interval=Interval
+        if day_of_week == 7:
+            interval=interval+1
+            next_Schduled_date = now + relativedelta(months=interval)
             
-            else:
-                next_Schduled_date = now + relativedelta(years=interval)
-        return next_Schduled_date
+        else:
+            next_Schduled_date = now + relativedelta(months=interval)
+            
+    elif RepeatInterval == 'yearly':
+        interval = Interval
+        if day_of_week == 7:
+            interval=interval+1
+            next_Schduled_date = now + relativedelta(years=interval)
+        
+        else:
+            next_Schduled_date = now + relativedelta(years=interval)
+    return next_Schduled_date
           
 
 
@@ -2691,21 +2696,14 @@ class GetAllTemplatesByPagination(generics.ListAPIView):
                         row['TempleteTypeName']=""
 
                     try:
-                        project = Project.objects.get(ProjectId=row['ProjectId'])
-                        projectSerializer = ProjectSerializer(project)
-                        row['ProjectName'] = projectSerializer.data['ProjectName']
-                    except:
-                        row['ProjectName'] = ""
-                    try:
-                        staff = Staff.objects.get(StaffId=row['TaskAssignedTo'])
-                        staffSerializer = StaffSerializer(staff)
-                        row['StaffName'] = staffSerializer.data['StaffName']
-                    except:
-                        row['StaffName'] =""
-                    try:
-                        staff = Staff.objects.get(StaffId=row['TaskAssignedBy'])
-                        staffSerializer = StaffSerializer(staff)
-                        row['TaskAssignedByName'] = staffSerializer.data['StaffName']
+                        try:
+                            staff = Staff.objects.get(StaffId=row['TaskAssignedBy'])
+                            staffSerializer = StaffSerializer(staff)
+                            row['TaskAssignedByName'] = staffSerializer.data['StaffName']
+                        except:
+                            company = Company.objects.get(CompanyId=row['TaskAssignedBy'])
+                            companySerializer = CompanySerializer(company)
+                            row['TaskAssignedByName'] =companySerializer.data['CompanyName']
                     except:
                         row['TaskAssignedByName'] =""
 
