@@ -41,7 +41,8 @@ url(r'^GetAllActiveStaffList/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.GetAllActive
 
 
 path('staffSalaryByPerformance/', views.staffSalaryByPerformanceApi),
-path('CreateSalarySlip/', views.CreateSalarySlipApi),
+# path('CreateSalarySlip/', views.CreateSalarySlipApi),
+    url(r'^CreateSalarySlip/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.CreateSalarySlipApi),
     path('DownloadSalarySlip/<str:Month>/<str:Year>/<str:StaffId>', views.DownloadSalarySlip),
 
 path('CURDSalarySlipApi/', views.CURDSalarySlipApi),
