@@ -840,7 +840,7 @@ def SalarySlipApi(request,StaffId="",Year="",Month=""):
 @swagger_auto_schema(method='GET', operation_description="NOTE: API for Create salary slip")
 @api_view(['GET'])
 @retry(retries=3, delay=2)
-def CreateSalarySlipApi(request,CompanyId="0c4466c6-1f53-42ae-b80e-19b6daadc651"):
+def CreateSalarySlipApi(request,CompanyId=""):
     # try:
         if request.method == 'GET':
             staffDa = Staff.objects.filter(Status=1,CompanyId=CompanyId)
