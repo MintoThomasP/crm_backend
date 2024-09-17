@@ -59,7 +59,8 @@ def ProjectReportApiByProjectId(request):
         start_date = timezone.datetime.strptime(staffData['StartDate'], '%Y-%m-%d').date()
         end_date = (timezone.datetime.strptime(staffData['EndDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
     else:
-        start_date =timezone.datetime.strptime(ProjectDetails['StartDate'], '%Y-%m-%d').date() 
+        start_date =timezone.datetime.strptime(str(ProjectDetails['StartDate']).split()[0], '%Y-%m-%d').date()
+        # timezone.datetime.strptime(ProjectDetails['StartDate'], '%Y-%m-%d').date() 
         end_date = date.today()
     projects = ProjectTask.objects.filter(ProjectId=Project_id, ScheduledDeadline__range=(start_date, end_date)).values('TaskAssignedTo').distinct()
     
@@ -206,9 +207,9 @@ def ClientReportApiByClientId(request):
         staff_projects.append(Staff_details)
     if staff_projects:
 
-        ClientDetails['Staff'] = staff_projects
+        ClientDetails['Projects'] = staff_projects
     else:
-        ClientDetails['Staff'] = {
+        ClientDetails['Projects'] = {
             'StaffId': '',
            'StaffName': '',
             'TotalCompletedPoints': 0,
@@ -774,7 +775,7 @@ def get_subcategories(category_id, startDate, startYear, endDate, endYear):
 def get_report_data(category_id, startDate, startYear, endDate, endYear):
     start_date = datetime(year=int(startYear), month=int(startDate), day=1)
     end_date = datetime(year=int(endYear), month=int(endDate), day=1)
-    reports = Report.objects.filter(Q(InDraft=0),
+    reports = Report.objects.filter(
         Q(Year__gt=start_date.year) | (Q(Year=start_date.year) & Q(Month__gte=start_date.month)),
         Q(Year__lt=end_date.year) | (Q(Year=end_date.year) & Q(Month__lte=end_date.month)),
         CategoryId=category_id,
@@ -860,7 +861,7 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
                         if year=='YTD' and  ReportType=='1':
                             reportData=getYTD(ClientId,ReportType)
                         else:
-                            reports = Report.objects.filter(Month=month, Year=year,ClientId=ClientId,ReportType=ReportType,InDraft=0).order_by('OrderNo')
+                            reports = Report.objects.filter(Month=month, Year=year,ClientId=ClientId,ReportType=ReportType).order_by('OrderNo')
                             reportSerializer = ReportSerializer(reports, many=True)
                             reportData=reportSerializer.data
                             data.append(reportData)
@@ -1132,7 +1133,7 @@ def getYTD(ClientId="",ReportType="",year="",month=""):
         year = timezone.now().year
     if month=="":
         month = timezone.now().month
-    queryset = Report.objects.filter(InDraft=0,
+    queryset = Report.objects.filter(
             Month__gte=1, Month__lte=month,ClientId=ClientId,ReportType=ReportType,
             Year=year
         ).values(
