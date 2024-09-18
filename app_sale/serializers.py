@@ -67,7 +67,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
 'AmountDue',
 'InvoiceFile',
 'Payment',
-'Status')
+'Status',
+'AddBankAccount')
 
 
 

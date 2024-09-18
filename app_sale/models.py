@@ -67,6 +67,7 @@ class Invoice(models.Model):
     Payment=models.CharField(blank=True, null=True, max_length=15)
     InvoiceFile=models.FileField(null=True,blank=True, upload_to='Invoicefiles')
     Status=models.IntegerField(default=1)
+    AddBankAccount=models.BooleanField(default=False)
     
 
 class InvoiceItem(models.Model):

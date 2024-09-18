@@ -13,13 +13,16 @@
         html {
             font-family: 'Roboto', sans-serif;
             color: rgba(0, 0, 0, 0);
-            font-weight:600;
+        }
+        @page {
+            size: A4 portrait;
+            margin: 1.5cm;
+            /* adjust margins as needed */
         }
         @media print {
             html {
                 color: rgba(0, 0, 0, 0);
                 text-shadow: 0 0 0 #000000;
-                font-weight:600;
                
             }
 
@@ -27,7 +30,6 @@
                 html {
                 color: #000000;
                 -webkit-print-color-adjust: exact;
-                font-weight:600;
                 
                 }
             }
@@ -60,14 +62,6 @@
             padding-right: 6px;
         }
 
-        /* .invoice_header table {
-        width: 100%;
-        border-bottom: 3px solid transparent;
-        border-image: linear-gradient(0.25turn, #595959, #595959);
-        border-image-slice: 100%;
-        border-image-slice: 1;
-        padding-bottom: 15px;
-    } */
 
         .trn {
             font-weight: 600;
@@ -227,9 +221,6 @@
             vertical-align: baseline;
         }
 
-        /* .invoice_header table tr td img {
-        width: 200px;
-    } */
 
         .esign_bg {
             background-image: url("esign.png");
@@ -275,28 +266,30 @@
     </style>
 </head>
 
-<body>
-    <div class="container-fluid" >
+<body style="margin:20px;">
         <div class="invoice_header">
             <table>
                 <tr style=" padding-bottom: 10px;">
-                    <td style="width: 80%; padding-right:10px;"><img src="{{logo}}"
-                            style="width: 200px;" />
+                    <td style="width: 80%; padding-right:10px;">
+                        <img src="{{logo}}" style="width: 200px;" />
                         <div class="header_div">
-                            <p><b>{{company.CompanyName}}</b></p>
-                            <p style='white-space:pre'>{{company.Address}}</p>
+                            <br/>
+                            <b>{{company.CompanyName}}</b>
+                            <div style='white-space:pre'>{{company.Address}}</div>
                             <!-- <p><b>WEB BUREAU WEB-DESIGN CO LLC</b><br>Dubai<br>United Arab Emirates</p> -->
                         </div>
                     </td>
                     <td style="width:20%; padding-left:5px; text-align: right;">
                         <div class="header_div">
 
-                            <p style="font-weight: 900;">INVOICE<br># {{invoice.InvoiceNumber}}</p>
+                            <div style="font-weight: 400;font-size:40px;line-height: 0;">INVOICE</div>
+                            
+                            <div># {{invoice.InvoiceNumber}}</div>
                         </div>
                         <div class="header_div">
 
                             <span>Balance Due<br>
-                                <b>AED {{invoice.AmountDue}}</b></span>
+                                <b style="font-size:20px;">AED {{invoice.AmountDue}}</b></span>
                         </div>
 
 
@@ -309,36 +302,44 @@
 
         <div class="customer_details_main">
             <table>
-                <tr style="width:50%;">
-                    <td rowspan="3" class="cust_detail_td" style="width:71%;">
+                <tr >
+                    <td style="width:60%;" rowspan="2" class="cust_detail_td" style="width:71%;">
                         <p>Bill To:
                             {% if billingAddress.CustomerName %}
                             <br><b>{{billingAddress.CustomerName}}</b>
                             {% endif %}
                             <br><b>{{client.CustomerDisplayName}}</b>
                            
-                            <br>{{billingAddress.Address1}}<br>
+                            <br>
+
+                            {% if billingAddress.Address1 %}
+                            {{billingAddress.Address1}}<br>
+                            {% endif %}
+                            {% if billingAddress.Address2 %}
                             {{billingAddress.Address2}}<br>
+                            {% endif %}
+                            {% if billingAddress.City %}
                             {{billingAddress.City}}<br>
+                            {% endif %}
+                            {% if billingAddress.CountryName %}
                             {{billingAddress.CountryName}}<br>
+                            {% endif %}
+                            {% if billingAddress.ZipCode %}
                             {{billingAddress.ZipCode}}
+                            {% endif %}
                         </p>
 
                     </td>
 
 
+                    <td style="vertical-align: top;text-align:right;width:20%;">Invoice Date:</b></td>
+                    <td style="vertical-align: top;text-align:right;">{{invoice.InvoiceDate}}</b></td>
 
-                </tr>
-
-
-                <tr style="width:20%;">
-                    <td style="vertical-align: top; width:20%;">Invoice Date:</b></td>
-                    <td style="vertical-align: top;">{{invoice.InvoiceDate}}</b></td>
                 </tr>
 
                 <tr>
-                    <td style="vertical-align: top;">Due Date:</b></td>
-                    <td style="vertical-align: top;">{{invoice.DueDate}}</b></td>
+                    <td style="vertical-align: top;text-align:right;">Due Date:</b></td>
+                    <td style="vertical-align: top;text-align:right;">{{invoice.DueDate}}</b></td>
                 </tr>
 
             </table>
@@ -421,7 +422,9 @@
         {%endif%}
 
 
-    </div>
+    {% if bankAccount %}
+    <p style='white-space:pre'><b><u>Bank Account</u></b><br/>{{bankAccount}}</p>
+    {%endif%}
     <p>NOTES<br>Thank you for the payment. You just made our day</p>
     </div>
 </body>

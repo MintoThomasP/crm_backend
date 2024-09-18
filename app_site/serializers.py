@@ -29,7 +29,8 @@ class SiteSettingsSerializer(serializers.ModelSerializer):
                   'SecondaryColor',
                   'FavIcon',
                   'StaffCodePrefix',
-                  'DefaultMobilePrefix'
+                  'DefaultMobilePrefix',
+                  'BankAccount'
         )
 
 
@@ -58,7 +59,8 @@ class SaveSiteSettingsSerializer(serializers.ModelSerializer):
                   'PrimaryColor',
                   'SecondaryColor',
                   'StaffCodePrefix',
-                  'DefaultMobilePrefix'        
+                  'DefaultMobilePrefix',
+                  'BankAccount'        
         )
 
 

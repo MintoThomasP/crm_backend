@@ -28,7 +28,7 @@ class SiteSettings(models.Model):
     PrimaryColor=models.CharField(max_length=50, blank=True, null=True)
     SecondaryColor=models.CharField(max_length=50, blank=True, null=True)
     FavIcon=models.FileField(upload_to='FavIcon/',null=True,blank=True,max_length=300)
-
+    BankAccount=models.TextField(null=True,blank=True)
 
 
 

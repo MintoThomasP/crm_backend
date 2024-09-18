@@ -780,6 +780,7 @@ from django.core.files.base import ContentFile
 
 #save and print
 from decimal import Decimal
+from datetime import datetime
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for view invoice PDF",)
 @api_view(['GET'])
@@ -798,8 +799,20 @@ def ViewPDF(request, InvoiceId=""):
                 siteSettings=SiteSettings.objects.get(CompanyId=invoice.CompanyId)
                 siteSettingsSerializer=SiteSettingsSerializer(siteSettings)
                 logo=os.path.join(settings.BASE_DIR)+siteSettingsSerializer.data['Logo']
+                if invoice.AddBankAccount:
+                    bankAccount=siteSettingsSerializer.data['BankAccount']
             except:
                 logo=""
+            
+            InvoiceDate = datetime.strptime(invoice.InvoiceDate, '%Y-%m-%d')
+
+            # Format the date in '25 Mar 2024' format
+            invoice.InvoiceDate = InvoiceDate.strftime('%d %b %Y')
+        
+            DueDate = datetime.strptime(invoice.DueDate, '%Y-%m-%d')
+
+            # Format the date in '25 Mar 2024' format
+            invoice.DueDate = DueDate.strftime('%d %b %Y')
             context = {
                 'invoice': invoice,
                 'invoiceItems': invoiceItems,
@@ -809,7 +822,8 @@ def ViewPDF(request, InvoiceId=""):
                 'siteSettings':siteSettings,
                 'billingAddress':billingAddress,
                 'client':client,
-                'company':company
+                'company':company,
+                'bankAccount': bankAccount,
             }
             if siteSettings.InvoiceTemplate=='invoice.html':
                 
