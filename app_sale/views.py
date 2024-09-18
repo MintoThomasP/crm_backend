@@ -804,15 +804,21 @@ def ViewPDF(request, InvoiceId=""):
             except:
                 logo=""
             
-            InvoiceDate = datetime.strptime(invoice.InvoiceDate, '%Y-%m-%d')
+            try:
+                InvoiceDate = datetime.strptime(invoice.InvoiceDate, '%Y-%m-%d')
 
-            # Format the date in '25 Mar 2024' format
-            invoice.InvoiceDate = InvoiceDate.strftime('%d %b %Y')
+                # Format the date in '25 Mar 2024' format
+                invoice.InvoiceDate = InvoiceDate.strftime('%d %b %Y')
         
-            DueDate = datetime.strptime(invoice.DueDate, '%Y-%m-%d')
+            except:
+                p=""
+            try:
+                DueDate = datetime.strptime(invoice.DueDate, '%Y-%m-%d')
 
-            # Format the date in '25 Mar 2024' format
-            invoice.DueDate = DueDate.strftime('%d %b %Y')
+                # Format the date in '25 Mar 2024' format
+                invoice.DueDate = DueDate.strftime('%d %b %Y')
+            except:
+                p=""
             context = {
                 'invoice': invoice,
                 'invoiceItems': invoiceItems,
