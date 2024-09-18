@@ -12,7 +12,7 @@
 
         html {
             font-family: 'Roboto', sans-serif;
-            color: rgba(0, 0, 0, 0);
+            color: #2e4157;
         }
         @page {
             size: A4 portrait;
@@ -21,14 +21,12 @@
         }
         @media print {
             html {
-                color: rgba(0, 0, 0, 0);
                 text-shadow: 0 0 0 #000000;
                
             }
 
             @media print and (-webkit-min-device-pixel-ratio:0) {
                 html {
-                color: #000000;
                 -webkit-print-color-adjust: exact;
                 
                 }
@@ -270,23 +268,20 @@
         <div class="invoice_header">
             <table>
                 <tr style=" padding-bottom: 10px;">
-                    <td style="width: 80%; padding-right:10px;">
-                        <div style='white-space:pre'>
+                    <td style="width: 80%;">
+                        <div>
                         <img src="{{logo}}" style="width: 200px;" /><br/>
                             <b>{{company.CompanyName}}</b>
-                            <br/>{{company.Address}}
+                            <br/><span style='white-space:pre'>{{company.Address}}</span>
                             <!-- <p><b>WEB BUREAU WEB-DESIGN CO LLC</b><br>Dubai<br>United Arab Emirates</p> -->
                         </div>
                     </td>
                     <td style="width:30%; padding-left:5px; text-align: right;">
-                        <div class="header_div">
 
-                            <div style="font-weight: 400;font-size:40px;line-height: 0;">INVOICE</div>
-                            
-                            <div># {{invoice.InvoiceNumber}}</div>
-                        </div>
-                        <div class="header_div">
-
+                            <span style="font-weight: 400;font-size:40px;line-height: 0;">INVOICE</span>
+                            <br/>
+                            <b style="font-size:16px;"># {{invoice.InvoiceNumber}}</b>
+                            <br/>
                             <span>Balance Due<br>
                                 <b style="font-size:20px;">AED {{invoice.AmountDue}}</b></span>
                         </div>
@@ -422,7 +417,7 @@
 
 
     {% if bankAccount %}
-    <p style='white-space:pre'><b><u>Bank Account</u></b><br/>{{bankAccount}}</p>
+    <p style='white-space:pre;font-size:12px;'><b><u>Bank Account</u></b><br/>{{bankAccount}}</p>
     {%endif%}
     <p>NOTES<br>Thank you for the payment. You just made our day</p>
     </div>
