@@ -52,3 +52,20 @@ class SiteMessage(models.Model):
     SiteMessage = models.TextField( blank=True, null=True)
     ExpiryDate = models.TextField(blank=True, null=True)
 
+
+
+
+class SiteContact(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    SiteContactId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    ContactType = models.CharField(max_length=300, blank=True, null=True)
+    Name = models.CharField(max_length=300, blank=True, null=True)
+    Email = models.CharField(max_length=300, blank=True, null=True)
+    
+    PhoneNumber = models.CharField(max_length=50, blank=True, null=True)
+    CompanyName = models.CharField(max_length=300, blank=True, null=True)
+    Message = models.TextField(blank=True, null=True)
+    Services=models.CharField(max_length=300, blank=True, null=True)
+    CompanyId=models.CharField(max_length=50, blank=True, null=True)
+    

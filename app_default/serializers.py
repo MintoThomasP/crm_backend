@@ -1,6 +1,6 @@
 
 from xml.dom.minidom import DocumentType
-from app_default.models import CategoryType, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquiryType, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, ReportType, SectionType, StaffStatus, TaskStatus, UserType
+from app_default.models import CategoryType, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquiryType, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, ReportType, SectionType, SiteContactType, StaffStatus, TaskStatus, UserType
 from rest_framework import serializers
 
 
@@ -180,4 +180,12 @@ class CountryCodeSerializer(serializers.ModelSerializer):
             'Country',
             'CountryCode',
             'RegularExpression'
+        )
+
+
+class SiteContactTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SiteContactType
+        fields = (
+            'ContactTypeId','ContactType'
         )

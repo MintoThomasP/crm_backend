@@ -38,7 +38,7 @@ from app_todo.models import Todo
 def CompanyApi(request):
     try:
         if request.method == 'GET':
-            company = Company.objects.all()
+            company = Company.objects.filter(ActiveStatus=1)
             companySerializer = CompanySerializer(
                     company, many=True)
             companyData=[]
@@ -102,7 +102,10 @@ def CompanyApiById(request, CompanyId=""):
             return JsonResponse(companyData, safe=False)
         elif request.method == 'DELETE':
             company = Company.objects.get(CompanyId=CompanyId)
-            company.delete()
+           
+            company.ActiveStatus=0
+            company.save()
+
             return JsonResponse("Deleted successfully", safe=False)
         else:
             return JsonResponse("", safe=False)
@@ -272,7 +275,7 @@ def CompanyPerformanceById(request, CompanyId=""):
             companyData = companySerializer.data
             
 
-            projects = Project.objects.filter(CompanyId=CompanyId)
+            projects = Project.objects.filter(CompanyId=CompanyId,ActiveStatus=1)
             projectSerializer = ProjectSerializer(projects, many=True)
             total_points_gain = 0
             total_count = 0
@@ -318,9 +321,9 @@ def CompanyPerformanceById(request, CompanyId=""):
             companyData['bestPerformer'] = "N/A"
             if bestPerformer:
                 companyData['bestPerformer'] = max(bestPerformer, key=lambda ev: ev['Performance'])
-            # Fetch staff and clients in bulk
-            staff = Staff.objects.filter(CompanyId=CompanyId)
-            client = Client.objects.filter(CompanyId=CompanyId)
+           
+            staff = Staff.objects.filter(CompanyId=CompanyId,Status=1)
+            client = Client.objects.filter(CompanyId=CompanyId,ActiveStatus=1)
 
             # Serialize the data
             staff_count = staff.count()
@@ -356,11 +359,19 @@ def CompanyPerformanceById(request, CompanyId=""):
 
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get Company by CompanyId",)
-@api_view(['GET','DELETE'])
+@api_view(['GET'])
 @retry(retries=3, delay=2)
 def DeleteCompanyDataByCompanyId(request, CompanyId=""):
     try:
         if request.method == 'GET':          
+            company = Company.objects.get(CompanyId=CompanyId)
+            companyDocuments=CompanyDocuments.objects.filter(CompanyId=CompanyId)
+            for compdoc in companyDocuments:
+                compdoc.Document.delete(save=True)
+                compdoc.delete
+            login=Login.objects.get(UserId=CompanyId)
+            login.delete
+
             category=Category.objects.filter(CompanyId=CompanyId)
             for cate in category:
                 report=Report.objects.filter(CategoryId=cate.CategoryId)
@@ -373,7 +384,7 @@ def DeleteCompanyDataByCompanyId(request, CompanyId=""):
                 cate.delete()
 
 
-            client=Client.objects.filter(CompanyId=CompanyId)
+            client=Client.objects.filter(CompanyId=CompanyId,ActiveStatus=1)
             for cli in client:
                 clientOtherDetails=ClientOtherDetails.objects.filter(ClientId=cli.ClientId)
                 for details in clientOtherDetails:
@@ -404,7 +415,7 @@ def DeleteCompanyDataByCompanyId(request, CompanyId=""):
                     notedoc.delete()
                 note.delete()
 
-            project=Project.objects.filter(CompanyId=CompanyId)
+            project=Project.objects.filter(CompanyId=CompanyId,ActiveStatus=1)
             for proj in project:
                 projectTask=ProjectTask.objects.filter(ProjectId=proj.ProjectId)
                 for task in projectTask:
@@ -453,7 +464,7 @@ def DeleteCompanyDataByCompanyId(request, CompanyId=""):
                     payfile.delete()
                 payment.delete()
 
-            staff=Staff.objects.filter(CompanyId=CompanyId)
+            staff=Staff.objects.filter(CompanyId=CompanyId,Status=1)
             for user in staff:
                 StaffGuardian.objects.filter(StaffId=user.StaffId).delete()
                 LeaveApplication.objects.filter(StaffId=user.StaffId).delete()
@@ -470,7 +481,8 @@ def DeleteCompanyDataByCompanyId(request, CompanyId=""):
                 user.delete()
             Designation.objects.filter(CompanyId=CompanyId).delete()
             UserGroup.objects.filter(CompanyId=CompanyId).delete()
-            return JsonResponse("Deleted Successfully", safe=False)
+            company.delete()
+            return JsonResponse("Deleted successfully", safe=False)
         else:
             return JsonResponse("", safe=False)
     except:

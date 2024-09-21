@@ -20,7 +20,8 @@ class QuotationSerializer(serializers.ModelSerializer):
 'CustomerNotes',
 'TermsNConditions',
 'SubTotalAmount',
-'TotalAmount')
+'TotalAmount',
+'QuotationFile')
         
 
 class QuotationItemSerializer(serializers.ModelSerializer):

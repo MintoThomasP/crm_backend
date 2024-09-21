@@ -25,6 +25,10 @@ path('GetNotificationByToUser/', views.GetNotificationByToUser.as_view()),
     url(r'^CURDSiteMessage/(?P<CompanyId>[0-9a-zA-Z\-]+)$',
         views.SiteMessageByCompanyId),
 
+
+    path('CURDSiteContact/', views.CURDSiteContactApi),
+    url(r'^CURDSiteContact/(?P<SiteContactId>[0-9a-zA-Z\-]+)$', views.CURDSiteContactApiById),
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

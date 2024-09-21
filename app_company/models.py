@@ -16,6 +16,7 @@ class Company(models.Model):
     RegisteredOn=models.CharField(max_length=150, blank=True, null=True)
     Address=models.TextField(blank=True, null=True)
     UserGroup=models.CharField(blank=True, null=True, max_length=300)
+    ActiveStatus=models.BooleanField(default=True)
 
 
 class CompanyDocuments(models.Model):

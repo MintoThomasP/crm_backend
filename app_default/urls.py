@@ -33,6 +33,6 @@ path('UserType/', views.UserTypeApi),
     path('FollowUpTypeApi/', views.FollowUpTypeApi),
     path('EnquiryStatusApi/', views.EnquiryStatusApi),
     path('CountryCodeApi/', views.CountryCodeApi),
-
+path('SiteContactType/',views.SiteContactTypeApi),
 
 ]

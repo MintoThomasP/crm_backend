@@ -20,6 +20,7 @@ class Project(models.Model):
     Duration=models.IntegerField(default=0)
     Status=models.ForeignKey('app_default.TaskStatus',on_delete=models.CASCADE)
     ClientId=models.CharField(blank=True, null=True, max_length=50)
+    ActiveStatus=models.BooleanField(default=True)
     # def save(self, *args, **kwargs):
     #     if not self.StartDate:
     #         # Convert current time to IST

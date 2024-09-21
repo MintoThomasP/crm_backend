@@ -16,7 +16,8 @@ class ProjectSerializer(serializers.ModelSerializer):
 'EndDate',
 'Duration',
 'Status',
-'ClientId')
+'ClientId',
+'ActiveStatus')
         
 
 class ProjectTaskSerializer(serializers.ModelSerializer):

@@ -6,13 +6,15 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
+from app_default.models import SiteContactType
+from app_default.serializers import SiteContactTypeSerializer
 from app_default.views import retry
 from app_login.models import LoginHistory
 from app_project.models import ProjectTask, ProjectTaskTiming
 from app_project.serializers import ProjectTaskSerializer
 from app_project.views import CustomPageNumberPagination
-from app_site.models import Notification, SiteMessage, SiteSettings
-from app_site.serializers import NotificationSerializer, SaveSiteSettingsSerializer, SiteMessageSerializer, SiteSettingsSerializer, UploadSiteSettingsSerializer
+from app_site.models import Notification, SiteContact, SiteMessage, SiteSettings
+from app_site.serializers import NotificationSerializer, SaveSiteSettingsSerializer, SiteContactSerializer, SiteMessageSerializer, SiteSettingsSerializer, UploadSiteSettingsSerializer
 from django.db.models import Max
 from django.db.models import F
 from app_staff.models import Staff
@@ -38,6 +40,7 @@ def CURDSiteSettingsApi(request, pk=""):
             return JsonResponse(siteSettingsSerializer.data, safe=False)
         elif request.method == 'POST':
             siteSettingsData = JSONParser().parse(request)
+            
             siteSettingsSerializer = SaveSiteSettingsSerializer(
                 data=siteSettingsData)
             if siteSettingsSerializer.is_valid():
@@ -249,3 +252,71 @@ def SiteMessageByCompanyId(request,CompanyId=""):
     except:
         return JsonResponse("", safe=False)
     
+
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=SiteContactSerializer,operation_description="NOTE: API for save SiteContact")
+@swagger_auto_schema(method='PUT', request_body=SiteContactSerializer,operation_description="NOTE: API for edit SiteContact")
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all Site contacts",)
+@api_view(['GET','POST','PUT'])
+def CURDSiteContactApi(request, pk=""):
+    try:
+        if request.method == 'GET':
+            siteContact = SiteContact.objects.all().order_by('-SortId')
+            siteContactSerializer = SiteContactSerializer(
+                siteContact, many=True)
+            contactData=[]
+            for row in siteContactSerializer.data:
+                try:
+                    contactType=SiteContactType.objects.get(ContactTypeId=row['ContactType'])
+                    contactTypeSerializer=SiteContactTypeSerializer(contactType)
+                    row['ContactTypeName']=contactTypeSerializer.data['ContactType']
+                except:
+                    row['ContactTypeName']=""
+                contactData.append(row)
+            return JsonResponse(contactData, safe=False)
+        elif request.method == 'POST':
+            siteContactData = JSONParser().parse(request)
+            siteContactSerializer = SiteContactSerializer(
+                data=siteContactData)
+            if siteContactSerializer.is_valid():
+                siteContactSerializer.save()
+                return JsonResponse(siteContactSerializer.data['SiteContactId'], safe=False)
+            return JsonResponse("Failed", safe=False)
+        elif request.method == 'PUT':
+            siteContactData = JSONParser().parse(request)
+            siteContact = SiteContact.objects.get(
+                SiteContactId=siteContactData['SiteContactId'])
+            siteContactSerializer = SiteContactSerializer(
+                siteContact, data=siteContactData)
+            if siteContactSerializer.is_valid():
+                siteContactSerializer.save()
+                return JsonResponse(siteContactSerializer.data['SiteContactId'], safe=False)
+            return JsonResponse("Failed", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("Invalid", safe=False)
+    
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: Api for get SiteContact by SiteContactId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: Api for DELETE SiteContact by SiteContactId",)
+@api_view(['GET','DELETE'])
+def CURDSiteContactApiById(request, SiteContactId=""):
+    try:
+        if request.method == 'GET':
+            siteContact = SiteContact.objects.get(
+                SiteContactId=SiteContactId)
+            siteContactSerializer = SiteContactSerializer(
+                siteContact)
+            return JsonResponse(siteContactSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            siteContact = SiteContact.objects.get(SiteContactId=SiteContactId)
+            siteContact.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("Invalid", safe=False)

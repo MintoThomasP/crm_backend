@@ -14,7 +14,8 @@ class CompanySerializer(serializers.ModelSerializer):
             'Website',
             'RegisteredOn',
             'Address',
-            'UserGroup'
+            'UserGroup',
+            'ActiveStatus'
         )
 class CompanyDocumentsSerializer(serializers.ModelSerializer):
     class Meta:

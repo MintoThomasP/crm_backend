@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from app_site.models import Notification, SiteMessage, SiteSettings
+from app_site.models import Notification, SiteContact, SiteMessage, SiteSettings
 
 
 class SiteSettingsSerializer(serializers.ModelSerializer):
@@ -94,3 +94,20 @@ class SiteMessageSerializer(serializers.ModelSerializer):
                   'SiteMessage',
                   'ExpiryDate'
         )
+
+
+class SiteContactSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SiteContact
+        fields = ('SortId',
+                  'SiteContactId',
+                  'Name',
+                  'Email',
+                  'ContactType',
+                  'PhoneNumber',
+                  'CompanyName',
+                  'Message',
+                  'Services',
+                  'CompanyId'
+                 
+                  )

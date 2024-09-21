@@ -7,6 +7,7 @@ from django.views.decorators.csrf import csrf_exempt
 from app_company.models import Company
 from app_company.serializers import CompanySerializer
 from app_default.views import retry
+from app_login.models import Login
 from app_project.models import Project, ProjectTask
 from app_project.serializers import ProjectTaskSerializer
 from rest_framework.parsers import JSONParser
@@ -48,7 +49,7 @@ def staffApi(request,CompanyId=""):
     try:
         if request.method == 'GET':
            
-            staff = Staff.objects.filter(CompanyId=CompanyId).order_by('-SortId')
+            staff = Staff.objects.filter(CompanyId=CompanyId,Status=1).order_by('-SortId')
             staffSerializer = StaffSerializer(
                     staff, many=True)
             staffData=[]
@@ -129,6 +130,24 @@ def staffApi(request,CompanyId=""):
                 staff, data=staffData)
             if staffSerializer.is_valid():
                 staffSerializer.save()
+                loginData={
+                    "UserId":staffData['StaffId'],
+                    "EmailId":staffSerializer.data['EmailId'],
+                    "UserType":staffSerializer.data['UserType'],
+                    "Password":staffSerializer.data['StaffCode']
+
+                }
+                try:
+                    login=Login.objects.get(UserId=staffData['StaffId'])
+                    loginSerializer=LoginSerializer(login,data=loginData)
+                    if loginSerializer.is_valid():
+                        loginSerializer.save()
+                except:
+                    loginSerializer=LoginSerializer(data=loginData)
+                    if loginSerializer.is_valid():
+                        loginSerializer.save()
+
+
                 return JsonResponse(staffSerializer.data['StaffId'], safe=False)
             return JsonResponse("Failed to Update", safe=False)
         else:
@@ -212,7 +231,8 @@ def StaffApiById(request, StaffId=""):
             return JsonResponse(designationData, safe=False)
         elif request.method == 'DELETE':
             staff = Staff.objects.get(StaffId=StaffId)
-            staff.delete()
+            staff.Status=0
+            staff.save()
             return JsonResponse("Deleted successfully", safe=False)
         else:
             return JsonResponse("", safe=False)

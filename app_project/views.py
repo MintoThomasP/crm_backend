@@ -51,7 +51,7 @@ class CustomPageNumberPagination(PageNumberPagination):
 def ProjectApi(request,CompanyId=""):
     try:
         if request.method == 'GET':
-            project = Project.objects.filter(CompanyId=CompanyId).order_by('-SortId')
+            project = Project.objects.filter(CompanyId=CompanyId,ActiveStatus=1).order_by('-SortId')
             projectSerializer = ProjectSerializer(
                     project, many=True)
             
@@ -126,7 +126,9 @@ def ProjectApiById(request, ProjectId=""):
             return JsonResponse(projectSerializer.data, safe=False)
         elif request.method == 'DELETE':
             project = Project.objects.get(ProjectId=ProjectId)
-            project.delete()
+            project.ActiveStatus=0
+            project.save()
+
             return JsonResponse("Deleted successfully", safe=False)
         else:
             return JsonResponse("", safe=False)
@@ -134,7 +136,7 @@ def ProjectApiById(request, ProjectId=""):
         return JsonResponse("", safe=False)
     
 class ProjectApiByCompanyId(generics.ListAPIView):
-    queryset =Project.objects.all().order_by('-SortId')
+    queryset =Project.objects.filter(ActiveStatus=1).order_by('-SortId')
     pagination_class = CustomPageNumberPagination
     serializer_class = ProjectSerializer 
     def post(self, request, *args, **kwargs):
@@ -161,7 +163,7 @@ def ProjectByCompanyId(request, CompanyId=""):
     try:
         if request.method == 'GET': 
             project = Project.objects.filter(
-                    CompanyId=CompanyId)
+                    CompanyId=CompanyId,ActiveStatus=1)
             projectSerializer = ProjectSerializer(
                     project,many=True)
             return JsonResponse(projectSerializer.data, safe=False)
@@ -187,7 +189,7 @@ class ProjectTaskPagination(generics.ListAPIView):
                 self.queryset = self.queryset.filter(TaskAssignedTo=filterData['TaskAssignedTo'])
             if filterData['CompanyId']:
                 project = Project.objects.filter(
-                        CompanyId=filterData['CompanyId'])
+                        CompanyId=filterData['CompanyId'],ActiveStatus=1)
                 projectSerializer = ProjectSerializer(
                         project,many=True)
                 projectId=[]
@@ -2269,7 +2271,7 @@ class GetAllTicketsApi(generics.ListAPIView):
             Keyword = filterData.get('SearchKeyword', '')
             if filterData['CompanyId']:
                 project = Project.objects.filter(
-                        CompanyId=filterData['CompanyId'])
+                        CompanyId=filterData['CompanyId'],ActiveStatus=1)
                 projectSerializer = ProjectSerializer(
                         project,many=True)
                 projectId=[]
@@ -2900,7 +2902,7 @@ def ProjectTaskendatedurationCalculation(request):
         total_duration = f"{total_duration_hours}:{total_duration_remaining_minutes}"
 
         projectTask = ProjectTask.objects.get(ProjectTaskId=row.ProjectTaskId)
-        print(projectTaskTimingSerializer.data)
+      
         projectTask.EndDate=projectTaskTimingSerializer.data[0]['EndDate']
         projectTask.TotalDuration = total_duration
         projectTask.save()

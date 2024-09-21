@@ -22,6 +22,7 @@ class Quotation(models.Model):
     TermsNConditions=models.TextField(blank=True, null=True)
     SubTotalAmount=models.CharField(blank=True, null=True, max_length=15)
     TotalAmount=models.CharField(blank=True, null=True, max_length=15)
+    QuotationFile=models.FileField(null=True,blank=True, upload_to='QuotationFile')
 
 
 class QuotationItem(models.Model):

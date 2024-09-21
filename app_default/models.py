@@ -116,3 +116,9 @@ class CountryCode(models.Model):
     Country = models.CharField(max_length=300, blank=True, null=True)
     CountryCode = models.CharField(max_length=10, blank=True, null=True)
     RegularExpression=models.TextField(blank=True, null=True)
+
+
+
+class SiteContactType(models.Model):
+    ContactTypeId = models.AutoField(primary_key=True, editable=False)
+    ContactType= models.CharField(max_length=150, blank=True, null=True)

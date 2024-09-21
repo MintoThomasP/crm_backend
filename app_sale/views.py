@@ -60,7 +60,7 @@ def sendCubexizsoftMail(msg=""):
 @api_view(['GET','POST','PUT'])
 @retry(retries=3, delay=2)
 def QuotationApi(request):
-    try:
+    # try:
         if request.method == 'GET':
             quotation = Quotation.objects.all().order_by('-SortId')
             quotationSerializer = QuotationSerializer(
@@ -108,8 +108,8 @@ def QuotationApi(request):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for get Quotation by QuotationId",)
@@ -696,7 +696,11 @@ class DownloadPDF(View):
         clientadrress=ClientAddress.objects.get(ClientId=invoice.ClientId)
         billingAddress=json.loads(invoice.BillingAddress)
         totalAmount=Decimal(invoice.TotalAmount)
-        amountinwords=decimal_number_to_words(totalAmount)
+        siteSettings=SiteSettings.objects.get(CompanyId=invoice.CompanyId)
+        currencyType=siteSettings.CurrencyType
+            
+        amountinwords=decimal_number_to_words(totalAmount,currencyType)
+        # amountinwords=decimal_number_to_words(totalAmount)
         
         try:
             siteSettings=SiteSettings.objects.get(CompanyId=invoice.CompanyId)
@@ -735,7 +739,7 @@ def render_to_pdf(template_src, context_dict={}):
     result = BytesIO()
     
         
-    pdf = pisa.pisaDocument(BytesIO(html.encode("ISO-8859-1")), result)
+    pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
     if not pdf.err:
         return HttpResponse(result.getvalue(), content_type='application/pdf')
         
@@ -794,15 +798,24 @@ def ViewPDF(request, InvoiceId=""):
             clientaddress = ClientAddress.objects.get(ClientId=invoice.ClientId)
             billingAddress=json.loads(invoice.BillingAddress)
             totalAmount= Decimal(invoice.TotalAmount)
-            amountinwords=decimal_number_to_words(totalAmount)
+            siteSettings=SiteSettings.objects.get(CompanyId=invoice.CompanyId)
+            currencyType=siteSettings.CurrencyType
+            
+            amountinwords=decimal_number_to_words(totalAmount,currencyType)
+            # amountinwords=decimal_number_to_words(totalAmount)
             try:
                 siteSettings=SiteSettings.objects.get(CompanyId=invoice.CompanyId)
                 siteSettingsSerializer=SiteSettingsSerializer(siteSettings)
                 logo=os.path.join(settings.BASE_DIR)+siteSettingsSerializer.data['Logo']
-                if invoice.AddBankAccount:
-                    bankAccount=siteSettingsSerializer.data['BankAccount']
+                
             except:
                 logo=""
+           
+            bankAccount=""
+            if invoice.AddBankAccount == True:
+                bankAccount=siteSettings.BankAccount
+            else:
+                bankAccount=""
             
             try:
                 InvoiceDate = datetime.strptime(invoice.InvoiceDate, '%Y-%m-%d')
@@ -1104,14 +1117,24 @@ def number_to_words(number):
  
     return result.strip()
 
-def decimal_number_to_words(number):
+def decimal_number_to_words(number,currencyType):
     integer_part = int(number)
     fractional_part = int((number - integer_part) * 100)
     
     words_integer_part = number_to_words(integer_part)
     words_fractional_part = number_to_words(fractional_part)
- 
-    return words_integer_part+" Dirhams and "+words_fractional_part+" Fils."
+    if currencyType == 'INR':
+        if fractional_part > 0:
+            Amount = words_integer_part + " Rupees and " + words_fractional_part + " Paisa."
+        else:
+            Amount = words_integer_part + " Rupees only."
+    elif currencyType == 'AED':
+        if fractional_part > 0:
+            Amount = words_integer_part + " Dirhams and " + words_fractional_part + " Fils."
+        else:
+            Amount = words_integer_part + " Dirhams only."
+
+    return Amount
 
 
 
@@ -1127,8 +1150,10 @@ def ViewPDFWoodsInteriors(request, InvoiceId=""):
             clientaddress = ClientAddress.objects.get(ClientId=invoice.ClientId)
             totalAmount=Decimal(invoice.TotalAmount)
             billingAddress=json.loads(invoice.BillingAddress)
+            siteSettings=SiteSettings.objects.get(CompanyId=invoice.CompanyId)
+            currencyType=siteSettings.CurrencyType
             
-            amountinwords=decimal_number_to_words(totalAmount)
+            amountinwords=decimal_number_to_words(totalAmount,currencyType)
             context = {
                 'invoice': invoice,
                 'invoiceItems': invoiceItems,
@@ -1240,8 +1265,10 @@ def ViewPaymentPDF(request, PaymentReceivedId=""):
                 logo=os.path.join(settings.BASE_DIR)+siteSettingsSerializer.data['Logo']
             except:
                 logo=""
+           
             context = {
                 'payment': payment,
+                'paymentDate':datetime.strptime(payment.PaymentDate, '%Y-%m-%d').strftime('%B %d, %Y'),
                 'company':company,
                 'paymentMode':paymentMode,
                 'billingaddressdata':billingaddressdata,
@@ -1297,3 +1324,93 @@ class DownloadPaymentPDF(View):
         content = "attachment; filename=%s" %(filename)
         response['Content-Disposition'] = content
         return response
+    
+
+
+from django.templatetags.static import static
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for View payment PDF",)
+@api_view(['GET'])
+def ViewQuotationPDF(request, QuotationId=""):
+    # try:
+        if request.method == 'GET':
+            quote = Quotation.objects.get(QuotationId=QuotationId)
+            invoiceItems = QuotationItem.objects.filter(QuotationId=QuotationId)
+            company=Company.objects.get(CompanyId=quote.CompanyId)
+            client=Client.objects.get(ClientId=quote.ClientId)
+            clientaddress = ClientAddress.objects.get(ClientId=quote.ClientId)
+            try:
+                country=Country.objects.get(CountryId=clientaddress.Country)
+                countrySerializer=CountrySerializer(country)
+                clientaddress.Country=countrySerializer.data['Country']
+            except:
+                clientaddress.Country=""
+           
+           
+            totalAmount= Decimal(quote.TotalAmount)
+            siteSettings=SiteSettings.objects.get(CompanyId=quote.CompanyId)
+            currencyType=siteSettings.CurrencyType
+            
+            amountinwords=decimal_number_to_words(totalAmount,currencyType)
+            # amountinwords=decimal_number_to_words(totalAmount)
+            try:
+                siteSettings=SiteSettings.objects.get(CompanyId=quote.CompanyId)
+                siteSettingsSerializer=SiteSettingsSerializer(siteSettings)
+                logo=os.path.join(settings.BASE_DIR)+siteSettingsSerializer.data['Logo']
+                
+            except:
+                logo=""
+           
+         
+            
+            try:
+                QuoteDate = datetime.strptime(quote.QuoteDate, '%Y-%m-%d')
+
+                # Format the date in '25 Mar 2024' format
+                quote.QuoteDate = QuoteDate.strftime('%d %b %Y')
+        
+            except:
+                p=""
+            try:
+                ExpiryDate = datetime.strptime(quote.ExpiryDate, '%Y-%m-%d')
+
+                # Format the date in '25 Mar 2024' format
+                quote.ExpiryDate = ExpiryDate.strftime('%d %b %Y')
+            except:
+                p=""
+
+            logo_url = request.build_absolute_uri(static('images/pdf-graphic1.jpg'))
+            other_image_url = request.build_absolute_uri(static('images/pdf-graphic2.jpg'))
+            context = {
+                'quote': quote,
+                'invoiceItems': invoiceItems,
+                'clientaddress': clientaddress,
+                'logo':logo,
+                'amountinwords':amountinwords,
+                'siteSettings':siteSettings,
+                'logo_url':logo_url,
+                'other_image_url':other_image_url,
+                'client':client,
+                'company':company,
+              
+            }
+           
+            
+            pdf = render_to_pdf('quotation.html', context)
+            
+            
+
+            invoice_file_name = f'{quote.QuotationNumber}.pdf'
+          
+            if quote.QuotationFile:
+                quote.QuotationFile.delete(save=True)
+                quote.QuotationFile.save(invoice_file_name, ContentFile(pdf.content))
+            else:
+                quote.QuotationFile.save(invoice_file_name, ContentFile(pdf.content))
+            return HttpResponse(pdf.content, content_type='application/pdf')
+
+        else:
+            return JsonResponse({"error": "Invalid method"}, status=405)
+    # except Exception as e:
+    #     return JsonResponse({"error": str(e)}, status=500)
+

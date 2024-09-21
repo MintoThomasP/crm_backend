@@ -279,7 +279,7 @@ def ClientReportApiByClientId(request):
 @retry(retries=3, delay=2)
 def getAllProjectReport(request):
     staffData = JSONParser().parse(request)
-    project = Project.objects.all()
+    project = Project.objects.filter(ActiveStatus=1)
     projectSerializer = ProjectSerializer(project,many=True)
     ProjectDetails =[]
 
@@ -351,7 +351,7 @@ def StaffReportApiByStaffId(request):
         project_tasks = ProjectTask.objects.filter(TaskAssignedTo=staff_id,TaskType='Task')
         
     project_ids = project_tasks.values_list('ProjectId', flat=True).distinct()
-    projects = Project.objects.filter(ProjectId__in=project_ids)
+    projects = Project.objects.filter(ProjectId__in=project_ids,ActiveStatus=1)
     staff_projects = []
     for project in projects:
         project_details = {
@@ -1471,7 +1471,7 @@ def DownloadSummarizedStaffReportByStaffId(request,StaffId="",StartDate="",EndDa
         project_tasks = ProjectTask.objects.filter(TaskAssignedTo=StaffId,TaskType='Task')
         
     project_ids = project_tasks.values_list('ProjectId', flat=True).distinct()
-    projects = Project.objects.filter(ProjectId__in=project_ids)
+    projects = Project.objects.filter(ProjectId__in=project_ids,ActiveStatus=1)
     totalPoint=0
     noOftask=0
     performance=0
@@ -1609,7 +1609,7 @@ def getAllProjectReportofClientByCompanyId(request, CompanyId=""):
             start_date = datetime.strptime(startDate, '%Y-%m-%d')
             end_date = datetime.strptime(endDate, '%Y-%m-%d')
 
-            client = Client.objects.filter(CompanyId=CompanyId)
+            client = Client.objects.filter(CompanyId=CompanyId,ActiveStatus=1)
             clientSerializer = ClientSerializer(client, many=True)
             projectData = []
 
@@ -1619,7 +1619,7 @@ def getAllProjectReportofClientByCompanyId(request, CompanyId=""):
                     'performanceData': []
                 }
 
-                project = Project.objects.filter(ClientId=row['ClientId'])
+                project = Project.objects.filter(ClientId=row['ClientId'],ActiveStatus=1)
                 projectSerializer = ProjectSerializer(project, many=True)
 
                 for pro in projectSerializer.data:

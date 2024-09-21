@@ -53,6 +53,8 @@ urlpatterns = [
 
 url(r'^ViewPaymentPDF/(?P<PaymentReceivedId>[0-9a-zA-Z\-]+)$', views.ViewPaymentPDF),
 url(r'^DownloadPaymentPDF/(?P<PaymentReceivedId>[0-9a-zA-Z\-]+)$', views.DownloadPaymentPDF.as_view()),
+
+url(r'^ViewQuotationPDF/(?P<QuotationId>[0-9a-zA-Z\-]+)$', views.ViewQuotationPDF),
     ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
