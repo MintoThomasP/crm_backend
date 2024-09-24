@@ -1379,8 +1379,8 @@ def ViewQuotationPDF(request, QuotationId=""):
             except:
                 p=""
 
-            logo_url = request.build_absolute_uri(static('images/pdf-graphic1.jpg'))
-            other_image_url = request.build_absolute_uri(static('images/pdf-graphic2.jpg'))
+            logo_url = request.build_absolute_uri(static('images/line.webp'))
+            other_image_url = request.build_absolute_uri(static('images/round.webp'))
             context = {
                 'quote': quote,
                 'invoiceItems': invoiceItems,

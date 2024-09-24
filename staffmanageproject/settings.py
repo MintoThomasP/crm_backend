@@ -166,8 +166,8 @@ import os
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
-STATIC_URL = 'static/'  # The URL prefix for static files
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')] 
+STATIC_URL = '/static/'
+STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
 MEDIA_URL='/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR,'media')
@@ -197,7 +197,7 @@ GOOGLE_APPLICATION_CREDENTIALS='serviceAccountKey.json'
 
 # firebase_cred = credentials.Certificate(os.path.join(BASE_DIR, 'serviceAccountKey.json'))
 
-WEBBUREAU_LOGO="http://13.127.179.202/static/images/logo.png"
+WEBBUREAU_LOGO="https://webbureau.ae/assets/images/logo_dark.png"
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.office365.com'

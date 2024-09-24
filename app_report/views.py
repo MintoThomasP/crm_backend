@@ -1443,106 +1443,135 @@ def DownloadSummarizedStaffReportByStaffId(request,StaffId="",StartDate="",EndDa
         staff = Staff.objects.get(StaffId=StaffId)
         staffSerializer = StaffSerializer(staff)
         StaffDetails = staffSerializer.data
-        StaffName=staffSerializer.data['StaffName']
+        StaffName = staffSerializer.data['StaffName']
     except:
-        p=""
-    currentDate=datetime.now().date()
-    # currentDate=datetime.strptime(currentDate, '%Y-%m-%dT%H:%M:%S%z').date()
-    try:
-        siteSettings=SiteSettings.objects.get(CompanyId=staff.CompanyId)
-        siteSettingsSerializer=SiteSettingsSerializer(siteSettings)
-        logo=os.path.join(settings.BASE_DIR)+siteSettingsSerializer.data['Logo']
-    except:
-        logo=""
-    try:
-        company=Company.objects.get(CompanyId=staff.CompanyId)
-        companySerializer=CompanySerializer(company)
-        
-        Companydetails=companySerializer.data
+        StaffDetails = {}
+        StaffName = "Unknown"
 
+    currentDate = datetime.now().date()
+
+    try:
+        siteSettings = SiteSettings.objects.get(CompanyId=staff.CompanyId)
+        siteSettingsSerializer = SiteSettingsSerializer(siteSettings)
+        logo = os.path.join(settings.BASE_DIR, siteSettingsSerializer.data['Logo'])
     except:
-        Companydetails=""
-       
+        logo = ""
+
+    try:
+        company = Company.objects.get(CompanyId=staff.CompanyId)
+        companySerializer = CompanySerializer(company)
+        Companydetails = companySerializer.data
+    except:
+        Companydetails = ""
+
+    # Handle StartDate and EndDate
     if StartDate and EndDate:
-        start_date = timezone.datetime.strptime(StartDate, '%Y-%m-%d').date()
-        end_date = (timezone.datetime.strptime(EndDate, '%Y-%m-%d') + timezone.timedelta(days=1)).date()
-        project_tasks = ProjectTask.objects.filter(TaskAssignedTo=StaffId,CreatedDate__range=(start_date, end_date),TaskType='Task')
+        try:
+            start_date = timezone.datetime.strptime(StartDate, '%Y-%m-%d').date()
+            end_date = (timezone.datetime.strptime(EndDate, '%Y-%m-%d') + timezone.timedelta(days=1)).date()
+        except ValueError:
+            # Fallback for invalid date format
+            start_date = None
+            end_date = None
     else:
-        project_tasks = ProjectTask.objects.filter(TaskAssignedTo=StaffId,TaskType='Task')
-        
+        start_date = None
+        end_date = None
+
+    # Query for project tasks
+    if start_date and end_date:
+        project_tasks = ProjectTask.objects.filter(TaskAssignedTo=StaffId, CreatedDate__range=(start_date, end_date), TaskType='Task')
+    else:
+        project_tasks = ProjectTask.objects.filter(TaskAssignedTo=StaffId, TaskType='Task')
+
+    # Get distinct project ids and filter projects
     project_ids = project_tasks.values_list('ProjectId', flat=True).distinct()
-    projects = Project.objects.filter(ProjectId__in=project_ids,ActiveStatus=1)
-    totalPoint=0
-    noOftask=0
-    performance=0
+    projects = Project.objects.filter(ProjectId__in=project_ids, ActiveStatus=1)
+
+    # Initialize performance-related variables
+    totalPoint = 0
+    noOftask = 0
+    performance = 0
     staff_projects = []
+
+    # Process each project
     for project in projects:
         project_details = {
             'ProjectId': project.ProjectId,
             'ProjectName': project.ProjectName,
-            'TotalCompletedPoints': round(0.00,2),  
+            'TotalCompletedPoints': 0.00,  
             'TotalNumberofTask': 0,
             'DueTaskCount': 0,
             'CompletedTaskCount': 0,
             'OnTimeCompletedTaskCount': 0
         }
-        if StartDate and EndDate:
-            project_tasks_filtered = project_tasks.filter(ProjectId=project.ProjectId,CreatedDate__range=(start_date, end_date),TaskType='Task')
-        else:
-            project_tasks_filtered = project_tasks.filter(ProjectId=project.ProjectId,TaskType='Task')
-           
+
+        # Filter project tasks by date if available
+        project_tasks_filtered = project_tasks.filter(ProjectId=project.ProjectId)
         project_task_serializer = ProjectTaskSerializer(project_tasks_filtered, many=True)
+
+        # Count task points and statuses
         for task_data in project_task_serializer.data:
             project_details['TotalNumberofTask'] += 1
-            project_details['TotalCompletedPoints'] =round((round(float(project_details['TotalCompletedPoints']),2) + round(float(task_data['CompletionPoint']),2)),2)
-            
-            if task_data['Status'] == '1' or task_data['Status'] == '2' or task_data['Status'] == '4' or task_data['Status'] == '5' or task_data['Status'] == '6':
+            project_details['TotalCompletedPoints'] += float(task_data['CompletionPoint'])
+
+            if task_data['Status'] in ['1', '2', '4', '5', '6']:
                 project_details['DueTaskCount'] += 1
-            elif task_data['Status'] == '7' or task_data['Status'] == '8' or task_data['Status'] == '9':
+            elif task_data['Status'] in ['7', '8', '9']:
                 project_details['CompletedTaskCount'] += 1
-            if  task_data['Status'] == '9':
+            if task_data['Status'] == '9':
                 project_details['OnTimeCompletedTaskCount'] += 1
 
         staff_projects.append(project_details)
-        for point in staff_projects:
-            totalPoint+=(point['TotalCompletedPoints'])
-            noOftask+=point['TotalNumberofTask']
-        performance=totalPoint/noOftask
+
+        # Update total points and task count
+        totalPoint += project_details['TotalCompletedPoints']
+        noOftask += project_details['TotalNumberofTask']
+
+    # Calculate performance
+    if noOftask > 0:
+        performance = totalPoint / noOftask
+    else:
+        performance = 0
 
     StaffDetails['Projects'] = staff_projects
-    
-    if StartDate and EndDate:
-        start_date = timezone.datetime.strptime(StartDate, '%Y-%m-%d').date()
-        end_date = (timezone.datetime.strptime(EndDate, '%Y-%m-%d')).date()
-        Start_Date=start_date.strftime('%B %d, %Y')
-        End_Date=end_date.strftime('%B %d, %Y')
-    else:
-        Start_Date=""
-        End_Date=""
-    
 
+    # Format start and end dates for display
+    if StartDate and EndDate:
+        try:
+            Start_Date = start_date.strftime('%B %d, %Y') if start_date else ""
+            End_Date = end_date.strftime('%B %d, %Y') if end_date else ""
+        except:
+            Start_Date = ""
+            End_Date = ""
+    else:
+        Start_Date = ""
+        End_Date = ""
+
+    # Prepare context for rendering
     context = {
-        'StartDate':Start_Date,
-        'JoinedDate':datetime.strptime(staff.JoinedOn, '%Y-%m-%d').strftime('%B %d, %Y'),
-        'CurrentDate':currentDate.strftime('%B %d, %Y'),
-        'EndDate':End_Date,
-        'totalPoint':round(totalPoint,2),
-        'performance':round(performance,2),
-        'StaffName':StaffName,
-        'StaffDetails':StaffDetails,
-        'logo':logo,
-        'Companydetails':Companydetails
+        'StartDate': Start_Date,
+        'JoinedDate': staff.JoinedOn.strftime('%B %d, %Y') if staff.JoinedOn else "Unknown",
+        'CurrentDate': currentDate.strftime('%B %d, %Y'),
+        'EndDate': End_Date,
+        'totalPoint': round(totalPoint, 2),
+        'performance': round(performance, 2),
+        'StaffName': StaffName,
+        'StaffDetails': StaffDetails,
+        'logo': logo,
+        'Companydetails': Companydetails
     }
-    # return JsonResponse(context,safe=False)
+
+    # Render PDF and watermark
     pdf = render_to_pdf('summarized_staff_report.html', context)
     watermark_pdf = create_watermark("CRM")
- 
+
     input_pdf = PdfReader(BytesIO(pdf.content))
     output_pdf_stream = add_watermark(input_pdf, watermark_pdf)
- 
+
     response = HttpResponse(output_pdf_stream.read(), content_type='application/pdf')
     response['Content-Disposition'] = f'attachment; filename={context["StaffName"]}.pdf'
-    return HttpResponse(pdf.content, content_type='application/pdf')
+    return response
+
 
 
 
