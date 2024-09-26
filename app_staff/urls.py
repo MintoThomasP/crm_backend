@@ -52,6 +52,12 @@ path('CURDSalarySlipApi/', views.CURDSalarySlipApi),
     url(r'^moveOnRegister/(?P<StaffId>[0-9a-zA-Z\-]+)$', views.moveOnRegisterApi),
     path('StaffPerformanceByCompanyId/<str:CompanyId>/', views.StaffPerformanceByCompanyId),
 
+
+
+    path('StaffBankDetailsApi/', views.StaffBankDetailsApi),
+    url(r'^staffBankDetailsApiById/(?P<BankDetailId>[0-9a-zA-Z\-]+)$', views.staffBankDetailsApiById),
+    url(r'^staffBankDetailsApiByStaffId/(?P<StaffId>[0-9a-zA-Z\-]+)$', views.staffBankDetailsApiByStaffId),
+
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

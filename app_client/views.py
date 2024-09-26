@@ -3,8 +3,8 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
-from app_client.models import Client, ClientAddress, ClientDocuments, ClientOtherDetails, ClientVisitRegister, ContactPerson
-from app_client.serializers import ClientAddressSerializer, ClientDocumentsSerializer, ClientOtherDetailsSerializer, ClientSerializer, ClientVisitRegisterSerializer, ContactPersonSerializer
+from app_client.models import Client, ClientAddress, ClientBankDetails, ClientDocuments, ClientOtherDetails, ClientVisitRegister, ContactPerson
+from app_client.serializers import ClientAddressSerializer, ClientBankDetailsSerializer, ClientDocumentsSerializer, ClientOtherDetailsSerializer, ClientSerializer, ClientVisitRegisterSerializer, ContactPersonSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -118,6 +118,7 @@ def ClientApiById(request, ClientId=""):
             contactPersonSerializer = ContactPersonSerializer(
                     contactPerson, many=True)
             clientData['ContactPersons']=contactPersonSerializer.data
+            
             return JsonResponse(clientData, safe=False)
         elif request.method == 'DELETE':
             client = Client.objects.get(ClientId=ClientId)
@@ -491,3 +492,95 @@ def ClientVisitRegisterApiById(request, ClientVisitRegisterId=""):
         return JsonResponse("", safe=False)
     
 
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=ClientBankDetailsSerializer,operation_description="NOTE: API for save ClientBankDetails")
+@swagger_auto_schema(method='PUT', request_body=ClientBankDetailsSerializer,operation_description="NOTE: API for edit ClientBankDetails")
+@api_view(['POST','PUT'])
+@retry(retries=3, delay=2)
+def ClientBankDetailsApi(request):
+    try:
+        if request.method == 'POST':
+            clientBankDetailsData = JSONParser().parse(request)
+            clientBankDetailsSerializer = ClientBankDetailsSerializer(
+                data=clientBankDetailsData)
+            if clientBankDetailsData['PrimaryAccount']==True:
+                clientBankDetails=ClientBankDetails.objects.filter(PrimaryAccount=1,ClientId=clientBankDetailsData['ClientId'])
+                for bank in clientBankDetails:
+                    bank.PrimaryAccount=False
+                    bank.save()
+            if clientBankDetailsSerializer.is_valid():
+                clientBankDetailsSerializer.save()
+                clientBankDetails = ClientBankDetails.objects.filter(ClientId=clientBankDetailsData['ClientId'])
+                if len(clientBankDetails)==1:
+                    for row in clientBankDetails:
+                        row.PrimaryAccount=True
+                        row.save()
+                
+                return JsonResponse(clientBankDetailsSerializer.data['BankDetailId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            clientBankDetailsData = JSONParser().parse(request)
+            clientBankDetails = ClientBankDetails.objects.get(
+                BankDetailId=clientBankDetailsData['BankDetailId'])
+            clientBankDetailsSerializer = ClientBankDetailsSerializer(
+                clientBankDetails, data=clientBankDetailsData)
+            if clientBankDetailsData['PrimaryAccount']==True:
+                clientBankDetails=ClientBankDetails.objects.filter(PrimaryAccount=1,ClientId=clientBankDetailsData['ClientId'])
+                for bank in clientBankDetails:
+                    bank.PrimaryAccount=False
+                    bank.save()
+            if clientBankDetailsSerializer.is_valid():
+                clientBankDetailsSerializer.save()
+                
+                    
+                return JsonResponse(clientBankDetailsSerializer.data['BankDetailId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get ClientBankDetails by ClientBankDetailsId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete ClientBankDetails by ClientBankDetailsId",)
+@api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
+def ClientBankDetailsApiById(request, BankDetailId=""):
+    try:
+        if request.method == 'GET': 
+            clientBankDetails = ClientBankDetails.objects.get(
+                    BankDetailId=BankDetailId)
+            clientBankDetailsSerializer = ClientBankDetailsSerializer(
+                    clientBankDetails)
+            return JsonResponse(clientBankDetailsSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            clientBankDetails = ClientBankDetails.objects.get(BankDetailId=BankDetailId)
+            clientBankDetails.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get ClientBankDetails by ClientId",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def ClientBankDetailsApiByClientId(request, ClientId=""):
+    try:
+        if request.method == 'GET': 
+            clientBankDetails = ClientBankDetails.objects.filter(
+                    ClientId=ClientId)
+            clientBankDetailsSerializer = ClientBankDetailsSerializer(
+                clientBankDetails,many=True)
+            return JsonResponse(clientBankDetailsSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)

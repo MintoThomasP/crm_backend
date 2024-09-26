@@ -1,4 +1,4 @@
-from app_client.models import Client, ClientAddress, ClientDocuments, ClientOtherDetails, ClientVisitRegister, ContactPerson
+from app_client.models import Client, ClientAddress, ClientBankDetails, ClientDocuments, ClientOtherDetails, ClientVisitRegister, ContactPerson
 from rest_framework import serializers
 
 
@@ -26,7 +26,8 @@ class ClientSerializer(serializers.ModelSerializer):
 'PLLedger',
 'BalanceSheetLedger',
 'TotalWorkingHoursPerMonth',
-'TotalVisitPerMonth'
+'TotalVisitPerMonth',
+'Reference'
 )
         
 class ClientOtherDetailsSerializer(serializers.ModelSerializer):
@@ -49,6 +50,8 @@ class ClientDocumentsSerializer(serializers.ModelSerializer):
             'ClientDocumentId',
 'ClientOtherDetailId',
 'Document',
+'DocumentName',
+'DocumentNumber'
 
 )
         
@@ -101,3 +104,20 @@ class ClientVisitRegisterSerializer(serializers.ModelSerializer):
 'VisitedDate',
 'Notes'
 )
+        
+
+
+        
+class ClientBankDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClientBankDetails
+        fields = ('SortId',
+'BankDetailId',
+'ClientId',
+'AccountHolderName',
+'BankName',
+'AccountNumber',
+'IFSCCode',
+'PrimaryAccount'
+)
+  

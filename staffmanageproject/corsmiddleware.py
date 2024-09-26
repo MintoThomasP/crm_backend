@@ -8,7 +8,7 @@ class DynamicCORSOriginMiddleware(MiddlewareMixin):
         current_host = request.get_host()
         origin = request.META.get('HTTP_ORIGIN')
         # Define the development and production hosts
-        dev_hosts = ['127.0.0.1','127.0.0.1:8000', 'crm-api.cubexizsoft.com']
+        dev_hosts = ['127.0.0.1','127.0.0.1:8000', 'crm-api.cubexizsoft.com','192.168.1.14:8000']
         prod_host = 'crm-api-live.cubexizsoft.com'
         allowed_origin = '*'
         prod_orgin=[

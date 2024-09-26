@@ -20,6 +20,14 @@ class Project(models.Model):
     Duration=models.IntegerField(default=0)
     Status=models.ForeignKey('app_default.TaskStatus',on_delete=models.CASCADE)
     ClientId=models.CharField(blank=True, null=True, max_length=50)
+    BusinessCategoryId=models.CharField(blank=True, null=True, max_length=50)
+    Address=models.TextField(blank=True, null=True)
+    ProjectScopeId=models.CharField(blank=True, null=True, max_length=50)
+    ProjectArea=models.CharField(blank=True, null=True, max_length=50)
+    EstimateAmount=models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    SurveyDate=models.CharField(blank=True, null=True, max_length=50)
+    Assignedto=models.TextField(blank=True, null=True)
+    GoogleMapLink=models.TextField(blank=True, null=True)
     ActiveStatus=models.BooleanField(default=True)
     # def save(self, *args, **kwargs):
     #     if not self.StartDate:

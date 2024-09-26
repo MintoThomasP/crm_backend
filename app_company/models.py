@@ -4,8 +4,6 @@ from datetime import datetime
 # Create your models here.
 
 
-
-
 class Company(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)
     CompanyId=models.CharField(
@@ -28,4 +26,15 @@ class CompanyDocuments(models.Model):
     DocumentType=models.CharField(max_length=300, blank=True, null=True)
     Document=models.FileField(upload_to='CompanyDocuments/',null=True,blank=True)
     ExpiryDate=models.CharField(max_length=150, blank=True, null=True)
+    DocumentNumber=models.CharField(max_length=50, blank=True, null=True)
 
+class CompanyBankDetails(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    BankDetailId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    CompanyId=models.CharField(blank=True, null=True, max_length=50)
+    AccountHolderName=models.CharField(blank=True, null=True, max_length=300)
+    BankName=models.CharField(blank=True, null=True, max_length=300)
+    AccountNumber=models.CharField(blank=True, null=True, max_length=50)
+    IFSCCode=models.CharField(blank=True, null=True, max_length=50)
+    PrimaryAccount=models.BooleanField(default=False)

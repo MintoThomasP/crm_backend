@@ -119,6 +119,11 @@ class CountryCode(models.Model):
 
 
 
+class ClientReference(models.Model):
+    ClientReferenceId= models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    Reference=models.CharField(max_length=300, blank=True, null=True)
+    
 class SiteContactType(models.Model):
     ContactTypeId = models.AutoField(primary_key=True, editable=False)
     ContactType= models.CharField(max_length=150, blank=True, null=True)

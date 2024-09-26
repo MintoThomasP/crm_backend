@@ -16,5 +16,13 @@ urlpatterns = [
 
 
     url(r'^DeleteCompanyDataByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.DeleteCompanyDataByCompanyId),
-     
+
+
+    path('CompanyBankDetailsApi/', views.CompanyBankDetailsApi),
+    url(r'^CompanyBankDetailsApiById/(?P<BankDetailId>[0-9a-zA-Z\-]+)$', views.CompanyBankDetailsApiById),
+    url(r'^CompanyBankDetailsApiByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.CompanyBankDetailsApiByCompanyId),
+ 
+
+
+#  path('SendWhatsappmessage/', views.SendWhatsappmessage),
 ]

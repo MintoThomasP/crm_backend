@@ -1,4 +1,4 @@
-from app_staff.models import LeaveApplication, MoveOnRegister, SalarySlip, Staff, StaffDocuments, StaffGuardian
+from app_staff.models import LeaveApplication, MoveOnRegister, SalarySlip, Staff, StaffBankDetails, StaffDocuments, StaffGuardian
 from rest_framework import serializers
 
 
@@ -101,8 +101,8 @@ class StaffDocumentsSerializer(serializers.ModelSerializer):
 'StaffId',
 'Document',
 'DocumentName',
+'DocumentNumber',
 'Comment',
-
 )
         
 
@@ -114,6 +114,7 @@ class SaveStaffDocumentsSerializer(serializers.ModelSerializer):
 'StaffId',
 'DocumentName',
 'Comment',
+'DocumentNumber'
 
 )
         
@@ -124,6 +125,19 @@ class UploadStaffDocumentsSerializer(serializers.ModelSerializer):
 'StaffDocumentId',
 'Document',
 
+)
+        
+class StaffBankDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StaffBankDetails
+        fields = ('SortId',
+'BankDetailId',
+'StaffId',
+'AccountHolderName',
+'BankName',
+'AccountNumber',
+'IFSCCode',
+'PrimaryAccount'
 )
         
 

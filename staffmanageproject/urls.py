@@ -57,6 +57,7 @@ urlpatterns = [
     path('api-todo/', include('app_todo.urls')),
     path('api-credential/', include('app_credential.urls')),
     path('api-website-email/', include('app_website_email.urls')),
+    path('api-vendor/', include('app_vendor.urls')),
     path('swagger-json/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger<str:format>', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),

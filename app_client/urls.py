@@ -31,4 +31,9 @@ urlpatterns = [
     url(r'^ClientVisitRegister/(?P<ClientVisitRegisterId>[0-9a-zA-Z\-]+)$',
         views.ClientVisitRegisterApiById),
    
+
+
+    path('ClientBankDetailsApi/', views.ClientBankDetailsApi),
+    url(r'^ClientBankDetailsApiById/(?P<BankDetailId>[0-9a-zA-Z\-]+)$', views.ClientBankDetailsApiById),
+    url(r'^ClientBankDetailsApiByClientId/(?P<ClientId>[0-9a-zA-Z\-]+)$', views.ClientBankDetailsApiByClientId),
 ]

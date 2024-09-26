@@ -28,7 +28,7 @@ SECRET_KEY = 'django-insecure-_5@07uks53!#s287u04jba(%+hqtq^jk50m4t$pxjz&rn7-hu8
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1','crm-api.cubexizsoft.com','54.151.144.203','crm-api-live.cubexizsoft.com']
+ALLOWED_HOSTS = ['127.0.0.1','crm-api.cubexizsoft.com','54.151.144.203','crm-api-live.cubexizsoft.com','192.168.1.14']
 
 
 # Application definition
@@ -59,7 +59,8 @@ INSTALLED_APPS = [
     'app_basic',
     'app_todo',
     'app_website_email',
-    'app_credential'
+    'app_credential',
+    'app_vendor'
     
     
 ]

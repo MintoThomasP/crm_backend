@@ -4,8 +4,8 @@ from django.views.decorators.csrf import csrf_exempt
 import requests
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
-from app_default.models import CategoryType, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquiryType, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, ReportType, SectionType, SiteContactType, StaffStatus,  TaskStatus, UserType
-from app_default.serializers import CategoryTypeSerializer, CompanyDocumentTypeSerializer, CountryCodeSerializer, CurrencySerializer, DepositToSerializer, EnquiryStatusSerializer, EnquiryTypeSerializer, FollowUpStatusSerializer, FollowUpTypeSerializer,InvoiceStatusSerializer, LeaveStatusSerializer, LeaveTypeSerializer, MeetingTypeSerializer, PaymentModeSerializer, ReportTypeSerializer, SectionTypeSerializer, SiteContactTypeSerializer, StaffStatusSerializer, TaskStatusSerializer, UserTypeSerializer
+from app_default.models import CategoryType, ClientReference, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquiryType, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, ReportType, SectionType, StaffStatus,  TaskStatus, UserType
+from app_default.serializers import CategoryTypeSerializer, ClientReferenceSerializer, CompanyDocumentTypeSerializer, CountryCodeSerializer, CurrencySerializer, DepositToSerializer, EnquiryStatusSerializer, EnquiryTypeSerializer, FollowUpStatusSerializer, FollowUpTypeSerializer,InvoiceStatusSerializer, LeaveStatusSerializer, LeaveTypeSerializer, MeetingTypeSerializer, PaymentModeSerializer, ReportTypeSerializer, SectionTypeSerializer, StaffStatusSerializer, TaskStatusSerializer, UserTypeSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 import time
@@ -440,6 +440,21 @@ def CountryCodeApi(request):
     
 
 
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all ClientReference",)
+@api_view(['GET'])
+def ClientReferenceApi(request):
+    try:
+        if request.method == 'GET': 
+            clientReference = ClientReference.objects.all()
+            clientReferenceSerializer = ClientReferenceSerializer(clientReference, many=True)
+            return JsonResponse(clientReferenceSerializer.data, safe=False)        
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all SiteContactType",)
 @api_view(['GET'])

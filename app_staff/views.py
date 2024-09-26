@@ -24,9 +24,9 @@ from app_project.views import CustomPageNumberPagination
 from app_report.views import durationCalculation
 from app_site.models import SiteSettings
 from app_site.serializers import SiteSettingsSerializer
-from app_staff.models import LeaveApplication, MoveOnRegister, SalarySlip, Staff, StaffDocuments, StaffGuardian
+from app_staff.models import LeaveApplication, MoveOnRegister, SalarySlip, Staff, StaffBankDetails, StaffDocuments, StaffGuardian
 import os
-from app_staff.serializers import LeaveApplicationSerializer, MoveOnRegisterSerializer, SalarySlipSerializer, SaveStaffSerializer, StaffDocumentsSerializer, StaffGuardianSerializer, StaffPerformanceSerializer, StaffSerializer, UpdateStaffSerializer, UploadStaffDocumentsSerializer
+from app_staff.serializers import LeaveApplicationSerializer, MoveOnRegisterSerializer, SalarySlipSerializer, SaveStaffSerializer, StaffBankDetailsSerializer, StaffDocumentsSerializer, StaffGuardianSerializer, StaffPerformanceSerializer, StaffSerializer, UpdateStaffSerializer, UploadStaffDocumentsSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -919,6 +919,8 @@ def CreateSalarySlipApi(request,CompanyId=""):
                             AppreciationBonus=((float(PerformancePoint)-float(1.5))*2)*(salaryPay*.1)
                         
                         GrossPay=salaryPay+AppreciationBonus
+                        # staffBankDetails=StaffBankDetails.objects.get(PrimaryAccount=1,StaffId=staff['StaffId'])
+                        # bankSerializer=StaffBankDetailsSerializer(staffBankDetails)
                         
                         data = {
                             'SalarySlipId': '',
@@ -935,7 +937,7 @@ def CreateSalarySlipApi(request,CompanyId=""):
                             'PaidDays': PaidDays,
                             'Leave': Leave,
                             'GrossPay': round(GrossPay,2),
-                            'BankAccount': staff['BankAccount'],
+                            # 'BankAccount': bankSerializer.data,
                         }
                         salarySlip = SalarySlipSerializer(
                             data=data)
@@ -998,6 +1000,13 @@ def DownloadSalarySlip(request, Month,Year,StaffId):
             DesignationName=designationSerializer.data['Designation']
         except:
             DesignationName=""
+        try:
+            staffBankDetails=StaffBankDetails.objects.get(PrimaryAccount=1,StaffId=StaffId)
+            staffBankDetailsSerializer=StaffBankDetailsSerializer(staffBankDetails)
+            bankDetails=staffBankDetailsSerializer.data
+        except:
+            bankDetails=""
+
         
         TotalDeductions=0
         NetSalary=TotalEarnings-TotalDeductions
@@ -1012,7 +1021,8 @@ def DownloadSalarySlip(request, Month,Year,StaffId):
             'NetSalary':NetSalary,
             'logo':logo,
             'Month':  calendar.month_name[int(Month)],
-            'Year':Year
+            'Year':Year,
+            'staffBankDetails':bankDetails
         }
         # return JsonResponse("", safe=False)
         pdf = render_to_pdf('salary_slip.html', context)
@@ -1215,3 +1225,92 @@ def StaffPerformanceByCompanyId(request, CompanyId=""):
 
     
 
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=StaffBankDetailsSerializer,operation_description="NOTE: API for save StaffBankDetails")
+@swagger_auto_schema(method='PUT', request_body=StaffBankDetailsSerializer,operation_description="NOTE: API for edit StaffBankDetails")
+@api_view(['POST','PUT'])
+@retry(retries=3, delay=2)
+def StaffBankDetailsApi(request):
+    # try:
+        if request.method == 'POST':
+            staffBankDetailsData = JSONParser().parse(request)
+            staffBankDetailsSerializer = StaffBankDetailsSerializer(
+                data=staffBankDetailsData)
+            if staffBankDetailsData['PrimaryAccount']==True:
+                staffBankDetails=StaffBankDetails.objects.filter(PrimaryAccount=1,StaffId=staffBankDetailsData['StaffId'])
+                for bank in staffBankDetails:
+                    bank.PrimaryAccount=False
+                    bank.save()
+            if staffBankDetailsSerializer.is_valid():
+                staffBankDetailsSerializer.save()
+                staffBankDetails = StaffBankDetails.objects.filter(StaffId=staffBankDetailsData['StaffId'])
+                if len(staffBankDetails)==1:
+                    for row in staffBankDetails:
+                        row.PrimaryAccount=True
+                        row.save()
+
+                return JsonResponse(staffBankDetailsSerializer.data['BankDetailId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            staffBankDetailsData = JSONParser().parse(request)
+            staffBankDetails = StaffBankDetails.objects.get(
+                BankDetailId=staffBankDetailsData['BankDetailId'])
+            staffBankDetailsSerializer = StaffBankDetailsSerializer(
+                staffBankDetails, data=staffBankDetailsData)
+            if staffBankDetailsData['PrimaryAccount']==True:
+                staffBankDetails=StaffBankDetails.objects.filter(PrimaryAccount=1,StaffId=staffBankDetailsData['StaffId'])
+                for bank in staffBankDetails:
+                    bank.PrimaryAccount=False
+                    bank.save()
+            if staffBankDetailsSerializer.is_valid():
+                staffBankDetailsSerializer.save()
+                
+                return JsonResponse(staffBankDetailsSerializer.data['BankDetailId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
+    
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get StaffBankDetails by StaffBankDetailsId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete StaffBankDetails by StaffBankDetailsId",)
+@api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
+def staffBankDetailsApiById(request, BankDetailId=""):
+    try:
+        if request.method == 'GET': 
+            staffBankDetails = StaffBankDetails.objects.get(
+                    BankDetailId=BankDetailId)
+            staffBankDetailsSerializer = StaffBankDetailsSerializer(
+                    staffBankDetails)
+            return JsonResponse(staffBankDetailsSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            staffBankDetails = StaffBankDetails.objects.get(BankDetailId=BankDetailId)
+            staffBankDetails.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get StaffBankDetails by StaffId",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def staffBankDetailsApiByStaffId(request, StaffId=""):
+    try:
+        if request.method == 'GET': 
+            staffBankDetails = StaffBankDetails.objects.filter(
+                    StaffId=StaffId)
+            staffBankDetailsSerializer = StaffBankDetailsSerializer(
+                staffBankDetails,many=True)
+            return JsonResponse(staffBankDetailsSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)

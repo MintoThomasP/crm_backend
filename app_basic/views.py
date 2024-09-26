@@ -4,8 +4,8 @@ from django.views.decorators.csrf import csrf_exempt
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 
-from app_basic.models import Country, Designation, PermissionSection, State, TempleteType, UserGroup, UserPermission
-from app_basic.serializers import CountrySerializer, DesignationSerializer, PermissionSectionSerializer, StateSerializer, TempleteTypeSerializer, UserGroupSerializer, UserPermissionSerializer
+from app_basic.models import BusinessCategory, Country, Designation, ElementCategory, PermissionSection, ProjectScope, State, TempleteType, Unit, UserGroup, UserPermission, WorkPlace
+from app_basic.serializers import BusinessCategorySerializer, CountrySerializer, DesignationSerializer, ElementCategorySerializer, PermissionSectionSerializer, ProjectScopeSerializer, StateSerializer, TempleteTypeSerializer, UnitSerializer, UserGroupSerializer, UserPermissionSerializer, WorkPlaceSerializer
 from app_default.views import retry
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
@@ -44,7 +44,7 @@ def DesignationApi(request):
                 return JsonResponse(designationSerializer.data['DesignationId'], safe=False)
             return JsonResponse("Failed to Update", safe=False)
         else:
-            return JsonResponse("Invalid request", safe=False)
+            return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
     
@@ -66,7 +66,7 @@ def DesignationApiById(request, DesignationId=""):
             designation.delete()
             return JsonResponse("Deleted successfully", safe=False)
         else:
-            return JsonResponse("Invalid request", safe=False)
+            return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
     
@@ -84,7 +84,7 @@ def DesignationByCompanyId(request, CompanyId=""):
             designationSerializer = DesignationSerializer(designation,many=True)
             return JsonResponse(designationSerializer.data, safe=False)
         else:
-            return JsonResponse("Invalid request", safe=False)
+            return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
 
@@ -123,7 +123,7 @@ def UserGroupApi(request):
                 return JsonResponse(userGroupSerializer.data['UserGroupId'], safe=False)
             return JsonResponse("Failed to Update", safe=False)
         else:
-            return JsonResponse("Invalid request", safe=False)
+            return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
     
@@ -144,7 +144,7 @@ def UserGroupApiById(request, UserGroupId=""):
             userGroup.delete()
             return JsonResponse("Deleted successfully", safe=False)
         else:
-            return JsonResponse("Invalid request", safe=False)
+            return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
     
@@ -160,7 +160,7 @@ def UserGroupByCompanyId(request, CompanyId=""):
             userGroup_serializer = UserGroupSerializer(userGroup,many=True)
             return JsonResponse(userGroup_serializer.data, safe=False)
         else:
-            return JsonResponse("Invalid request", safe=False)
+            return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
 
@@ -199,7 +199,7 @@ def CountryApi(request):
                 return JsonResponse(countrySerializer.data['CountryId'], safe=False)
             return JsonResponse("Failed to Update", safe=False)
         else:
-            return JsonResponse("Invalid request", safe=False)
+            return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
     
@@ -221,7 +221,7 @@ def CountryApiById(request, CountryId=""):
             country.delete()
             return JsonResponse("Deleted successfully", safe=False)
         else:
-            return JsonResponse("Invalid request", safe=False)
+            return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
     
@@ -260,7 +260,7 @@ def StateApi(request):
                 return JsonResponse(stateSerializer.data['StateId'], safe=False)
             return JsonResponse("Failed to Update", safe=False)
         else:
-            return JsonResponse("Invalid request", safe=False)
+            return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
     
@@ -282,7 +282,7 @@ def StateApiById(request, StateId=""):
             state.delete()
             return JsonResponse("Deleted successfully", safe=False)
         else:
-            return JsonResponse("Invalid request", safe=False)
+            return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
     
@@ -299,7 +299,7 @@ def StateApiByCountryId(request,CountryId=""):
                 state, many=True)  
             return JsonResponse(state_serializer.data, safe=False)
         else:
-            return JsonResponse("Invalid request", safe=False)
+            return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
     
@@ -333,7 +333,7 @@ def UserPermissionApi(request):
             return JsonResponse("Failed to add", safe=False)
       
         else:
-            return JsonResponse("Invalid request", safe=False)
+            return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
     
@@ -359,7 +359,7 @@ def UserPermissionbySectionTypeApi(request):
                 permissionData.append(row)
             return JsonResponse(permissionData, safe=False)
         else:
-            return JsonResponse("Invalid request", safe=False)
+            return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
     
@@ -399,7 +399,7 @@ def TempleteTypeApi(request):
                 return JsonResponse(templeteTypeSerializer.data['TempleteTypeId'], safe=False)
             return JsonResponse("Failed to Update", safe=False)
         else:
-            return JsonResponse("Invalid request", safe=False)
+            return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
     
@@ -421,7 +421,7 @@ def TempleteTypeApiById(request, TempleteTypeId=""):
             templeteType.delete()
             return JsonResponse("Deleted successfully", safe=False)
         else:
-            return JsonResponse("Invalid request", safe=False)
+            return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
     
@@ -439,7 +439,391 @@ def TempleteTypeByCompanyId(request, CompanyId=""):
             templeteTypeSerializer = TempleteTypeSerializer(templeteType,many=True)
             return JsonResponse(templeteTypeSerializer.data, safe=False)
         else:
-            return JsonResponse("Invalid request", safe=False)
+            return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
 
+
+
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=UnitSerializer,operation_description="NOTE: API for save Unit")
+@swagger_auto_schema(method='PUT', request_body=UnitSerializer,operation_description="NOTE: API for edit Unit")
+@api_view(['POST','PUT'])
+@retry(retries=3, delay=2)
+def UnitApi(request):
+    try:
+       
+
+        if request.method == 'POST':
+            unitData = JSONParser().parse(request)
+            # return JsonResponse(unitData, safe=False)
+            unitSerializer = UnitSerializer(
+                data=unitData)
+            if unitSerializer.is_valid():
+                unitSerializer.save()
+                return JsonResponse(unitSerializer.data['UnitId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            unitData = JSONParser().parse(request)
+            unit = Unit.objects.get(
+                UnitId=unitData['UnitId'])
+            unitSerializer = UnitSerializer(
+                unit, data=unitData)
+            if unitSerializer.is_valid():
+                unitSerializer.save()
+                return JsonResponse(unitSerializer.data['UnitId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get Unit by UnitId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete Unit by UnitId",)
+@api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
+def UnitApiById(request, UnitId=""):
+    try:
+        if request.method == 'GET':
+            unit = Unit.objects.get(UnitId=UnitId)
+            unitSerializer = UnitSerializer(unit)
+            return JsonResponse(unitSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            unit = Unit.objects.get(
+                UnitId=UnitId)
+            unit.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get Unit by CompanyId",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def UnitByCompanyId(request, CompanyId=""):
+    try:
+        if request.method == 'GET':
+            unit = Unit.objects.filter(CompanyId=CompanyId)
+            unitSerializer = UnitSerializer(unit,many=True)
+            return JsonResponse(unitSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=WorkPlaceSerializer,operation_description="NOTE: API for save WorkPlace")
+@swagger_auto_schema(method='PUT', request_body=WorkPlaceSerializer,operation_description="NOTE: API for edit WorkPlace")
+@api_view(['POST','PUT'])
+@retry(retries=3, delay=2)
+def WorkPlaceApi(request):
+    try:
+       
+
+        if request.method == 'POST':
+            workPlaceData = JSONParser().parse(request)
+            # return JsonResponse(workPlaceData, safe=False)
+            workPlaceSerializer = WorkPlaceSerializer(
+                data=workPlaceData)
+            if workPlaceSerializer.is_valid():
+                workPlaceSerializer.save()
+                return JsonResponse(workPlaceSerializer.data['WorkPlaceId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            workPlaceData = JSONParser().parse(request)
+            workPlace = WorkPlace.objects.get(
+                WorkPlaceId=workPlaceData['WorkPlaceId'])
+            workPlaceSerializer = WorkPlaceSerializer(
+                workPlace, data=workPlaceData)
+            if workPlaceSerializer.is_valid():
+                workPlaceSerializer.save()
+                return JsonResponse(workPlaceSerializer.data['WorkPlaceId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get WorkPlace by WorkPlaceId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete WorkPlace by WorkPlaceId",)
+@api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
+def WorkPlaceApiById(request, WorkPlaceId=""):
+    try:
+        if request.method == 'GET':
+            workPlace = WorkPlace.objects.get(WorkPlaceId=WorkPlaceId)
+            workPlaceSerializer = WorkPlaceSerializer(workPlace)
+            return JsonResponse(workPlaceSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            workPlace = WorkPlace.objects.get(
+                WorkPlaceId=WorkPlaceId)
+            workPlace.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get WorkPlace by CompanyId",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def WorkPlaceByCompanyId(request, CompanyId=""):
+    try:
+        if request.method == 'GET':
+            workPlace = WorkPlace.objects.filter(CompanyId=CompanyId)
+            workPlaceSerializer = WorkPlaceSerializer(workPlace,many=True)
+            return JsonResponse(workPlaceSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=ProjectScopeSerializer,operation_description="NOTE: API for save ProjectScope")
+@swagger_auto_schema(method='PUT', request_body=ProjectScopeSerializer,operation_description="NOTE: API for edit ProjectScope")
+@api_view(['POST','PUT'])
+@retry(retries=3, delay=2)
+def ProjectScopeApi(request):
+    try:
+       
+
+        if request.method == 'POST':
+            projectScopeData = JSONParser().parse(request)
+            # return JsonResponse(projectScopeData, safe=False)
+            projectScopeSerializer = ProjectScopeSerializer(
+                data=projectScopeData)
+            if projectScopeSerializer.is_valid():
+                projectScopeSerializer.save()
+                return JsonResponse(projectScopeSerializer.data['ProjectScopeId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            projectScopeData = JSONParser().parse(request)
+            projectScope = ProjectScope.objects.get(
+                ProjectScopeId=projectScopeData['ProjectScopeId'])
+            projectScopeSerializer = ProjectScopeSerializer(
+                projectScope, data=projectScopeData)
+            if projectScopeSerializer.is_valid():
+                projectScopeSerializer.save()
+                return JsonResponse(projectScopeSerializer.data['ProjectScopeId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get ProjectScope by ProjectScopeId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete ProjectScope by ProjectScopeId",)
+@api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
+def ProjectScopeApiById(request, ProjectScopeId=""):
+    try:
+        if request.method == 'GET':
+            projectScope = ProjectScope.objects.get(ProjectScopeId=ProjectScopeId)
+            projectScopeSerializer = ProjectScopeSerializer(projectScope)
+            return JsonResponse(projectScopeSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            projectScope = ProjectScope.objects.get(
+                ProjectScopeId=ProjectScopeId)
+            projectScope.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get ProjectScope by CompanyId",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def ProjectScopeByCompanyId(request, CompanyId=""):
+    try:
+        if request.method == 'GET':
+            projectScope = ProjectScope.objects.filter(CompanyId=CompanyId)
+            projectScopeSerializer = ProjectScopeSerializer(projectScope,many=True)
+            return JsonResponse(projectScopeSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=BusinessCategorySerializer,operation_description="NOTE: API for save Unit")
+@swagger_auto_schema(method='PUT', request_body=BusinessCategorySerializer,operation_description="NOTE: API for edit Unit")
+@api_view(['POST','PUT'])
+@retry(retries=3, delay=2)
+def BusinessCategoryApi(request):
+    try:
+       
+
+        if request.method == 'POST':
+            businessCategoryData = JSONParser().parse(request)
+            # return JsonResponse(businessCategoryData, safe=False)
+            businessCategorySerializer = BusinessCategorySerializer(
+                data=businessCategoryData)
+            if businessCategorySerializer.is_valid():
+                businessCategorySerializer.save()
+                return JsonResponse(businessCategorySerializer.data['BusinessCategoryId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            businessCategoryData = JSONParser().parse(request)
+            businessCategory = BusinessCategory.objects.get(
+                BusinessCategoryId=businessCategoryData['BusinessCategoryId'])
+            businessCategorySerializer = BusinessCategorySerializer(
+                businessCategory, data=businessCategoryData)
+            if businessCategorySerializer.is_valid():
+                businessCategorySerializer.save()
+                return JsonResponse(businessCategorySerializer.data['BusinessCategoryId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get BusinessCategory by BusinessCategoryId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete BusinessCategory by BusinessCategoryId",)
+@api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
+def BusinessCategoryApiById(request, BusinessCategoryId=""):
+    try:
+        if request.method == 'GET':
+            businessCategory = BusinessCategory.objects.get(BusinessCategoryId=BusinessCategoryId)
+            businessCategorySerializer = BusinessCategorySerializer(businessCategory)
+            return JsonResponse(businessCategorySerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            businessCategory = BusinessCategory.objects.get(
+                BusinessCategoryId=BusinessCategoryId)
+            businessCategory.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get BusinessCategory by CompanyId",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def BusinessCategoryByCompanyId(request, CompanyId=""):
+    try:
+        if request.method == 'GET':
+            businessCategory = BusinessCategory.objects.filter(CompanyId=CompanyId)
+            businessCategorySerializer = BusinessCategorySerializer(businessCategory,many=True)
+            return JsonResponse(businessCategorySerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=ElementCategorySerializer,operation_description="NOTE: API for save Unit")
+@swagger_auto_schema(method='PUT', request_body=ElementCategorySerializer,operation_description="NOTE: API for edit Unit")
+@api_view(['POST','PUT'])
+@retry(retries=3, delay=2)
+def ElementCategoryApi(request):
+    try:
+       
+
+        if request.method == 'POST':
+            elementCategoryData = JSONParser().parse(request)
+            # return JsonResponse(elementCategoryData, safe=False)
+            elementCategorySerializer = ElementCategorySerializer(
+                data=elementCategoryData)
+            if elementCategorySerializer.is_valid():
+                elementCategorySerializer.save()
+                return JsonResponse(elementCategorySerializer.data['ElementCategoryId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            elementCategoryData = JSONParser().parse(request)
+            elementCategory = ElementCategory.objects.get(
+                ElementCategoryId=elementCategoryData['ElementCategoryId'])
+            elementCategorySerializer = ElementCategorySerializer(
+                elementCategory, data=elementCategoryData)
+            if elementCategorySerializer.is_valid():
+                elementCategorySerializer.save()
+                return JsonResponse(elementCategorySerializer.data['ElementCategoryId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get ElementCategory by ElementCategoryId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete ElementCategory by ElementCategoryId",)
+@api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
+def ElementCategoryApiById(request, ElementCategoryId=""):
+    try:
+        if request.method == 'GET':
+            elementCategory = ElementCategory.objects.get(ElementCategoryId=ElementCategoryId)
+            elementCategorySerializer = ElementCategorySerializer(elementCategory)
+            return JsonResponse(elementCategorySerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            elementCategory = ElementCategory.objects.get(
+                ElementCategoryId=ElementCategoryId)
+            elementCategory.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get ElementCategory by CompanyId",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def ElementCategoryByCompanyId(request, CompanyId=""):
+    try:
+        if request.method == 'GET':
+            elementCategory = ElementCategory.objects.filter(CompanyId=CompanyId)
+            elementCategorySerializer = ElementCategorySerializer(elementCategory,many=True)
+            return JsonResponse(elementCategorySerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    

@@ -13,8 +13,8 @@ from app_basic.models import Designation, UserGroup
 from app_category.models import Category, Report, ReportRefFile
 from app_client.models import Client, ClientAddress, ClientDocuments, ClientOtherDetails, ContactPerson
 from app_client.serializers import ClientSerializer
-from app_company.models import Company, CompanyDocuments
-from app_company.serializers import CompanyDocumentsSerializer, CompanySerializer, SaveCompanyDocumentsSerializer, UploadCompanyDocumentsSerializer
+from app_company.models import Company, CompanyBankDetails, CompanyDocuments
+from app_company.serializers import CompanyBankDetailsSerializer, CompanyDocumentsSerializer, CompanySerializer, SaveCompanyDocumentsSerializer, UploadCompanyDocumentsSerializer
 from app_credential.models import Credentials
 from app_default.views import retry
 from app_enquiry.models import Enquiry, FollowUp
@@ -494,4 +494,146 @@ def DeleteCompanyDataByCompanyId(request, CompanyId=""):
 
 
 
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=CompanyBankDetailsSerializer,operation_description="NOTE: API for save CompanyBankDetails")
+@swagger_auto_schema(method='PUT', request_body=CompanyBankDetailsSerializer,operation_description="NOTE: API for edit CompanyBankDetails")
+@api_view(['POST','PUT'])
+@retry(retries=3, delay=2)
+def CompanyBankDetailsApi(request):
+    try:
+        if request.method == 'POST':
+            companyBankDetailsData = JSONParser().parse(request)
+            companyBankDetailsSerializer = CompanyBankDetailsSerializer(
+                data=companyBankDetailsData)
+            if companyBankDetailsData['PrimaryAccount']==True:
+                companyBankDetails=CompanyBankDetails.objects.filter(PrimaryAccount=1,CompanyId=companyBankDetailsData['CompanyId'])
+                for bank in companyBankDetails:
+                    bank.PrimaryAccount=False
+                    bank.save()
+            if companyBankDetailsSerializer.is_valid():
+                companyBankDetailsSerializer.save()
+                companyBankDetails = CompanyBankDetails.objects.filter(CompanyId=companyBankDetailsData['CompanyId'])
+                if len(companyBankDetails)==1:
+                    for row in companyBankDetails:
+                        row.PrimaryAccount=True
+                        row.save()
+                
+                return JsonResponse(companyBankDetailsSerializer.data['BankDetailId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            companyBankDetailsData = JSONParser().parse(request)
+            companyBankDetails = CompanyBankDetails.objects.get(
+                BankDetailId=companyBankDetailsData['BankDetailId'])
+            companyBankDetailsSerializer = CompanyBankDetailsSerializer(
+                companyBankDetails, data=companyBankDetailsData)
+            if companyBankDetailsData['PrimaryAccount']==True:
+                companyBankDetails=CompanyBankDetails.objects.filter(PrimaryAccount=1,CompanyId=companyBankDetailsData['CompanyId'])
+                for bank in companyBankDetails:
+                    bank.PrimaryAccount=False
+                    bank.save()
+            if companyBankDetailsSerializer.is_valid():
+                companyBankDetailsSerializer.save()
+                
+                return JsonResponse(companyBankDetailsSerializer.data['BankDetailId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get CompanyBankDetails by CompanyBankDetailsId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete CompanyBankDetails by CompanyBankDetailsId",)
+@api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
+def CompanyBankDetailsApiById(request, BankDetailId=""):
+    try:
+        if request.method == 'GET': 
+            companyBankDetails = CompanyBankDetails.objects.get(
+                    BankDetailId=BankDetailId)
+            companyBankDetailsSerializer = CompanyBankDetailsSerializer(
+                    companyBankDetails)
+            return JsonResponse(companyBankDetailsSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            companyBankDetails = CompanyBankDetails.objects.get(BankDetailId=BankDetailId)
+            companyBankDetails.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
 
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get CompanyBankDetails by CompanyId",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def CompanyBankDetailsApiByCompanyId(request, CompanyId=""):
+    try:
+        if request.method == 'GET': 
+            companyBankDetails = CompanyBankDetails.objects.filter(
+                    CompanyId=CompanyId)
+            companyBankDetailsSerializer = CompanyBankDetailsSerializer(
+                companyBankDetails,many=True)
+            return JsonResponse(companyBankDetailsSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+
+
+
+# from twilio.rest import Client
+# @csrf_exempt
+# @swagger_auto_schema(method='GET',operation_description="API for get CompanyBankDetails by CompanyId",)
+# @api_view(['GET'])
+# def SendWhatsappmessage(request):
+#     account_sid = 'REMOVED_TWILIO_SID'
+#     auth_token = 'REMOVED_TWILIO_TOKEN'
+#     client = Client(account_sid, auth_token)
+
+    
+#     try:
+       
+#         message = client.messages.create(
+#             body='Hello, this is a test message from Python!',
+#             from_='whatsapp:+14155238886', 
+#             to='whatsapp:+919526864524'
+#         )
+       
+       
+#         return JsonResponse({
+#             "status": "sent",
+#             "message_sid": message.sid,
+#             "date_created": str(message.date_created),
+#             "to": message.to,
+#             "from": message.from_,
+#             "body": message.body
+#         }, safe=False)
+
+#     except Exception as e:
+#         return JsonResponse({"status": "failed", "error": str(e)}, safe=False)
+
+
+
+# import pywhatkit
+# @csrf_exempt
+# @api_view(['GET'])
+# def SendWhatsappmessage(request):
+#     myobj = datetime.now()
+#     hour=myobj.hour
+#     minute=myobj.minute + 1
+#     pywhatkit.sendwhatmsg('+919526844444','Test taw4a 4ya55',hour,minute)
+#     return JsonResponse("ok",safe=False)
+    
+
+
+# from django.shortcuts import redirect
+# @csrf_exempt
+# def SendWhatsappmessage(request):
+#     phone_number = '+919526864524'  
+#     message = 'Hello from Django!' 
+#     whatsapp_url = f"https://wa.me/{phone_number[1:]}?text={message.replace(' ', '%20')}"
+#     return redirect(whatsapp_url)

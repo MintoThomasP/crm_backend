@@ -1413,4 +1413,3 @@ def ViewQuotationPDF(request, QuotationId=""):
             return JsonResponse({"error": "Invalid method"}, status=405)
     # except Exception as e:
     #     return JsonResponse({"error": str(e)}, status=500)
-

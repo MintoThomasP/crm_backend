@@ -7,7 +7,7 @@ urlpatterns = [
     url(r'^TaskStatusById/(?P<StatusId>[0-9a-zA-Z\-]+)$', views.TaskStatusApiById),
     path('get_permissions/',views.get_permissions),
 
-path('UserType/', views.UserTypeApi),
+    path('UserType/', views.UserTypeApi),
 
 
 
@@ -33,6 +33,8 @@ path('UserType/', views.UserTypeApi),
     path('FollowUpTypeApi/', views.FollowUpTypeApi),
     path('EnquiryStatusApi/', views.EnquiryStatusApi),
     path('CountryCodeApi/', views.CountryCodeApi),
+    path('ClientReferenceApi/', views.ClientReferenceApi),
+
 path('SiteContactType/',views.SiteContactTypeApi),
 
 ]

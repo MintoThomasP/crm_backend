@@ -61,3 +61,46 @@ class TempleteType(models.Model):
     TempleteType = models.CharField(max_length=300, blank=True, null=True)
     CompanyId=models.CharField(blank=True, null=True, max_length=50) 
 
+
+
+
+class Unit(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    UnitId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    UnitName = models.CharField(max_length=300, blank=True, null=True)
+    Unit = models.CharField(max_length=300, blank=True, null=True)
+    CompanyId=models.CharField(blank=True, null=True, max_length=50) 
+
+
+
+class WorkPlace(models.Model):
+    WorkPlaceId= models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    WorkPlace=models.CharField(max_length=300, blank=True, null=True)
+    CompanyId=models.CharField(max_length=50, blank=True, null=True)
+
+
+
+class ProjectScope(models.Model):
+    ProjectScopeId= models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    ProjectScope=models.CharField(max_length=300, blank=True, null=True)
+    CompanyId=models.CharField(max_length=50, blank=True, null=True)
+
+
+
+class BusinessCategory(models.Model):
+    BusinessCategoryId= models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    BusinessCategory=models.CharField(max_length=300, blank=True, null=True)
+    CompanyId=models.CharField(max_length=50, blank=True, null=True)
+
+
+
+
+class ElementCategory(models.Model):
+    ElementCategoryId= models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    ElementCategory=models.CharField(max_length=300, blank=True, null=True)
+    CompanyId=models.CharField(max_length=50, blank=True, null=True)

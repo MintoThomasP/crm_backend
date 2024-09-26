@@ -55,9 +55,19 @@ class StaffDocuments(models.Model):
     StaffId=models.CharField(blank=True, null=True, max_length=50)
     Document=models.FileField(upload_to='staffdocuments/',null=True,blank=True)
     DocumentName=models.CharField(blank=True, null=True, max_length=300)
+    DocumentNumber=models.CharField(blank=True, null=True, max_length=300)
     Comment=models.TextField(blank=True, null=True)
 
-
+class StaffBankDetails(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    BankDetailId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    StaffId=models.CharField(blank=True, null=True, max_length=50)
+    AccountHolderName=models.CharField(blank=True, null=True, max_length=300)
+    BankName=models.CharField(blank=True, null=True, max_length=300)
+    AccountNumber=models.CharField(blank=True, null=True, max_length=50)
+    IFSCCode=models.CharField(blank=True, null=True, max_length=50)
+    PrimaryAccount=models.BooleanField(default=False)
 
 class LeaveApplication(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)

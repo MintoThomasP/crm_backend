@@ -18,7 +18,7 @@ class Client(models.Model):
     EmailId=models.CharField(max_length=150, blank=True, null=True)
     Phone1=models.CharField(max_length=15, blank=True, null=True)
     Phone2=models.CharField(max_length=15, blank=True, null=True)
-    CustomerType=models.CharField(max_length=300, blank=True, null=True)
+    CustomerType=models.CharField(max_length=300, blank=True, null=True)# business/individual
     AdvanceAmount=models.CharField(max_length=15, blank=True, null=True, default="0")
     SetDefaultProject=models.BooleanField(default=True)
     CountryCode1=models.CharField(blank=True, null=True, max_length=10)
@@ -28,6 +28,7 @@ class Client(models.Model):
     BalanceSheetLedger=models.JSONField(null=True,blank=True)
     TotalWorkingHoursPerMonth=models.IntegerField(default=0)
     TotalVisitPerMonth=models.IntegerField(default=0)
+    Reference=models.CharField(max_length=300, blank=True, null=True) # digital marketing, GoogleAds
 
 
 class ClientOtherDetails(models.Model):
@@ -45,6 +46,8 @@ class ClientDocuments(models.Model):
         max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
     ClientOtherDetailId=models.CharField(max_length=50, blank=True, null=True)
     Document=models.FileField(upload_to='ClientDocuments/',null=True,blank=True)
+    DocumentName=models.CharField(max_length=300, blank=True, null=True)
+    DocumentNumber=models.CharField(max_length=50, blank=True, null=True)
     
 
 class ClientAddress(models.Model):
@@ -84,3 +87,17 @@ class ClientVisitRegister(models.Model):
     StaffId=models.CharField(max_length=300, blank=True, null=True)
     VisitedDate=models.DateTimeField(default=datetime.now)
     Notes=models.TextField(blank=True, null=True)
+
+
+
+
+class ClientBankDetails(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    BankDetailId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    ClientId=models.CharField(blank=True, null=True, max_length=50)
+    AccountHolderName=models.CharField(blank=True, null=True, max_length=300)
+    BankName=models.CharField(blank=True, null=True, max_length=300)
+    AccountNumber=models.CharField(blank=True, null=True, max_length=50)
+    IFSCCode=models.CharField(blank=True, null=True, max_length=50)
+    PrimaryAccount=models.BooleanField(default=False)

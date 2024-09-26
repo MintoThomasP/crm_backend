@@ -1,7 +1,7 @@
 
 from rest_framework import serializers
 
-from app_basic.models import Country, Designation, PermissionSection, TempleteType, UserGroup,State, UserPermission
+from app_basic.models import BusinessCategory, Country, Designation, ElementCategory, PermissionSection, ProjectScope, TempleteType, Unit, UserGroup,State, UserPermission, WorkPlace
 
 class DesignationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -69,5 +69,54 @@ class TempleteTypeSerializer(serializers.ModelSerializer):
         fields = ('SortId',
                   'TempleteTypeId',
                   'TempleteType',
+                  'CompanyId'
+                  )
+        
+
+
+class UnitSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Unit
+        fields = ('SortId',
+                  'UnitId',
+                  'UnitName',
+                  'Unit',
+                  'CompanyId'
+                  )
+
+
+
+
+class WorkPlaceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = WorkPlace
+        fields = ('WorkPlaceId',
+                  'WorkPlace',
+                  'CompanyId'
+                  )
+        
+
+class ProjectScopeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectScope
+        fields = ('ProjectScopeId',
+                  'ProjectScope',
+                  'CompanyId'
+                  )
+        
+class BusinessCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = BusinessCategory
+        fields = ('BusinessCategoryId',
+                  'BusinessCategory',
+                  'CompanyId'
+                  )
+        
+
+class ElementCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ElementCategory
+        fields = ('ElementCategoryId',
+                  'ElementCategory',
                   'CompanyId'
                   )

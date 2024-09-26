@@ -17,6 +17,14 @@ class ProjectSerializer(serializers.ModelSerializer):
 'Duration',
 'Status',
 'ClientId',
+'BusinessCategoryId',
+'Address',
+'ProjectScopeId',
+'ProjectArea',
+'EstimateAmount',
+'SurveyDate',
+'Assignedto',
+'GoogleMapLink',
 'ActiveStatus')
         
 

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from app_company.models import Company, CompanyDocuments
+from app_company.models import Company, CompanyBankDetails, CompanyDocuments
 
 
 class CompanySerializer(serializers.ModelSerializer):
@@ -27,7 +27,8 @@ class CompanyDocumentsSerializer(serializers.ModelSerializer):
             'DocumentName',
             'DocumentType',
             'Document',
-            'ExpiryDate'
+            'ExpiryDate',
+            'DocumentNumber'
         )
 
 class SaveCompanyDocumentsSerializer(serializers.ModelSerializer):
@@ -39,7 +40,8 @@ class SaveCompanyDocumentsSerializer(serializers.ModelSerializer):
             'CompanyId',
             'DocumentName',
             'DocumentType',
-            'ExpiryDate'
+            'ExpiryDate',
+            'DocumentNumber'
         )
 class UploadCompanyDocumentsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -49,3 +51,17 @@ class UploadCompanyDocumentsSerializer(serializers.ModelSerializer):
             'CompanyDocumentId',
             'Document',
         )
+
+class CompanyBankDetailsSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CompanyBankDetails
+        fields = ('SortId',
+'BankDetailId',
+'CompanyId',
+'AccountHolderName',
+'BankName',
+'AccountNumber',
+'IFSCCode',
+'PrimaryAccount'
+)
+   
