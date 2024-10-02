@@ -356,6 +356,11 @@ def InvoiceApiById(request, InvoiceId=""):
             invoiceSerializer = InvoiceSerializer(
                     invoice)
             invoiceData=invoiceSerializer.data
+            
+            invoiceData.InvoiceDate = datetime.strptime(invoiceData.InvoiceDate, '%Y-%m-%d')
+
+            invoiceData.DueDate = datetime.strptime(invoiceData.DueDate, '%Y-%m-%d')
+
             invoiceItem = InvoiceItem.objects.filter(InvoiceId=InvoiceId)
             invoiceItemSerializer = InvoiceItemSerializer(
                     invoiceItem, many=True)
