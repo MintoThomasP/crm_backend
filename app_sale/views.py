@@ -349,7 +349,7 @@ def InvoiceApi(request):
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def InvoiceApiById(request, InvoiceId=""):
-    try:
+    # try:
         if request.method == 'GET': 
             invoice = Invoice.objects.get(
                     InvoiceId=InvoiceId)
@@ -378,8 +378,8 @@ def InvoiceApiById(request, InvoiceId=""):
             return JsonResponse("Deleted successfully", safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
 
 
 
