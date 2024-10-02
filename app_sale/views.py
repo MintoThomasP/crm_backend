@@ -387,7 +387,7 @@ def InvoiceApiById(request, InvoiceId=""):
 
 
 class InvoiceApiByCompanyId(generics.ListAPIView):
-    queryset =Invoice.objects.all().order_by('-SortId')
+    queryset =Invoice.objects.all().order_by('-OrderNumber')
     pagination_class = CustomPagination
     serializer_class = InvoiceSerializer 
     def post(self, request, *args, **kwargs):
