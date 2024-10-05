@@ -25,6 +25,7 @@ class SiteSettings(models.Model):
     InvoiceTemplate=models.CharField(max_length=300, blank=True, null=True)
     MobilePattern=models.CharField(blank=True, null=True, max_length=300)   
     WhatsAppPattern = models.CharField(max_length=300, blank=True, null=True)
+    CompanySeal=models.FileField(upload_to='CompanySeal/',null=True,blank=True,max_length=300)
     Logo=models.FileField(upload_to='logo/',null=True,blank=True,max_length=300)
     PrimaryColor=models.CharField(max_length=50, blank=True, null=True)
     SecondaryColor=models.CharField(max_length=50, blank=True, null=True)

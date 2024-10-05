@@ -25,6 +25,7 @@ class SiteSettingsSerializer(serializers.ModelSerializer):
                   'InvoiceTemplate',
                   'MobilePattern',
                   'WhatsAppPattern',
+                  'CompanySeal',
                   'Logo',
                   'PrimaryColor',
                   'SecondaryColor',
@@ -72,6 +73,7 @@ class UploadSiteSettingsSerializer(serializers.ModelSerializer):
         model = SiteSettings
         fields = ('SiteSettingsId',
                   'Logo',
+                  'CompanySeal',
                   'FavIcon'
         )
 

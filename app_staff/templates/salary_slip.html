@@ -227,6 +227,11 @@
                 <td colspan="3" class="text-right bold">Net Salary</td>
                 <td class="text-right ItemValue">{{NetSalary}}</td>
             </tr>
+            {% if companySeal %}
+            <tr>
+                <td><img src="{{companySeal}}"/></td>
+            </tr>
+            {%endif%}
         </tbody>
     </table>
 

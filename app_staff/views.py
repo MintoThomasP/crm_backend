@@ -840,9 +840,7 @@ class StaffApiByCompanyId(generics.ListAPIView):
  
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all SalarySlip Details",)
-@swagger_auto_schema(method='POST',operation_description="NOTE: API for Save SalarySlip",)
-@swagger_auto_schema(method='PUT',operation_description="NOTE: API for edit SalarySlip",)
-@api_view(['GET','POST','PUT'])
+@api_view(['GET'])
 @retry(retries=3, delay=2)
 def SalarySlipApi(request,StaffId="",Year="",Month=""):
     try:
@@ -850,6 +848,22 @@ def SalarySlipApi(request,StaffId="",Year="",Month=""):
             salarySlip = SalarySlip.objects.filter(StaffId=StaffId,Year=Year,Month=Month)
             salarySlipSerializer = SalarySlipSerializer(
                     salarySlip)
+            return JsonResponse(salarySlipSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all SalarySlip Details by staff id",)
+@api_view(['GET','POST','PUT'])
+@retry(retries=3, delay=2)
+def GetSalarySlipByStaffId(request,StaffId=""):
+    try:
+        if request.method == 'GET':
+            salarySlip = SalarySlip.objects.filter(StaffId=StaffId)
+            salarySlipSerializer = SalarySlipSerializer(
+                    salarySlip,many=True)
             return JsonResponse(salarySlipSerializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
@@ -995,6 +1009,12 @@ def DownloadSalarySlip(request, Month,Year,StaffId):
         except:
             logo=""
         try:
+            siteSettings=SiteSettings.objects.get(CompanyId=staffData.CompanyId)
+            siteSettingsSerializer=SiteSettingsSerializer(siteSettings)
+            companySeal=os.path.join(settings.BASE_DIR)+siteSettingsSerializer.data['CompanySeal']
+        except:
+            companySeal=""
+        try:
             designation=Designation.objects.get(DesignationId=staffData.Designation)
             designationSerializer=DesignationSerializer(designation)
             DesignationName=designationSerializer.data['Designation']
@@ -1019,6 +1039,7 @@ def DownloadSalarySlip(request, Month,Year,StaffId):
             'TotalEarnings':TotalEarnings,
             'TotalDeductions':TotalDeductions,
             'NetSalary':NetSalary,
+            'companySeal':companySeal,
             'logo':logo,
             'Month':  calendar.month_name[int(Month)],
             'Year':Year,
