@@ -118,7 +118,7 @@ def get_ledger_by_categoryid(category_id):
 @api_view(['POST'])
 @retry(retries=3, delay=2)
 def GetAllCategoryBySectionTypeApi(request):
-    try:
+    # try:
         if request.method == 'POST':
             categoryData = JSONParser().parse(request)
             category = Category.objects.filter(
@@ -142,8 +142,8 @@ def GetAllCategoryBySectionTypeApi(request):
             return JsonResponse(categorySerializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
 
 @csrf_exempt

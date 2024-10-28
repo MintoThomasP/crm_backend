@@ -298,7 +298,7 @@ def CompanyPerformanceById(request, CompanyId=""):
                     projectTaskSerializer = ProjectTaskSerializer(projectTasks, many=True)
                    
                     if projectTasks.exists(): 
-                        work_status_count = {'Pending': 0, 'Performance': 0}
+                        work_status_count = {'Pending': 0, 'Performance': 0,'Sales':0}
                         for task in projectTaskSerializer.data:
                             if task['Status'] in ['7', '8', '9']:
                                 total_points_gain += float(task['CompletionPoint'])
@@ -310,10 +310,10 @@ def CompanyPerformanceById(request, CompanyId=""):
                             work_status_count['Performance'] = total_points_gain / total_count
                     else:
                        
-                        work_status_count = {'Pending': 0, 'Performance': 0}
+                        work_status_count = {'Pending': 0, 'Performance': 0,'Sales':0}
             else:
                
-                work_status_count = {'Pending': 0, 'Performance': 0}
+                work_status_count = {'Pending': 0, 'Performance': 0,'Sales':0}
 
             companyData['DashboardData'] = work_status_count
 

@@ -77,7 +77,7 @@ class StaffPerformanceSerializer(serializers.ModelSerializer):
 'StaffName',
 'StaffCode',
 'CompanyId',
-
+'Designation'
 )
 
 class StaffGuardianSerializer(serializers.ModelSerializer):

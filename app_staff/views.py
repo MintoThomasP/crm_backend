@@ -1,4 +1,5 @@
 import calendar
+from django.db import connection
 from django.db.models import DateTimeField
 from django.db.models.functions import Cast
 from django.http import HttpResponse
@@ -168,13 +169,13 @@ def StaffApiById(request, StaffId=""):
                     StaffId=StaffId)
             staffSerializer = StaffSerializer(
                     staff)
-            designationData=staffSerializer.data
+            staffData=staffSerializer.data
             try:
                 designation=Designation.objects.get(DesignationId=staffSerializer.data['Designation'])
                 designationSerializer=DesignationSerializer(designation)
-                designationData['DesignationName']=designationSerializer.data['Designation']
+                staffData['DesignationName']=designationSerializer.data['Designation']
             except:
-                designationData['DesignationName']=""
+                staffData['DesignationName']=""
 
             projectTask=ProjectTask.objects.filter(TaskAssignedTo=staffSerializer.data['StaffId'],TaskType='Task')
             projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
@@ -227,8 +228,8 @@ def StaffApiById(request, StaffId=""):
             work_status_count['Performance']=0
             if count:
                 work_status_count['Performance']=total_points_gain/count
-            designationData['WorkStatusCount'] = work_status_count
-            return JsonResponse(designationData, safe=False)
+            staffData['WorkStatusCount'] = work_status_count
+            return JsonResponse(staffData, safe=False)
         elif request.method == 'DELETE':
             staff = Staff.objects.get(StaffId=StaffId)
             staff.Status=0
@@ -238,7 +239,137 @@ def StaffApiById(request, StaffId=""):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
+
+
+   
+from datetime import datetime, timedelta 
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get Staff by StaffId",)
+@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete Staff by StaffId",)
+@api_view(['GET','DELETE'])
+@retry(retries=3, delay=2)
+def DashboardData(request, StaffId=""):
+    # try:
+        if request.method == 'GET': 
+            staff = Staff.objects.get(
+                    StaffId=StaffId)
+            staffSerializer = StaffSerializer(
+                    staff)
+            staffData=staffSerializer.data
+            try:
+                designation=Designation.objects.get(DesignationId=staffSerializer.data['Designation'])
+                designationSerializer=DesignationSerializer(designation)
+                staffData['DesignationName']=designationSerializer.data['Designation']
+            except:
+                staffData['DesignationName']=""
+
+            projectTask=ProjectTask.objects.filter(TaskAssignedTo=staffSerializer.data['StaffId'],TaskType='Task')
+            projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
+            work_status_count = {'Pending': 0, 'Completed': 0, 'Due': 0, 'Not Completed': 0, 'Finished': 0, 'Delay Finished': 0}
+            current_date = datetime.today()
+           
+            date_formats = [
+                '%m/%d/%Y, %I:%M:%S %p',
+                '%m/%d/%Y, %H:%M:%S',
+                '%d/%m/%Y, %I:%M:%S %p',
+                '%d/%m/%Y, %H:%M:%S',
+                "%Y-%m-%dT%H:%M",
+                "%Y-%m-%dT%H:%M:%S%z"
+            ]
+            total_point=0
+            total_points_gain=0
+            count=0
+            for task in projectTaskSerializer.data:
+                scheduled_deadline=0
+                if task['Status'] == '7' or task['Status'] == '8' or task['Status'] == '9' :
+                    total_point=+float(task['TaskPoint'])
+                    total_points_gain=total_points_gain+float(task['CompletionPoint'])
+                    count=count+1
+                for date_format in date_formats:
+                    try:
+                        deadline = task['ScheduledDeadline']
+                        if deadline:
+                            scheduled_deadline = datetime.strptime(deadline, date_format)
+                        break
+                    except ValueError:
+                        continue
+              
+                if task['Status'] == '1' or task['Status'] == '2':
+                        work_status_count['Pending'] += 1
+                
+                if task['Status'] == '3':
+                    work_status_count['Completed'] += 1
+        
+                if scheduled_deadline and scheduled_deadline < current_date and task['Status'] == '1' or task['Status'] == '2' or task['Status'] == '10':
+                    work_status_count['Due'] += 1
+
+                if task['Status'] == '8' or task['Status'] == '9':
+                    work_status_count['Delay Finished'] += 1
+
+                if task['Status'] == '4' or task['Status'] == '5' or task['Status'] == '6':
+                    work_status_count['Not Completed'] += 1   
+
+                if task['Status'] == '7':
+                    work_status_count['Finished'] += 1
+            work_status_count['Performance']=0
+            if count:
+                work_status_count['Performance']=total_points_gain/count
+            staffData['WorkStatusCount'] = work_status_count
+
+# Define the date range: from 7 months ago to the start of next month
+            sql="WITH month_series AS ( SELECT DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%b') AS Month, DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y') AS Year, DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL n MONTH), '%Y-%m-01') AS EndDate FROM (SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7) AS numbers ) SELECT ms.Month, COALESCE(SUM(t.TaskPoint), 0) AS TotalPoints FROM month_series ms LEFT JOIN app_project_projecttask t ON DATE_FORMAT(t.EndDate, '%Y-%m-01') = ms.EndDate AND TaskAssignedTo='"+StaffId+"' GROUP BY ms.Month, ms.Year ORDER BY ms.Year DESC, FIELD(ms.Month, 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec');"
+            task_performance = connection.cursor()
+            task_performance.execute(sql)
+            field_names = [i[0] for i in task_performance.description]
+            task_performance_data = []
+            for task in task_performance.fetchall():
+                j = 0
+                task_data = {}
+                for col in task:
+                    if j < len(field_names):
+                        task_data[str(field_names[j])] = col
+                        j = j + 1
+                task_performance_data.append(task_data)
+            staffData['7MonthPerformance']=task_performance_data
+            
+            
+            sql="WITH RECURSIVE date_series AS ( SELECT CURDATE() - INTERVAL 6 DAY AS DateValue UNION ALL SELECT DateValue + INTERVAL 1 DAY FROM date_series WHERE DateValue + INTERVAL 1 DAY <= CURDATE() ) SELECT DATE_FORMAT(ds.DateValue, '%a') AS DayOfWeek, COALESCE(SUM(TIMESTAMPDIFF(HOUR, t.MoveOutDateTime, t.MoveInDateTime)), 0) AS TotalWorkingHours FROM date_series ds LEFT JOIN app_staff_moveonregister t ON DATE(t.MoveInDateTime) = ds.DateValue AND t.StaffId = '"+StaffId+"' GROUP BY ds.DateValue ORDER BY ds.DateValue;"
+            task_performance = connection.cursor()
+            task_performance.execute(sql)
+            field_names = [i[0] for i in task_performance.description]
+            task_performance_data = []
+            for task in task_performance.fetchall():
+                j = 0
+                task_data = {}
+                for col in task:
+                    if j < len(field_names):
+                        task_data[str(field_names[j])] = col
+                        j = j + 1
+                task_performance_data.append(task_data)
+            staffData['7DayWorkingHours']=task_performance_data
+            
+            sql="SELECT DATE(d.days) AS `Date`, DATE_FORMAT(d.days, '%a') AS `DayName`, COALESCE(COUNT(t.ProjectTaskId), 0) AS `TotalCompletedTasks` FROM ( SELECT CURDATE() - INTERVAL n DAY AS days FROM ( SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 ) AS numbers ) AS d LEFT JOIN app_project_projecttask t ON DATE(t.CreatedDate) = DATE(d.days) AND t.Status IN (7, 8, 9) AND TaskAssignedTo='"+StaffId+"' GROUP BY d.days ORDER BY d.days DESC;"
+            task_performance = connection.cursor()
+            task_performance.execute(sql)
+            field_names = [i[0] for i in task_performance.description]
+            task_performance_data = []
+            for task in task_performance.fetchall():
+                j = 0
+                task_data = {}
+                for col in task:
+                    if j < len(field_names):
+                        task_data[str(field_names[j])] = col
+                        j = j + 1
+                task_performance_data.append(task_data)
+            staffData['7DayTaskCount']=task_performance_data
+            
+            return JsonResponse(staffData, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
+
 
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=StaffGuardianSerializer,operation_description="NOTE: API for save Staff Guardian")
@@ -779,7 +910,7 @@ class StaffApiByCompanyId(generics.ListAPIView):
     pagination_class = CustomPageNumberPagination
     serializer_class = StaffSerializer 
     def post(self, request, *args, **kwargs):
-        try:
+        # try:
             filterData = JSONParser().parse(request)
             Keyword = filterData.get('SearchKeyword', '')
             if filterData['CompanyId']:
@@ -835,8 +966,8 @@ class StaffApiByCompanyId(generics.ListAPIView):
                     row['WorkStatusCount'] = work_status_count
                     data.append(row)
                 return self.get_paginated_response(data)
-        except:
-            return JsonResponse("", safe=False)      
+        # except:
+        #     return JsonResponse("", safe=False)      
  
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all SalarySlip Details",)
@@ -1162,7 +1293,7 @@ def moveOnRegisterApi(request,StaffId=""):
 
 def AllStaffPerformancebyCompany(CompanyId=""):
     staff=Staff.objects.filter(CompanyId=CompanyId)
-    staffSerializer=StaffPerformanceSerializer(staff,many=True)
+    staffSerializer=StaffSerializer(staff,many=True)
     data = []
     for row in staffSerializer.data:
         try:

@@ -63,8 +63,6 @@ def CURDSiteSettingsApi(request, pk=""):
         return JsonResponse("", safe=False)
         
 
-
-
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE:API for Get all site Settingss by CompanyId",)
 @api_view(['GET'])

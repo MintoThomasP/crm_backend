@@ -182,7 +182,7 @@ class ProjectTaskPagination(generics.ListAPIView):
     pagination_class = CustomPageNumberPagination
     serializer_class = ProjectTaskSerializer 
     def post(self, request, *args, **kwargs):
-        try:
+        # try:
             filterData = JSONParser().parse(request)
             Keyword = filterData.get('SearchKeyword', '')
             if filterData['TaskAssignedTo']:
@@ -296,8 +296,8 @@ class ProjectTaskPagination(generics.ListAPIView):
 
                     data.append(row)
                 return self.get_paginated_response(data)
-        except:
-            return JsonResponse("", safe=False)
+        # except:
+        #     return JsonResponse("", safe=False)
             
 
 
@@ -2266,7 +2266,7 @@ class GetAllTicketsApi(generics.ListAPIView):
     pagination_class = CustomPageNumberPagination
     serializer_class = ProjectTaskSerializer 
     def post(self, request, *args, **kwargs):
-        try:
+        # try:
             filterData = JSONParser().parse(request)
             Keyword = filterData.get('SearchKeyword', '')
             if filterData['CompanyId']:
@@ -2285,7 +2285,8 @@ class GetAllTicketsApi(generics.ListAPIView):
             if filterData['ProjectId']:
                 self.queryset = self.queryset.filter(ProjectId=filterData['ProjectId'])
             if filterData['Status']:
-                self.queryset = self.queryset.filter(Status=filterData['Status'])
+                status=filterData['Status']
+                self.queryset = self.queryset.filter(Status__in=status)
             if Keyword:
                     self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
             if filterData['CreatedDate']:
@@ -2353,8 +2354,8 @@ class GetAllTicketsApi(generics.ListAPIView):
                 
 
                 return self.get_paginated_response(data)
-        except:
-            return JsonResponse("", safe=False)   
+        # except:
+        #     return JsonResponse("", safe=False)   
 
 
 

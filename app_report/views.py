@@ -251,9 +251,10 @@ def ClientReportApiByClientId(request):
         
         totalduration_minutes = 0
         for project in projectduration:
-            totalduration = project.TotalDuration
-            totahours, totalminutes = map(int, totalduration.split(':'))
-            totalduration_minutes += totahours * 60 + totalminutes
+            if project.TotalDuration:
+                totalduration = project.TotalDuration
+                totahours, totalminutes = map(int, totalduration.split(':'))
+                totalduration_minutes += totahours * 60 + totalminutes
         total_duration_hours = totalduration_minutes // 60
         remaining_duration_minutes = totalduration_minutes % 60
         
@@ -1546,11 +1547,19 @@ def DownloadSummarizedStaffReportByStaffId(request,StaffId="",StartDate="",EndDa
     else:
         Start_Date = ""
         End_Date = ""
+    if isinstance(staff.JoinedOn, str):
+        joined_date = datetime.strptime(staff.JoinedOn, '%Y-%m-%d')
+    else:
+        joined_date = staff.JoinedOn
+
+    # return JsonResponse(StaffSerializer(
+    #                 staff).data, safe=False)
 
     # Prepare context for rendering
     context = {
         'StartDate': Start_Date,
-        'JoinedDate': staff.JoinedOn.strftime('%B %d, %Y') if staff.JoinedOn else "Unknown",
+        'JoinedDate': joined_date.strftime('%B %d, %Y') if joined_date else "Unknown",
+    
         'CurrentDate': currentDate.strftime('%B %d, %Y'),
         'EndDate': End_Date,
         'totalPoint': round(totalPoint, 2),

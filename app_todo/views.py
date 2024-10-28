@@ -83,15 +83,15 @@ class TodoPagination(generics.ListAPIView):
     def post(self, request, *args, **kwargs):
         try:
             filterData = JSONParser().parse(request)
-            if filterData['Status']:
-                status=filterData['Status']
-                self.queryset = self.queryset.filter(IsCompleted=status)
+            # if filterData['Status']:
+            #     status=filterData['Status']
+            #     self.queryset = self.queryset.filter(IsCompleted=status)
             if filterData['UserId']:
                 self.queryset = self.queryset.filter(UserId=filterData['UserId'])
-            if filterData['StartDate'] and filterData['EndDate']:
-                start_date = timezone.datetime.strptime(filterData['StartDate'], '%Y-%m-%d').date()
-                end_date = (timezone.datetime.strptime(filterData['EndDate'], '%Y-%m-%d')).date()
-                self.queryset = self.queryset.filter(ScheduledOn__range=(start_date,end_date))
+            # if filterData['StartDate'] and filterData['EndDate']:
+            #     start_date = timezone.datetime.strptime(filterData['StartDate'], '%Y-%m-%d').date()
+            #     end_date = (timezone.datetime.strptime(filterData['EndDate'], '%Y-%m-%d')).date()
+            #     self.queryset = self.queryset.filter(ScheduledOn__range=(start_date,end_date))
             page = self.paginate_queryset(self.queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)

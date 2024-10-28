@@ -10,6 +10,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('Staff/', views.staffApi),
     url(r'^Staff/(?P<StaffId>[0-9a-zA-Z\-]+)$', views.StaffApiById),
+    url(r'^DashboardData/(?P<StaffId>[0-9a-zA-Z\-]+)$', views.DashboardData),
     url(r'^GetSalarySlipByStaffId/(?P<StaffId>[0-9a-zA-Z\-]+)$', views.GetSalarySlipByStaffId),
     url(r'^staffByStaffCode/(?P<StaffCode>[0-9a-zA-Z\-]+)$', views.staffApiByStaffCode),
     path('StaffApiByCompanyId/', views.StaffApiByCompanyId.as_view()), # pagination for staff manage table
