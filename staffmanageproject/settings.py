@@ -112,13 +112,14 @@ DATABASES = {
 
      'default': {
         'ENGINE': 'dj_db_conn_pool.backends.mysql',
-        'NAME': 'staffmanage_db2',
-        'USER': 'root',
-        'PASSWORD': '',
-        'PORT': '3309',
-        # 'USER': 'python_user',
-        # 'PASSWORD': 'Kq#oCWJN0sAR',
-        # 'PORT': '3306',
+        # 'NAME': 'staffmanage_db2',
+        # 'USER': 'root',
+        # 'PASSWORD': '',
+        # 'PORT': '3309',
+        'NAME': 'staffmanage_db',
+        'USER': 'python_user',
+        'PASSWORD': 'Kq#oCWJN0sAR',
+        'PORT': '3306',
         'HOST': 'localhost',
         'POOL_OPTIONS' : {
             'POOL_SIZE': 40,

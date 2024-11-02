@@ -310,10 +310,10 @@ def SectionTypeApi(request):
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all CategoryType",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
-def CategoryTypeApi(request):
+def CategoryTypeApi(request,SectionType=""):
     try:
         if request.method == 'GET':
-            categoryType = CategoryType.objects.all()
+            categoryType = CategoryType.objects.filter(SectionType=SectionType)
             categoryType_serializer = CategoryTypeSerializer(
                 categoryType, many=True)  
             return JsonResponse(categoryType_serializer.data, safe=False)

@@ -26,6 +26,7 @@ urlpatterns = [
     path('DocumentTypeApi/', views.DocumentTypeApi),
     path('SectionTypeApi/', views.SectionTypeApi),
     path('CategoryTypeApi/', views.CategoryTypeApi),
+    url(r'^CategoryTypeApi/(?P<SectionType>[0-9a-zA-Z\-]+)$', views.CategoryTypeApi),
     path('ReportTypeApi/', views.ReportTypeApi),
     path('MeetingTypeApi/', views.MeetingTypeApi),
     path('EnquiryTypeApi/', views.EnquiryTypeApi),

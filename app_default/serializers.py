@@ -118,6 +118,7 @@ class CategoryTypeSerializer(serializers.ModelSerializer):
 'CategoryType',
 'UsageType',
 'Ref',
+'SectionType',
 'OrderNo'
 )
         

@@ -249,13 +249,16 @@ from datetime import datetime, timedelta
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def DashboardData(request, StaffId=""):
-    # try:
+    try:
         if request.method == 'GET': 
-            staff = Staff.objects.get(
-                    StaffId=StaffId)
-            staffSerializer = StaffSerializer(
-                    staff)
-            staffData=staffSerializer.data
+            try:
+                staff = Staff.objects.get(
+                        StaffId=StaffId)
+                staffSerializer = StaffSerializer(
+                        staff)
+                staffData=staffSerializer.data
+            except:
+                staffData=[]
             try:
                 designation=Designation.objects.get(DesignationId=staffSerializer.data['Designation'])
                 designationSerializer=DesignationSerializer(designation)
@@ -366,8 +369,8 @@ def DashboardData(request, StaffId=""):
             return JsonResponse(staffData, safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 
 

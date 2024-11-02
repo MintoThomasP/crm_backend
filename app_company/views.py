@@ -1,4 +1,5 @@
 from datetime import date, datetime,timedelta
+from django.db import connection
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
@@ -345,6 +346,87 @@ def CompanyPerformanceById(request, CompanyId=""):
                 'Logo': logo_flag
             }
             companyData['account_completion']=account_completion
+            
+            
+            
+            sql="WITH RECURSIVE DateSeries AS ( SELECT CURDATE() - INTERVAL 30 DAY AS task_date UNION ALL SELECT task_date + INTERVAL 1 DAY FROM DateSeries WHERE task_date + INTERVAL 1 DAY <= CURDATE() ) SELECT DATE_FORMAT(ds.task_date, '%b %d') AS formatted_date, IFNULL(COUNT(t.ProjectTaskId), 0) AS total_completed_tasks FROM DateSeries ds LEFT JOIN app_project_projecttask t ON DATE(t.EndDate) = ds.task_date AND t.Status IN (7, 8, 9) AND CompanyId='"+CompanyId+"' WHERE ds.task_date BETWEEN CURDATE() - INTERVAL 30 DAY AND CURDATE() GROUP BY ds.task_date, t.CompanyId ORDER BY ds.task_date;"
+            task_performance = connection.cursor()
+            task_performance.execute(sql)
+            field_names = [i[0] for i in task_performance.description]
+            task_performance_data = []
+            for task in task_performance.fetchall():
+                j = 0
+                task_data = {}
+                for col in task:
+                    if j < len(field_names):
+                        task_data[str(field_names[j])] = col
+                        j = j + 1
+                task_performance_data.append(task_data)
+            companyData['StaffPerformance']=task_performance_data
+            
+            
+            sql="SELECT c.CustomerDisplayName, COALESCE(COUNT(t.ProjectTaskId), 0) AS total_completed_tasks FROM app_client_client c JOIN app_project_projecttask t ON c.ClientId = t.ClientId AND t.Status IN (7, 8, 9) AND t.EndDate >= CURDATE() - INTERVAL 60 DAY AND  t.CompanyId='"+CompanyId+"'  AND  c.CompanyId='"+CompanyId+"' GROUP BY c.ClientId ORDER BY total_completed_tasks DESC LIMIT 10;"
+            
+            task_performance = connection.cursor()
+            task_performance.execute(sql)
+            field_names = [i[0] for i in task_performance.description]
+            task_performance_data = []
+            for task in task_performance.fetchall():
+                j = 0
+                task_data = {}
+                for col in task:
+                    if j < len(field_names):
+                        task_data[str(field_names[j])] = col
+                        j = j + 1
+                task_performance_data.append(task_data)
+            companyData['ClientTouchpoint']=task_performance_data
+            
+            sql="WITH RECURSIVE date_series AS ( SELECT CURDATE() - INTERVAL 6 DAY AS DateValue UNION ALL SELECT DateValue + INTERVAL 1 DAY FROM date_series WHERE DateValue + INTERVAL 1 DAY <= CURDATE() ) SELECT DATE_FORMAT(ds.DateValue, '%a') AS DayOfWeek, ds.DateValue AS Date, COALESCE(SUM(TIMESTAMPDIFF(HOUR, t.MoveOutDateTime, t.MoveInDateTime)), 0) AS TotalWorkingHours FROM date_series ds LEFT JOIN app_staff_moveonregister t ON DATE(t.MoveInDateTime) = ds.DateValue LEFT JOIN app_staff_staff s ON t.StaffId = s.StaffId AND s.CompanyId='"+CompanyId+"'  GROUP BY ds.DateValue ORDER BY ds.DateValue;"
+            task_performance = connection.cursor()
+            task_performance.execute(sql)
+            field_names = [i[0] for i in task_performance.description]
+            task_performance_data = []
+            for task in task_performance.fetchall():
+                j = 0
+                task_data = {}
+                for col in task:
+                    if j < len(field_names):
+                        task_data[str(field_names[j])] = col
+                        j = j + 1
+                task_performance_data.append(task_data)
+            companyData['7DayWorkingHours']=task_performance_data
+            
+            sql="SELECT DATE(d.days) AS `Date`, DATE_FORMAT(d.days, '%a') AS `DayName`, COALESCE(COUNT(t.ProjectTaskId), 0) AS `TotalCompletedTasks` FROM ( SELECT CURDATE() - INTERVAL n DAY AS days FROM ( SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3 UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 ) AS numbers ) AS d LEFT JOIN app_project_projecttask t ON DATE(t.CreatedDate) = DATE(d.days) AND t.Status IN (7, 8, 9) AND CompanyId='"+CompanyId+"' GROUP BY d.days ORDER BY d.days DESC;"
+            task_performance = connection.cursor()
+            task_performance.execute(sql)
+            field_names = [i[0] for i in task_performance.description]
+            task_performance_data = []
+            for task in task_performance.fetchall():
+                j = 0
+                task_data = {}
+                for col in task:
+                    if j < len(field_names):
+                        task_data[str(field_names[j])] = col
+                        j = j + 1
+                task_performance_data.append(task_data)
+            companyData['7DayTaskCount']=task_performance_data
+            
+            
+            sql="SELECT SUM(CASE WHEN ScheduledDeadline < CURDATE() THEN 1 ELSE 0 END) AS Overdue, SUM(CASE WHEN ScheduledDeadline = CURDATE() THEN 1 ELSE 0 END) AS Due, SUM(CASE WHEN ScheduledDeadline > CURDATE() THEN 1 ELSE 0 END) AS Upcoming, SUM(CASE WHEN ScheduledDeadline IS NULL THEN 1 ELSE 0 END) AS NoDeadline FROM app_project_projecttask WHERE Status IN (1, 2, 4, 5, 6, 10) AND CompanyId='"+CompanyId+"';"
+            task_performance = connection.cursor()
+            task_performance.execute(sql)
+            field_names = [i[0] for i in task_performance.description]
+            task_performance_data = []
+            for task in task_performance.fetchall():
+                j = 0
+                task_data = {}
+                for col in task:
+                    if j < len(field_names):
+                        task_data[str(field_names[j])] = col
+                        j = j + 1
+                task_performance_data.append(task_data)
+            companyData['TaskDetails']=task_performance_data
+            
             return JsonResponse(companyData, safe=False)
         
        

@@ -185,8 +185,10 @@ class ProjectTaskPagination(generics.ListAPIView):
         # try:
             filterData = JSONParser().parse(request)
             Keyword = filterData.get('SearchKeyword', '')
-            if filterData['TaskAssignedTo']:
-                self.queryset = self.queryset.filter(TaskAssignedTo=filterData['TaskAssignedTo'])
+            if len(filterData['TaskName']):
+                self.queryset = self.queryset.filter(Title__icontains=filterData['TaskName'])
+            if len(filterData['TaskAssignedTo']):
+                self.queryset = self.queryset.filter(TaskAssignedTo__in=filterData['TaskAssignedTo'])
             if filterData['CompanyId']:
                 project = Project.objects.filter(
                         CompanyId=filterData['CompanyId'],ActiveStatus=1)
@@ -199,10 +201,10 @@ class ProjectTaskPagination(generics.ListAPIView):
             if len(filterData['Status']):
                 status=filterData['Status']
                 self.queryset = self.queryset.filter(Status__in=status)
-            if filterData['TaskAssignedBy']:
-                self.queryset = self.queryset.filter(TaskAssignedBy=filterData['TaskAssignedBy'])
-            if filterData['ProjectId']:
-                self.queryset = self.queryset.filter(ProjectId=filterData['ProjectId'])
+            if len(filterData['TaskAssignedBy']):
+                self.queryset = self.queryset.filter(TaskAssignedBy__in=filterData['TaskAssignedBy'])
+            if len(filterData['ProjectId']):
+                self.queryset = self.queryset.filter(ProjectId__in=filterData['ProjectId'])
             if Keyword:
                     self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
             if filterData['CreatedDate']:
@@ -2266,7 +2268,7 @@ class GetAllTicketsApi(generics.ListAPIView):
     pagination_class = CustomPageNumberPagination
     serializer_class = ProjectTaskSerializer 
     def post(self, request, *args, **kwargs):
-        # try:
+        try:
             filterData = JSONParser().parse(request)
             Keyword = filterData.get('SearchKeyword', '')
             if filterData['CompanyId']:
@@ -2278,15 +2280,22 @@ class GetAllTicketsApi(generics.ListAPIView):
                 for row in projectSerializer.data:
                     projectId.append(row['ProjectId'])
                 self.queryset = self.queryset.filter(ProjectId__in=projectId)
-            if filterData['TaskAssignedTo']:
-                self.queryset = self.queryset.filter(TaskAssignedTo=filterData['TaskAssignedTo'])
-            if filterData['TaskAssignedBy']:
-                self.queryset = self.queryset.filter(TaskAssignedBy=filterData['TaskAssignedBy'])
-            if filterData['ProjectId']:
-                self.queryset = self.queryset.filter(ProjectId=filterData['ProjectId'])
+            if len(filterData['TaskAssignedTo']):
+                self.queryset = self.queryset.filter(TaskAssignedTo__in=filterData['TaskAssignedTo'])
+            if len(filterData['TaskAssignedBy']):
+                self.queryset = self.queryset.filter(TaskAssignedBy__in=filterData['TaskAssignedBy'])
+            if len(filterData['ProjectId']):
+                self.queryset = self.queryset.filter(ProjectId__in=filterData['ProjectId'])
+                
+            # Filter by Status
             if filterData['Status']:
-                status=filterData['Status']
+                status = filterData['Status']
+                if isinstance(status, int):
+                    status = [status]
                 self.queryset = self.queryset.filter(Status__in=status)
+            # if filterData['Status']:
+            #     status=filterData['Status']
+            #     self.queryset = self.queryset.filter(Status__in=status)
             if Keyword:
                     self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
             if filterData['CreatedDate']:
@@ -2354,8 +2363,8 @@ class GetAllTicketsApi(generics.ListAPIView):
                 
 
                 return self.get_paginated_response(data)
-        # except:
-        #     return JsonResponse("", safe=False)   
+        except:
+            return JsonResponse("", safe=False)   
 
 
 

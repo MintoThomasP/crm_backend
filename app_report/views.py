@@ -207,9 +207,9 @@ def ClientReportApiByClientId(request):
         staff_projects.append(Staff_details)
     if staff_projects:
 
-        ClientDetails['Projects'] = staff_projects
+        ClientDetails['Staff'] = staff_projects
     else:
-        ClientDetails['Projects'] = {
+        ClientDetails['Staff'] = {
             'StaffId': '',
            'StaffName': '',
             'TotalCompletedPoints': 0,
