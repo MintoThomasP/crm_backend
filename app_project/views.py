@@ -223,7 +223,7 @@ class ProjectTaskPagination(generics.ListAPIView):
 
                 
             
-            return JsonResponse(self.queryset, safe=False)
+            return JsonResponse(str(self.queryset.query), safe=False)
             page = self.paginate_queryset(self.queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
