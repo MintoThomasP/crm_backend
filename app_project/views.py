@@ -219,7 +219,27 @@ class ProjectTaskPagination(generics.ListAPIView):
                 end_date_str = filterData['EndDate']
                 end_date = datetime.strptime(end_date_str, '%Y-%m-%d').date()
                 self.queryset = self.queryset.filter(EndDate__startswith=end_date)
+            
+            if filterData.get('FromDate'):
+                # Convert FromDate to start of the day in ScheduledDeadline's format
+                from_date_str = datetime.strptime(filterData['FromDate'], '%Y-%m-%d').strftime('%Y-%m-%dT%H:%M')
+            else:
+                from_date_str = None
 
+            if filterData.get('ToDate'):
+                # Convert ToDate to end of the day in ScheduledDeadline's format
+                to_date = datetime.strptime(filterData['ToDate'], '%Y-%m-%d') + timedelta(days=1) - timedelta(seconds=1)
+                to_date_str = to_date.strftime('%Y-%m-%dT%H:%M')
+            else:
+                to_date_str = None
+
+            # Apply string-based filtering
+            if from_date_str and to_date_str:
+                self.queryset = self.queryset.filter(ScheduledDeadline__gte=from_date_str, ScheduledDeadline__lte=to_date_str)
+            elif from_date_str:
+                self.queryset = self.queryset.filter(ScheduledDeadline__gte=from_date_str)
+            elif to_date_str:
+                self.queryset = self.queryset.filter(ScheduledDeadline__lte=to_date_str)
                 
             
             # return JsonResponse(str(self.queryset.query), safe=False)
@@ -2291,6 +2311,27 @@ class GetAllTicketsApi(generics.ListAPIView):
                 self.queryset = self.queryset.filter(TaskAssignedBy__in=filterData['TaskAssignedBy'])
             if len(filterData['ProjectId']):
                 self.queryset = self.queryset.filter(ProjectId__in=filterData['ProjectId'])
+            if filterData.get('FromDate'):
+                # Convert FromDate to start of the day in ScheduledDeadline's format
+                from_date_str = datetime.strptime(filterData['FromDate'], '%Y-%m-%d').strftime('%Y-%m-%dT%H:%M')
+            else:
+                from_date_str = None
+
+            if filterData.get('ToDate'):
+                # Convert ToDate to end of the day in ScheduledDeadline's format
+                to_date = datetime.strptime(filterData['ToDate'], '%Y-%m-%d') + timedelta(days=1) - timedelta(seconds=1)
+                to_date_str = to_date.strftime('%Y-%m-%dT%H:%M')
+            else:
+                to_date_str = None
+
+            # Apply string-based filtering
+            if from_date_str and to_date_str:
+                self.queryset = self.queryset.filter(CreatedDate__gte=from_date_str, CreatedDate__lte=to_date_str)
+            elif from_date_str:
+                self.queryset = self.queryset.filter(CreatedDate__gte=from_date_str)
+            elif to_date_str:
+                self.queryset = self.queryset.filter(CreatedDatee__lte=to_date_str)
+                
                 
             # Filter by Status
             if filterData['Status']:
@@ -2301,12 +2342,12 @@ class GetAllTicketsApi(generics.ListAPIView):
             # if filterData['Status']:
             #     status=filterData['Status']
             #     self.queryset = self.queryset.filter(Status__in=status)
-            if Keyword:
-                    self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
-            if filterData['CreatedDate']:
-                created_date_str = filterData['CreatedDate']
-                created_date = datetime.strptime(created_date_str, '%Y-%m-%d').date()
-                self.queryset = self.queryset.filter(CreatedDate__startswith=created_date)
+            # if Keyword:
+            #         self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
+            # if filterData['CreatedDate']:
+            #     created_date_str = filterData['CreatedDate']
+            #     created_date = datetime.strptime(created_date_str, '%Y-%m-%d').date()
+            #     self.queryset = self.queryset.filter(CreatedDate__startswith=created_date)
         
             page = self.paginate_queryset(self.queryset)
             if page is not None:

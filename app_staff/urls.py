@@ -16,6 +16,7 @@ urlpatterns = [
     path('StaffApiByCompanyId/', views.StaffApiByCompanyId.as_view()), # pagination for staff manage table
        url(r'^StaffPerformanceByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.StaffPerformanceByCompanyId),
        url(r'^getAllStaffReport/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.staffApi),
+    path('getStaffReport/', views.getStaffReport.as_view()),
 
 
     path('StaffGuardian/', views.staffGuardianApi),

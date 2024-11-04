@@ -34,7 +34,6 @@ class Staff(models.Model):
     CountryCode=models.CharField(blank=True, null=True, max_length=10)
 
     
-    
 
 
 class StaffGuardian(models.Model):

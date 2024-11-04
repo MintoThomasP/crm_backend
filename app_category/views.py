@@ -239,28 +239,6 @@ def ReportApiById(request, ReportId=""):
 
 
 
-def get_subcategories(category_id):
-    subcategories = Category.objects.filter(RefId=category_id, ActiveStatus=1).order_by('-SortId')
-    subcategory_serializer = CategorySerializer(subcategories, many=True)
-    subcategory_data = []
-    for subcategory in subcategory_serializer.data:
-        children = get_subcategories(subcategory['CategoryId'])
-        if children:
-            subcategory['Subcategory'] = children
-        else:
-            subcategory['Subcategory']=[]
-
-        report_data = get_report_data(subcategory['CategoryId'])
-        if report_data:
-            subcategory['Report'] = report_data
-        subcategory_data.append(subcategory)
-    return subcategory_data
-
-def get_report_data(category_id):
-    reports = Report.objects.filter(CategoryId=category_id)
-    report_serializer = ReportSerializer(reports, many=True)
-    return report_serializer.data
-
 @csrf_exempt
 @swagger_auto_schema(method='POST', operation_description="NOTE: API for get category and subcategories by CategoryType",)
 @api_view(['POST'])
@@ -300,6 +278,28 @@ def GetCategoryandSubCategoriesByCategoryType(request):
     # except:
     #     return JsonResponse("", safe=False)
 
+def get_subcategories(category_id):
+    subcategories = Category.objects.filter(RefId=category_id, ActiveStatus=1).order_by('-SortId')
+    subcategory_serializer = CategorySerializer(subcategories, many=True)
+    subcategory_data = []
+    for subcategory in subcategory_serializer.data:
+        children = get_subcategories(subcategory['CategoryId'])
+        if children:
+            subcategory['Subcategory'] = children
+        else:
+            subcategory['Subcategory']=[]
+
+        report_data = get_report_data(subcategory['CategoryId'])
+        if report_data:
+            subcategory['Report'] = report_data
+        subcategory_data.append(subcategory)
+    return subcategory_data
+
+def get_report_data(category_id):
+    reports = Report.objects.filter(CategoryId=category_id)
+    report_serializer = ReportSerializer(reports, many=True)
+    return report_serializer.data
+
 @csrf_exempt
 @swagger_auto_schema(method='POST', operation_description="NOTE: API for get category and subcategories and report details by SectionType",)
 @api_view(['POST'])
@@ -307,30 +307,65 @@ def GetAllCategoryandSubCategories(request):
     try:
         if request.method == 'POST':
             category_data = JSONParser().parse(request)
-            categories = Category.objects.filter(
-                Q(RefId__isnull=True) | Q(RefId=""),
+
+            # Fetch all categories at once and group by RefId for faster processing
+            all_categories = Category.objects.filter(
+                Q(RefId__isnull=True) | Q(RefId="") | Q(RefId__isnull=False),
                 ActiveStatus=1,
                 SectionType=category_data['SectionType'],
                 CompanyId=category_data['CompanyId'],
             ).order_by('-SortId')
-            category_serializer = CategorySerializer(categories, many=True)
-            category_data = []
+
+            # Serialize categories once
+            category_serializer = CategorySerializer(all_categories, many=True)
+            category_map = {}
+
+            # Organize categories by CategoryId and RefId for quick lookup
             for category in category_serializer.data:
-                subcategories = get_subcategories(category['CategoryId'])
-                if subcategories:
-                    category['Subcategory'] = subcategories
+                category_id = category['CategoryId']
+                ref_id = category['RefId']
+                if ref_id:
+                    category_map.setdefault(ref_id, []).append(category)
                 else:
-                   
-                    category['Subcategory'] = []
-                report_data = get_report_data(category['CategoryId'])
+                    category_map.setdefault(None, []).append(category)
+
+            # Build nested structure without recursion
+            def attach_subcategories(parent_category):
+                subcategories = category_map.get(parent_category['CategoryId'], [])
+                for subcategory in subcategories:
+                    attach_subcategories(subcategory)
+                    subcategory['Subcategory'] = category_map.get(subcategory['CategoryId'], [])
+
+                    # Attach report data for subcategory
+                    report_data = get_report_data(subcategory['CategoryId'])
+                    if report_data:
+                        subcategory['Report'] = report_data
+
+                parent_category['Subcategory'] = subcategories
+
+            # Prepare final data structure
+            category_data = []
+            for root_category in category_map.get(None, []):
+                attach_subcategories(root_category)
+                
+                # Attach report data for main category
+                report_data = get_report_data(root_category['CategoryId'])
                 if report_data:
-                    category['Report'] = report_data
-                category_data.append(category)
+                    root_category['Report'] = report_data
+
+                category_data.append(root_category)
+
             return JsonResponse(category_data, safe=False)
         else:
             return JsonResponse([], safe=False)
-    except:
-        return JsonResponse("Invalid", safe=False)
+    except Exception as e:
+        return JsonResponse({"error": "Invalid", "details": str(e)}, safe=False)
+
+def get_report_data(category_id):
+    # Fetch all reports in one go to avoid repeated DB calls
+    reports = Report.objects.filter(CategoryId=category_id)
+    report_serializer = ReportSerializer(reports, many=True)
+    return report_serializer.data
 
 @csrf_exempt
 @swagger_auto_schema(method='POST', operation_description="NOTE: API for get Monthly Client report",)

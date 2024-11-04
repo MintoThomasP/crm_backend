@@ -40,6 +40,75 @@ from django.utils import timezone
 from xhtml2pdf import pisa
 from django.template.loader import get_template
 from django.conf import settings
+
+
+class getStaffReport(generics.ListAPIView):
+    queryset = Staff.objects.filter(Status=1)
+    serializer_class = StaffSerializer 
+
+    def post(self, request, *args, **kwargs):
+        try:
+            filterData = JSONParser().parse(request)
+            company_id = filterData.get('CompanyId')
+
+            # Apply CompanyId filter if provided
+            if company_id:
+                self.queryset = self.queryset.filter(CompanyId=company_id)
+            
+            if len(filterData['StaffId']):
+                self.queryset = self.queryset.filter(StaffId__in=filterData['StaffId'])
+            
+            # Parse FromDate and ToDate with appropriate format
+            from_date_str = datetime.strptime(filterData.get('FromDate', ''), '%Y-%m-%d').strftime('%Y-%m-%dT%H:%M') if filterData.get('FromDate') else None
+            to_date = datetime.strptime(filterData.get('ToDate', ''), '%Y-%m-%d') + timedelta(days=1) - timedelta(seconds=1) if filterData.get('ToDate') else None
+            to_date_str = to_date.strftime('%Y-%m-%dT%H:%M') if to_date else None
+
+            serializer = self.get_serializer(self.queryset, many=True)
+            data = []
+
+            # Process each client row
+            for row in serializer.data:
+                designation=Designation.objects.get(DesignationId=row['Designation'])
+                designationSerializer=DesignationSerializer(designation)
+                row['DesignationName']=designationSerializer.data['Designation']
+                project_tasks = ProjectTask.objects.filter(TaskAssignedTo=row['StaffId'], TaskType="Task")
+                
+                # Filter by date range if provided
+                if from_date_str and to_date_str:
+                    project_tasks = project_tasks.filter(CreatedDate__gte=from_date_str, CreatedDate__lte=to_date_str)
+                elif from_date_str:
+                    project_tasks = project_tasks.filter(CreatedDate__gte=from_date_str)
+                elif to_date_str:
+                    project_tasks = project_tasks.filter(CreatedDate__lte=to_date_str)
+                    
+                project_task_serializer = ProjectTaskSerializer(project_tasks, many=True)
+                work_status_count = {'Pending': 0, 'Completed': 0, 'Due': 0, 'Not Completed': 0, 'Finished': 0, 'Delay Finished': 0}
+                current_date = str(date.today())
+                
+                # Count task statuses
+                for task in project_task_serializer.data:
+                    if task['Status'] in ['1', '2']:
+                        work_status_count['Pending'] += 1
+                    if task['Status'] == '3':
+                        work_status_count['Completed'] += 1
+                    if task['CreatedDate'] < current_date and task['Status'] == '1':
+                        work_status_count['Due'] += 1
+                    if task['Status'] in ['8', '9']:
+                        work_status_count['Delay Finished'] += 1
+                    if task['Status'] in ['4', '5', '6']:
+                        work_status_count['Not Completed'] += 1
+                    if task['Status'] == '7':
+                        work_status_count['Finished'] += 1
+
+                row['WorkStatusCount'] = work_status_count
+                data.append(row)
+
+            return JsonResponse(data, safe=False)   
+        except Exception as e:
+            return JsonResponse({'error': str(e)}, safe=False, status=500)
+      
+
+
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=SaveStaffSerializer,operation_description="NOTE: API for save staff")
 @swagger_auto_schema(method='PUT', request_body=SaveStaffSerializer,operation_description="NOTE: API for edit staff")

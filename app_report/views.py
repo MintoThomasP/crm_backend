@@ -817,7 +817,7 @@ def FinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""):
 
 
 def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType="",NoOfMonths="0"):
-    try :
+    # try :
         if request.method == 'GET':
             expectField=['OrderNo', 'Level','RefId','CategoryId','itemsumorder']
             start_date = startdate.split('-')
@@ -979,16 +979,16 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
                             amount=0
                         try:
                             if isBaseValue:
-                                BaseValue[k]=int(BaseValue[k])+int(amount)
+                                BaseValue[k]=float(BaseValue[k])+float(amount)
                             else:
-                                LevelAmount[LevelIndex][k]=int(LevelAmount[LevelIndex][k])+int(amount)
+                                LevelAmount[LevelIndex][k]=float(LevelAmount[LevelIndex][k])+float(amount)
                         except:
                             if isBaseValue:
                                 BaseValue.setdefault(k, 0)
-                                BaseValue[k]=int(BaseValue[k])+int(amount)
+                                BaseValue[k]=float(BaseValue[k])+float(amount)
                             else:
                                 LevelAmount[LevelIndex].setdefault(k, 0)
-                                LevelAmount[LevelIndex][k]=int(LevelAmount[LevelIndex][k])+int(amount)
+                                LevelAmount[LevelIndex][k]=float(LevelAmount[LevelIndex][k])+float(amount)
                         
                 responsedata.append(Categorydata)
             if len(LevelAmount):
@@ -1126,8 +1126,8 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
         
             return "NODATA"
         # print(startdate, enddate,ClientId ,ReportType)
-    except:
-        return "NODATA"
+    # except:
+    #     return "NODATA"
 
 def getYTD(ClientId="",ReportType="",year="",month=""):
     if year=="":

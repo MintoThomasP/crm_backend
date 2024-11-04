@@ -8,6 +8,7 @@ urlpatterns = [
     path('ClientApiByCompanyId/', views.ClientApiByCompanyId.as_view()),
     url(r'^ClientByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.ClientByCompanyId),
     url(r'^getAllClientReport/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.clientApi),
+    path('getClientReport/', views.getClientReport.as_view()),
 
     path('ClientOtherDetails/', views.ClientOtherDetailsApi),
     url(r'^ClientOtherDetailsApiById/(?P<ClientOtherDetailId>[0-9a-zA-Z\-]+)$', views.ClientOtherDetailsApiById),
