@@ -176,6 +176,8 @@ def ProjectByCompanyId(request, CompanyId=""):
 
 
 
+from functools import reduce
+import operator
 
 class ProjectTaskPagination(generics.ListAPIView):
     queryset =ProjectTask.objects.filter(Q(RefId__isnull=True) | Q(RefId=""),TaskType='Task').order_by('-SortId')
@@ -186,6 +188,9 @@ class ProjectTaskPagination(generics.ListAPIView):
             filterData = JSONParser().parse(request)
             Keyword = filterData.get('SearchKeyword', '')
             if len(filterData['TaskName']):
+                self.queryset = self.queryset.filter(
+                    reduce(operator.or_, (Q(Title__icontains=task_name) for task_name in filterData['TaskName']))
+)
                 self.queryset = self.queryset.filter(Title__icontains=filterData['TaskName'])
             if len(filterData['TaskAssignedTo']):
                 self.queryset = self.queryset.filter(TaskAssignedTo__in=filterData['TaskAssignedTo'])
