@@ -209,8 +209,8 @@ class ProjectTaskPagination(generics.ListAPIView):
                 self.queryset = self.queryset.filter(TaskAssignedBy__in=filterData['TaskAssignedBy'])
             if len(filterData['ProjectId']):
                 self.queryset = self.queryset.filter(ProjectId__in=filterData['ProjectId'])
-            if Keyword:
-                    self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
+            # if Keyword:
+            #         self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
             if filterData['CreatedDate']:
                 created_date_str = filterData['CreatedDate']
                 created_date = datetime.strptime(created_date_str, '%Y-%m-%d').date()
@@ -222,7 +222,7 @@ class ProjectTaskPagination(generics.ListAPIView):
 
                 
             
-            return JsonResponse(str(self.queryset.query), safe=False)
+            # return JsonResponse(str(self.queryset.query), safe=False)
             page = self.paginate_queryset(self.queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
