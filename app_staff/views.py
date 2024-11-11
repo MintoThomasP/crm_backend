@@ -318,7 +318,7 @@ from datetime import datetime, timedelta
 @api_view(['GET','DELETE'])
 @retry(retries=3, delay=2)
 def DashboardData(request, StaffId=""):
-    try:
+    # try:
         if request.method == 'GET': 
             try:
                 staff = Staff.objects.get(
@@ -336,8 +336,9 @@ def DashboardData(request, StaffId=""):
                 staffData['DesignationName']=""
 
             projectTask=ProjectTask.objects.filter(TaskAssignedTo=staffSerializer.data['StaffId'],TaskType='Task')
-            projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
-            work_status_count = {'Pending': 0, 'Completed': 0, 'Due': 0, 'Not Completed': 0, 'Finished': 0, 'Delay Finished': 0}
+            projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)            
+            work_status_count = {'Pending': 0, 'Paused': 0, 'Verfication pending': 0, 'On time': 0, 'Re-assigned': 0, 'Delay Finished': 0}
+
             current_date = datetime.today()
            
             date_formats = [
@@ -365,24 +366,25 @@ def DashboardData(request, StaffId=""):
                         break
                     except ValueError:
                         continue
-              
+        
                 if task['Status'] == '1' or task['Status'] == '2':
                         work_status_count['Pending'] += 1
                 
+                if task['Status'] == '10':
+                    work_status_count['Paused'] += 1
+                    
                 if task['Status'] == '3':
-                    work_status_count['Completed'] += 1
+                    work_status_count['Verfication pending'] += 1
         
-                if scheduled_deadline and scheduled_deadline < current_date and task['Status'] == '1' or task['Status'] == '2' or task['Status'] == '10':
-                    work_status_count['Due'] += 1
+                if task['Status'] == '7':
+                    work_status_count['On time'] += 1
 
                 if task['Status'] == '8' or task['Status'] == '9':
                     work_status_count['Delay Finished'] += 1
 
                 if task['Status'] == '4' or task['Status'] == '5' or task['Status'] == '6':
-                    work_status_count['Not Completed'] += 1   
-
-                if task['Status'] == '7':
-                    work_status_count['Finished'] += 1
+                    work_status_count['Re-assigned'] += 1   
+                    
             work_status_count['Performance']=0
             if count:
                 work_status_count['Performance']=total_points_gain/count
@@ -438,8 +440,8 @@ def DashboardData(request, StaffId=""):
             return JsonResponse(staffData, safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
     
 
 
@@ -977,70 +979,87 @@ class leaveApplicationApiByStaffId(generics.ListAPIView):
         except:
             return JsonResponse("", safe=False)
 
-class StaffApiByCompanyId(generics.ListAPIView):
-    queryset =Staff.objects.all().order_by('-SortId')
-    pagination_class = CustomPageNumberPagination
-    serializer_class = StaffSerializer 
-    def post(self, request, *args, **kwargs):
-        # try:
-            filterData = JSONParser().parse(request)
-            Keyword = filterData.get('SearchKeyword', '')
-            if filterData['CompanyId']:
-                self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
-            if Keyword:
-                self.queryset = self.queryset.filter(StaffName__icontains=Keyword)
+# class StaffApiByCompanyId(generics.ListAPIView):
+#     queryset =Staff.objects.all().order_by('-SortId')
+#     pagination_class = CustomPageNumberPagination
+#     serializer_class = StaffSerializer 
+#     def post(self, request, *args, **kwargs):
+#         # try:
+#             filterData = JSONParser().parse(request)
+#             Keyword = filterData.get('SearchKeyword', '')
+#             if filterData['CompanyId']:
+#                 self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+#             if Keyword:
+#                 self.queryset = self.queryset.filter(StaffName__icontains=Keyword)
 
             
-            page = self.paginate_queryset(self.queryset)
-            if page is not None:
-                serializer = self.get_serializer(page, many=True)
-                data = []
-                for row in serializer.data:
-                    try:
-                        designation=Designation.objects.get(DesignationId=row['Designation'])
-                        designationSerializer=DesignationSerializer(designation)
-                        row['DesignationName']=designationSerializer.data['Designation']
-                    except:
-                        row['DesignationName']=""
+#             page = self.paginate_queryset(self.queryset)
+#             if page is not None:
+#                 serializer = self.get_serializer(page, many=True)
+#                 data = []
+#                 for row in serializer.data:
+#                     try:
+#                         designation=Designation.objects.get(DesignationId=row['Designation'])
+#                         designationSerializer=DesignationSerializer(designation)
+#                         row['DesignationName']=designationSerializer.data['Designation']
+#                     except:
+#                         row['DesignationName']=""
 
-                    projectTask=ProjectTask.objects.filter(TaskAssignedTo=row['StaffId'])
-                    projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
-                    work_status_count = {'Pending': 0, 'Completed': 0, 'Due': 0, 'Not Completed': 0, 'Finished': 0, 'Delay Finished': 0}
-                    current_date = str(date.today())
-                    total_points_gain=0
-                    count=0
-                    for task in projectTaskSerializer.data:
-                        if task['Status'] == '7' or task['Status'] == '8' or task['Status'] == '9' :
-                            total_points_gain=total_points_gain+float(task['CompletionPoint'])
-                            count=count+1
-                        if task['Status'] == '1' or task['Status'] == '2' or task['Status'] == '10':
-                            work_status_count['Pending'] += 1
+#                     projectTask=ProjectTask.objects.filter(TaskAssignedTo=row['StaffId'])
+#                     projectTaskSerializer=ProjectTaskSerializer(projectTask,many=True)
+#                     work_status_count = {'Pending': 0, 'Completed': 0, 'Due': 0, 'Not Completed': 0, 'Finished': 0, 'Delay Finished': 0}
+#                     current_date = str(date.today())
+#                     total_points_gain=0
+#                     count=0
+#                     for task in projectTaskSerializer.data:
+#                         if task['Status'] == '7' or task['Status'] == '8' or task['Status'] == '9' :
+#                             total_points_gain=total_points_gain+float(task['CompletionPoint'])
+#                             count=count+1
+#                         if task['Status'] == '1' or task['Status'] == '2' or task['Status'] == '10':
+#                             work_status_count['Pending'] += 1
                     
-                        if task['Status'] == '3':
-                            work_status_count['Completed'] += 1
+#                         if task['Status'] == '3':
+#                             work_status_count['Completed'] += 1
                 
-                        if task['CreatedDate'] < current_date and task['Status'] == '1':
-                            work_status_count['Due'] += 1
+#                         if task['CreatedDate'] < current_date and task['Status'] == '1':
+#                             work_status_count['Due'] += 1
 
-                        if task['Status'] == '8' or task['Status'] == '9':
-                            work_status_count['Delay Finished'] += 1
+#                         if task['Status'] == '8' or task['Status'] == '9':
+#                             work_status_count['Delay Finished'] += 1
 
-                        if task['Status'] == '4' or task['Status'] == '5' or task['Status'] == '6':
-                            work_status_count['Not Completed'] += 1   
+#                         if task['Status'] == '4' or task['Status'] == '5' or task['Status'] == '6':
+#                             work_status_count['Not Completed'] += 1   
 
-                        if task['Status'] == '7':
-                            work_status_count['Finished'] += 1
-                    work_status_count['Performance']=0
-                    if count:
+#                         if task['Status'] == '7':
+#                             work_status_count['Finished'] += 1
+#                     work_status_count['Performance']=0
+#                     if count:
                         
-                        work_status_count['Performance']=total_points_gain/count
+#                         work_status_count['Performance']=total_points_gain/count
 
-                    row['WorkStatusCount'] = work_status_count
-                    data.append(row)
-                return self.get_paginated_response(data)
-        # except:
-        #     return JsonResponse("", safe=False)      
- 
+#                     row['WorkStatusCount'] = work_status_count
+#                     data.append(row)
+#                 return self.get_paginated_response(data)
+#         # except:
+#         #     return JsonResponse("", safe=False)      
+
+@csrf_exempt
+@swagger_auto_schema(method='POST',operation_description="NOTE: API for Get all staff",)
+@api_view(['POST'])
+@retry(retries=3, delay=2)
+def StaffApiByCompanyId(request):
+    try:
+        if request.method == 'POST':
+            filterData = JSONParser().parse(request)
+            salarySlip = Staff.objects.filter(CompanyId=filterData['CompanyId'])
+            salarySlipSerializer = StaffSerializer(
+                    salarySlip,many=True)
+            return JsonResponse(salarySlipSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
 @csrf_exempt
 @swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all SalarySlip Details",)
 @api_view(['GET'])

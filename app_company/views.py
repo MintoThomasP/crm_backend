@@ -281,6 +281,7 @@ def CompanyPerformanceById(request, CompanyId=""):
             total_points_gain = 0
             total_count = 0
 
+            work_status_count = {'Pending': 0, 'Performance': 0,'Sales':0}
             if projects.exists():  
                 for project in projectSerializer.data:
                     currentMonthYear = date.today().strftime("%Y-%m")
@@ -296,22 +297,25 @@ def CompanyPerformanceById(request, CompanyId=""):
                     end_date = datetime.strptime(endDate, '%Y-%m-%d')+ timedelta(days=1)
 
                     projectTasks = ProjectTask.objects.filter(CreatedDate__range=(start_date, end_date), ProjectId=project['ProjectId'])
-                    projectTaskSerializer = ProjectTaskSerializer(projectTasks, many=True)
-                   
                     if projectTasks.exists(): 
-                        work_status_count = {'Pending': 0, 'Performance': 0,'Sales':0}
                         for task in projectTaskSerializer.data:
                             if task['Status'] in ['7', '8', '9']:
                                 total_points_gain += float(task['CompletionPoint'])
                                 total_count += 1
-                            if task['Status'] in ['1', '2', '10']:
-                                work_status_count['Pending'] += 1
 
                         if total_count > 0:
                             work_status_count['Performance'] = total_points_gain / total_count
-                    else:
+                    projectTasks = ProjectTask.objects.filter(ProjectId=project['ProjectId'],TaskType='Task')
+                    projectTaskSerializer = ProjectTaskSerializer(projectTasks, many=True)
+                   
+                    if projectTasks.exists(): 
+                        for task in projectTaskSerializer.data:
+                            if task['Status'] in ['1','2', '4', '5', '6', '10']:
+                                work_status_count['Pending'] += 1
+
+                    # else:
                        
-                        work_status_count = {'Pending': 0, 'Performance': 0,'Sales':0}
+                    #     work_status_count = {'Pending': 0, 'Performance': 0,'Sales':0}
             else:
                
                 work_status_count = {'Pending': 0, 'Performance': 0,'Sales':0}

@@ -184,7 +184,7 @@ class ProjectTaskPagination(generics.ListAPIView):
     pagination_class = CustomPageNumberPagination
     serializer_class = ProjectTaskSerializer 
     def post(self, request, *args, **kwargs):
-        # try:
+        try:
             filterData = JSONParser().parse(request)
             Keyword = filterData.get('SearchKeyword', '')
             if len(filterData['TaskName']):
@@ -209,6 +209,8 @@ class ProjectTaskPagination(generics.ListAPIView):
                 self.queryset = self.queryset.filter(TaskAssignedBy__in=filterData['TaskAssignedBy'])
             if len(filterData['ProjectId']):
                 self.queryset = self.queryset.filter(ProjectId__in=filterData['ProjectId'])
+            if len(filterData['ClientId']):
+                self.queryset = self.queryset.filter(ClientId__in=filterData['ClientId'])
             # if Keyword:
             #         self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
             if filterData['CreatedDate']:
@@ -323,8 +325,8 @@ class ProjectTaskPagination(generics.ListAPIView):
 
                     data.append(row)
                 return self.get_paginated_response(data)
-        # except:
-        #     return JsonResponse("", safe=False)
+        except:
+            return JsonResponse("", safe=False)
             
 
 
