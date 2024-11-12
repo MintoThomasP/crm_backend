@@ -832,9 +832,11 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
             end_year = int(endYear)
             end_month = int(endDate)
             header = ["Item"]
+            head_title = ["Item"]
             
             while current_year < end_year or (current_year == end_year and current_month <= end_month):
                 header.append(f"{current_year}-{current_month}")
+                head_title.append(datetime.strptime(f"{current_year}-{current_month}", "%Y-%m").strftime("%b-%Y"))
                 if current_month == 12:
                     current_month = 1
                     current_year += 1
@@ -842,11 +844,15 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
                     current_month += 1
                 if ReportType=='1':
                     header.append("%")
+                    head_title.append("%")
             if ReportType=='1':
                 header.append("YTD-"+str(timezone.now().year))
+                head_title.append("YTD-"+str(timezone.now().year))
             if ReportType=='1':
                 header.append("%")
+                head_title.append("%")
             formatted_data = [{i: header[i] for i in range(len(header))}]
+            formatted_head_title = [{i: head_title[i] for i in range(len(head_title))}]
             responsedata = []  
             category_data_dict = {}
             datcount=0
@@ -1114,7 +1120,9 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
 
 
                 context = {
-                    "formatted_data": formatted_data[0],
+                    # "formatted_data": formatted_data[0],
+                    # "formatted_head_title": formatted_head_title[0],
+                    "formatted_data": formatted_head_title[0],
                     "responsedata": finaldata,
                     "cell_length":cell_length,
                     "BaseValue":BaseValue,
