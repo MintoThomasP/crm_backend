@@ -979,7 +979,7 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
                 for k, v in data.items():
                     amount=0
                     if k not in expectField and k !='0' and k !=0:
-                        if v:
+                        if v and v !="null":
                             amount=v
                         else:
                             amount=0
