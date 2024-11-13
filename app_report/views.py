@@ -133,7 +133,12 @@ def ProjectReportApiByProjectId(request):
         totalduration_minutes = 0
         for project in projectduration:
             totalduration = project.TotalDuration
-            totahours, totalminutes = map(int, totalduration.split(':'))
+            if totalduration is not None:
+                totahours, totalminutes = map(int, totalduration.split(':'))
+            else:
+                # Handle the case when totalduration is None
+                totahours, totalminutes = 0, 0  # or some other default values
+
             totalduration_minutes += totahours * 60 + totalminutes
         total_duration_hours = totalduration_minutes // 60
         remaining_duration_minutes = totalduration_minutes % 60
