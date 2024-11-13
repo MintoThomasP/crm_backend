@@ -13,7 +13,7 @@ urlpatterns = [
     url(r'^DashboardData/(?P<StaffId>[0-9a-zA-Z\-]+)$', views.DashboardData),
     url(r'^GetSalarySlipByStaffId/(?P<StaffId>[0-9a-zA-Z\-]+)$', views.GetSalarySlipByStaffId),
     url(r'^staffByStaffCode/(?P<StaffCode>[0-9a-zA-Z\-]+)$', views.staffApiByStaffCode),
-    # path('StaffApiByCompanyId/', views.StaffApiByCompanyId.as_view()), # pagination for staff manage table
+    path('StaffApiByCompanyIdPagination/', views.StaffApiByCompanyIdPagination.as_view()), # pagination for staff manage table
     path('StaffApiByCompanyId/', views.StaffApiByCompanyId),
     
        url(r'^StaffPerformanceByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.StaffPerformanceByCompanyId),
