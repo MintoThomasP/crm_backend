@@ -117,7 +117,7 @@ class CredentialsPagination(generics.ListAPIView):
                     try:
                         client=Client.objects.get(ClientId=row['ClientId'])
                         clientSerializer=ClientSerializer(client)
-                        row['ClientName']=clientSerializer.data['ClientName']
+                        row['ClientName']=clientSerializer.data['CustomerDisplayName']
                     except:
                         row['ClientName']=""
                     data.append(row)
