@@ -28,6 +28,7 @@ urlpatterns = [
     path('UploadInvoiceDocument/', views.UploadInvoiceDocument.as_view()),
     url(r'^InvoiceDocumentApiById/(?P<InvoiceDocumentId>[0-9a-zA-Z\-]+)$', views.InvoiceDocumentApiById),
 
+    url(r'^invoice-summary/(?P<CompanyId>[0-9a-zA-Z\-]+)$',views.invoice_summary_view),
 
     path('PaymentReceivedApi/', views.PaymentReceivedApi),
     url(r'^PaymentReceivedApiById/(?P<PaymentReceivedId>[0-9a-zA-Z\-]+)$', views.PaymentReceivedApiById),

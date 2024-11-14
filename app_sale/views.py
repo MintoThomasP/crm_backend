@@ -383,8 +383,76 @@ def InvoiceApiById(request, InvoiceId=""):
             return JsonResponse("", safe=False)
     # except:
     #     return JsonResponse("", safe=False)
+from django.db.models import Sum, Case, When, F, DecimalField
+from django.utils import timezone
+from datetime import timedelta
 
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for get Invoice summery",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def invoice_summary_view(request,CompanyId=""):
+    
+    # Calculate the current date
+    current_date = timezone.now().date()
 
+    # Initialize totals
+    total_receivable_amount = 0
+    current_amount = 0
+    due_1_15_days = 0
+    due_16_30_days = 0
+    due_31_45_days = 0
+    due_above_45_days = 0
+
+    # Define past date ranges
+    past_15_days = current_date - timedelta(days=15)
+    past_30_days = current_date - timedelta(days=30)
+    past_45_days = current_date - timedelta(days=45)
+
+    # Filter only Unpaid and Partially Paid invoices
+    queryset = Invoice.objects.filter(CompanyId=CompanyId , Status__in=[2, 3]) 
+
+    for invoice in queryset:
+        # Parse DueDate
+        due_date = parse_due_date(invoice.DueDate)
+        amount_due = float(invoice.AmountDue) or 0
+
+        # Aggregate total receivable amount
+        total_receivable_amount += amount_due
+
+        # Categorize each invoice into the appropriate range
+        if due_date >= current_date:
+            current_amount += amount_due
+        elif past_15_days <= due_date < current_date:
+            due_1_15_days += amount_due
+        elif past_30_days <= due_date < past_15_days:
+            due_16_30_days += amount_due
+        elif past_45_days <= due_date < past_30_days:
+            due_31_45_days += amount_due
+        elif due_date < past_45_days:
+            due_above_45_days += amount_due
+
+    totals = {
+        "total_receivable_amount": total_receivable_amount,
+        "current_amount": current_amount,
+        "due_1_15_days": due_1_15_days,
+        "due_16_30_days": due_16_30_days,
+        "due_31_45_days": due_31_45_days,
+        "due_above_45_days": due_above_45_days,
+    }
+    totals = {
+        "current_date":current_date
+,        "total_receivable_amount": totals.get("total_receivable_amount") or 0,
+        "current_amount": totals.get("current_amount") or 0,
+        "due_1_15_days": totals.get("due_1_15_days") or 0,
+        "due_16_30_days": totals.get("due_16_30_days") or 0,
+        "due_31_45_days": totals.get("due_31_45_days") or 0,
+        "due_above_45_days": totals.get("due_above_45_days") or 0,
+    }
+    return JsonResponse(totals, safe=False)
+
+def parse_due_date(due_date_str):
+    return datetime.strptime(due_date_str, "%d %b %Y").date()
 
 class InvoiceApiByCompanyId(generics.ListAPIView):
     queryset =Invoice.objects.all().order_by('-OrderNumber')
