@@ -77,6 +77,7 @@ MIDDLEWARE = [
     'django.middleware.gzip.GZipMiddleware',
     # 'staffmanageproject.corsmiddleware.DynamicCORSOriginMiddleware',
 ]
+CORS_ORIGIN_ALLOW_ALL=True
 
 # Set CORS_ORIGIN_ALLOW_ALL and CORS_ALLOWED_ORIGINS to defaults
 # CORS_ORIGIN_ALLOW_ALL = False
