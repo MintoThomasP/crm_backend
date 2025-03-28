@@ -66,7 +66,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    # 'corsheaders.middleware.CorsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -75,7 +75,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.gzip.GZipMiddleware',
-    'staffmanageproject.corsmiddleware.DynamicCORSOriginMiddleware',
+    # 'staffmanageproject.corsmiddleware.DynamicCORSOriginMiddleware',
 ]
 
 # Set CORS_ORIGIN_ALLOW_ALL and CORS_ALLOWED_ORIGINS to defaults
