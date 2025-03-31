@@ -989,6 +989,8 @@ class StaffApiByCompanyIdPagination(generics.ListAPIView):
             Keyword = filterData.get('SearchKeyword', '')
             if filterData['CompanyId']:
                 self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+            if filterData['Status']:
+                self.queryset = self.queryset.filter(Status=filterData['Status'])
             if Keyword:
                 self.queryset = self.queryset.filter(StaffName__icontains=Keyword)
 
