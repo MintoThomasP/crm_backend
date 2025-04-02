@@ -297,6 +297,7 @@ def CompanyPerformanceById(request, CompanyId=""):
                     end_date = datetime.strptime(endDate, '%Y-%m-%d')+ timedelta(days=1)
 
                     projectTasks = ProjectTask.objects.filter(CreatedDate__range=(start_date, end_date), ProjectId=project['ProjectId'])
+                    projectTaskSerializer = ProjectTaskSerializer(projectTasks, many=True)
                     if projectTasks.exists(): 
                         for task in projectTaskSerializer.data:
                             if task['Status'] in ['7', '8', '9']:
