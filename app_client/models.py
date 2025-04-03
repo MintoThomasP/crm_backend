@@ -74,6 +74,7 @@ class ContactPerson(models.Model):
     Salutation=models.CharField(max_length=5, blank=True, null=True)
     FirstName=models.CharField(max_length=300, blank=True, null=True)
     LastName=models.CharField(max_length=300, blank=True, null=True)
+    Designation=models.CharField(max_length=300, blank=True, null=True)
     EmailId=models.CharField(max_length=150, blank=True, null=True)
     Phone1=models.CharField(max_length=15, blank=True, null=True)
     Phone2=models.CharField(max_length=15, blank=True, null=True)

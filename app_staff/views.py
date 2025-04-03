@@ -739,7 +739,7 @@ def staffDocumentsApiByStaffId(request, StaffId=""):
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def GetAllActiveStaffListApi(request,CompanyId=""):
-    # try:
+    try:
         if request.method == 'GET':
            
             staff = Staff.objects.filter(Status=1,CompanyId=CompanyId)
@@ -757,8 +757,8 @@ def GetAllActiveStaffListApi(request,CompanyId=""):
             return JsonResponse(staffData, safe=False)
         else:
             return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
     
 
 

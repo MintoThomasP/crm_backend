@@ -88,6 +88,7 @@ class ContactPersonSerializer(serializers.ModelSerializer):
 'Salutation',
 'FirstName',
 'LastName',
+'Designation',
 'EmailId',
 'Phone1',
 'Phone2'
