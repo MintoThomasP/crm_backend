@@ -76,6 +76,7 @@ class InvoiceItem(models.Model):
     InvoiceItemId = models.CharField(
         max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
     InvoiceId=models.CharField(blank=True, null=True, max_length=50)
+    Code=models.CharField(blank=True, null=True, max_length=100)
     ItemDetails=models.TextField(blank=True, null=True)
     Quantity = models.IntegerField(default=1)
     Rate=models.CharField(blank=True, null=True, max_length=15)

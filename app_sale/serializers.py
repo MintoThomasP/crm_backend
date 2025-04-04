@@ -79,6 +79,7 @@ class InvoiceItemSerializer(serializers.ModelSerializer):
         fields = ('SortId',
 'InvoiceItemId',
 'InvoiceId',
+'Code',
 'ItemDetails',
 'Quantity',
 'Rate',
