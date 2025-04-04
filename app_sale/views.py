@@ -944,13 +944,13 @@ def ViewPDF(request, InvoiceId=""):
                 
                 pdf = render_to_pdf('woodsInvoice.html', context)
 
-            invoice_file_name = f'{invoice.InvoiceNumber}.pdf'
+            filename = "%s.pdf" %(context['invoice'].InvoiceNumber)
           
             if invoice.InvoiceFile:
                 invoice.InvoiceFile.delete(save=True)
-                invoice.InvoiceFile.save(invoice_file_name, ContentFile(pdf.content))
+                invoice.InvoiceFile.save(filename, ContentFile(pdf.content))
             else:
-                invoice.InvoiceFile.save(invoice_file_name, ContentFile(pdf.content))
+                invoice.InvoiceFile.save(filename, ContentFile(pdf.content))
             return HttpResponse(pdf.content, content_type='application/pdf')
 
         else:
