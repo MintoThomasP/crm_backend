@@ -359,13 +359,13 @@ def InvoiceApiById(request, InvoiceId=""):
             try:
                 invoiceData['InvoiceDate'] = datetime.strptime(invoiceData['InvoiceDate'], '%d %b %Y') 
             except:
-                p=""
+                invoiceData['InvoiceDate'] = datetime.strptime(invoiceData['InvoiceDate'], '%Y-%m-%d')
             invoiceData['InvoiceDate'] = invoiceData['InvoiceDate'].strftime('%Y-%m-%d')
 
             try:
                 invoiceData['DueDate'] = datetime.strptime(invoiceData['DueDate'],'%d %b %Y') 
             except:
-                p=""
+                invoiceData['DueDate'] = datetime.strptime(invoiceData['DueDate'], '%Y-%m-%d')
             invoiceData['DueDate'] = invoiceData['DueDate'].strftime('%Y-%m-%d')
 
 
