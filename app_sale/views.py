@@ -816,7 +816,7 @@ class DownloadPDF(View):
         elif siteSettings.InvoiceTemplate=='woodsInvoice.html':
             pdf = render_to_pdf('woodsInvoice.html', context)
         response = HttpResponse(pdf, content_type='application/pdf')
-        filename = "Estimate_%s.pdf" %(context['invoice'].InvoiceNumber)
+        filename = "%s.pdf" %(context['invoice'].InvoiceNumber)
        
         content = "attachment; filename=%s" %(filename)
         response['Content-Disposition'] = content
