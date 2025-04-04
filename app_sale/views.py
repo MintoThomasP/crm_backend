@@ -356,11 +356,16 @@ def InvoiceApiById(request, InvoiceId=""):
             invoiceSerializer = InvoiceSerializer(
                     invoice)
             invoiceData=invoiceSerializer.data
-            
-            invoiceData['InvoiceDate'] = datetime.strptime(invoiceData['InvoiceDate'], '%d %b %Y') 
+            try:
+                invoiceData['InvoiceDate'] = datetime.strptime(invoiceData['InvoiceDate'], '%d %b %Y') 
+            except:
+                p=""
             invoiceData['InvoiceDate'] = invoiceData['InvoiceDate'].strftime('%Y-%m-%d')
 
-            invoiceData['DueDate'] = datetime.strptime(invoiceData['DueDate'],'%d %b %Y') 
+            try:
+                invoiceData['DueDate'] = datetime.strptime(invoiceData['DueDate'],'%d %b %Y') 
+            except:
+                p=""
             invoiceData['DueDate'] = invoiceData['DueDate'].strftime('%Y-%m-%d')
 
 
