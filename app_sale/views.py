@@ -392,17 +392,18 @@ from datetime import timedelta
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def invoice_summary_view(request,CompanyId=""):
+    current_date = timezone.now().date()
+    
+    total_receivable_amount = 0
+    current_amount = 0
+    due_1_15_days = 0
+    due_16_30_days = 0
+    due_31_45_days = 0
+    due_above_45_days = 0
     try:
         # Calculate the current date
-        current_date = timezone.now().date()
 
         # Initialize totals
-        total_receivable_amount = 0
-        current_amount = 0
-        due_1_15_days = 0
-        due_16_30_days = 0
-        due_31_45_days = 0
-        due_above_45_days = 0
 
         # Define past date ranges
         past_15_days = current_date - timedelta(days=15)
@@ -452,7 +453,15 @@ def invoice_summary_view(request,CompanyId=""):
         return JsonResponse(totals, safe=False)
     except:
         
-        return JsonResponse("", safe=False)
+        return JsonResponse({
+            "current_date":current_date
+    ,        "total_receivable_amount": totals.get("total_receivable_amount") or 0,
+            "current_amount": totals.get("current_amount") or 0,
+            "due_1_15_days": totals.get("due_1_15_days") or 0,
+            "due_16_30_days": totals.get("due_16_30_days") or 0,
+            "due_31_45_days": totals.get("due_31_45_days") or 0,
+            "due_above_45_days": totals.get("due_above_45_days") or 0,
+        }, safe=False)
 
 def parse_due_date(due_date_str):
     return datetime.strptime(due_date_str, "%d %b %Y").date()
