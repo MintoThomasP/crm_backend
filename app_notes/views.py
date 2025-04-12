@@ -144,25 +144,43 @@ class MeetingNotesApiByCompanyId(generics.ListAPIView):
         try:
             filterData = JSONParser().parse(request)
             
-            Keyword = filterData.get('SearchKeyword', '')
-            if Keyword:
-                self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
-            if filterData['CompanyId']:
-                self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
-            if filterData['CreatedBy']:
-                self.queryset = self.queryset.filter(CreatedBy=filterData['CreatedBy'])
+            try:
+                Keyword = filterData.get('SearchKeyword', '')
+                if Keyword:
+                    self.queryset = self.queryset.filter(Q(Title__icontains=Keyword)|Q(Description__icontains=Keyword))
+            except:
+                p=""
+            try:
+                if filterData['CompanyId']:
+                    self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+            except:
+                p=""
+            try:
+                if filterData['CreatedBy']:
+                    self.queryset = self.queryset.filter(CreatedBy=filterData['CreatedBy'])
                 
-            if filterData['MeetingType']:
-                self.queryset = self.queryset.filter(MeetingType=filterData['MeetingType'])
-            if filterData['ParticipatedBy']:
-                self.queryset = self.queryset.filter(TeamParticipants__icontains=filterData['ParticipatedBy'])
-            if filterData['StartDate'] and filterData['EndDate']:
-                # start_date=datetime.strptime(filterData['StartDate'], '%Y-%m-%d').date()
-                # end_date=datetime.strptime(filterData['EndDate'], '%Y-%m-%d').date()
-                start_date = timezone.datetime.strptime(filterData['StartDate'], '%Y-%m-%d').date()
-                end_date = (timezone.datetime.strptime(filterData['EndDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
-                
-                self.queryset = self.queryset.filter(CreatedDate__range=(start_date,end_date))
+            except:
+                p=""
+            try:
+                if filterData['MeetingType']:
+                    self.queryset = self.queryset.filter(MeetingType=filterData['MeetingType'])
+            except:
+                p=""
+            try:
+                if filterData['ParticipatedBy']:
+                    self.queryset = self.queryset.filter(TeamParticipants__icontains=filterData['ParticipatedBy'])
+            except:
+                p=""
+            try:
+                if filterData['StartDate'] and filterData['EndDate']:
+                    # start_date=datetime.strptime(filterData['StartDate'], '%Y-%m-%d').date()
+                    # end_date=datetime.strptime(filterData['EndDate'], '%Y-%m-%d').date()
+                    start_date = timezone.datetime.strptime(filterData['StartDate'], '%Y-%m-%d').date()
+                    end_date = (timezone.datetime.strptime(filterData['EndDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
+                    
+                    self.queryset = self.queryset.filter(CreatedDate__range=(start_date,end_date))
+            except:
+                p=""
                 
             page = self.paginate_queryset(self.queryset)
             if page is not None:
