@@ -181,7 +181,7 @@ class MeetingNotesApiByCompanyId(generics.ListAPIView):
                     self.queryset = self.queryset.filter(CreatedDate__range=(start_date,end_date))
             except:
                 p=""
-                
+                 
             page = self.paginate_queryset(self.queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
