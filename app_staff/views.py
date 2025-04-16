@@ -145,7 +145,7 @@ class getStaffReport(generics.ListAPIView):
                         work_status_count['Not Completed'] += 1
                     if task['Status'] == '7':
                         work_status_count['Finished'] += 1
-                row['WorkDuration'] =get_total_task_duration_for_user(task_assigned_to, from_date_str, to_date_str)
+                row['WorkDuration'] =get_total_task_duration_for_user(row['StaffId'], from_date_str, to_date_str)
                 row['WorkStatusCount'] = work_status_count
                 data.append(row)
 
