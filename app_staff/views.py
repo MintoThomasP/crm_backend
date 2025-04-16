@@ -9,7 +9,7 @@ from app_company.models import Company
 from app_company.serializers import CompanySerializer
 from app_default.views import retry
 from app_login.models import Login
-from app_project.models import Project, ProjectTask
+from app_project.models import Project, ProjectTask, ProjectTaskTiming
 from app_project.serializers import ProjectTaskSerializer
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
@@ -40,8 +40,54 @@ from django.utils import timezone
 from xhtml2pdf import pisa
 from django.template.loader import get_template
 from django.conf import settings
+from datetime import datetime, timedelta
+from dateutil.parser import isoparse
 
 
+def parse_duration(duration_str):
+    """Parses 'H:M' or 'H:M:S' string into timedelta."""
+    try:
+        parts = duration_str.strip().split(":")
+        parts = list(map(int, parts))
+        if len(parts) == 2:
+            return timedelta(hours=parts[0], minutes=parts[1])
+        elif len(parts) == 3:
+            return timedelta(hours=parts[0], minutes=parts[1], seconds=parts[2])
+    except Exception:
+        pass
+    return timedelta(0)
+
+def get_total_task_duration_for_user(task_assigned_to, from_date_str, to_date_str):
+    task_ids = ProjectTask.objects.filter(
+        TaskAssignedTo=task_assigned_to
+    ).values_list('ProjectTaskId', flat=True)
+
+    # Step 2: Filter ProjectTaskTiming entries
+    timings = ProjectTaskTiming.objects.filter(
+        ProjectTaskId__in=task_ids
+    ).exclude(Duration__isnull=True).exclude(Duration__exact="")
+
+    if from_date_str and to_date_str:
+        timings = timings.filter(StartDate__gte=from_date_str, EndDate__lte=to_date_str)
+    elif from_date_str:
+        timings = timings.filter(StartDate__gte=from_date_str)
+    elif to_date_str:
+        timings = timings.filter(EndDate__lte=to_date_str)
+    total_duration = timedelta()
+
+    for timing in timings:
+        try:
+                duration = parse_duration(timing.Duration)
+                total_duration += duration
+        except Exception:
+            continue  # Skip malformed rows
+
+    # Convert total_duration to H:M:S
+    total_hours = total_duration.total_seconds() // 3600
+    total_minutes = (total_duration.total_seconds() % 3600) // 60
+    total_seconds = int(total_duration.total_seconds() % 60)
+
+    return f"{int(total_hours):02}:{int(total_minutes):02}:{total_seconds:02}"
 class getStaffReport(generics.ListAPIView):
     queryset = Staff.objects.filter(Status=1)
     serializer_class = StaffSerializer 
@@ -99,7 +145,7 @@ class getStaffReport(generics.ListAPIView):
                         work_status_count['Not Completed'] += 1
                     if task['Status'] == '7':
                         work_status_count['Finished'] += 1
-
+                row['WorkDuration'] =get_total_task_duration_for_user(task_assigned_to, from_date_str, to_date_str)
                 row['WorkStatusCount'] = work_status_count
                 data.append(row)
 
