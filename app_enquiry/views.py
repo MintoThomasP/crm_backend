@@ -108,21 +108,21 @@ class EnquiryApiByCompanyId(generics.ListAPIView):
                         enquirySource)
                         row['EnquirySourceName']=enquirySource_serializer.data['EnquirySource']
                     except:
-                        row['EnquirySourceName']=""
+                        row['EnquirySourceName']="N/A"
                     try:
                         enquiryStatus = EnquiryStatus.objects.get(StatusId=row['Status'])
                         enquiryStatus_serializer = EnquiryStatusSerializer(
                         enquiryStatus)
                         row['EnquiryStatusName']=enquiryStatus_serializer.data['Status']
                     except:
-                        row['EnquiryStatusName']=""
+                        row['EnquiryStatusName']="N/A"
                     try:
                         serviceType = ServiceType.objects.get(StatusId=row['Status'])
                         serviceType_serializer = ServiceTypeSerializer(
                         serviceType)
                         row['ServiceTypeName']=serviceType_serializer.data['ServiceType']
                     except:
-                        row['ServiceTypeName']=""
+                        row['ServiceTypeName']="N/A"
                     data.append(row)
                 return self.get_paginated_response(data)
         except:
@@ -209,7 +209,7 @@ def CURDFollowUpApiByEnquiryId(request, EnquiryId=""):
                         companySerializer=CompanySerializer(company)
                         row['ScheduledToName']=companySerializer.data['CompanyName']
                 except:
-                    row['ScheduledToName']=""
+                    row['ScheduledToName']="N/A"
                 try:
                     try:
                         staff=Staff.objects.get(StaffId=row['UserId'])
@@ -220,19 +220,19 @@ def CURDFollowUpApiByEnquiryId(request, EnquiryId=""):
                         companySerializer=CompanySerializer(company)
                         row['UserName']=companySerializer.data['CompanyName']
                 except:
-                    row['UserName']=""
+                    row['UserName']="N/A"
                 try:
                     status=FollowUpStatus.objects.get(StatusId=row['Status'])
                     statusSerializer=FollowUpStatusSerializer(status)
                     row['StatusName']=statusSerializer.data['Status']
                 except:
-                    row['StatusName']=""
+                    row['StatusName']="N/A"
                 try:
                     type=FollowUpType.objects.get(FollowUpTypeId=row['FollowUpType'])
                     typeSerializer=FollowUpTypeSerializer(type)
                     row['FollowUpTypeName']=typeSerializer.data['FollowUpType']
                 except:
-                    row['FollowUpTypeName']=""
+                    row['FollowUpTypeName']="N/A"
                 followUpData.append(row)
             return JsonResponse(followUpData, safe=False)    
        
@@ -325,14 +325,14 @@ class EnquiryByScheduledTo(generics.ListAPIView):
                         enquirySource_serializer = EnquirySourceSerializer(enquirySource)
                         col['EnquirySourceName'] = enquirySource_serializer.data['EnquirySource']
                     except:
-                        col['EnquirySourceName'] = ""
+                        col['EnquirySourceName'] = "N/A"
                     
                     try:
                         enquiryStatus = EnquiryStatus.objects.get(StatusId=col['Status'])
                         enquiryStatus_serializer = EnquiryStatusSerializer(enquiryStatus)
                         col['EnquiryStatusName'] = enquiryStatus_serializer.data['Status']
                     except:
-                        col['EnquiryStatusName'] = ""
+                        col['EnquiryStatusName'] = "N/A"
                     
                     data.append(col)
                 
