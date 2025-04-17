@@ -102,6 +102,10 @@ class EnquirySource(models.Model):
     EnquirySourceId=models.AutoField(primary_key=True, editable=False)
     EnquirySource=models.CharField(max_length=300, blank=True, null=True)
 
+class ServiceType(models.Model):
+    ServiceTypeId=models.AutoField(primary_key=True, editable=False)
+    ServiceType=models.CharField(max_length=300, blank=True, null=True)
+
 class FollowUpType(models.Model):
     FollowUpTypeId=models.AutoField(primary_key=True, editable=False)
     FollowUpType=models.CharField(max_length=300, blank=True, null=True)

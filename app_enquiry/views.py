@@ -6,8 +6,8 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from app_company.models import Company
 from app_company.serializers import CompanySerializer
-from app_default.models import EnquiryStatus, EnquirySource, FollowUpStatus, FollowUpType
-from app_default.serializers import EnquiryStatusSerializer, EnquirySourceSerializer, FollowUpStatusSerializer, FollowUpTypeSerializer
+from app_default.models import EnquiryStatus, EnquirySource, FollowUpStatus, FollowUpType, ServiceType
+from app_default.serializers import EnquiryStatusSerializer, EnquirySourceSerializer, FollowUpStatusSerializer, FollowUpTypeSerializer, ServiceTypeSerializer
 from app_default.views import retry
 from app_enquiry.models import Enquiry, FollowUp
 from app_enquiry.serailizers import EnquirySerializer, FollowUpSerializer
@@ -116,6 +116,13 @@ class EnquiryApiByCompanyId(generics.ListAPIView):
                         row['EnquiryStatusName']=enquiryStatus_serializer.data['Status']
                     except:
                         row['EnquiryStatusName']=""
+                    try:
+                        serviceType = ServiceType.objects.get(StatusId=row['Status'])
+                        serviceType_serializer = ServiceTypeSerializer(
+                        serviceType)
+                        row['ServiceTypeName']=serviceType_serializer.data['ServiceType']
+                    except:
+                        row['ServiceTypeName']=""
                     data.append(row)
                 return self.get_paginated_response(data)
         except:
