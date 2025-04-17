@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from django.shortcuts import render
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
@@ -92,6 +93,34 @@ class EnquiryApiByCompanyId(generics.ListAPIView):
                 self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
             if filterData['UserId']:
                 self.queryset = self.queryset.filter(CreatedBy=filterData['UserId'])
+            if filterData['Status']:
+                self.queryset = self.queryset.filter(Status=filterData['Status'])
+            if filterData['UserId']:
+                self.queryset = self.queryset.filter(CreatedBy=filterData['UserId'])
+            if filterData['UserId']:
+                self.queryset = self.queryset.filter(CreatedBy=filterData['UserId'])
+            
+            if filterData.get('FromDate'):
+                # Convert FromDate to start of the day in EnquiryDate's format
+                from_date_str = datetime.strptime(filterData['FromDate'], '%Y-%m-%d').strftime('%Y-%m-%dT%H:%M')
+            else:
+                from_date_str = None
+
+            if filterData.get('ToDate'):
+                # Convert ToDate to end of the day in EnquiryDate's format
+                to_date = datetime.strptime(filterData['ToDate'], '%Y-%m-%d') + timedelta(days=1) - timedelta(seconds=1)
+                to_date_str = to_date.strftime('%Y-%m-%dT%H:%M')
+            else:
+                to_date_str = None
+
+            # Apply string-based filtering
+            if from_date_str and to_date_str:
+                self.queryset = self.queryset.filter(EnquiryDate__gte=from_date_str, EnquiryDate__lte=to_date_str)
+            elif from_date_str:
+                self.queryset = self.queryset.filter(EnquiryDate__gte=from_date_str)
+            elif to_date_str:
+                self.queryset = self.queryset.filter(EnquiryDate__lte=to_date_str)
+                
             
             if Keyword:
                 self.queryset = self.queryset.filter(Description__icontains=Keyword)
