@@ -99,6 +99,8 @@ class EnquiryApiByCompanyId(generics.ListAPIView):
                 self.queryset = self.queryset.filter(CreatedBy=filterData['UserId'])
             if filterData['UserId']:
                 self.queryset = self.queryset.filter(CreatedBy=filterData['UserId'])
+            if filterData['ServiceType']:
+                self.queryset = self.queryset.filter(ServiceType=filterData['ServiceType'])
             
             if filterData.get('FromDate'):
                 # Convert FromDate to start of the day in EnquiryDate's format
