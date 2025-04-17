@@ -85,7 +85,7 @@ class CredentialsPagination(generics.ListAPIView):
     pagination_class = CustomPageNumberPagination
     serializer_class = CredentialsSerializer 
     def post(self, request, *args, **kwargs):
-        # try:
+        try:
             filterData = JSONParser().parse(request)
            
             if filterData['UserId']:
@@ -95,7 +95,7 @@ class CredentialsPagination(generics.ListAPIView):
             if filterData['AccessTo']:
                 self.queryset = self.queryset.filter(AccessTo__icontains=filterData['AccessTo'])
             if filterData['ClientId']:
-                self.queryset = self.queryset.filter(ClientId=filterData['ClientId'])
+                self.queryset = self.queryset.filter(ClientId__in=filterData['ClientId'])
           
             page = self.paginate_queryset(self.queryset)
             if page is not None:
@@ -122,5 +122,5 @@ class CredentialsPagination(generics.ListAPIView):
                         row['ClientName']=""
                     data.append(row)
                 return self.get_paginated_response(data)
-        # except:
-        #     return JsonResponse("", safe=False)
+        except:
+            return JsonResponse("", safe=False)
