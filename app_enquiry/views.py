@@ -148,7 +148,7 @@ class EnquiryApiByCompanyId(generics.ListAPIView):
                     except:
                         row['EnquiryStatusName']="N/A"
                     try:
-                        serviceType = ServiceType.objects.get(StatusId=row['Status'])
+                        serviceType = ServiceType.objects.get(ServiceTypeId=row['ServiceType'])
                         serviceType_serializer = ServiceTypeSerializer(
                         serviceType)
                         row['ServiceTypeName']=serviceType_serializer.data['ServiceType']
