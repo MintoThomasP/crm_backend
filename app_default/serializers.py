@@ -1,6 +1,6 @@
 
 from xml.dom.minidom import DocumentType
-from app_default.models import CategoryType, ClientReference, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquiryType, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, ReportType, SectionType, SiteContactType, StaffStatus, TaskStatus, UserType
+from app_default.models import CategoryType, ClientReference, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquirySource, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, ReportType, SectionType, SiteContactType, StaffStatus, TaskStatus, UserType
 from rest_framework import serializers
 
 
@@ -139,12 +139,12 @@ class MeetingTypeSerializer(serializers.ModelSerializer):
 'MeetingType'
 )
         
-class EnquiryTypeSerializer(serializers.ModelSerializer):
+class EnquirySourceSerializer(serializers.ModelSerializer):
     class Meta:
-        model = EnquiryType
+        model = EnquirySource
         fields = (
-'EnquiryTypeId',
-'EnquiryType'
+'EnquirySourceId',
+'EnquirySource'
 )
 
 class FollowUpTypeSerializer(serializers.ModelSerializer):

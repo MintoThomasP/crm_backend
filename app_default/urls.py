@@ -29,7 +29,7 @@ urlpatterns = [
     url(r'^CategoryTypeApi/(?P<SectionType>[0-9a-zA-Z\-]+)$', views.CategoryTypeApi),
     path('ReportTypeApi/', views.ReportTypeApi),
     path('MeetingTypeApi/', views.MeetingTypeApi),
-    path('EnquiryTypeApi/', views.EnquiryTypeApi),
+    path('EnquirySourceApi/', views.EnquirySourceApi),
     path('FollowUpStatusApi/', views.FollowUpStatusApi),
     path('FollowUpTypeApi/', views.FollowUpTypeApi),
     path('EnquiryStatusApi/', views.EnquiryStatusApi),

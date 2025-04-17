@@ -6,8 +6,8 @@ from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from app_company.models import Company
 from app_company.serializers import CompanySerializer
-from app_default.models import EnquiryStatus, EnquiryType, FollowUpStatus, FollowUpType
-from app_default.serializers import EnquiryStatusSerializer, EnquiryTypeSerializer, FollowUpStatusSerializer, FollowUpTypeSerializer
+from app_default.models import EnquiryStatus, EnquirySource, FollowUpStatus, FollowUpType
+from app_default.serializers import EnquiryStatusSerializer, EnquirySourceSerializer, FollowUpStatusSerializer, FollowUpTypeSerializer
 from app_default.views import retry
 from app_enquiry.models import Enquiry, FollowUp
 from app_enquiry.serailizers import EnquirySerializer, FollowUpSerializer
@@ -103,12 +103,12 @@ class EnquiryApiByCompanyId(generics.ListAPIView):
 
                 for row in serializer.data:
                     try:
-                        enquiryType = EnquiryType.objects.get(EnquiryTypeId=row['EnquiryType'])
-                        enquiryType_serializer = EnquiryTypeSerializer(
-                        enquiryType)
-                        row['EnquiryTypeName']=enquiryType_serializer.data['EnquiryType']
+                        enquirySource = EnquirySource.objects.get(EnquirySourceId=row['EnquirySource'])
+                        enquirySource_serializer = EnquirySourceSerializer(
+                        enquirySource)
+                        row['EnquirySourceName']=enquirySource_serializer.data['EnquirySource']
                     except:
-                        row['EnquiryTypeName']=""
+                        row['EnquirySourceName']=""
                     try:
                         enquiryStatus = EnquiryStatus.objects.get(StatusId=row['Status'])
                         enquiryStatus_serializer = EnquiryStatusSerializer(
@@ -314,11 +314,11 @@ class EnquiryByScheduledTo(generics.ListAPIView):
                 data = []
                 for col in followUpData:
                     try:
-                        enquiryType = EnquiryType.objects.get(EnquiryTypeId=col['EnquiryType'])
-                        enquiryType_serializer = EnquiryTypeSerializer(enquiryType)
-                        col['EnquiryTypeName'] = enquiryType_serializer.data['EnquiryType']
+                        enquirySource = EnquirySource.objects.get(EnquirySourceId=col['EnquirySource'])
+                        enquirySource_serializer = EnquirySourceSerializer(enquirySource)
+                        col['EnquirySourceName'] = enquirySource_serializer.data['EnquirySource']
                     except:
-                        col['EnquiryTypeName'] = ""
+                        col['EnquirySourceName'] = ""
                     
                     try:
                         enquiryStatus = EnquiryStatus.objects.get(StatusId=col['Status'])
