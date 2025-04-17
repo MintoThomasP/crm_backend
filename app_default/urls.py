@@ -30,6 +30,7 @@ urlpatterns = [
     path('ReportTypeApi/', views.ReportTypeApi),
     path('MeetingTypeApi/', views.MeetingTypeApi),
     path('EnquirySourceApi/', views.EnquirySourceApi),
+    path('ServiceTypeApi/', views.ServiceTypeApi),
     path('FollowUpStatusApi/', views.FollowUpStatusApi),
     path('FollowUpTypeApi/', views.FollowUpTypeApi),
     path('EnquiryStatusApi/', views.EnquiryStatusApi),

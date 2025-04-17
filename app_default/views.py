@@ -4,8 +4,8 @@ from django.views.decorators.csrf import csrf_exempt
 import requests
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
-from app_default.models import CategoryType, ClientReference, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquirySource, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, ReportType, SectionType, StaffStatus,  TaskStatus, UserType
-from app_default.serializers import CategoryTypeSerializer, ClientReferenceSerializer, CompanyDocumentTypeSerializer, CountryCodeSerializer, CurrencySerializer, DepositToSerializer, EnquiryStatusSerializer, EnquirySourceSerializer, FollowUpStatusSerializer, FollowUpTypeSerializer,InvoiceStatusSerializer, LeaveStatusSerializer, LeaveTypeSerializer, MeetingTypeSerializer, PaymentModeSerializer, ReportTypeSerializer, SectionTypeSerializer, StaffStatusSerializer, TaskStatusSerializer, UserTypeSerializer
+from app_default.models import CategoryType, ClientReference, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquirySource, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, ReportType, SectionType, ServiceType, StaffStatus,  TaskStatus, UserType
+from app_default.serializers import CategoryTypeSerializer, ClientReferenceSerializer, CompanyDocumentTypeSerializer, CountryCodeSerializer, CurrencySerializer, DepositToSerializer, EnquiryStatusSerializer, EnquirySourceSerializer, FollowUpStatusSerializer, FollowUpTypeSerializer,InvoiceStatusSerializer, LeaveStatusSerializer, LeaveTypeSerializer, MeetingTypeSerializer, PaymentModeSerializer, ReportTypeSerializer, SectionTypeSerializer, ServiceTypeSerializer, StaffStatusSerializer, TaskStatusSerializer, UserTypeSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 import time
@@ -370,6 +370,23 @@ def EnquirySourceApi(request):
             enquirySource_serializer = EnquirySourceSerializer(
                 enquirySource, many=True)  
             return JsonResponse(enquirySource_serializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+    
+
+@csrf_exempt
+@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all ServiceType",)
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def ServiceTypeApi(request):
+    try:
+        if request.method == 'GET':
+            serviceType = ServiceType.objects.all()
+            serviceType_serializer = ServiceTypeSerializer(
+                serviceType, many=True)  
+            return JsonResponse(serviceType_serializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
