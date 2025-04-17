@@ -8,7 +8,7 @@ class Enquiry(models.Model):
         max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
     CustomerName=models.CharField(max_length=300,null=True, blank=True)
     Description=models.TextField(null=True,blank=True)
-    EnquiryType=models.CharField(max_length=50,null=True, blank=True)
+    EnquirySource=models.CharField(max_length=50,null=True, blank=True)
     EmailId=models.CharField(max_length=150,null=True, blank=True)
     PhoneNumber=models.CharField(max_length=15,null=True, blank=True)
     Status=models.CharField(max_length=50)
@@ -18,6 +18,7 @@ class Enquiry(models.Model):
     CreatedBy=models.CharField(max_length=50,null=True, blank=True)
     CompanyId=models.CharField(max_length=50,null=True, blank=True)
     CountryCode=models.CharField(max_length=10,null=True, blank=True)
+    ServiceType=models.CharField(max_length=50,null=True, blank=True)
 
 
 

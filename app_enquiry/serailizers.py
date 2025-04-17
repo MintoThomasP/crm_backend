@@ -9,7 +9,7 @@ class EnquirySerializer(serializers.ModelSerializer):
 'EnquiryId',
 'CustomerName',
 'Description',
-'EnquiryType',
+'EnquirySource',
 'EmailId',
 'PhoneNumber',
 'Status',
@@ -18,7 +18,8 @@ class EnquirySerializer(serializers.ModelSerializer):
 'CreatedDate',
 'CreatedBy',
 'CompanyId',
-'CountryCode')
+'CountryCode',
+'ServiceType')
 
         
 
