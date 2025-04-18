@@ -226,81 +226,109 @@ def ClientByCompanyId(request, CompanyId=""):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-
-
-class ClientApiByCompanyId(generics.ListAPIView):
-    queryset =Client.objects.filter(ActiveStatus=1).order_by('-SortId')
+    
+    
+class ClientApiByCompanyId(APIView):
+    parser_classes = [JSONParser]
     pagination_class = CustomPageNumberPagination
-    serializer_class = ClientSerializer 
+
     def post(self, request, *args, **kwargs):
-        # try:
-            filterData = JSONParser().parse(request)
-            Keyword = filterData.get('SearchKeyword', '')
-            if filterData['CompanyId']:
-                self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+        try:
+            filter_data = request.data
+            keyword = filter_data.get('SearchKeyword', '')
+            company_id = filter_data.get('CompanyId')
 
-            if Keyword:
-                self.queryset = self.queryset.filter(Q(CustomerDisplayName__icontains=Keyword)|Q(CompanyName__icontains=Keyword))
-            page = self.paginate_queryset(self.queryset)
-            if page is not None:
-                serializer = self.get_serializer(page, many=True)
-                for client in serializer.data:   
-                    
-                    start_date = client['SortId'].date()  
-                    end_date = (datetime.now() + timedelta(days=1)).date()
-                    work_data = []
-                    current_date = start_date
-                    while current_date < end_date:
-                        month_start_date = current_date.replace(day=1)
-                    
-                        next_month = month_start_date.replace(day=28) + timezone.timedelta(days=4)
-                        
-                        month_end_date = next_month - timezone.timedelta(days=next_month.day)
-                                
-                        projects = ProjectTask.objects.filter(
-                            MarkAsClientVisit=1,
-                            ClientId=client['ClientId'],
-                            CreatedDate__range=(month_start_date, month_end_date),
-                            SortId__month=month_start_date.month
-                        )
-                        visitRegister = ClientVisitRegister.objects.filter(VisitedDate__range=(month_start_date, month_end_date),ClientId=client['ClientId'])
-                        projectduration = ProjectTask.objects.filter((Q(Status='3') | Q(Status='7')| Q(Status='8')| Q(Status='9')| Q(Status='10')),
-                            ClientId=client['ClientId'],
-                            CreatedDate__range=(month_start_date, month_end_date),
-                            SortId__month=month_start_date.month
-                        ).exclude(TaskType='Subtask')
-                        
-                        totalduration_minutes = 0
-                        for project in projectduration:
-                            if project.TotalDuration:
-                                totalduration = project.TotalDuration
-                                totahours, totalminutes = map(int, totalduration.split(':'))
-                                totalduration_minutes += totahours * 60 + totalminutes
-                        total_duration_hours = totalduration_minutes // 60
-                        remaining_duration_minutes = totalduration_minutes % 60
-                        
+            queryset = Client.objects.filter(ActiveStatus=1).order_by('-SortId')
 
-                        work_data.append({
-                            'Month': calendar.month_name[month_start_date.month],
-                            'TotalVisit': client.TotalVisitPerMonth,
-                            'NoofVisit': visitRegister.count(),
-                            'TotalAllocatedWorkingHours': client.TotalWorkingHoursPerMonth,
-                            'TotalWorkingHours': f'{total_duration_hours}:{remaining_duration_minutes:02}',
-                        })
+            if company_id:
+                queryset = queryset.filter(CompanyId=company_id)
 
-                        current_date = month_end_date + timezone.timedelta(days=1)
+            if keyword:
+                queryset = queryset.filter(
+                    Q(CustomerDisplayName__icontains=keyword) |
+                    Q(CompanyName__icontains=keyword)
+                )
 
-                    client['WorkData'] = work_data
-                    
-    
-    
+            # Pagination
+            paginator = self.pagination_class()
+            paginated_clients = paginator.paginate_queryset(queryset, request)
 
-                return self.get_paginated_response(serializer.data)
-        # except:
-        #     return JsonResponse("", safe=False)
+            # Serialize
+            serializer = ClientSerializer(paginated_clients, many=True)
 
+            enriched_data = []
 
+            for client_data in serializer.data:
+                work_data = []
+                client_id = client_data['ClientId']
 
+                # Parse SortId as date
+                try:
+                    start_date = datetime.fromisoformat(client_data['SortId']).date()
+                except Exception:
+                    start_date = datetime.now().date()
+
+                end_date = (datetime.now() + timedelta(days=1)).date()
+                current_date = start_date
+
+                while current_date < end_date:
+                    month_start = current_date.replace(day=1)
+                    next_month = month_start.replace(day=28) + timedelta(days=4)
+                    month_end = next_month - timedelta(days=next_month.day)
+
+                    # Get visits
+                    visits = ClientVisitRegister.objects.filter(
+                        ClientId=client_id,
+                        VisitedDate__range=(month_start, month_end)
+                    )
+
+                    # Get relevant tasks
+                    tasks = ProjectTask.objects.filter(
+                        MarkAsClientVisit=1,
+                        ClientId=client_id,
+                        CreatedDate__range=(month_start, month_end),
+                        SortId__month=month_start.month
+                    )
+
+                    project_duration_tasks = ProjectTask.objects.filter(
+                        Q(Status__in=['3', '7', '8', '9', '10']),
+                        ClientId=client_id,
+                        CreatedDate__range=(month_start, month_end),
+                        SortId__month=month_start.month
+                    ).exclude(TaskType='Subtask')
+
+                    # Calculate total working time
+                    total_minutes = 0
+                    for task in project_duration_tasks:
+                        if task.TotalDuration:
+                            try:
+                                hours, minutes = map(int, task.TotalDuration.split(':'))
+                                total_minutes += hours * 60 + minutes
+                            except ValueError:
+                                continue
+
+                    total_hours = total_minutes // 60
+                    remaining_minutes = total_minutes % 60
+
+                    work_data.append({
+                        'Month': calendar.month_name[month_start.month],
+                        'TotalVisit': client_data.get('TotalVisitPerMonth'),
+                        'NoofVisit': visits.count(),
+                        'TotalAllocatedWorkingHours': client_data.get('TotalWorkingHoursPerMonth'),
+                        'TotalWorkingHours': f'{total_hours}:{remaining_minutes:02}'
+                    })
+
+                    current_date = month_end + timedelta(days=1)
+
+                client_data['WorkData'] = work_data
+                enriched_data.append(client_data)
+
+            return paginator.get_paginated_response(enriched_data)
+
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, safe=False, status=500)
+        
+        
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=ClientOtherDetailsSerializer,operation_description="NOTE: API for save ClientOtherDetails")
 @swagger_auto_schema(method='PUT', request_body=ClientOtherDetailsSerializer,operation_description="NOTE: API for edit ClientOtherDetails")
