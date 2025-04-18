@@ -1,4 +1,5 @@
-from datetime import date
+import calendar
+from datetime import date, timezone
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
@@ -243,6 +244,57 @@ class ClientApiByCompanyId(generics.ListAPIView):
             page = self.paginate_queryset(self.queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
+                for client in serializer.data:   
+                    
+                    start_date = client.SortId.date()  
+                    end_date = (datetime.now() + timedelta(days=1)).date()
+                    work_data = []
+                    current_date = start_date
+                    while current_date < end_date:
+                        month_start_date = current_date.replace(day=1)
+                    
+                        next_month = month_start_date.replace(day=28) + timezone.timedelta(days=4)
+                        
+                        month_end_date = next_month - timezone.timedelta(days=next_month.day)
+                                
+                        projects = ProjectTask.objects.filter(
+                            MarkAsClientVisit=1,
+                            ClientId=client.ClientId,
+                            CreatedDate__range=(month_start_date, month_end_date),
+                            SortId__month=month_start_date.month
+                        )
+                        visitRegister = ClientVisitRegister.objects.filter(VisitedDate__range=(month_start_date, month_end_date),ClientId=client.ClientId)
+                        projectduration = ProjectTask.objects.filter((Q(Status='3') | Q(Status='7')| Q(Status='8')| Q(Status='9')| Q(Status='10')),
+                            ClientId=client.ClientId,
+                            CreatedDate__range=(month_start_date, month_end_date),
+                            SortId__month=month_start_date.month
+                        ).exclude(TaskType='Subtask')
+                        
+                        totalduration_minutes = 0
+                        for project in projectduration:
+                            if project.TotalDuration:
+                                totalduration = project.TotalDuration
+                                totahours, totalminutes = map(int, totalduration.split(':'))
+                                totalduration_minutes += totahours * 60 + totalminutes
+                        total_duration_hours = totalduration_minutes // 60
+                        remaining_duration_minutes = totalduration_minutes % 60
+                        
+
+                        work_data.append({
+                            'Month': calendar.month_name[month_start_date.month],
+                            'TotalVisit': client.TotalVisitPerMonth,
+                            'NoofVisit': visitRegister.count(),
+                            'TotalAllocatedWorkingHours': client.TotalWorkingHoursPerMonth,
+                            'TotalWorkingHours': f'{total_duration_hours}:{remaining_duration_minutes:02}',
+                        })
+
+                        current_date = month_end_date + timezone.timedelta(days=1)
+
+                    client['WorkData'] = work_data
+                    
+    
+    
+
                 return self.get_paginated_response(serializer.data)
         except:
             return JsonResponse("", safe=False)
