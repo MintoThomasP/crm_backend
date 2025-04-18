@@ -233,7 +233,7 @@ class ClientApiByCompanyId(generics.ListAPIView):
     pagination_class = CustomPageNumberPagination
     serializer_class = ClientSerializer 
     def post(self, request, *args, **kwargs):
-        try:
+        # try:
             filterData = JSONParser().parse(request)
             Keyword = filterData.get('SearchKeyword', '')
             if filterData['CompanyId']:
@@ -296,8 +296,8 @@ class ClientApiByCompanyId(generics.ListAPIView):
     
 
                 return self.get_paginated_response(serializer.data)
-        except:
-            return JsonResponse("", safe=False)
+        # except:
+        #     return JsonResponse("", safe=False)
 
 
 
