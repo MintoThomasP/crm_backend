@@ -246,7 +246,7 @@ class ClientApiByCompanyId(generics.ListAPIView):
                 serializer = self.get_serializer(page, many=True)
                 for client in serializer.data:   
                     
-                    start_date = client.SortId.date()  
+                    start_date = client['SortId'].date()  
                     end_date = (datetime.now() + timedelta(days=1)).date()
                     work_data = []
                     current_date = start_date
@@ -259,13 +259,13 @@ class ClientApiByCompanyId(generics.ListAPIView):
                                 
                         projects = ProjectTask.objects.filter(
                             MarkAsClientVisit=1,
-                            ClientId=client.ClientId,
+                            ClientId=client['ClientId'],
                             CreatedDate__range=(month_start_date, month_end_date),
                             SortId__month=month_start_date.month
                         )
-                        visitRegister = ClientVisitRegister.objects.filter(VisitedDate__range=(month_start_date, month_end_date),ClientId=client.ClientId)
+                        visitRegister = ClientVisitRegister.objects.filter(VisitedDate__range=(month_start_date, month_end_date),ClientId=client['ClientId'])
                         projectduration = ProjectTask.objects.filter((Q(Status='3') | Q(Status='7')| Q(Status='8')| Q(Status='9')| Q(Status='10')),
-                            ClientId=client.ClientId,
+                            ClientId=client['ClientId'],
                             CreatedDate__range=(month_start_date, month_end_date),
                             SortId__month=month_start_date.month
                         ).exclude(TaskType='Subtask')
