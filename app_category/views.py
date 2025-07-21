@@ -623,6 +623,8 @@ def get_maincategories(category_id, data=[]):
     subcategories = Category.objects.filter(CategoryId=category_id)
     subcategory_serializer = CategorySerializer(subcategories, many=True)
     subcategory = subcategory_serializer.data
+    if not subcategory:
+        return []  # or raise a custom error or return None
     subcategory[0]['Subcategory'] = data
     if subcategory[0]['RefId']:
         children = get_maincategories(subcategory[0]['RefId'], subcategory)
