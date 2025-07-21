@@ -25,7 +25,7 @@ urlpatterns = [
         views.GetAllLedgerCategory),
 
     # pagination for staff manage table
-    # path('LedgerCategoryPagination/', views.LedgerCategoryPagination.as_view()),
+    path('LedgerCategoryPagination/', views.LedgerCategoryPagination.as_view()),
 
 
     path('SaveReport/', views.BulkCreateReportView.as_view()),
