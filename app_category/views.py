@@ -1,3 +1,5 @@
+from rest_framework.response import Response
+from rest_framework import status
 import json
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
@@ -19,11 +21,9 @@ from app_default.serializers import CategoryTypeSerializer
 # Create your views here.
 
 
-
-
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=CategorySerializer,operation_description="NOTE: API for save category")
-@swagger_auto_schema(method='PUT', request_body=CategorySerializer,operation_description="NOTE: API for edit category")
+@swagger_auto_schema(method='POST', request_body=CategorySerializer, operation_description="NOTE: API for save category")
+@swagger_auto_schema(method='PUT', request_body=CategorySerializer, operation_description="NOTE: API for edit category")
 @api_view(['POST', 'PUT'])
 def CategoryApi(request):
     try:
@@ -68,22 +68,24 @@ def CategoryApi(request):
 @swagger_auto_schema(method='DELETE', operation_description="NOTE: API for delete Category by CategoryId",)
 @api_view(['GET', 'DELETE'])
 @retry(retries=3, delay=2)
-def CategoryApiById(request,CompanyId="", CategoryId=""):
+def CategoryApiById(request, CompanyId="", CategoryId=""):
     try:
         if request.method == 'GET':
             category = Category.objects.get(
-                CategoryId=CategoryId,CompanyId=CompanyId)
+                CategoryId=CategoryId, CompanyId=CompanyId)
             categorySerializer = CategorySerializer(
                 category)
-            categoryData=categorySerializer.data
-            subcategory = Category.objects.filter(RefId=CategoryId,ActiveStatus=1)
-            subcategorySerializer=CategorySerializer(subcategory, many=True)
-            categoryData['Subcategory']=subcategorySerializer.data
-           
+            categoryData = categorySerializer.data
+            subcategory = Category.objects.filter(
+                RefId=CategoryId, ActiveStatus=1)
+            subcategorySerializer = CategorySerializer(subcategory, many=True)
+            categoryData['Subcategory'] = subcategorySerializer.data
+
             return JsonResponse(categoryData, safe=False)
         elif request.method == 'DELETE':
-            category = Category.objects.get(CategoryId=CategoryId,CompanyId=CompanyId)
-            category.ActiveStatus=0
+            category = Category.objects.get(
+                CategoryId=CategoryId, CompanyId=CompanyId)
+            category.ActiveStatus = 0
             category.save()
             return JsonResponse("Deleted successfully", safe=False)
         else:
@@ -92,97 +94,116 @@ def CategoryApiById(request,CompanyId="", CategoryId=""):
         return JsonResponse("Invalid", safe=False)
 
 
-
 def get_subcategoriesbysectiontype(category_id):
-    subcategories = Category.objects.filter(RefId=category_id, ActiveStatus=1).exclude(SectionType=3).order_by('-SortId')
+    subcategories = Category.objects.filter(
+        RefId=category_id, ActiveStatus=1).exclude(SectionType=3).order_by('-SortId')
     subcategory_serializer = CategorySerializer(subcategories, many=True)
     subcategory_data = []
     for subcategory in subcategory_serializer.data:
         children = get_subcategoriesbysectiontype(subcategory['CategoryId'])
         subcategory['Subcategory'] = children
-        subcategory['Ledger']=get_ledger_by_categoryid(subcategory['CategoryId'])
+        subcategory['Ledger'] = get_ledger_by_categoryid(
+            subcategory['CategoryId'])
         subcategory_data.append(subcategory)
     return subcategory_data
 
 
 def get_ledger_by_categoryid(category_id):
-    subcategories = Category.objects.filter(RefId=category_id,SectionType=3).order_by('-SortId')
+    subcategories = Category.objects.filter(
+        RefId=category_id, SectionType=3).order_by('-SortId')
     subcategory_serializer = CategorySerializer(subcategories, many=True)
     subcategory_data = subcategory_serializer.data
     return subcategory_data
 
 
-
 @csrf_exempt
-@swagger_auto_schema(method='POST', operation_description="NOTE: API for get Category by SectionType",)
+@swagger_auto_schema(method='POST', operation_description="NOTE: API for get Category by SectionType")
 @api_view(['POST'])
 @retry(retries=3, delay=2)
 def GetAllCategoryBySectionTypeApi(request):
-    # try:
-        if request.method == 'POST':
-            categoryData = JSONParser().parse(request)
-            category = Category.objects.filter(
-                Q(RefId__isnull=True) | Q(RefId=""),ActiveStatus=1,SectionType=categoryData['SectionType'],CompanyId=categoryData['CompanyId']).order_by('-SortId')
-            categorySerializer = CategorySerializer(
-                category, many=True)
-            categoryData=[]
-            for row in categorySerializer.data:
-                try:
-                    categoryType=CategoryType.objects.get(CategoryTypeId=row['CategoryType'])
-                    categoryTypeSerializer=CategoryTypeSerializer(categoryType)
-                    row['CategoryTypeName']=categoryTypeSerializer.data['CategoryType']
-                except:
-                    row['CategoryTypeName']=""
-                row['Subcategory']  = get_subcategoriesbysectiontype(row['CategoryId'])
-                row['Ledger']=get_ledger_by_categoryid(row['CategoryId'])
-                # report_data = get_report_data(row['CategoryId'])
-                # if report_data:
-                #     row['Report'] = report_data
-                categoryData.append(row)
-            return JsonResponse(categorySerializer.data, safe=False)
-        else:
-            return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
-    
+    if request.method == 'POST':
+        categoryData = JSONParser().parse(request)
+
+        category_qs = Category.objects.filter(
+            Q(RefId__isnull=True) | Q(RefId=""),
+            ActiveStatus=1,
+            SectionType=categoryData['SectionType'],
+            CompanyId=categoryData['CompanyId']
+        ).order_by('-SortId')
+
+        categorySerializer = CategorySerializer(category_qs, many=True)
+        data = categorySerializer.data
+
+        # Preload related data
+        category_ids = [row['CategoryId'] for row in data]
+        category_type_ids = [row['CategoryType']
+                             for row in data if row['CategoryType']]
+
+        category_type_map = {
+            ct.CategoryTypeId: ct.CategoryType
+            for ct in CategoryType.objects.filter(CategoryTypeId__in=category_type_ids)
+        }
+
+        subcat_map = get_all_subcategories_by_category_ids(
+            category_ids)  # Should return dict
+        ledger_map = get_all_ledgers_by_category_ids(
+            category_ids)        # Should return dict
+
+        final_data = []
+        for row in data:
+            row['CategoryTypeName'] = category_type_map.get(
+                row['CategoryType'], "")
+            row['Subcategory'] = subcat_map.get(row['CategoryId'], [])
+            row['Ledger'] = ledger_map.get(row['CategoryId'], [])
+            final_data.append(row)
+
+        return JsonResponse(final_data, safe=False)
+
+    return JsonResponse("", safe=False)
+
 
 @csrf_exempt
 @retry(retries=3, delay=2)
 @swagger_auto_schema(method='GET', operation_description="NOTE: API for get all ledger category",)
 @api_view(['GET'])
-def GetAllLedgerCategory(request,CompanyId=""):
+def GetAllLedgerCategory(request, CompanyId=""):
     # try:
-        if request.method == 'GET':
-            category = Category.objects.filter(ActiveStatus=1,SectionType='3',CompanyId=CompanyId).order_by('-SortId')
-            categorySerializer = CategorySerializer(
-                category, many=True)
-            categoryData=[]
-            for row in categorySerializer.data:
-                row['CategoryPath']=get_category_path(get_maincategories(row['RefId']))
-                try:
-                    categoryType=CategoryType.objects.get(CategoryTypeId=row['CategoryType'])
-                    categoryTypeSerializer=CategoryTypeSerializer(categoryType)
-                    row['CategoryTypeName']=categoryTypeSerializer.data['CategoryType']
-                except:
-                    row['CategoryTypeName']=""
-               
-                categoryData.append(row)
-            return JsonResponse(categorySerializer.data, safe=False)
-        else:
-            return JsonResponse("", safe=False)
+    if request.method == 'GET':
+        category = Category.objects.filter(
+            ActiveStatus=1, SectionType='3', CompanyId=CompanyId).order_by('-SortId')
+        categorySerializer = CategorySerializer(
+            category, many=True)
+        categoryData = []
+        for row in categorySerializer.data:
+            row['CategoryPath'] = get_category_path(
+                get_maincategories(row['RefId']))
+            try:
+                categoryType = CategoryType.objects.get(
+                    CategoryTypeId=row['CategoryType'])
+                categoryTypeSerializer = CategoryTypeSerializer(categoryType)
+                row['CategoryTypeName'] = categoryTypeSerializer.data['CategoryType']
+            except:
+                row['CategoryTypeName'] = ""
+
+            categoryData.append(row)
+        return JsonResponse(categorySerializer.data, safe=False)
+    else:
+        return JsonResponse("", safe=False)
     # except:
     #     return JsonResponse("", safe=False)
 
 
 def get_category_path(category):
-    path=""
+    path = ""
     for data in category:
-        path=data['Category'] + " \ " + get_category_path(data['Subcategory'])
+        path = data['Category'] + " \ " + \
+            get_category_path(data['Subcategory'])
     return path
 
+
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=ReportSerializer,operation_description="NOTE: API for save Report")
-@swagger_auto_schema(method='PUT', request_body=ReportSerializer,operation_description="NOTE: API for edit Report")
+@swagger_auto_schema(method='POST', request_body=ReportSerializer, operation_description="NOTE: API for save Report")
+@swagger_auto_schema(method='PUT', request_body=ReportSerializer, operation_description="NOTE: API for edit Report")
 @api_view(['POST', 'PUT'])
 def ReportApi(request):
     try:
@@ -224,7 +245,7 @@ def ReportApiById(request, ReportId=""):
                 ReportId=ReportId)
             reportSerializer = ReportSerializer(
                 report)
-            reportData=reportSerializer.data
+            reportData = reportSerializer.data
             return JsonResponse(reportData, safe=False)
         elif request.method == 'DELETE':
             report = Report.objects.get(ReportId=ReportId)
@@ -236,50 +257,51 @@ def ReportApiById(request, ReportId=""):
         return JsonResponse("Invalid", safe=False)
 
 
-
-
-
 @csrf_exempt
 @swagger_auto_schema(method='POST', operation_description="NOTE: API for get category and subcategories by CategoryType",)
 @api_view(['POST'])
 def GetCategoryandSubCategoriesByCategoryType(request):
     # try:
-        if request.method == 'POST':
-            category_data = JSONParser().parse(request)
-            categoryType=CategoryType.objects.filter(CategoryTypeId__in=category_data['CategoryType'])
-            categoryType_serializer = CategoryTypeSerializer(categoryType, many=True)
-            data = []
-            for category_type in categoryType_serializer.data:
-                categories = Category.objects.filter(
-                    Q(RefId__isnull=True) | Q(RefId=""),
-                    ActiveStatus=1,
-                    SectionType=category_data['SectionType'],CategoryType=category_type['CategoryTypeId']
-                    ,CompanyId=category_data['CompanyId']
-                ).order_by('CategoryType')
-                category_serializer = CategorySerializer(categories, many=True)
-                
-                for category in category_serializer.data:
-                    subcategories = get_subcategories(category['CategoryId'])
-                    if subcategories:
-                        category['Subcategory'] = subcategories
-                    else:
-                    
-                        category['Subcategory'] = []
-                    # report_data = get_report_data(category['CategoryId'])
-                    # if report_data:
-                    #     category['Report'] = report_data
-                category_type['Subcategory']=category_serializer.data
-                category_type['Category']=category_type['CategoryType']
-                category_type['CategoryId']=category_type['CategoryTypeId']
-                data.append(category_type)
-            return JsonResponse(data, safe=False)
-        else:
-            return JsonResponse([], safe=False)
+    if request.method == 'POST':
+        category_data = JSONParser().parse(request)
+        categoryType = CategoryType.objects.filter(
+            CategoryTypeId__in=category_data['CategoryType'])
+        categoryType_serializer = CategoryTypeSerializer(
+            categoryType, many=True)
+        data = []
+        for category_type in categoryType_serializer.data:
+            categories = Category.objects.filter(
+                Q(RefId__isnull=True) | Q(RefId=""),
+                ActiveStatus=1,
+                SectionType=category_data['SectionType'], CategoryType=category_type[
+                    'CategoryTypeId'], CompanyId=category_data['CompanyId']
+            ).order_by('CategoryType')
+            category_serializer = CategorySerializer(categories, many=True)
+
+            for category in category_serializer.data:
+                subcategories = get_subcategories(category['CategoryId'])
+                if subcategories:
+                    category['Subcategory'] = subcategories
+                else:
+
+                    category['Subcategory'] = []
+                # report_data = get_report_data(category['CategoryId'])
+                # if report_data:
+                #     category['Report'] = report_data
+            category_type['Subcategory'] = category_serializer.data
+            category_type['Category'] = category_type['CategoryType']
+            category_type['CategoryId'] = category_type['CategoryTypeId']
+            data.append(category_type)
+        return JsonResponse(data, safe=False)
+    else:
+        return JsonResponse([], safe=False)
     # except:
     #     return JsonResponse("", safe=False)
 
+
 def get_subcategories(category_id):
-    subcategories = Category.objects.filter(RefId=category_id, ActiveStatus=1).order_by('-SortId')
+    subcategories = Category.objects.filter(
+        RefId=category_id, ActiveStatus=1).order_by('-SortId')
     subcategory_serializer = CategorySerializer(subcategories, many=True)
     subcategory_data = []
     for subcategory in subcategory_serializer.data:
@@ -287,7 +309,7 @@ def get_subcategories(category_id):
         if children:
             subcategory['Subcategory'] = children
         else:
-            subcategory['Subcategory']=[]
+            subcategory['Subcategory'] = []
 
         report_data = get_report_data(subcategory['CategoryId'])
         if report_data:
@@ -295,10 +317,12 @@ def get_subcategories(category_id):
         subcategory_data.append(subcategory)
     return subcategory_data
 
+
 def get_report_data(category_id):
     reports = Report.objects.filter(CategoryId=category_id)
     report_serializer = ReportSerializer(reports, many=True)
     return report_serializer.data
+
 
 @csrf_exempt
 @swagger_auto_schema(method='POST', operation_description="NOTE: API for get category and subcategories and report details by SectionType",)
@@ -331,10 +355,12 @@ def GetAllCategoryandSubCategories(request):
 
             # Build nested structure without recursion
             def attach_subcategories(parent_category):
-                subcategories = category_map.get(parent_category['CategoryId'], [])
+                subcategories = category_map.get(
+                    parent_category['CategoryId'], [])
                 for subcategory in subcategories:
                     attach_subcategories(subcategory)
-                    subcategory['Subcategory'] = category_map.get(subcategory['CategoryId'], [])
+                    subcategory['Subcategory'] = category_map.get(
+                        subcategory['CategoryId'], [])
 
                     # Attach report data for subcategory
                     report_data = get_report_data(subcategory['CategoryId'])
@@ -347,7 +373,7 @@ def GetAllCategoryandSubCategories(request):
             category_data = []
             for root_category in category_map.get(None, []):
                 attach_subcategories(root_category)
-                
+
                 # Attach report data for main category
                 report_data = get_report_data(root_category['CategoryId'])
                 if report_data:
@@ -361,11 +387,13 @@ def GetAllCategoryandSubCategories(request):
     except Exception as e:
         return JsonResponse({"error": "Invalid", "details": str(e)}, safe=False)
 
+
 def get_report_data(category_id):
     # Fetch all reports in one go to avoid repeated DB calls
     reports = Report.objects.filter(CategoryId=category_id)
     report_serializer = ReportSerializer(reports, many=True)
     return report_serializer.data
+
 
 @csrf_exempt
 @swagger_auto_schema(method='POST', operation_description="NOTE: API for get Monthly Client report",)
@@ -374,54 +402,58 @@ def get_report_data(category_id):
 def GetClientReportMonthly(request):
     data = JSONParser().parse(request)
 
-    report = Report.objects.filter(ClientId=data['ClientId'],Month=data['Month'],Year=data['Year'],ReportType=data['ReportType']).order_by('-OrderNo')
+    report = Report.objects.filter(ClientId=data['ClientId'], Month=data['Month'],
+                                   Year=data['Year'], ReportType=data['ReportType']).order_by('-OrderNo')
     reportSerializer = ReportSerializer(
         report, many=True)
-    reportData=[]
+    reportData = []
     for report in reportSerializer.data:
-        report['ReportRefFile']=[]
+        report['ReportRefFile'] = []
         try:
             category = Category.objects.get(
                 CategoryId=report['CategoryId'])
             categorySerializer = CategorySerializer(
                 category)
-            report['CategoryName']=categorySerializer.data['Category']
+            report['CategoryName'] = categorySerializer.data['Category']
             if categorySerializer.data['RefId']:
-                report['RefId']=categorySerializer.data['RefId']
+                report['RefId'] = categorySerializer.data['RefId']
             else:
-                report['RefId']=categorySerializer.data['CategoryType']
-            reportFiles=ReportRefFile.objects.filter(ReportId=report['ReportId'])
+                report['RefId'] = categorySerializer.data['CategoryType']
+            reportFiles = ReportRefFile.objects.filter(
+                ReportId=report['ReportId'])
             reportFilesSerializer = ReportRefFileSerializer(
-                reportFiles,many=True)
-            report['ReportRefFile']=reportFilesSerializer.data
+                reportFiles, many=True)
+            report['ReportRefFile'] = reportFilesSerializer.data
         except:
             category = CategoryType.objects.get(
                 CategoryTypeId=report['CategoryId'])
             categorySerializer = CategoryTypeSerializer(
                 category)
-            report['CategoryName']=categorySerializer.data['CategoryType']
-            report['RefId']=""
+            report['CategoryName'] = categorySerializer.data['CategoryType']
+            report['RefId'] = ""
         reportData.append(report)
     return JsonResponse(reportData, safe=False)
 
 
 class SaveReportRefFile(APIView):
     parser_classes = (MultiPartParser, FormParser)
+
     def post(self, request,  *args, **kwargs):
         try:
-                Serializer = SaveReportRefFileSerializer(
-                    data=request.data)
-                if Serializer.is_valid():
-                    Serializer.save()
-                    return JsonResponse(Serializer.data['ReportRefFileId'], safe=False)
-                else:
-                    return JsonResponse("", safe=False)
+            Serializer = SaveReportRefFileSerializer(
+                data=request.data)
+            if Serializer.is_valid():
+                Serializer.save()
+                return JsonResponse(Serializer.data['ReportRefFileId'], safe=False)
+            else:
+                return JsonResponse("", safe=False)
         except:
             return JsonResponse("", safe=False)
-        
-        
+
+
 class SaveReport(APIView):
     parser_classes = (MultiPartParser, FormParser)
+
     def post(self, request,  *args, **kwargs):
         reportData = JSONParser().parse(request)
         for report in reportData:
@@ -439,18 +471,17 @@ class SaveReport(APIView):
                     reportSerializer.save()
                     if report['RefFiles']:
                         for file in report['RefFiles']:
-                            filedata={
-                                'ReportId':reportSerializer.data['ReportId'],
-                                'ReportRefFile':file['ReportRefFile'],
-                                'OrderNo':file['ReportRefFile']
+                            filedata = {
+                                'ReportId': reportSerializer.data['ReportId'],
+                                'ReportRefFile': file['ReportRefFile'],
+                                'OrderNo': file['ReportRefFile']
                             }
-                           
+
                             Serializer = SaveReportRefFileSerializer(
                                 data=filedata)
                             if Serializer.is_valid():
                                 Serializer.save()
         return JsonResponse("added", safe=False)
-    
 
 
 # class BulkCreateReportView(APIView):
@@ -481,25 +512,23 @@ class SaveReport(APIView):
 #                                 'ReportRefFile':file['ReportRefFile'],
 #                                 'OrderNo':file['ReportRefFile']
 #                             }
-                           
+
 #                             Serializer = SaveReportRefFileSerializer(
 #                                 data=filedata)
 #                             if Serializer.is_valid():
 #                                 Serializer.save()
 #         return JsonResponse("added", safe=False)
-    
 
-from rest_framework import status
-from rest_framework.response import Response
+
 class BulkCreateReportView(APIView):
     def post(self, request, *args, **kwargs):
         try:
-        
+
             if request.data['RefFiles']:
                 if request.data['ReportId']:
                     report = Report.objects.get(
                         ReportId=request.data['ReportId'])
-                    serializer = ReportSerializer(report,data=request.data)
+                    serializer = ReportSerializer(report, data=request.data)
                     if serializer.is_valid():
                         serializer.save()
                         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -509,12 +538,12 @@ class BulkCreateReportView(APIView):
                         serializer.save()
                         return Response("Saved", status=status.HTTP_201_CREATED)
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            
+
         except:
             if request.data['ReportId']:
                 report = Report.objects.get(
                     ReportId=request.data['ReportId'])
-                serializer = ReportSaveSerializer(report,data=request.data)
+                serializer = ReportSaveSerializer(report, data=request.data)
                 if serializer.is_valid():
                     serializer.save()
             else:
@@ -525,10 +554,9 @@ class BulkCreateReportView(APIView):
         # return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-
 # class BulkCreateReportView(APIView):
 #     def post(self, request, *args, **kwargs):
-       
+
 #         serializer = BulkReportSerializer(data=request.data)
 #         if serializer.is_valid():
 #             reports_data = serializer.validated_data.get('reports',[])
@@ -542,7 +570,6 @@ class BulkCreateReportView(APIView):
 #                     return Response(report_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 #             return Response(created_reports, status=status.HTTP_201_CREATED)
 #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
 
 
 @csrf_exempt
@@ -561,8 +588,6 @@ def DeleteReportRefFileById(request, ReportRefFileId=""):
         return JsonResponse("Invalid", safe=False)
 
 
-
-
 def get_maincategories(category_id, data=[]):
     subcategories = Category.objects.filter(CategoryId=category_id)
     subcategory_serializer = CategorySerializer(subcategories, many=True)
@@ -572,22 +597,23 @@ def get_maincategories(category_id, data=[]):
         children = get_maincategories(subcategory[0]['RefId'], subcategory)
         returnData = children
     else:
-        subcategory[0]['RefId']=subcategory[0]['CategoryType']
-        categoryType=CategoryType.objects.get(CategoryTypeId=subcategory[0]['CategoryType'])
-        categoryTypeSerializer=CategoryTypeSerializer(categoryType)
-        mainCategory=[]
+        subcategory[0]['RefId'] = subcategory[0]['CategoryType']
+        categoryType = CategoryType.objects.get(
+            CategoryTypeId=subcategory[0]['CategoryType'])
+        categoryTypeSerializer = CategoryTypeSerializer(categoryType)
+        mainCategory = []
         mainCategory.append({
-            'UsageType':categoryTypeSerializer.data['UsageType'],
-            'OrderNo':categoryTypeSerializer.data['OrderNo'],
-            'Ref':categoryTypeSerializer.data['Ref'],
-            'CategoryId':categoryTypeSerializer.data['CategoryTypeId'],
-            'RefId':'',
-            'Category':categoryTypeSerializer.data['CategoryType'],
-            'SectionType':'',
-            'CategoryType':'',
-            'ActiveStatus':''
+            'UsageType': categoryTypeSerializer.data['UsageType'],
+            'OrderNo': categoryTypeSerializer.data['OrderNo'],
+            'Ref': categoryTypeSerializer.data['Ref'],
+            'CategoryId': categoryTypeSerializer.data['CategoryTypeId'],
+            'RefId': '',
+            'Category': categoryTypeSerializer.data['CategoryType'],
+            'SectionType': '',
+            'CategoryType': '',
+            'ActiveStatus': ''
         })
-        mainCategory[0]['Subcategory']=subcategory
+        mainCategory[0]['Subcategory'] = subcategory
         returnData = mainCategory
     return returnData
 
@@ -614,7 +640,8 @@ def saveClientLedgerId(request, ClientId="", ReportType=""):
         try:
             mainCategory = get_maincategories(id)
             if response_data:
-                response_data = checkSameCategory(response_data, mainCategory[0])
+                response_data = checkSameCategory(
+                    response_data, mainCategory[0])
             else:
                 response_data.append(mainCategory[0])
         except Exception as e:
@@ -633,28 +660,28 @@ def GetMainCategorybyClientId(request, ClientId="", ReportType=""):
             client = Client.objects.get(ClientId=ClientId)
             clientSerializer = ClientSerializer(client)
             response_data = []
-            ledgerId=[]
-            if ReportType=="1":
-                ledgerId=clientSerializer.data.get('PLLedger', [])
-            elif ReportType=="2":
-                ledgerId=clientSerializer.data.get('BalanceSheetLedger', [])
+            ledgerId = []
+            if ReportType == "1":
+                ledgerId = clientSerializer.data.get('PLLedger', [])
+            elif ReportType == "2":
+                ledgerId = clientSerializer.data.get('BalanceSheetLedger', [])
             for id in ledgerId:
                 try:
                     mainCategory = get_maincategories(id)
                     if len(response_data):
-                        response_data=checkSameCategory(response_data,mainCategory[0])
+                        response_data = checkSameCategory(
+                            response_data, mainCategory[0])
                     else:
-                        response_data.append(mainCategory[0]) 
+                        response_data.append(mainCategory[0])
                 except:
-                    continue  
+                    continue
 
-            return JsonResponse(response_data, safe=False) 
+            return JsonResponse(response_data, safe=False)
 
-        except :
+        except:
             return JsonResponse([], safe=False)
 
     return JsonResponse("", safe=False)
-
 
 
 def checkSameCategory(ExistCategoryList, NewCategory):
@@ -663,10 +690,11 @@ def checkSameCategory(ExistCategoryList, NewCategory):
         if cat_data['CategoryId'] == NewCategory['CategoryId']:
             category_found = True
             if len(NewCategory['Subcategory']):
-                cat_data['Subcategory'] = checkSameCategory(cat_data['Subcategory'], NewCategory['Subcategory'][0])
+                cat_data['Subcategory'] = checkSameCategory(
+                    cat_data['Subcategory'], NewCategory['Subcategory'][0])
             break
-    
+
     if not category_found:
         ExistCategoryList.append(NewCategory)
-    
+
     return ExistCategoryList
