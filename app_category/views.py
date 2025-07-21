@@ -129,9 +129,10 @@ def GetAllCategoryBySectionTypeApi(request):
         categorySerializer = CategorySerializer(
             category, many=True)
         categoryData = []
-        type_map = CategoryType.objects.all()
+        type_map = CategoryType.objects.in_bulk(field_name='CategoryTypeId')
         CategoryType_serialized = {
-            k: v.CategoryType for k, v in type_map.items()}
+            k: v.CategoryType for k, v in type_map.items()
+        }
 
         for row in categorySerializer.data:
             try:
