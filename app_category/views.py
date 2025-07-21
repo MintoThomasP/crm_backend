@@ -152,44 +152,44 @@ def GetAllCategoryBySectionTypeApi(request):
     #     return JsonResponse("", safe=False)
 
 
-class LedgerCategoryPagination(generics.ListAPIView):
-    queryset = Category.objects.all().order_by('-SortId')
-    pagination_class = CustomPageNumberPagination
-    serializer_class = CategorySerializer
+# class LedgerCategoryPagination(generics.ListAPIView):
+#     queryset = Category.objects.all().order_by('-SortId')
+#     pagination_class = CustomPageNumberPagination
+#     serializer_class = CategorySerializer
 
-    def post(self, request, *args, **kwargs):
-        page = self.paginate_queryset(self.queryset)
-        filterData = JSONParser().parse(request)
-        Keyword = filterData.get('SearchKeyword', '')
-        if filterData['CompanyId']:
-            self.queryset = self.queryset.filter(
-                CompanyId=filterData['CompanyId'])
-        if filterData['SectionType']:
-            self.queryset = self.queryset.filter(
-                SectionType=filterData['SectionType'])
-        if filterData['ActiveStatus']:
-            self.queryset = self.queryset.filter(
-                ActiveStatus=filterData['ActiveStatus'])
-        if Keyword:
-            self.queryset = self.queryset.filter(Category__icontains=Keyword)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            data = []
+#     def post(self, request, *args, **kwargs):
+#         page = self.paginate_queryset(self.queryset)
+#         filterData = JSONParser().parse(request)
+#         Keyword = filterData.get('SearchKeyword', '')
+#         if filterData['CompanyId']:
+#             self.queryset = self.queryset.filter(
+#                 CompanyId=filterData['CompanyId'])
+#         if filterData['SectionType']:
+#             self.queryset = self.queryset.filter(
+#                 SectionType=filterData['SectionType'])
+#         if filterData['ActiveStatus']:
+#             self.queryset = self.queryset.filter(
+#                 ActiveStatus=filterData['ActiveStatus'])
+#         if Keyword:
+#             self.queryset = self.queryset.filter(Category__icontains=Keyword)
+#         if page is not None:
+#             serializer = self.get_serializer(page, many=True)
+#             data = []
 
-            for row in serializer.data:
-                row['CategoryPath'] = get_category_path(
-                    get_maincategories(row['RefId']))
-                try:
-                    categoryType = CategoryType.objects.get(
-                        CategoryTypeId=row['CategoryType'])
-                    categoryTypeSerializer = CategoryTypeSerializer(
-                        categoryType)
-                    row['CategoryTypeName'] = categoryTypeSerializer.data['CategoryType']
-                except:
-                    row['CategoryTypeName'] = ""
+#             for row in serializer.data:
+#                 row['CategoryPath'] = get_category_path(
+#                     get_maincategories(row['RefId']))
+#                 try:
+#                     categoryType = CategoryType.objects.get(
+#                         CategoryTypeId=row['CategoryType'])
+#                     categoryTypeSerializer = CategoryTypeSerializer(
+#                         categoryType)
+#                     row['CategoryTypeName'] = categoryTypeSerializer.data['CategoryType']
+#                 except:
+#                     row['CategoryTypeName'] = ""
 
-                data.append(row)
-            return self.get_paginated_response(data)
+#                 data.append(row)
+#             return self.get_paginated_response(data)
 
 
 @csrf_exempt
