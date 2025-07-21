@@ -4,8 +4,10 @@ from app_category import views
 
 urlpatterns = [
     path('CURDCategory/', views.CategoryApi),
-    url(r'^CURDCategory/(?P<CompanyId>[0-9a-zA-Z\-]+)/(?P<CategoryId>[0-9a-zA-Z\-]+)$', views.CategoryApiById),
-    path('GetAllCategoryBySectionTypeApi/', views.GetAllCategoryBySectionTypeApi),
+    url(r'^CURDCategory/(?P<CompanyId>[0-9a-zA-Z\-]+)/(?P<CategoryId>[0-9a-zA-Z\-]+)$',
+        views.CategoryApiById),
+    path('GetAllCategoryBySectionTypeApi/',
+         views.GetAllCategoryBySectionTypeApi),
 
 
     path('CURDReport/', views.ReportApi),
@@ -13,16 +15,25 @@ urlpatterns = [
 
     path('SaveReportRefFile/', views.SaveReportRefFile.as_view()),
 
-    path('GetAllCategoryandSubCategories/', views.GetAllCategoryandSubCategories),
-    path('GetCategoryandSubCategoriesByCategoryType/', views.GetCategoryandSubCategoriesByCategoryType),
+    path('GetAllCategoryandSubCategories/',
+         views.GetAllCategoryandSubCategories),
+    path('GetCategoryandSubCategoriesByCategoryType/',
+         views.GetCategoryandSubCategoriesByCategoryType),
     path('GetClientReportMonthly/', views.GetClientReportMonthly),
     path('GetAllLedgerCategory/', views.GetAllLedgerCategory),
-    url(r'^GetAllLedgerCategory/(?P<CompanyId>[0-9a-zA-Z\-]+)/$', views.GetAllLedgerCategory),
+    url(r'^GetAllLedgerCategory/(?P<CompanyId>[0-9a-zA-Z\-]+)/$',
+        views.GetAllLedgerCategory),
+
+    # pagination for staff manage table
+    path('LedgerCategoryPagination/', views.LedgerCategoryPagination.as_view()),
+
 
     path('SaveReport/', views.BulkCreateReportView.as_view()),
 
-    url(r'^DeleteReportRefFileById/(?P<ReportRefFileId>[0-9a-zA-Z\-]+)$', views.DeleteReportRefFileById),
-    url(r'^GetMainCategorybySubCategoryId/(?P<CategoryId>[0-9a-zA-Z\-]+)$', views.GetMainCategorybySubCategoryId),
+    url(r'^DeleteReportRefFileById/(?P<ReportRefFileId>[0-9a-zA-Z\-]+)$',
+        views.DeleteReportRefFileById),
+    url(r'^GetMainCategorybySubCategoryId/(?P<CategoryId>[0-9a-zA-Z\-]+)$',
+        views.GetMainCategorybySubCategoryId),
     # url(r'^GetMainCategorybyClientId/(?P<ClientId>[0-9a-zA-Z\-]+)/(?P<ReportType>[0-9a-zA-Z\-]+)/$', views.GetMainCategorybyClientId),
 
     url(r'^GetMainCategorybyClientId/(?P<ClientId>[0-9a-zA-Z\-]+)/(?P<ReportType>[0-9a-zA-Z\-]+)/$',
