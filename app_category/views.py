@@ -1,5 +1,6 @@
 from rest_framework.response import Response
 from rest_framework import status
+from collections import defaultdict
 import json
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
@@ -94,72 +95,72 @@ def CategoryApiById(request, CompanyId="", CategoryId=""):
         return JsonResponse("Invalid", safe=False)
 
 
-def get_subcategoriesbysectiontype(category_id):
-    subcategories = Category.objects.filter(
-        RefId=category_id, ActiveStatus=1).exclude(SectionType=3).order_by('-SortId')
-    subcategory_serializer = CategorySerializer(subcategories, many=True)
-    subcategory_data = []
-    for subcategory in subcategory_serializer.data:
-        children = get_subcategoriesbysectiontype(subcategory['CategoryId'])
-        subcategory['Subcategory'] = children
-        subcategory['Ledger'] = get_ledger_by_categoryid(
-            subcategory['CategoryId'])
-        subcategory_data.append(subcategory)
-    return subcategory_data
-
-
-def get_ledger_by_categoryid(category_id):
-    subcategories = Category.objects.filter(
-        RefId=category_id, SectionType=3).order_by('-SortId')
-    subcategory_serializer = CategorySerializer(subcategories, many=True)
-    subcategory_data = subcategory_serializer.data
-    return subcategory_data
-
-
 @csrf_exempt
 @swagger_auto_schema(method='POST', operation_description="NOTE: API for get Category by SectionType")
 @api_view(['POST'])
-@retry(retries=3, delay=2)
 def GetAllCategoryBySectionTypeApi(request):
-    if request.method == 'POST':
-        categoryData = JSONParser().parse(request)
+    if request.method != 'POST':
+        return JsonResponse("", safe=False)
 
-        category_qs = Category.objects.filter(
-            Q(RefId__isnull=True) | Q(RefId=""),
-            ActiveStatus=1,
-            SectionType=categoryData['SectionType'],
-            CompanyId=categoryData['CompanyId']
-        ).order_by('-SortId')
+    data = JSONParser().parse(request)
+    section_type = data.get('SectionType')
+    company_id = data.get('CompanyId')
 
-        categorySerializer = CategorySerializer(category_qs, many=True)
-        data = categorySerializer.data
+    # Step 1: Fetch all categories of the company
+    all_categories = Category.objects.filter(
+        ActiveStatus=1,
+        CompanyId=company_id
+    ).order_by('-SortId')
 
-        # Preload related data
-        category_ids = [row['CategoryId'] for row in data]
-        category_type_ids = [row['CategoryType']
-                             for row in data if row['CategoryType']]
+    # Step 2: Serialize once
+    all_categories_serialized = CategorySerializer(
+        all_categories, many=True).data
 
-        category_type_map = {
-            ct.CategoryTypeId: ct.CategoryType
-            for ct in CategoryType.objects.filter(CategoryTypeId__in=category_type_ids)
-        }
+    # Step 3: Index by CategoryId and RefId
+    category_by_id = {c['CategoryId']: c for c in all_categories_serialized}
+    children_by_ref = defaultdict(list)
+    ledger_by_ref = defaultdict(list)
 
-        subcat_map = get_all_subcategories_by_category_ids(
-            category_ids)  # Should return dict
-        ledger_map = get_all_ledgers_by_category_ids(
-            category_ids)        # Should return dict
+    for cat in all_categories_serialized:
+        if cat['SectionType'] == 3:
+            ledger_by_ref[cat['RefId']].append(cat)
+        else:
+            children_by_ref[cat['RefId']].append(cat)
 
-        final_data = []
-        for row in data:
-            row['CategoryTypeName'] = category_type_map.get(
-                row['CategoryType'], "")
-            row['Subcategory'] = subcat_map.get(row['CategoryId'], [])
-            row['Ledger'] = ledger_map.get(row['CategoryId'], [])
-            final_data.append(row)
+    # Step 4: Attach CategoryTypeNames in bulk
+    type_ids = set(cat['CategoryType']
+                   for cat in all_categories_serialized if cat.get('CategoryType'))
+    type_map = CategoryType.objects.filter(
+        CategoryTypeId__in=type_ids).in_bulk(field_name='CategoryTypeId')
+    type_serialized = {k: v.CategoryType for k, v in type_map.items()}
 
-        return JsonResponse(final_data, safe=False)
+    for cat in all_categories_serialized:
+        cat['CategoryTypeName'] = type_serialized.get(
+            cat.get('CategoryType'), "")
+        cat['Subcategory'] = []
+        cat['Ledger'] = ledger_by_ref.get(cat['CategoryId'], [])
 
-    return JsonResponse("", safe=False)
+    # Step 5: Recursive tree building
+    def build_tree(parent_id=None):
+        nodes = []
+        for cat in children_by_ref.get(parent_id, []):
+            cat['Subcategory'] = build_tree(cat['CategoryId'])
+            nodes.append(cat)
+        return nodes
+
+    # Step 6: Filter root categories
+    root_categories = [
+        c for c in all_categories_serialized
+        if (c['RefId'] in (None, '') and c['SectionType'] == section_type)
+    ]
+
+    # Build tree only for root categories
+    result = []
+    for cat in root_categories:
+        cat['Subcategory'] = build_tree(cat['CategoryId'])
+        result.append(cat)
+
+    return JsonResponse(result, safe=False)
 
 
 @csrf_exempt
