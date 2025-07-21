@@ -129,15 +129,12 @@ def GetAllCategoryBySectionTypeApi(request):
         categorySerializer = CategorySerializer(
             category, many=True)
         categoryData = []
-        type_map = CategoryType.objects.in_bulk(field_name='CategoryTypeId')
-        CategoryType_serialized = {
-            k: v.CategoryType for k, v in type_map.items()
-        }
-
         for row in categorySerializer.data:
             try:
-                row['CategoryTypeName'] = CategoryType_serialized.get(
-                    row.get('CategoryType'), "")
+                categoryType = CategoryType.objects.get(
+                    CategoryTypeId=row['CategoryType'])
+                categoryTypeSerializer = CategoryTypeSerializer(categoryType)
+                row['CategoryTypeName'] = categoryTypeSerializer.data['CategoryType']
             except:
                 row['CategoryTypeName'] = ""
             row['Subcategory'] = get_subcategoriesbysectiontype(
