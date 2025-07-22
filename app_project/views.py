@@ -509,31 +509,32 @@ def RestTaskPoint(request):
 
 @csrf_exempt
 def DeleteTaskByAdmin(request):
-
     if request.method == 'POST':
         request_data = JSONParser().parse(request)
 
-        projectTask = ProjectTask.objects.filter(
-            IsTemplate=0, CompanyId=request_data['CompanyId'])
-        projectTaskSerializer = ProjectTaskSerializer(
-            projectTask, many=True)
-        for row in projectTaskSerializer.data:
-            if row['IsTemplate'] == 0:
-                projectTaskFile = ProjectTaskFile.objects.filter(
-                    ProjectTaskId=row['ProjectTaskId'])
-                projectTaskFileSerializer = ProjectTaskFileSerializer(
-                    projectTaskFile, many=True)
-                for file_row in projectTaskFileSerializer.data:
-                    file_row.TaskFile.delete(save=True)
-                    file_row.delete()
+        projectTasks = ProjectTask.objects.filter(
+            IsTemplate=0, CompanyId=request_data['CompanyId']
+        )
 
-                projectTaskTiming = ProjectTaskTiming.objects.filter(
-                    ProjectTaskId=row['ProjectTaskId'])
-                projectTaskTimingSerializer = ProjectTaskTimingSerializer(
-                    projectTaskTiming, many=True)
-                for timing_row in projectTaskTimingSerializer.data:
-                    timing_row.delete()
-                row.delete()
+        for task in projectTasks:
+            # Delete related files
+            projectTaskFiles = ProjectTaskFile.objects.filter(
+                ProjectTaskId=task.ProjectTaskId)
+            for file in projectTaskFiles:
+                if file.TaskFile:
+                    file.TaskFile.delete(save=True)
+                file.delete()
+
+            # Delete related timing entries
+            projectTaskTimings = ProjectTaskTiming.objects.filter(
+                ProjectTaskId=task.ProjectTaskId)
+            for timing in projectTaskTimings:
+                timing.delete()
+
+            # Delete the task itself
+            task.delete()
+
+        return JsonResponse({'status': 'success', 'message': 'Tasks deleted successfully'})
 
 
 @csrf_exempt
