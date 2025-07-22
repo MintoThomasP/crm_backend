@@ -512,8 +512,15 @@ def DeleteTaskByAdmin(request):
     if request.method == 'POST':
         request_data = JSONParser().parse(request)
 
+        project = Project.objects.filter(
+            CompanyId=request_data['CompanyId'])
+        projectSerializer = ProjectSerializer(
+            project, many=True)
+        projectId = []
+        for row in projectSerializer.data:
+            projectId.append(row['ProjectId'])
         projectTasks = ProjectTask.objects.filter(
-            IsTemplate=0, CompanyId=request_data['CompanyId']
+            IsTemplate=0, ProjectId__in=projectId
         )
 
         for task in projectTasks:
