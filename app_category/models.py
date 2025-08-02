@@ -16,7 +16,6 @@ class Category(models.Model):
         blank=True, null=True, max_length=300)  # data from default table
     ActiveStatus = models.BooleanField(default=True)
     CompanyId = models.CharField(blank=True, null=True, max_length=50)
-    CategoryId = models.CharField(blank=True, null=True, max_length=60)
 
 
 class Report(models.Model):

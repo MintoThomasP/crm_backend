@@ -7,14 +7,14 @@ class CredentialsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Credentials
         fields = (
-'SortId',
-'CredentialId',
-'CompanyId',
-'Name',
-'LoginURL',
-'UserName',
-'Password',
-'AccessTo',
-'ClientId',
-'UserId')
-        
+            'SortId',
+            'CredentialId',
+            'CompanyId',
+            'Name',
+            'LoginURL',
+            'UserName',
+            'Password',
+            'AccessTo',
+            'ClientId',
+            'UserId',
+            'CategoryId')

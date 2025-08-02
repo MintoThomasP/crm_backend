@@ -14,8 +14,7 @@ class CategorySerializer(serializers.ModelSerializer):
             'SectionType',
             'CategoryType',
             'ActiveStatus',
-            'CompanyId',
-            'CategoryId'
+            'CompanyId'
         )
 
 
