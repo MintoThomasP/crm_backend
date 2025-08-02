@@ -3,7 +3,6 @@ from rest_framework import serializers
 from app_category.models import Category, Report, ReportRefFile
 
 
-
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
@@ -15,10 +14,9 @@ class CategorySerializer(serializers.ModelSerializer):
             'SectionType',
             'CategoryType',
             'ActiveStatus',
-            'CompanyId'
+            'CompanyId',
+            'CategoryId'
         )
-
-
 
 
 class ReportSaveSerializer(serializers.ModelSerializer):
@@ -39,15 +37,18 @@ class ReportSaveSerializer(serializers.ModelSerializer):
             'Status',
             'InDraft'
         )
-        
+
+
 class ReportRefFileSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReportRefFile
         fields = '__all__'
 
+
 class ReportSerializer(serializers.ModelSerializer):
     RefFiles = serializers.ListField(
-        child=serializers.FileField(max_length=1000000, allow_empty_file=False, use_url=False),
+        child=serializers.FileField(
+            max_length=1000000, allow_empty_file=False, use_url=False),
         write_only=True
     )
 
@@ -60,8 +61,10 @@ class ReportSerializer(serializers.ModelSerializer):
         report = Report.objects.create(**validated_data)
         if files_data:
             for file_data in files_data:
-                ReportRefFile.objects.create(ReportId=report, ReportRefFile=file_data)
+                ReportRefFile.objects.create(
+                    ReportId=report, ReportRefFile=file_data)
         return report
+
     def update(self, instance, validated_data):
         ref_files_data = validated_data.pop('RefFiles', None)
         for attr, value in validated_data.items():
@@ -69,14 +72,16 @@ class ReportSerializer(serializers.ModelSerializer):
         instance.save()
         if ref_files_data is not None:
             for file_data in ref_files_data:
-                ReportRefFile.objects.create(ReportId=instance, ReportRefFile=file_data)
-        
+                ReportRefFile.objects.create(
+                    ReportId=instance, ReportRefFile=file_data)
+
         return instance
-    
+
 # class BulkReportSerializer(serializers.Serializer):
 #     reports = serializers.ListField(
 #         child=ReportSerializer()
 #     )
+
 
 class SaveReportRefFileSerializer(serializers.ModelSerializer):
     class Meta:

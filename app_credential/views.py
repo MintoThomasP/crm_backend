@@ -18,53 +18,51 @@ from app_staff.serializers import StaffSerializer
 # Create your views here.
 
 
-
-
-
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=CredentialsSerializer,operation_description="NOTE: API for save Credentials")
-@swagger_auto_schema(method='PUT', request_body=CredentialsSerializer,operation_description="NOTE: API for edit Credentials")
-@api_view(['POST','PUT'])
+@swagger_auto_schema(method='POST', request_body=CredentialsSerializer, operation_description="NOTE: API for save Credentials")
+@swagger_auto_schema(method='PUT', request_body=CredentialsSerializer, operation_description="NOTE: API for edit Credentials")
+@api_view(['POST', 'PUT'])
 @retry(retries=3, delay=2)
 def CredentialsApi(request):
     # try:
 
-        if request.method == 'POST':
-            credentialsData = JSONParser().parse(request)
-            credentialsSerializer = CredentialsSerializer(
-                data=credentialsData)
-            if credentialsSerializer.is_valid():
-                credentialsSerializer.save()
+    if request.method == 'POST':
+        credentialsData = JSONParser().parse(request)
+        credentialsSerializer = CredentialsSerializer(
+            data=credentialsData)
+        if credentialsSerializer.is_valid():
+            credentialsSerializer.save()
 
-                return JsonResponse(credentialsSerializer.data['CredentialId'], safe=False)
-            return JsonResponse("Failed to add", safe=False)
-        elif request.method == 'PUT':
-            credentialsData = JSONParser().parse(request)
-            credentials = Credentials.objects.get(
-                CredentialId=credentialsData['CredentialId'])
-            credentialsSerializer = CredentialsSerializer(
-                credentials, data=credentialsData)
-            if credentialsSerializer.is_valid():
-                credentialsSerializer.save()
-                return JsonResponse(credentialsSerializer.data['CredentialId'], safe=False)
-            return JsonResponse("Failed to Update", safe=False)
-        else:
-            return JsonResponse("", safe=False)
+            return JsonResponse(credentialsSerializer.data['CredentialId'], safe=False)
+        return JsonResponse("Failed to add", safe=False)
+    elif request.method == 'PUT':
+        credentialsData = JSONParser().parse(request)
+        credentials = Credentials.objects.get(
+            CredentialId=credentialsData['CredentialId'])
+        credentialsSerializer = CredentialsSerializer(
+            credentials, data=credentialsData)
+        if credentialsSerializer.is_valid():
+            credentialsSerializer.save()
+            return JsonResponse(credentialsSerializer.data['CredentialId'], safe=False)
+        return JsonResponse("Failed to Update", safe=False)
+    else:
+        return JsonResponse("", safe=False)
     # except:
     #     return JsonResponse("", safe=False)
-    
+
+
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for get Credentials by CredentialId",)
-@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete Credentials by CredentialId",)
-@api_view(['GET','DELETE'])
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get Credentials by CredentialId",)
+@swagger_auto_schema(method='DELETE', operation_description="NOTE: API for delete Credentials by CredentialId",)
+@api_view(['GET', 'DELETE'])
 @retry(retries=3, delay=2)
 def CredentialsApiById(request, CredentialId=""):
     try:
-        if request.method == 'GET': 
+        if request.method == 'GET':
             credentials = Credentials.objects.get(
-                    CredentialId=CredentialId)
+                CredentialId=CredentialId)
             credentialsSerializer = CredentialsSerializer(
-                    credentials)
+                credentials)
             return JsonResponse(credentialsSerializer.data, safe=False)
         elif request.method == 'DELETE':
             credentials = Credentials.objects.get(CredentialId=CredentialId)
@@ -74,29 +72,33 @@ def CredentialsApiById(request, CredentialId=""):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
-
-
-
 
 
 class CredentialsPagination(generics.ListAPIView):
-    queryset =Credentials.objects.all().order_by('-SortId')
+    queryset = Credentials.objects.all().order_by('-SortId')
     pagination_class = CustomPageNumberPagination
-    serializer_class = CredentialsSerializer 
+    serializer_class = CredentialsSerializer
+
     def post(self, request, *args, **kwargs):
         try:
             filterData = JSONParser().parse(request)
-           
+
             if filterData['UserId']:
-                self.queryset = self.queryset.filter(UserId=filterData['UserId'])
+                self.queryset = self.queryset.filter(
+                    UserId=filterData['UserId'])
             if filterData['CompanyId']:
-                self.queryset = self.queryset.filter(CompanyId=filterData['CompanyId'])
+                self.queryset = self.queryset.filter(
+                    CompanyId=filterData['CompanyId'])
             if filterData['AccessTo']:
-                self.queryset = self.queryset.filter(AccessTo__icontains=filterData['AccessTo'])
+                self.queryset = self.queryset.filter(
+                    AccessTo__icontains=filterData['AccessTo'])
             if filterData['ClientId']:
-                self.queryset = self.queryset.filter(ClientId__in=filterData['ClientId'])
-          
+                self.queryset = self.queryset.filter(
+                    ClientId__in=filterData['ClientId'])
+            if filterData['CategoryId']:
+                self.queryset = self.queryset.filter(
+                    CategoryId__in=filterData['CategoryId'])
+
             page = self.paginate_queryset(self.queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
@@ -105,21 +107,22 @@ class CredentialsPagination(generics.ListAPIView):
                 for row in serializer.data:
                     try:
                         try:
-                            staff=Staff.objects.get(StaffId=row['UserId'])
-                            staffSerializer=StaffSerializer(staff)
-                            row['UserIdName']=staffSerializer.data['StaffName']
+                            staff = Staff.objects.get(StaffId=row['UserId'])
+                            staffSerializer = StaffSerializer(staff)
+                            row['UserIdName'] = staffSerializer.data['StaffName']
                         except:
-                            company=Company.objects.get(CompanyId=row['UserId'])
-                            companySerializer=CompanySerializer(company)
-                            row['UserIdName']=companySerializer.data['CompanyName']
+                            company = Company.objects.get(
+                                CompanyId=row['UserId'])
+                            companySerializer = CompanySerializer(company)
+                            row['UserIdName'] = companySerializer.data['CompanyName']
                     except:
-                        row['UserIdName']=""
+                        row['UserIdName'] = ""
                     try:
-                        client=Client.objects.get(ClientId=row['ClientId'])
-                        clientSerializer=ClientSerializer(client)
-                        row['ClientName']=clientSerializer.data['CustomerDisplayName']
+                        client = Client.objects.get(ClientId=row['ClientId'])
+                        clientSerializer = ClientSerializer(client)
+                        row['ClientName'] = clientSerializer.data['CustomerDisplayName']
                     except:
-                        row['ClientName']=""
+                        row['ClientName'] = ""
                     data.append(row)
                 return self.get_paginated_response(data)
         except:
