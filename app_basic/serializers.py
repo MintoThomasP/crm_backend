@@ -1,7 +1,8 @@
 
 from rest_framework import serializers
 
-from app_basic.models import BusinessCategory, Country, Designation, ElementCategory, PermissionSection, ProjectScope, TempleteType, Unit, UserGroup,State, UserPermission, WorkPlace
+from app_basic.models import BusinessCategory, Country, CredentialCategory, Designation, ElementCategory, PermissionSection, ProjectScope, TempleteType, Unit, UserGroup, State, UserPermission, WorkPlace
+
 
 class DesignationSerializer(serializers.ModelSerializer):
     class Meta:
@@ -11,7 +12,7 @@ class DesignationSerializer(serializers.ModelSerializer):
                   'Designation',
                   'CompanyId',
                   )
-        
+
 
 class UserGroupSerializer(serializers.ModelSerializer):
     class Meta:
@@ -21,9 +22,6 @@ class UserGroupSerializer(serializers.ModelSerializer):
                   'UserGroup',
                   'CompanyId',
                   'AccessTo')
-        
-
-
 
 
 class CountrySerializer(serializers.ModelSerializer):
@@ -33,8 +31,8 @@ class CountrySerializer(serializers.ModelSerializer):
                   'CountryId',
                   'Country',
                   )
-        
-        
+
+
 class StateSerializer(serializers.ModelSerializer):
     class Meta:
         model = State
@@ -43,26 +41,29 @@ class StateSerializer(serializers.ModelSerializer):
                   'CountryId',
                   'State'
                   )
-        
+
+
 class PermissionSectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = PermissionSection
         fields = (
-                  'PermissionSectionId',
-                  'SectionName' 
-                  )
+            'PermissionSectionId',
+            'SectionName'
+        )
 
 
 class UserPermissionSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserPermission
         fields = (
-                  'UserPermissionId',
-                  'UserPermission',
-                  'PermissionSectionId',
-                  'DisplayName',
-                  'OrderNo'
-                  )
+            'UserPermissionId',
+            'UserPermission',
+            'PermissionSectionId',
+            'DisplayName',
+            'OrderNo'
+        )
+
+
 class TempleteTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = TempleteType
@@ -71,7 +72,6 @@ class TempleteTypeSerializer(serializers.ModelSerializer):
                   'TempleteType',
                   'CompanyId'
                   )
-        
 
 
 class UnitSerializer(serializers.ModelSerializer):
@@ -85,8 +85,6 @@ class UnitSerializer(serializers.ModelSerializer):
                   )
 
 
-
-
 class WorkPlaceSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkPlace
@@ -94,7 +92,7 @@ class WorkPlaceSerializer(serializers.ModelSerializer):
                   'WorkPlace',
                   'CompanyId'
                   )
-        
+
 
 class ProjectScopeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -103,7 +101,8 @@ class ProjectScopeSerializer(serializers.ModelSerializer):
                   'ProjectScope',
                   'CompanyId'
                   )
-        
+
+
 class BusinessCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = BusinessCategory
@@ -111,7 +110,7 @@ class BusinessCategorySerializer(serializers.ModelSerializer):
                   'BusinessCategory',
                   'CompanyId'
                   )
-        
+
 
 class ElementCategorySerializer(serializers.ModelSerializer):
     class Meta:
@@ -120,3 +119,12 @@ class ElementCategorySerializer(serializers.ModelSerializer):
                   'ElementCategory',
                   'CompanyId'
                   )
+
+
+class CredentialCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CredentialCategory
+        fields = ('SortId',
+                  'CredentialCategoryId',
+                  'CredentialCategoryName',
+                  'CompanyId')

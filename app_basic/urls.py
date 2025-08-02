@@ -17,14 +17,16 @@ urlpatterns = [
 
     path('State/', views.StateApi),
     url(r'^StateApiById/(?P<StateId>[0-9a-zA-Z\-]+)$', views.StateApiById),
-    url(r'^StateApiByCountryId/(?P<CountryId>[0-9a-zA-Z\-]+)$', views.StateApiByCountryId),
+    url(r'^StateApiByCountryId/(?P<CountryId>[0-9a-zA-Z\-]+)$',
+        views.StateApiByCountryId),
 
     path('Country/', views.CountryApi),
-    url(r'^CountryApiById/(?P<CountryId>[0-9a-zA-Z\-]+)$', views.CountryApiById),
+    url(r'^CountryApiById/(?P<CountryId>[0-9a-zA-Z\-]+)$',
+        views.CountryApiById),
 
     path('UserPermissionApi/', views.UserPermissionApi),
     path('UserPermissionbySectionType/', views.UserPermissionbySectionTypeApi),
-    
+
     path('TempleteType/', views.TempleteTypeApi),
     url(r'^TempleteType/(?P<TempleteTypeId>[0-9a-zA-Z\-]+)$',
         views.TempleteTypeApiById),
@@ -61,9 +63,16 @@ urlpatterns = [
     url(r'^BusinessCategoryByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$',
         views.BusinessCategoryByCompanyId),
 
-  path('ElementCategoryApi/', views.ElementCategoryApi),
+    path('ElementCategoryApi/', views.ElementCategoryApi),
     url(r'^ElementCategoryApiById/(?P<ElementCategoryId>[0-9a-zA-Z\-]+)$',
         views.ElementCategoryApiById),
     url(r'^ElementCategoryByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$',
         views.ElementCategoryByCompanyId),
+
+
+    path('CredentialCategory/', views.CredentialCategoryApi),
+    url(r'^CredentialCategoryApiById/(?P<CredentialCategoryId>[0-9a-zA-Z\-]+)$',
+        views.CredentialCategoryApiById),
+    url(r'^CredentialCategoryByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$',
+        views.CredentialCategoryByCompanyId),
 ]
