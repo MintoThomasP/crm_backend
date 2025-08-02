@@ -471,7 +471,7 @@ def SiteContactTypeApi(request):
 def AccessLinkApi(request):
     try:
         if request.method == 'GET':
-            accessLink = AccessLink.objects.exclude(UserPermission="")
+            accessLink = AccessLink.objects.all()
             accessLinkSerializer = AccessLinkSerializer(
                 accessLink, many=True)
             return JsonResponse(accessLinkSerializer.data, safe=False)
