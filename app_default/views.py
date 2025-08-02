@@ -1,11 +1,12 @@
 
+from django.db import transaction
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 import requests
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
-from app_default.models import CategoryType, ClientReference, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquirySource, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, ReportType, SectionType, ServiceType, StaffStatus,  TaskStatus, UserType
-from app_default.serializers import CategoryTypeSerializer, ClientReferenceSerializer, CompanyDocumentTypeSerializer, CountryCodeSerializer, CurrencySerializer, DepositToSerializer, EnquiryStatusSerializer, EnquirySourceSerializer, FollowUpStatusSerializer, FollowUpTypeSerializer,InvoiceStatusSerializer, LeaveStatusSerializer, LeaveTypeSerializer, MeetingTypeSerializer, PaymentModeSerializer, ReportTypeSerializer, SectionTypeSerializer, ServiceTypeSerializer, StaffStatusSerializer, TaskStatusSerializer, UserTypeSerializer
+from app_default.models import AccessLink, CategoryType, ClientReference, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquirySource, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, ReportType, SectionType, ServiceType, SiteContactType, StaffStatus,  TaskStatus, UserType
+from app_default.serializers import AccessLinkSerializer, CategoryTypeSerializer, ClientReferenceSerializer, CompanyDocumentTypeSerializer, CountryCodeSerializer, CurrencySerializer, DepositToSerializer, EnquiryStatusSerializer, EnquirySourceSerializer, FollowUpStatusSerializer, FollowUpTypeSerializer, InvoiceStatusSerializer, LeaveStatusSerializer, LeaveTypeSerializer, MeetingTypeSerializer, PaymentModeSerializer, ReportTypeSerializer, SectionTypeSerializer, ServiceTypeSerializer, SiteContactTypeSerializer, StaffStatusSerializer, TaskStatusSerializer, UserTypeSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 import time
@@ -31,20 +32,18 @@ def retry(retries=3, delay=2):
     return decorator
 
 
-
-
 @csrf_exempt
-@swagger_auto_schema(method='POST', request_body=TaskStatusSerializer,operation_description="NOTE: API for save TaskStatus")
-@swagger_auto_schema(method='PUT', request_body=TaskStatusSerializer,operation_description="NOTE: API for edit TaskStatus")
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all task status",)
-@api_view(['GET','POST','PUT'])
+@swagger_auto_schema(method='POST', request_body=TaskStatusSerializer, operation_description="NOTE: API for save TaskStatus")
+@swagger_auto_schema(method='PUT', request_body=TaskStatusSerializer, operation_description="NOTE: API for edit TaskStatus")
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all task status",)
+@api_view(['GET', 'POST', 'PUT'])
 @retry(retries=3, delay=2)
 def TaskStatusApi(request):
     try:
         if request.method == 'GET':
             taskStatus = TaskStatus.objects.all()
             taskStatusSerializer = TaskStatusSerializer(
-                    taskStatus, many=True)
+                taskStatus, many=True)
             return JsonResponse(taskStatusSerializer.data, safe=False)
         elif request.method == 'POST':
             taskStatusData = JSONParser().parse(request)
@@ -68,19 +67,20 @@ def TaskStatusApi(request):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
+
+
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for get TaskStatus by StatusId",)
-@swagger_auto_schema(method='DELETE',operation_description="NOTE: API for delete TaskStatus by StatusId",)
-@api_view(['GET','DELETE'])
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get TaskStatus by StatusId",)
+@swagger_auto_schema(method='DELETE', operation_description="NOTE: API for delete TaskStatus by StatusId",)
+@api_view(['GET', 'DELETE'])
 @retry(retries=3, delay=2)
 def TaskStatusApiById(request, StatusId=""):
     try:
-        if request.method == 'GET': 
+        if request.method == 'GET':
             taskStatus = TaskStatus.objects.get(
-                    StatusId=StatusId)
+                StatusId=StatusId)
             taskStatusSerializer = TaskStatusSerializer(
-                    taskStatus)
+                taskStatus)
             return JsonResponse(taskStatusSerializer.data, safe=False)
         elif request.method == 'DELETE':
             taskStatus = TaskStatus.objects.get(StatusId=StatusId)
@@ -90,10 +90,10 @@ def TaskStatusApiById(request, StatusId=""):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
+
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE:API for get all Usertypes",)
+@swagger_auto_schema(method='GET', operation_description="NOTE:API for get all Usertypes",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def UserTypeApi(request):
@@ -101,16 +101,12 @@ def UserTypeApi(request):
         if request.method == 'GET':
             userType = UserType.objects.all()
             userTypeSerializer = UserTypeSerializer(
-                    userType, many=True)
+                userType, many=True)
             return JsonResponse(userTypeSerializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
-
-
-
 
 
 class PermissionSerializer(serializers.ModelSerializer):
@@ -118,14 +114,14 @@ class PermissionSerializer(serializers.ModelSerializer):
         model = Permission
         fields = ['id', 'name', 'codename', 'content_type']
 
-from django.db import transaction
+
 def get_permissions(request):
     BATCH_SIZE = 100
     permissions = Permission.objects.all()
     total_permission = permissions.count()
-    
+
     all_serialized_data = []
-    
+
     for i in range(0, total_permission, BATCH_SIZE):
         with transaction.atomic():
             batch_tasks = permissions[i:i+BATCH_SIZE]
@@ -135,15 +131,8 @@ def get_permissions(request):
     return JsonResponse(all_serialized_data, safe=False)
 
 
-
-
-
-    
-
-
-
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all Currency",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all Currency",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def CurrencyApi(request):
@@ -151,16 +140,16 @@ def CurrencyApi(request):
         if request.method == 'GET':
             currency = Currency.objects.all()
             currency_serializer = CurrencySerializer(
-                currency, many=True)  
+                currency, many=True)
             return JsonResponse(currency_serializer.data, safe=False)
         else:
-            return JsonResponse("",safe=False)
+            return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
+
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all PaymentMode",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all PaymentMode",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def PaymentModeApi(request):
@@ -168,16 +157,16 @@ def PaymentModeApi(request):
         if request.method == 'GET':
             paymentMode = PaymentMode.objects.all()
             paymentMode_serializer = PaymentModeSerializer(
-                paymentMode, many=True)  
+                paymentMode, many=True)
             return JsonResponse(paymentMode_serializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
+
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for  Get all DepositTo",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for  Get all DepositTo",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def DepositToApi(request):
@@ -185,16 +174,16 @@ def DepositToApi(request):
         if request.method == 'GET':
             depositTo = DepositTo.objects.all()
             depositTo_serializer = DepositToSerializer(
-                depositTo, many=True)  
+                depositTo, many=True)
             return JsonResponse(depositTo_serializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
+
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE:API for Get all InvoiceStatus",)
+@swagger_auto_schema(method='GET', operation_description="NOTE:API for Get all InvoiceStatus",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def InvoiceStatusApi(request):
@@ -202,21 +191,16 @@ def InvoiceStatusApi(request):
         if request.method == 'GET':
             invoiceStatus = InvoiceStatus.objects.all()
             invoiceStatus_serializer = InvoiceStatusSerializer(
-                invoiceStatus, many=True)  
+                invoiceStatus, many=True)
             return JsonResponse(invoiceStatus_serializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
-
-
-    
-
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all StaffStatus",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all StaffStatus",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def StaffStatusApi(request):
@@ -224,17 +208,16 @@ def StaffStatusApi(request):
         if request.method == 'GET':
             staffStatus = StaffStatus.objects.all()
             staffStatus_serializer = StaffStatusSerializer(
-                staffStatus, many=True)  
+                staffStatus, many=True)
             return JsonResponse(staffStatus_serializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all LeaveType",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all LeaveType",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def LeaveTypeApi(request):
@@ -242,16 +225,16 @@ def LeaveTypeApi(request):
         if request.method == 'GET':
             leaveType = LeaveType.objects.all()
             leaveType_serializer = LeaveTypeSerializer(
-                leaveType, many=True)  
+                leaveType, many=True)
             return JsonResponse(leaveType_serializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
+
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all LeaveStatus",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all LeaveStatus",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def LeaveStatusApi(request):
@@ -259,16 +242,16 @@ def LeaveStatusApi(request):
         if request.method == 'GET':
             leaveStatus = LeaveStatus.objects.all()
             leaveStatus_serializer = LeaveStatusSerializer(
-                leaveStatus, many=True)  
+                leaveStatus, many=True)
             return JsonResponse(leaveStatus_serializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
-    
+
+
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all DocumentType",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all DocumentType",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def DocumentTypeApi(request):
@@ -276,20 +259,16 @@ def DocumentTypeApi(request):
         if request.method == 'GET':
             documentType = CompanyDocumentType.objects.all()
             documentType_serializer = CompanyDocumentTypeSerializer(
-                documentType, many=True)  
+                documentType, many=True)
             return JsonResponse(documentType_serializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
-
-
-
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all SectionType",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all SectionType",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def SectionTypeApi(request):
@@ -297,35 +276,33 @@ def SectionTypeApi(request):
         if request.method == 'GET':
             sectionType = SectionType.objects.all()
             sectionType_serializer = SectionTypeSerializer(
-                sectionType, many=True)  
+                sectionType, many=True)
             return JsonResponse(sectionType_serializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all CategoryType",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all CategoryType",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
-def CategoryTypeApi(request,SectionType=""):
+def CategoryTypeApi(request, SectionType=""):
     try:
         if request.method == 'GET':
             categoryType = CategoryType.objects.filter(SectionType=SectionType)
             categoryType_serializer = CategoryTypeSerializer(
-                categoryType, many=True)  
+                categoryType, many=True)
             return JsonResponse(categoryType_serializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all ReportType",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all ReportType",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def ReportTypeApi(request):
@@ -333,16 +310,16 @@ def ReportTypeApi(request):
         if request.method == 'GET':
             reportType = ReportType.objects.all()
             reportType_serializer = ReportTypeSerializer(
-                reportType, many=True)  
+                reportType, many=True)
             return JsonResponse(reportType_serializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
+
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all MeetingType",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all MeetingType",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def MeetingTypeApi(request):
@@ -350,17 +327,16 @@ def MeetingTypeApi(request):
         if request.method == 'GET':
             meetingType = MeetingType.objects.all()
             meetingType_serializer = MeetingTypeSerializer(
-                meetingType, many=True)  
+                meetingType, many=True)
             return JsonResponse(meetingType_serializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all EnquirySource",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all EnquirySource",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def EnquirySourceApi(request):
@@ -368,16 +344,16 @@ def EnquirySourceApi(request):
         if request.method == 'GET':
             enquirySource = EnquirySource.objects.all()
             enquirySource_serializer = EnquirySourceSerializer(
-                enquirySource, many=True)  
+                enquirySource, many=True)
             return JsonResponse(enquirySource_serializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
+
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all ServiceType",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all ServiceType",)
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def ServiceTypeApi(request):
@@ -385,102 +361,120 @@ def ServiceTypeApi(request):
         if request.method == 'GET':
             serviceType = ServiceType.objects.all()
             serviceType_serializer = ServiceTypeSerializer(
-                serviceType, many=True)  
+                serviceType, many=True)
             return JsonResponse(serviceType_serializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all FollowUpStatus",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all FollowUpStatus",)
 @api_view(['GET'])
 def FollowUpStatusApi(request):
     try:
         if request.method == 'GET':
             followUpStatus = FollowUpStatus.objects.all()
-            followUpStatusSerializer = FollowUpStatusSerializer(followUpStatus, many=True)
-            return JsonResponse(followUpStatusSerializer.data, safe=False)    
+            followUpStatusSerializer = FollowUpStatusSerializer(
+                followUpStatus, many=True)
+            return JsonResponse(followUpStatusSerializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
+
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all FollowUpType",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all FollowUpType",)
 @api_view(['GET'])
 def FollowUpTypeApi(request):
     try:
         if request.method == 'GET':
             followUpType = FollowUpType.objects.all()
-            followUpTypeSerializer = FollowUpTypeSerializer(followUpType, many=True)
-            return JsonResponse(followUpTypeSerializer.data, safe=False)    
+            followUpTypeSerializer = FollowUpTypeSerializer(
+                followUpType, many=True)
+            return JsonResponse(followUpTypeSerializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
+
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all VanDeliveryEnquiryStatus",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all VanDeliveryEnquiryStatus",)
 @api_view(['GET'])
 def EnquiryStatusApi(request):
     try:
-        if request.method == 'GET': 
+        if request.method == 'GET':
             enquiryStatus = EnquiryStatus.objects.all()
-            enquiryStatusSerializer = EnquiryStatusSerializer(enquiryStatus, many=True)
-            return JsonResponse(enquiryStatusSerializer.data, safe=False)        
+            enquiryStatusSerializer = EnquiryStatusSerializer(
+                enquiryStatus, many=True)
+            return JsonResponse(enquiryStatusSerializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
-
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all CountryCode",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all CountryCode",)
 @api_view(['GET'])
 def CountryCodeApi(request):
     try:
-        if request.method == 'GET': 
+        if request.method == 'GET':
             countryCode = CountryCode.objects.all()
-            countryCodeSerializer = CountryCodeSerializer(countryCode, many=True)
-            return JsonResponse(countryCodeSerializer.data, safe=False)        
+            countryCodeSerializer = CountryCodeSerializer(
+                countryCode, many=True)
+            return JsonResponse(countryCodeSerializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
-    
-
-
 
 
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all ClientReference",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all ClientReference",)
 @api_view(['GET'])
 def ClientReferenceApi(request):
     try:
-        if request.method == 'GET': 
+        if request.method == 'GET':
             clientReference = ClientReference.objects.all()
-            clientReferenceSerializer = ClientReferenceSerializer(clientReference, many=True)
-            return JsonResponse(clientReferenceSerializer.data, safe=False)        
+            clientReferenceSerializer = ClientReferenceSerializer(
+                clientReference, many=True)
+            return JsonResponse(clientReferenceSerializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
+
+
 @csrf_exempt
-@swagger_auto_schema(method='GET',operation_description="NOTE: API for Get all SiteContactType",)
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all SiteContactType",)
 @api_view(['GET'])
 def SiteContactTypeApi(request):
     try:
-        if request.method == 'GET': 
+        if request.method == 'GET':
             siteContactType = SiteContactType.objects.all()
-            siteContactTypeSerializer = SiteContactTypeSerializer(siteContactType, many=True)
-            return JsonResponse(siteContactTypeSerializer.data, safe=False)        
+            siteContactTypeSerializer = SiteContactTypeSerializer(
+                siteContactType, many=True)
+            return JsonResponse(siteContactTypeSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("Invalid", safe=False)
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get all access Link",)
+@api_view(['GET'])
+def AccessLinkApi(request):
+    try:
+        if request.method == 'GET':
+            accessLink = AccessLink.objects.all()
+            accessLinkSerializer = AccessLinkSerializer(
+                accessLink, many=True)
+            return JsonResponse(accessLinkSerializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:

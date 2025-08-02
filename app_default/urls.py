@@ -4,8 +4,9 @@ from app_default import views
 
 urlpatterns = [
     path('TaskStatus/', views.TaskStatusApi),
-    url(r'^TaskStatusById/(?P<StatusId>[0-9a-zA-Z\-]+)$', views.TaskStatusApiById),
-    path('get_permissions/',views.get_permissions),
+    url(r'^TaskStatusById/(?P<StatusId>[0-9a-zA-Z\-]+)$',
+        views.TaskStatusApiById),
+    path('get_permissions/', views.get_permissions),
 
     path('UserType/', views.UserTypeApi),
 
@@ -17,16 +18,17 @@ urlpatterns = [
     path('InvoiceStatus/', views.InvoiceStatusApi),
 
 
-   path('StaffStatusApi/', views.StaffStatusApi),
-   path('LeaveTypeApi/', views.LeaveTypeApi),
-   path('LeaveStatus/', views.LeaveStatusApi),
-   
+    path('StaffStatusApi/', views.StaffStatusApi),
+    path('LeaveTypeApi/', views.LeaveTypeApi),
+    path('LeaveStatus/', views.LeaveStatusApi),
+
 
 
     path('DocumentTypeApi/', views.DocumentTypeApi),
     path('SectionTypeApi/', views.SectionTypeApi),
     path('CategoryTypeApi/', views.CategoryTypeApi),
-    url(r'^CategoryTypeApi/(?P<SectionType>[0-9a-zA-Z\-]+)$', views.CategoryTypeApi),
+    url(r'^CategoryTypeApi/(?P<SectionType>[0-9a-zA-Z\-]+)$',
+        views.CategoryTypeApi),
     path('ReportTypeApi/', views.ReportTypeApi),
     path('MeetingTypeApi/', views.MeetingTypeApi),
     path('EnquirySourceApi/', views.EnquirySourceApi),
@@ -36,7 +38,8 @@ urlpatterns = [
     path('EnquiryStatusApi/', views.EnquiryStatusApi),
     path('CountryCodeApi/', views.CountryCodeApi),
     path('ClientReferenceApi/', views.ClientReferenceApi),
+    path('AccessLinkApi/', views.AccessLinkApi),
 
-path('SiteContactType/',views.SiteContactTypeApi),
+    path('SiteContactType/', views.SiteContactTypeApi),
 
 ]

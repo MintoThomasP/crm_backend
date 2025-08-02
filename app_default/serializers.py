@@ -1,6 +1,6 @@
 
 from xml.dom.minidom import DocumentType
-from app_default.models import CategoryType, ClientReference, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquirySource, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, ReportType, SectionType, ServiceType, SiteContactType, StaffStatus, TaskStatus, UserType
+from app_default.models import AccessLink, CategoryType, ClientReference, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquirySource, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, ReportType, SectionType, ServiceType, SiteContactType, StaffStatus, TaskStatus, UserType
 from rest_framework import serializers
 
 
@@ -8,22 +8,20 @@ class TaskStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaskStatus
         fields = (
-'StatusId',
-'Status',
-'Point',
-)
-        
+            'StatusId',
+            'Status',
+            'Point',
+        )
 
 
 class UserTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserType
         fields = (
-'UserTypeId',
-'UserType',
+            'UserTypeId',
+            'UserType',
 
-)
-        
+        )
 
 
 class CurrencySerializer(serializers.ModelSerializer):
@@ -32,9 +30,9 @@ class CurrencySerializer(serializers.ModelSerializer):
         fields = ('SortId',
                   'CurrencyId',
                   'Currency',
-                  
+
                   )
-        
+
 
 class PaymentModeSerializer(serializers.ModelSerializer):
     class Meta:
@@ -43,7 +41,7 @@ class PaymentModeSerializer(serializers.ModelSerializer):
                   'PaymentModeId',
                   'PaymentMode',
                   )
-        
+
 
 class DepositToSerializer(serializers.ModelSerializer):
     class Meta:
@@ -52,7 +50,8 @@ class DepositToSerializer(serializers.ModelSerializer):
                   'DepositToId',
                   'DepositTo',
                   )
-        
+
+
 class InvoiceStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = InvoiceStatus
@@ -60,108 +59,110 @@ class InvoiceStatusSerializer(serializers.ModelSerializer):
                   'InvoiceStatusId',
                   'InvoiceStatus',
                   )
-        
+
 
 class StaffStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = StaffStatus
         fields = (
-'StatusId',
-'Status'
-)
-  
+            'StatusId',
+            'Status'
+        )
+
 
 class LeaveTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeaveType
         fields = (
-'LeaveTypeId',
-'LeaveType'
-)
-  
+            'LeaveTypeId',
+            'LeaveType'
+        )
+
 
 class LeaveStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeaveStatus
         fields = (
-'StatusId',
-'Status'
-)
-        
-
+            'StatusId',
+            'Status'
+        )
 
 
 class CompanyDocumentTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompanyDocumentType
         fields = (
-'DocumentTypeId',
-'DocumentType'
-)
-        
-
+            'DocumentTypeId',
+            'DocumentType'
+        )
 
 
 class SectionTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = SectionType
         fields = (
-'SectionTypeId',
-'SectionType'
-)
-        
+            'SectionTypeId',
+            'SectionType'
+        )
+
+
 class CategoryTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = CategoryType
         fields = (
-'CategoryTypeId',
-'CategoryType',
-'UsageType',
-'Ref',
-'SectionType',
-'OrderNo'
-)
-        
+            'CategoryTypeId',
+            'CategoryType',
+            'UsageType',
+            'Ref',
+            'SectionType',
+            'OrderNo'
+        )
+
 
 class ReportTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ReportType
         fields = (
-'ReportTypeId',
-'ReportType'
-)
-        
+            'ReportTypeId',
+            'ReportType'
+        )
+
+
 class MeetingTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = MeetingType
         fields = (
-'MeetingTypeId',
-'MeetingType'
-)
-        
+            'MeetingTypeId',
+            'MeetingType'
+        )
+
+
 class EnquirySourceSerializer(serializers.ModelSerializer):
     class Meta:
         model = EnquirySource
         fields = (
-'EnquirySourceId',
-'EnquirySource'
-)
+            'EnquirySourceId',
+            'EnquirySource'
+        )
+
+
 class ServiceTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = ServiceType
         fields = (
-'ServiceTypeId',
-'ServiceType'
-)
+            'ServiceTypeId',
+            'ServiceType'
+        )
+
 
 class FollowUpTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = FollowUpType
         fields = (
-'FollowUpTypeId',
-'FollowUpType'
-)
-             
+            'FollowUpTypeId',
+            'FollowUpType'
+        )
+
 
 class FollowUpStatusSerializer(serializers.ModelSerializer):
     class Meta:
@@ -170,6 +171,7 @@ class FollowUpStatusSerializer(serializers.ModelSerializer):
             'StatusId',
             'Status',
         )
+
 
 class EnquiryStatusSerializer(serializers.ModelSerializer):
     class Meta:
@@ -191,17 +193,28 @@ class CountryCodeSerializer(serializers.ModelSerializer):
         )
 
 
-
 class ClientReferenceSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientReference
         fields = ('ClientReferenceId',
                   'Reference',
-                  
                   )
+
+
 class SiteContactTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = SiteContactType
         fields = (
-            'ContactTypeId','ContactType'
+            'ContactTypeId', 'ContactType'
+        )
+
+
+class AccessLinkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = AccessLink
+        fields = (
+            'AccessLinkId',
+            'AccessLinkName',
+            'AccessLink',
+            'UserPermission'
         )
