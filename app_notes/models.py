@@ -12,8 +12,7 @@ class MeetingNotes(models.Model):
         max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
     StartTime = models.CharField(blank=True, null=True, max_length=100)
     EndTime = models.CharField(blank=True, null=True, max_length=100)
-    TeamParticipants = models.TextField(blank=True, null=True)
-    TeamParticipantsJSON = models.JSONField(
+    TeamParticipants = models.JSONField(
         default=list, blank=True, null=True)
     MeetingType = models.CharField(blank=True, null=True, max_length=50)
     CreatedBy = models.CharField(blank=True, null=True, max_length=50)
