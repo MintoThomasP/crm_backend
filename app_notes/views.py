@@ -148,101 +148,96 @@ class MeetingNotesApiByCompanyId(generics.ListAPIView):
     serializer_class = MeetingNotesSerializer
 
     def post(self, request, *args, **kwargs):
+        # try:
+        filterData = JSONParser().parse(request)
         try:
-            filterData = JSONParser().parse(request)
-    #         : [[]],
-    #   ClientId: [[]],
-    #   FromDate: "",
-    #   ToDate: "",
-    #   ParticipatedBy: [[]],
-    #   CreatedBy
-            try:
-                Keyword = filterData.get('SearchKeyword', '')
-                if Keyword:
-                    self.queryset = self.queryset.filter(
-                        Q(Title__icontains=Keyword) | Q(Description__icontains=Keyword))
-            except:
-                p = ""
-            try:
-                if filterData['CompanyId']:
-                    self.queryset = self.queryset.filter(
-                        CompanyId=filterData['CompanyId'])
-            except:
-                p = ""
-            try:
-                if filterData['CreatedBy']:
-                    self.queryset = self.queryset.filter(
-                        CreatedBy__in=filterData['CreatedBy'])
-
-            except:
-                p = ""
-            try:
-                if filterData['MeetingType']:
-                    self.queryset = self.queryset.filter(
-                        MeetingType__in=filterData['MeetingType'])
-            except:
-                p = ""
-            # try:
-            #     if filterData['ParticipatedBy']:
-            #         self.queryset = self.queryset.filter(TeamParticipants__icontains=filterData['ParticipatedBy'])
-            # except:
-            #     p=""
-            try:
-                if filterData['FromDate'] and filterData['ToDate']:
-                    # start_date=datetime.strptime(filterData['FromDate'], '%Y-%m-%d').date()
-                    # end_date=datetime.strptime(filterData['ToDate'], '%Y-%m-%d').date()
-                    start_date = timezone.datetime.strptime(
-                        filterData['FromDate'], '%Y-%m-%d').date()
-                    end_date = (timezone.datetime.strptime(
-                        filterData['ToDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
-
-                    self.queryset = self.queryset.filter(
-                        CreatedDate__range=(start_date, end_date))
-            except:
-                p = ""
-
-            page = self.paginate_queryset(self.queryset)
-            if page is not None:
-                serializer = self.get_serializer(page, many=True)
-                data = []
-
-                for row in serializer.data:
-                    try:
-                        try:
-                            staff = Staff.objects.get(StaffId=row['CreatedBy'])
-                            staffSerializer = StaffSerializer(staff)
-                            row['CreatedByName'] = staffSerializer.data['StaffName']
-                        except:
-                            company = Company.objects.get(
-                                CompanyId=row['CreatedBy'])
-                            companySerializer = CompanySerializer(company)
-                            row['CreatedByName'] = companySerializer.data['CompanyName']
-                    except:
-                        row['CreatedByName'] = ""
-                    try:
-                        meetingType = MeetingType.objects.get(
-                            MeetingTypeId=row['MeetingType'])
-                        meetingTypeSerializer = MeetingTypeSerializer(
-                            meetingType)
-                        row['MeetingTypevalue'] = meetingTypeSerializer.data['MeetingType']
-                    except:
-                        row['MeetingTypevalue'] = ""
-                    try:
-                        client = Client.objects.get(ClientId=row['ClientId'])
-                        clientSerializer = ClientSerializer(client)
-                        row['ClientName'] = clientSerializer.data['CustomerDisplayName']
-                    except:
-                        row['ClientName'] = ""
-                    try:
-                        meetingDocument = MeetingNoteDocument.objects.filter(
-                            MeetingNoteId=row['MeetingNoteId'])
-                        meetingDocumentSerializer = MeetingNoteDocumentSerializer(
-                            meetingDocument, many=True)
-                        row['MeetingDocuments'] = meetingDocumentSerializer.data
-                    except:
-                        row['MeetingDocuments'] = ""
-                    data.append(row)
-
-                return self.get_paginated_response(data)
+            Keyword = filterData.get('SearchKeyword', '')
+            if Keyword:
+                self.queryset = self.queryset.filter(
+                    Q(Title__icontains=Keyword) | Q(Description__icontains=Keyword))
         except:
-            return JsonResponse("", safe=False)
+            p = ""
+        try:
+            if filterData['CompanyId']:
+                self.queryset = self.queryset.filter(
+                    CompanyId=filterData['CompanyId'])
+        except:
+            p = ""
+        try:
+            if filterData['CreatedBy']:
+                self.queryset = self.queryset.filter(
+                    CreatedBy__in=filterData['CreatedBy'])
+
+        except:
+            p = ""
+        try:
+            if filterData['MeetingType']:
+                self.queryset = self.queryset.filter(
+                    MeetingType__in=filterData['MeetingType'])
+        except:
+            p = ""
+        try:
+            if filterData['ParticipatedBy']:
+                self.queryset = self.queryset.filter(
+                    TeamParticipants__contains=filterData['ParticipatedBy'])
+        except:
+            p = ""
+        try:
+            if filterData['FromDate'] and filterData['ToDate']:
+                # start_date=datetime.strptime(filterData['FromDate'], '%Y-%m-%d').date()
+                # end_date=datetime.strptime(filterData['ToDate'], '%Y-%m-%d').date()
+                start_date = timezone.datetime.strptime(
+                    filterData['FromDate'], '%Y-%m-%d').date()
+                end_date = (timezone.datetime.strptime(
+                    filterData['ToDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
+
+                self.queryset = self.queryset.filter(
+                    CreatedDate__range=(start_date, end_date))
+        except:
+            p = ""
+
+        page = self.paginate_queryset(self.queryset)
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            data = []
+
+            for row in serializer.data:
+                try:
+                    try:
+                        staff = Staff.objects.get(StaffId=row['CreatedBy'])
+                        staffSerializer = StaffSerializer(staff)
+                        row['CreatedByName'] = staffSerializer.data['StaffName']
+                    except:
+                        company = Company.objects.get(
+                            CompanyId=row['CreatedBy'])
+                        companySerializer = CompanySerializer(company)
+                        row['CreatedByName'] = companySerializer.data['CompanyName']
+                except:
+                    row['CreatedByName'] = ""
+                try:
+                    meetingType = MeetingType.objects.get(
+                        MeetingTypeId=row['MeetingType'])
+                    meetingTypeSerializer = MeetingTypeSerializer(
+                        meetingType)
+                    row['MeetingTypevalue'] = meetingTypeSerializer.data['MeetingType']
+                except:
+                    row['MeetingTypevalue'] = ""
+                try:
+                    client = Client.objects.get(ClientId=row['ClientId'])
+                    clientSerializer = ClientSerializer(client)
+                    row['ClientName'] = clientSerializer.data['CustomerDisplayName']
+                except:
+                    row['ClientName'] = ""
+                try:
+                    meetingDocument = MeetingNoteDocument.objects.filter(
+                        MeetingNoteId=row['MeetingNoteId'])
+                    meetingDocumentSerializer = MeetingNoteDocumentSerializer(
+                        meetingDocument, many=True)
+                    row['MeetingDocuments'] = meetingDocumentSerializer.data
+                except:
+                    row['MeetingDocuments'] = ""
+                data.append(row)
+
+            return self.get_paginated_response(data)
+        # except:
+        #     return JsonResponse("", safe=False)
