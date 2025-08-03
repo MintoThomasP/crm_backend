@@ -8,17 +8,20 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    path('check-network/', views.checkNetwork),
     path('CURDSiteSettings/', views.CURDSiteSettingsApi),
-    url(r'^CURDSiteSettingsApiCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.CURDSiteSettingsApiCompanyId),
+    url(r'^CURDSiteSettingsApiCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$',
+        views.CURDSiteSettingsApiCompanyId),
 
-    url(r'^CURDSiteSettingsApiById/(?P<SiteSettingsId>[0-9a-zA-Z\-]+)$', views.CURDSiteSettingsApiById),
+    url(r'^CURDSiteSettingsApiById/(?P<SiteSettingsId>[0-9a-zA-Z\-]+)$',
+        views.CURDSiteSettingsApiById),
 
     url(r'^UploadSiteSettingsImage/(?P<SiteSettingsId>[0-9a-zA-Z\-]+)$',
         views.UploadSiteSettingsImage.as_view()),
 
-path('GetNotificationByToUser/', views.GetNotificationByToUser.as_view()),
-    
-  
+    path('GetNotificationByToUser/', views.GetNotificationByToUser.as_view()),
+
+
     path('CURDSiteMessage/', views.CURDSiteMessage),
     url(r'^CURDSiteMessage/(?P<CompanyId>[0-9a-zA-Z\-]+)/(?P<SiteMessageId>[0-9a-zA-Z\-]+)$',
         views.SiteMessageById),
@@ -27,8 +30,10 @@ path('GetNotificationByToUser/', views.GetNotificationByToUser.as_view()),
 
 
     path('CURDSiteContact/', views.CURDSiteContactApi),
-    url(r'^CURDSiteContact/(?P<SiteContactId>[0-9a-zA-Z\-]+)$', views.CURDSiteContactApiById),
+    url(r'^CURDSiteContact/(?P<SiteContactId>[0-9a-zA-Z\-]+)$',
+        views.CURDSiteContactApiById),
 
 ]
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.MEDIA_URL,
+                          document_root=settings.MEDIA_ROOT)
