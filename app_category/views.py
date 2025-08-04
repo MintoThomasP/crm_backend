@@ -289,7 +289,7 @@ def ReportApiById(request, ReportId=""):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', operation_description="NOTE: API for get category and subcategories by CategoryType")
+@swagger_auto_schema(method='POST', operation_description="NOTE: API for get category and subcategories by CategoryType",)
 @api_view(['POST'])
 def GetCategoryandSubCategoriesByCategoryType(request):
     if request.method != 'POST':
@@ -301,46 +301,51 @@ def GetCategoryandSubCategoriesByCategoryType(request):
         section_type = category_data.get('SectionType')
         company_id = category_data.get('CompanyId')
 
-        # Preload top-level categories and all subcategories at once
+        # Get the CategoryType objects
+        category_types = CategoryType.objects.filter(
+            CategoryTypeId__in=category_type_ids)
+        category_type_serialized = CategoryTypeSerializer(
+            category_types, many=True).data
+
+        # Fetch all relevant categories in one query
         all_categories = Category.objects.filter(
             ActiveStatus=1,
             SectionType=section_type,
             CompanyId=company_id
         ).order_by('CategoryType', '-SortId')
 
+        # Group categories by RefId (parent CategoryId)
         category_map = {}
         for cat in all_categories:
-            if cat.RefId:
-                category_map.setdefault(cat.RefId, []).append(cat)
-            else:
-                category_map.setdefault(None, []).append(cat)
+            ref_id = cat.RefId or None
+            category_map.setdefault(ref_id, []).append(cat)
 
+        # Recursive function to build category-subcategory tree
         def build_category_tree(parent_id):
             children = category_map.get(parent_id, [])
             serialized_children = CategorySerializer(children, many=True).data
             for i, child in enumerate(children):
                 child_id = child.CategoryId
                 subtree = build_category_tree(child_id)
-                report_data = get_report_data(child_id)
                 serialized_children[i]['Subcategory'] = subtree
+                report_data = get_report_data(child_id)
                 if report_data:
                     serialized_children[i]['Report'] = report_data
             return serialized_children
 
-        # Filter relevant CategoryTypes
-        category_types = CategoryType.objects.filter(
-            CategoryTypeId__in=category_type_ids)
-        category_type_serialized = CategoryTypeSerializer(
-            category_types, many=True).data
-
         data = []
+
         for category_type in category_type_serialized:
-            category_type_id = category_type['CategoryTypeId']
+            # Match by name (string)
+            category_type_name = category_type['CategoryType']
+
+            # Top-level categories that belong to this category type
             top_level_categories = [
                 cat for cat in category_map.get(None, [])
-                if cat.CategoryType_id == category_type_id
+                if cat.CategoryType == category_type_name
             ]
 
+            # Serialize top-level categories
             serialized_top = CategorySerializer(
                 top_level_categories, many=True).data
             for i, top_cat in enumerate(top_level_categories):
@@ -348,8 +353,9 @@ def GetCategoryandSubCategoriesByCategoryType(request):
                 subtree = build_category_tree(cat_id)
                 serialized_top[i]['Subcategory'] = subtree
 
+            # Append enriched data
             category_type['Subcategory'] = serialized_top
-            category_type['Category'] = category_type['CategoryType']
+            category_type['Category'] = category_type_name
             category_type['CategoryId'] = category_type['CategoryTypeId']
             data.append(category_type)
 
