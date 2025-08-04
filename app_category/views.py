@@ -182,7 +182,7 @@ class LedgerCategoryPagination(generics.ListAPIView):
 
             for row in serializer.data:
                 main_category = get_maincategories(row['RefId'])
-                row['CategoryType'] = main_category['CategoryType']
+                row['CategoryType'] = main_category[0]['CategoryType']
                 row['CategoryPath'] = get_category_path(
                     get_maincategories(row['RefId']))
                 try:
