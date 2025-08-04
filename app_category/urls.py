@@ -19,6 +19,8 @@ urlpatterns = [
          views.GetAllCategoryandSubCategories),
     path('GetCategoryandSubCategoriesByCategoryType/',
          views.GetCategoryandSubCategoriesByCategoryType),
+    path('GetLedgerByCategoryType/',
+         views.GetLedgerByCategoryType),
     path('GetClientReportMonthly/', views.GetClientReportMonthly),
     path('GetAllLedgerCategory/', views.GetAllLedgerCategory),
     url(r'^GetAllLedgerCategory/(?P<CompanyId>[0-9a-zA-Z\-]+)/$',

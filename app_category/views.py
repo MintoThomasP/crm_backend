@@ -289,6 +289,34 @@ def ReportApiById(request, ReportId=""):
 
 
 @csrf_exempt
+@swagger_auto_schema(method='POST', operation_description="NOTE: API for get Get Ledger By Category Type",)
+@api_view(['POST'])
+def GetLedgerByCategoryType(request):
+    # try:
+
+    if request.method == 'POST':
+        category_data = JSONParser().parse(request)
+        categoryType = CategoryType.objects.filter(
+            CategoryTypeId__in=category_data['CategoryType'])
+        categoryType_serializer = CategoryTypeSerializer(
+            categoryType, many=True)
+        data = []
+        for category_type in categoryType_serializer.data:
+            categories = Category.objects.filter(
+                Q(RefId__isnull=True) | Q(RefId=""),
+                ActiveStatus=1,
+                SectionType=category_data['SectionType'], CategoryType=category_type[
+                    'CategoryTypeId'], CompanyId=category_data['CompanyId']
+            ).order_by('CategoryType')
+            category_serializer = CategorySerializer(categories, many=True)
+        return JsonResponse(category_serializer.data, safe=False)
+    else:
+        return JsonResponse([], safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
+
+
+@csrf_exempt
 @swagger_auto_schema(method='POST', operation_description="NOTE: API for get category and subcategories by CategoryType",)
 @api_view(['POST'])
 def GetCategoryandSubCategoriesByCategoryType(request):
