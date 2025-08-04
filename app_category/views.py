@@ -168,6 +168,9 @@ class LedgerCategoryPagination(generics.ListAPIView):
         if filterData['SectionType']:
             self.queryset = self.queryset.filter(
                 SectionType=filterData['SectionType'])
+        if filterData['CategoryType']:
+            self.queryset = self.queryset.filter(
+                CategoryType=filterData['CategoryType'])
         if filterData['ActiveStatus']:
             self.queryset = self.queryset.filter(
                 ActiveStatus=filterData['ActiveStatus'])
@@ -178,6 +181,8 @@ class LedgerCategoryPagination(generics.ListAPIView):
             data = []
 
             for row in serializer.data:
+                main_category = get_maincategories(row['RefId'])
+                row['CategoryType'] = main_category['CategoryType']
                 row['CategoryPath'] = get_category_path(
                     get_maincategories(row['RefId']))
                 try:
