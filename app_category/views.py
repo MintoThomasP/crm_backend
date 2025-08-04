@@ -122,7 +122,7 @@ def get_ledger_by_categoryid(category_id):
 @swagger_auto_schema(method='POST', operation_description="NOTE: API for get Category by SectionType",)
 @api_view(['POST'])
 @retry(retries=3, delay=2)
-def GetAllCategoryBySectionTypeApi(self, request):
+def GetAllCategoryBySectionTypeApi(request):
     # try:
     if request.method == 'POST':
         categoryData = JSONParser().parse(request)
@@ -130,14 +130,6 @@ def GetAllCategoryBySectionTypeApi(self, request):
             Q(RefId__isnull=True) | Q(RefId=""), ActiveStatus=1,
             SectionType=categoryData['SectionType'],
             CompanyId=categoryData['CompanyId']).order_by('-SortId')
-
-        if categoryData.get('CategoryType'):
-            self.category = self.category.filter(
-                CategoryType__in=[
-                    str(x).strip() for x in categoryData['CategoryType']
-                ]
-            )
-
         categorySerializer = CategorySerializer(
             category, many=True)
         categoryData = []
