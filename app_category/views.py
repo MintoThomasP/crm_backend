@@ -195,7 +195,7 @@ class LedgerCategoryPagination(generics.ListAPIView):
                     row['CategoryTypeName'] = ""
 
                 data.append(row)
-            return self.get_paginated_response(data)
+            return JsonResponse("test", safe=False)
 
 
 @csrf_exempt
