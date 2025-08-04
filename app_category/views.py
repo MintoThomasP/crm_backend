@@ -289,64 +289,74 @@ def ReportApiById(request, ReportId=""):
 
 
 @csrf_exempt
-@swagger_auto_schema(method='POST', operation_description="NOTE: API for get category and subcategories by CategoryType",)
+@swagger_auto_schema(method='POST', operation_description="NOTE: API for get category and subcategories by CategoryType")
 @api_view(['POST'])
 def GetCategoryandSubCategoriesByCategoryType(request):
-    # try:
-    if request.method == 'POST':
+    if request.method != 'POST':
+        return JsonResponse([], safe=False)
+
+    try:
         category_data = JSONParser().parse(request)
-        categoryType = CategoryType.objects.filter(
-            CategoryTypeId__in=category_data['CategoryType'])
-        categoryType_serializer = CategoryTypeSerializer(
-            categoryType, many=True)
+        category_type_ids = category_data.get('CategoryType', [])
+        section_type = category_data.get('SectionType')
+        company_id = category_data.get('CompanyId')
+
+        # Preload top-level categories and all subcategories at once
+        all_categories = Category.objects.filter(
+            ActiveStatus=1,
+            SectionType=section_type,
+            CompanyId=company_id
+        ).order_by('CategoryType', '-SortId')
+
+        category_map = {}
+        for cat in all_categories:
+            if cat.RefId:
+                category_map.setdefault(cat.RefId, []).append(cat)
+            else:
+                category_map.setdefault(None, []).append(cat)
+
+        def build_category_tree(parent_id):
+            children = category_map.get(parent_id, [])
+            serialized_children = CategorySerializer(children, many=True).data
+            for i, child in enumerate(children):
+                child_id = child.CategoryId
+                subtree = build_category_tree(child_id)
+                report_data = get_report_data(child_id)
+                serialized_children[i]['Subcategory'] = subtree
+                if report_data:
+                    serialized_children[i]['Report'] = report_data
+            return serialized_children
+
+        # Filter relevant CategoryTypes
+        category_types = CategoryType.objects.filter(
+            CategoryTypeId__in=category_type_ids)
+        category_type_serialized = CategoryTypeSerializer(
+            category_types, many=True).data
+
         data = []
-        for category_type in categoryType_serializer.data:
-            categories = Category.objects.filter(
-                Q(RefId__isnull=True) | Q(RefId=""),
-                ActiveStatus=1,
-                SectionType=category_data['SectionType'], CategoryType=category_type[
-                    'CategoryTypeId'], CompanyId=category_data['CompanyId']
-            ).order_by('CategoryType')
-            category_serializer = CategorySerializer(categories, many=True)
+        for category_type in category_type_serialized:
+            category_type_id = category_type['CategoryTypeId']
+            top_level_categories = [
+                cat for cat in category_map.get(None, [])
+                if cat.CategoryType_id == category_type_id
+            ]
 
-            for category in category_serializer.data:
-                subcategories = get_subcategories(category['CategoryId'])
-                if subcategories:
-                    category['Subcategory'] = subcategories
-                else:
+            serialized_top = CategorySerializer(
+                top_level_categories, many=True).data
+            for i, top_cat in enumerate(top_level_categories):
+                cat_id = top_cat.CategoryId
+                subtree = build_category_tree(cat_id)
+                serialized_top[i]['Subcategory'] = subtree
 
-                    category['Subcategory'] = []
-                # report_data = get_report_data(category['CategoryId'])
-                # if report_data:
-                #     category['Report'] = report_data
-            category_type['Subcategory'] = category_serializer.data
+            category_type['Subcategory'] = serialized_top
             category_type['Category'] = category_type['CategoryType']
             category_type['CategoryId'] = category_type['CategoryTypeId']
             data.append(category_type)
+
         return JsonResponse(data, safe=False)
-    else:
-        return JsonResponse([], safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
 
-
-def get_subcategories(category_id):
-    subcategories = Category.objects.filter(
-        RefId=category_id, ActiveStatus=1).order_by('-SortId')
-    subcategory_serializer = CategorySerializer(subcategories, many=True)
-    subcategory_data = []
-    for subcategory in subcategory_serializer.data:
-        children = get_subcategories(subcategory['CategoryId'])
-        if children:
-            subcategory['Subcategory'] = children
-        else:
-            subcategory['Subcategory'] = []
-
-        report_data = get_report_data(subcategory['CategoryId'])
-        if report_data:
-            subcategory['Report'] = report_data
-        subcategory_data.append(subcategory)
-    return subcategory_data
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, safe=False)
 
 
 def get_report_data(category_id):
