@@ -159,38 +159,59 @@ class LedgerCategoryPagination(generics.ListAPIView):
     serializer_class = CategorySerializer
 
     def post(self, request, *args, **kwargs):
-        page = self.paginate_queryset(self.queryset)
+        # Parse the JSON body
         filterData = JSONParser().parse(request)
-        Keyword = filterData.get('SearchKeyword', '')
-        if filterData['CompanyId']:
+        Keyword = filterData.get('SearchKeyword', '').strip()
+
+        # Start with base queryset
+        self.queryset = Category.objects.all().order_by('-SortId')
+
+        # Apply filters one by one
+        if filterData.get('CompanyId'):
             self.queryset = self.queryset.filter(
-                CompanyId=filterData['CompanyId'])
-        if filterData['SectionType']:
-            self.queryset = self.queryset.filter(
-                SectionType=filterData['SectionType'])
-        if filterData.get('CategoryType'):
-            self.queryset = self.queryset.filter(
-                CategoryType__in=[str(x).strip()
-                                  for x in filterData['CategoryType']]
+                CompanyId=filterData['CompanyId']
             )
 
-        if filterData['ActiveStatus']:
+        if filterData.get('SectionType'):
             self.queryset = self.queryset.filter(
-                ActiveStatus=filterData['ActiveStatus'])
+                SectionType=filterData['SectionType']
+            )
+
+        if filterData.get('CategoryType'):
+            self.queryset = self.queryset.filter(
+                CategoryType__in=[
+                    str(x).strip() for x in filterData['CategoryType']
+                ]
+            )
+
+        if filterData.get('ActiveStatus'):
+            self.queryset = self.queryset.filter(
+                ActiveStatus=filterData['ActiveStatus']
+            )
+
         if Keyword:
-            self.queryset = self.queryset.filter(Category__icontains=Keyword)
+            self.queryset = self.queryset.filter(
+                Category__icontains=Keyword
+            )
+
+        # Now paginate after applying filters
+        page = self.paginate_queryset(self.queryset)
+
         if page is not None:
             serializer = self.get_serializer(page, many=True)
             data = []
 
             for row in serializer.data:
+                # Add main category and path info
                 main_category = get_maincategories(row['RefId'])
                 row['main_category'] = main_category
-                row['CategoryPath'] = get_category_path(
-                    main_category)
+                row['CategoryPath'] = get_category_path(main_category)
+
+                # Get category type name
                 try:
                     categoryType = CategoryType.objects.get(
-                        CategoryTypeId=row['CategoryType'])
+                        CategoryTypeId=row['CategoryType']
+                    )
                     categoryTypeSerializer = CategoryTypeSerializer(
                         categoryType)
                     row['CategoryTypeName'] = categoryTypeSerializer.data['CategoryType']
@@ -198,6 +219,7 @@ class LedgerCategoryPagination(generics.ListAPIView):
                     row['CategoryTypeName'] = ""
 
                 data.append(row)
+
             return self.get_paginated_response(data)
 
 
