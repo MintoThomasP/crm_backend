@@ -168,7 +168,7 @@ class LedgerCategoryPagination(generics.ListAPIView):
         if filterData['SectionType']:
             self.queryset = self.queryset.filter(
                 SectionType=filterData['SectionType'])
-        if filterData['CategoryType']:
+        if len(filterData['CategoryType']):
             self.queryset = self.queryset.filter(
                 CategoryType__in=filterData['CategoryType'])
         if filterData['ActiveStatus']:
