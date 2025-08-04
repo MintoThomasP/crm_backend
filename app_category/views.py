@@ -168,9 +168,12 @@ class LedgerCategoryPagination(generics.ListAPIView):
         if filterData['SectionType']:
             self.queryset = self.queryset.filter(
                 SectionType=filterData['SectionType'])
-        if len(filterData['CategoryType']):
+        if filterData.get('CategoryType'):
             self.queryset = self.queryset.filter(
-                CategoryType__in=filterData['CategoryType'])
+                CategoryType__in=[str(x).strip()
+                                  for x in filterData['CategoryType']]
+            )
+
         if filterData['ActiveStatus']:
             self.queryset = self.queryset.filter(
                 ActiveStatus=filterData['ActiveStatus'])
@@ -195,7 +198,7 @@ class LedgerCategoryPagination(generics.ListAPIView):
                     row['CategoryTypeName'] = ""
 
                 data.append(row)
-            return JsonResponse("test", safe=False)
+            return self.get_paginated_response(data)
 
 
 @csrf_exempt
