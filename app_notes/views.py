@@ -190,6 +190,20 @@ class MeetingNotesApiByCompanyId(generics.ListAPIView):
         except:
             p = ""
         try:
+            if filterData['Status']:
+                self.queryset = self.queryset.filter(
+                    Status__in=filterData['Status'])
+
+        except:
+            p = ""
+        try:
+            if filterData['AssignedTo']:
+                self.queryset = self.queryset.filter(
+                    AssignedTo__in=filterData['AssignedTo'])
+
+        except:
+            p = ""
+        try:
             if filterData['FromDate'] and filterData['ToDate']:
                 # start_date=datetime.strptime(filterData['FromDate'], '%Y-%m-%d').date()
                 # end_date=datetime.strptime(filterData['ToDate'], '%Y-%m-%d').date()
@@ -199,7 +213,7 @@ class MeetingNotesApiByCompanyId(generics.ListAPIView):
                     filterData['ToDate'], '%Y-%m-%d') + timezone.timedelta(days=1)).date()
 
                 self.queryset = self.queryset.filter(
-                    CreatedDate__range=(start_date, end_date))
+                    ScheduledOn__range=(start_date, end_date))
         except:
             p = ""
 

@@ -21,6 +21,10 @@ class MeetingNotes(models.Model):
     Description = models.TextField(blank=True, null=True)
     ClientId = models.CharField(blank=True, null=True, max_length=50)
     CompanyId = models.CharField(blank=True, null=True, max_length=50)
+    AssignedTo = models.CharField(blank=True, null=True, max_length=50)
+    ScheduledOn = models.DateTimeField(
+        blank=True, null=True, default=timezone.now)
+    Status = models.IntegerField(default=2)  # 1=Scheduled, 2= Completed
 
     def save(self, *args, **kwargs):
         if not self.CreatedDate:

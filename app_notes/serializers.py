@@ -17,12 +17,16 @@ class MeetingNotesSerializer(serializers.ModelSerializer):
                   'Title',
                   'Description',
                   'ClientId',
-                  'CompanyId'           
-        )
+                  'CompanyId',
+                  'AssignedTo',
+                  'ScheduledOn',
+                  'Status'
+                  )
+
 
 class MeetingNoteDocumentSerializer(serializers.ModelSerializer):
     class Meta:
         model = MeetingNoteDocument
         fields = ('MeetingNoteDocumentId',
-                 'MeetingNoteId',
-                  'Document' )
+                  'MeetingNoteId',
+                  'Document')
