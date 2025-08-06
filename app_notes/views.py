@@ -197,9 +197,9 @@ class MeetingNotesApiByCompanyId(generics.ListAPIView):
         except:
             p = ""
         try:
-            if filterData['AssignedTo']:
+            if filterData['AssignedBy']:
                 self.queryset = self.queryset.filter(
-                    AssignedTo__in=filterData['AssignedTo'])
+                    AssignedBy__in=filterData['AssignedBy'])
 
         except:
             p = ""

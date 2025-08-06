@@ -18,7 +18,7 @@ class MeetingNotesSerializer(serializers.ModelSerializer):
                   'Description',
                   'ClientId',
                   'CompanyId',
-                  'AssignedTo',
+                  'AssignedBy',
                   'ScheduledOn',
                   'Status'
                   )
