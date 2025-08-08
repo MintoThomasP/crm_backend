@@ -55,7 +55,7 @@ class ClientReminderSerializer(serializers.ModelSerializer):
             'ReminderType',
             'TargetDate',
             'RemindBefore',
-            'sRecurring',
+            'IsRecurring',
             'RecurrencePeriod'
         )
 
