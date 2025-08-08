@@ -173,7 +173,7 @@ class MeetingNotesApiByCompanyId(generics.ListAPIView):
         try:
             if filterData['ClientId']:
                 self.queryset = self.queryset.filter(
-                    CreatedBy__in=filterData['ClientId'])
+                    ClientId__in=filterData['ClientId'])
 
         except:
             p = ""
