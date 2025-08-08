@@ -409,6 +409,37 @@ def ClientOtherDetailsApiById(request, ClientOtherDetailId=""):
         return JsonResponse("", safe=False)
 
 
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=ClientDocuments, operation_description="NOTE: API for save ClientDocuments")
+@swagger_auto_schema(method='PUT', request_body=ClientDocumentsSerializer, operation_description="NOTE: API for edit ClientDocuments")
+@api_view(['POST', 'PUT'])
+@retry(retries=3, delay=2)
+def ClientDocument(request):
+    try:
+        if request.method == 'POST':
+            clientDocumentsData = JSONParser().parse(request)
+            clientDocumentsSerializer = ClientDocumentsSerializer(
+                data=clientDocumentsData)
+            if clientDocumentsSerializer.is_valid():
+                clientDocumentsSerializer.save()
+                return JsonResponse(clientDocumentsSerializer.data['ClientDocumentId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            clientDocumentsData = JSONParser().parse(request)
+            clientDocuments = ClientDocuments.objects.get(
+                ClientDocumentId=clientDocumentsData['ClientDocumentId'])
+            clientDocumentsSerializer = ClientDocumentsSerializer(
+                clientDocuments, data=clientDocumentsData)
+            if clientDocumentsSerializer.is_valid():
+                clientDocumentsSerializer.save()
+                return JsonResponse(clientDocumentsSerializer.data['ClientDocumentId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+
+
 class UploadClientDocument(APIView):
     parser_classes = (MultiPartParser, FormParser)
 
