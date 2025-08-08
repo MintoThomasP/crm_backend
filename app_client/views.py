@@ -805,34 +805,34 @@ def ClientBankDetailsApiByClientId(request, ClientId=""):
 @api_view(['GET', 'POST', 'PUT'])
 @retry(retries=3, delay=2)
 def ClientReminderApi(request):
-    try:
-        if request.method == 'GET':
-            contactPerson = ClientReminder.objects.all()
-            contactPersonSerializer = ClientReminderSerializer(
-                contactPerson, many=True)
-            return JsonResponse(contactPersonSerializer.data, safe=False)
-        elif request.method == 'POST':
-            contactPersonData = JSONParser().parse(request)
-            contactPersonSerializer = ClientReminderSerializer(
-                data=contactPersonData)
-            if contactPersonSerializer.is_valid():
-                contactPersonSerializer.save()
-                return JsonResponse(contactPersonSerializer.data['ClientReminderId'], safe=False)
-            return JsonResponse("Failed to add", safe=False)
-        elif request.method == 'PUT':
-            contactPersonData = JSONParser().parse(request)
-            contactPerson = ClientReminder.objects.get(
-                ClientReminderId=contactPersonData['ClientReminderId'])
-            contactPersonSerializer = ClientReminderSerializer(
-                contactPerson, data=contactPersonData)
-            if contactPersonSerializer.is_valid():
-                contactPersonSerializer.save()
-                return JsonResponse(contactPersonSerializer.data['ClientReminderId'], safe=False)
-            return JsonResponse("Failed to Update", safe=False)
-        else:
-            return JsonResponse("", safe=False)
-    except:
+    # try:
+    if request.method == 'GET':
+        contactPerson = ClientReminder.objects.all()
+        contactPersonSerializer = ClientReminderSerializer(
+            contactPerson, many=True)
+        return JsonResponse(contactPersonSerializer.data, safe=False)
+    elif request.method == 'POST':
+        contactPersonData = JSONParser().parse(request)
+        contactPersonSerializer = ClientReminderSerializer(
+            data=contactPersonData)
+        if contactPersonSerializer.is_valid():
+            contactPersonSerializer.save()
+            return JsonResponse(contactPersonSerializer.data['ClientReminderId'], safe=False)
+        return JsonResponse("Failed to add", safe=False)
+    elif request.method == 'PUT':
+        contactPersonData = JSONParser().parse(request)
+        contactPerson = ClientReminder.objects.get(
+            ClientReminderId=contactPersonData['ClientReminderId'])
+        contactPersonSerializer = ClientReminderSerializer(
+            contactPerson, data=contactPersonData)
+        if contactPersonSerializer.is_valid():
+            contactPersonSerializer.save()
+            return JsonResponse(contactPersonSerializer.data['ClientReminderId'], safe=False)
+        return JsonResponse("Failed to Update", safe=False)
+    else:
         return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
 
 
 @csrf_exempt
