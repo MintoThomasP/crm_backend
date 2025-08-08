@@ -56,6 +56,8 @@ class StaffDocuments(models.Model):
         upload_to='staffdocuments/', null=True, blank=True)
     DocumentName = models.CharField(blank=True, null=True, max_length=300)
     DocumentNumber = models.CharField(blank=True, null=True, max_length=300)
+    ImageType = models.CharField(blank=True, null=True, max_length=300)
+    IssuedOn = models.CharField(blank=True, null=True, max_length=50)
     ExpiryDate = models.CharField(blank=True, null=True, max_length=50)
     Comment = models.TextField(blank=True, null=True)
 

@@ -104,8 +104,10 @@ class StaffDocumentsSerializer(serializers.ModelSerializer):
                   'Document',
                   'DocumentName',
                   'DocumentNumber',
+                  'ImageType',
                   'Comment',
-                  'ExpiryDate'
+                  'ExpiryDate',
+                  'IssuedOn'
                   )
 
 
@@ -116,9 +118,11 @@ class SaveStaffDocumentsSerializer(serializers.ModelSerializer):
                   'StaffDocumentId',
                   'StaffId',
                   'DocumentName',
+                  'ImageType',
                   'Comment',
                   'DocumentNumber',
-                  'ExpiryDate'
+                  'ExpiryDate',
+                  'IssuedOn'
 
                   )
 

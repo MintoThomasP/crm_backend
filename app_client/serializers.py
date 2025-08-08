@@ -7,40 +7,41 @@ class ClientSerializer(serializers.ModelSerializer):
         model = Client
         fields = (
             'SortId',
-'ClientId',
-'CompanyId',
-'Salutation',
-'FirstName',
-'LastName',
-'CompanyName',
-'CustomerDisplayName',
-'EmailId',
-'Phone1',
-'Phone2',
-'CustomerType',
-'AdvanceAmount',
-'SetDefaultProject',
-'CountryCode1',
-'CountryCode2',
-'ActiveStatus',
-'PLLedger',
-'BalanceSheetLedger',
-'TotalWorkingHoursPerMonth',
-'TotalVisitPerMonth',
-'Reference'
-)
-        
+            'ClientId',
+            'CompanyId',
+            'Salutation',
+            'FirstName',
+            'LastName',
+            'CompanyName',
+            'CustomerDisplayName',
+            'EmailId',
+            'Phone1',
+            'Phone2',
+            'CustomerType',
+            'AdvanceAmount',
+            'SetDefaultProject',
+            'CountryCode1',
+            'CountryCode2',
+            'ActiveStatus',
+            'PLLedger',
+            'BalanceSheetLedger',
+            'TotalWorkingHoursPerMonth',
+            'TotalVisitPerMonth',
+            'Reference'
+        )
+
+
 class ClientOtherDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientOtherDetails
         fields = (
             'SortId',
-'ClientOtherDetailId',
-'ClientId',
-'Currency',
-'OpeningBalance'
-)
-        
+            'ClientOtherDetailId',
+            'ClientId',
+            'Currency',
+            'OpeningBalance'
+        )
+
 
 class ClientDocumentsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -48,77 +49,77 @@ class ClientDocumentsSerializer(serializers.ModelSerializer):
         fields = (
             'SortId',
             'ClientDocumentId',
-'ClientOtherDetailId',
-'Document',
-'DocumentName',
-'DocumentNumber'
+            'ClientId',
+            'Document',
+            'DocumentName',
+            'DocumentNumber',
+            'ImageType',
+            'Comment',
+            'ExpiryDate',
+            'IssuedOn'
+        )
 
-)
-        
 
 class ClientAddressSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientAddress
         fields = (
-           'SortId',
-'ClientAddressId',
-'ClientId',
-'CustomerName',
-'Country',
-'City',
-'State',
-'Address1',
-'Address2',
-'ZipCode',
-'Phone',
-'FaxNumber',
-'IsDefaultAddress'
+            'SortId',
+            'ClientAddressId',
+            'ClientId',
+            'CustomerName',
+            'Country',
+            'City',
+            'State',
+            'Address1',
+            'Address2',
+            'ZipCode',
+            'Phone',
+            'FaxNumber',
+            'IsDefaultAddress'
 
-)
-        
+        )
 
 
 class ContactPersonSerializer(serializers.ModelSerializer):
     class Meta:
         model = ContactPerson
         fields = (
-'SortId',
-'ContactPersonId',
-'ClientId',
-'Salutation',
-'FirstName',
-'LastName',
-'Designation',
-'EmailId',
-'Phone1',
-'Phone2'
-)
+            'SortId',
+            'ContactPersonId',
+            'ClientId',
+            'Salutation',
+            'FirstName',
+            'LastName',
+            'Designation',
+            'EmailId',
+            'Phone1',
+            'Phone2'
+        )
+
 
 class ClientVisitRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientVisitRegister
         fields = (
             'SortId',
-'ClientVisitRegisterId',
-'ClientId',
-'StaffId',
-'VisitedDate',
-'Notes'
-)
-        
+            'ClientVisitRegisterId',
+            'ClientId',
+            'StaffId',
+            'VisitedDate',
+            'Notes'
+        )
 
 
-        
 class ClientBankDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = ClientBankDetails
         fields = ('SortId',
-'BankDetailId',
-'ClientId',
-'AccountHolderName',
-'BankName',
-'AccountNumber',
-'IFSCCode',
-'PrimaryAccount'
-)
-  
+                  'BankDetailId',
+                  'ClientId',
+                  'AccountHolderName',
+                  'BankName',
+                  'AccountNumber',
+                  'IFSCCode',
+                  'PrimaryAccount'
+                  )
