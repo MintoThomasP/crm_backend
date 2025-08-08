@@ -30,10 +30,13 @@ urlpatterns = [
         views.ClientAddressApiByClientId),
 
 
-
     path('ContactPerson/', views.ContactPersonApi),
     url(r'^ContactPersonApiById/(?P<ContactPersonId>[0-9a-zA-Z\-]+)$',
         views.ContactPersonApiById),
+
+    path('ClientReminder/', views.ClientReminderApi),
+    url(r'^ClientReminderApiById/(?P<ClientReminderId>[0-9a-zA-Z\-]+)$',
+        views.ClientReminderApiById),
 
     path('ClientVisitRegister/', views.ClientVisitRegisterApi),
     url(r'^ClientVisitRegisterByClientId/(?P<ClientId>[0-9a-zA-Z\-]+)$',

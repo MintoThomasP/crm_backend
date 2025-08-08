@@ -1,4 +1,4 @@
-from app_client.models import Client, ClientAddress, ClientBankDetails, ClientDocuments, ClientOtherDetails, ClientVisitRegister, ContactPerson
+from app_client.models import Client, ClientAddress, ClientBankDetails, ClientDocuments, ClientOtherDetails, ClientReminder, ClientVisitRegister, ContactPerson
 from rest_framework import serializers
 
 
@@ -40,6 +40,23 @@ class ClientOtherDetailsSerializer(serializers.ModelSerializer):
             'ClientId',
             'Currency',
             'OpeningBalance'
+        )
+
+
+class ClientReminderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ClientReminder
+        fields = (
+            'SortId',
+            'ClientReminderId',
+            'ClientId',
+            'Title',
+            'Description',
+            'ReminderType',
+            'TargetDate',
+            'RemindBefore',
+            'sRecurring',
+            'RecurrencePeriod'
         )
 
 

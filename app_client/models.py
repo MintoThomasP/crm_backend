@@ -59,6 +59,21 @@ class ClientDocuments(models.Model):
     Comment = models.TextField(blank=True, null=True)
 
 
+class ClientReminder(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    ClientReminderId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    ClientId = models.CharField(blank=True, null=True, max_length=50)
+    Title = models.CharField(blank=True, null=True, max_length=300)
+    Description = models.TextField(blank=True, null=True)
+    ReminderType = models.CharField(blank=True, null=True, max_length=50)
+    TargetDate = models.DateTimeField(help_text="The due date for the action.")
+    RemindBefore = models.PositiveIntegerField(
+        default=2, help_text="Days before target_date to remind")
+    IsRecurring = models.BooleanField(default=True)
+    RecurrencePeriod = models.CharField(max_length=50)
+
+
 class ClientAddress(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)
     ClientAddressId = models.CharField(
@@ -74,6 +89,7 @@ class ClientAddress(models.Model):
     Phone = models.CharField(max_length=15, blank=True, null=True)
     FaxNumber = models.CharField(max_length=20, blank=True, null=True)
     IsDefaultAddress = models.BooleanField(default=False)
+    Status = models.IntegerField(default=1)  # 1=Active,2=Inactive
 
 
 class ContactPerson(models.Model):

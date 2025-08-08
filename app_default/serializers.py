@@ -1,6 +1,6 @@
 
 from xml.dom.minidom import DocumentType
-from app_default.models import AccessLink, CategoryType, ClientReference, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquirySource, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, ReportType, SectionType, ServiceType, SiteContactType, StaffStatus, TaskStatus, UserType
+from app_default.models import AccessLink, CategoryType, ClientReference, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquirySource, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, RecurrenceChoice, ReminderType, ReportType, SectionType, ServiceType, SiteContactType, StaffStatus, TaskStatus, UserType
 from rest_framework import serializers
 
 
@@ -205,7 +205,8 @@ class SiteContactTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = SiteContactType
         fields = (
-            'ContactTypeId', 'ContactType'
+            'ContactTypeId',
+            'ContactType'
         )
 
 
@@ -217,4 +218,22 @@ class AccessLinkSerializer(serializers.ModelSerializer):
             'AccessLinkName',
             'AccessLink',
             'UserPermission'
+        )
+
+
+class RecurrenceChoiceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RecurrenceChoice
+        fields = (
+            'RecurrenceChoiceId',
+            'RecurrenceChoice'
+        )
+
+
+class ReminderTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ReminderType
+        fields = (
+            'ReminderTypeId',
+            'ReminderType'
         )

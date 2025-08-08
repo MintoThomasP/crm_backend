@@ -5,8 +5,8 @@ from django.views.decorators.csrf import csrf_exempt
 import requests
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
-from app_default.models import AccessLink, CategoryType, ClientReference, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquirySource, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, ReportType, SectionType, ServiceType, SiteContactType, StaffStatus,  TaskStatus, UserType
-from app_default.serializers import AccessLinkSerializer, CategoryTypeSerializer, ClientReferenceSerializer, CompanyDocumentTypeSerializer, CountryCodeSerializer, CurrencySerializer, DepositToSerializer, EnquiryStatusSerializer, EnquirySourceSerializer, FollowUpStatusSerializer, FollowUpTypeSerializer, InvoiceStatusSerializer, LeaveStatusSerializer, LeaveTypeSerializer, MeetingTypeSerializer, PaymentModeSerializer, ReportTypeSerializer, SectionTypeSerializer, ServiceTypeSerializer, SiteContactTypeSerializer, StaffStatusSerializer, TaskStatusSerializer, UserTypeSerializer
+from app_default.models import AccessLink, CategoryType, ClientReference, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquirySource, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, RecurrenceChoice, ReminderType, ReportType, SectionType, ServiceType, SiteContactType, StaffStatus,  TaskStatus, UserType
+from app_default.serializers import AccessLinkSerializer, CategoryTypeSerializer, ClientReferenceSerializer, CompanyDocumentTypeSerializer, CountryCodeSerializer, CurrencySerializer, DepositToSerializer, EnquiryStatusSerializer, EnquirySourceSerializer, FollowUpStatusSerializer, FollowUpTypeSerializer, InvoiceStatusSerializer, LeaveStatusSerializer, LeaveTypeSerializer, MeetingTypeSerializer, PaymentModeSerializer, RecurrenceChoiceSerializer, ReminderTypeSerializer, ReportTypeSerializer, SectionTypeSerializer, ServiceTypeSerializer, SiteContactTypeSerializer, StaffStatusSerializer, TaskStatusSerializer, UserTypeSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 import time
@@ -475,6 +475,38 @@ def AccessLinkApi(request):
             accessLinkSerializer = AccessLinkSerializer(
                 accessLink, many=True)
             return JsonResponse(accessLinkSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("Invalid", safe=False)
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get Recurrence Choice",)
+@api_view(['GET'])
+def RecurrenceChoiceApi(request):
+    try:
+        if request.method == 'GET':
+            recurrenceChoice = RecurrenceChoice.objects.all()
+            recurrenceChoiceSerializer = RecurrenceChoiceSerializer(
+                recurrenceChoice, many=True)
+            return JsonResponse(recurrenceChoiceSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("Invalid", safe=False)
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for Get Reminder Type",)
+@api_view(['GET'])
+def ReminderTypeApi(request):
+    try:
+        if request.method == 'GET':
+            reminderType = ReminderType.objects.all()
+            reminderTypeSerializer = ReminderTypeSerializer(
+                reminderType, many=True)
+            return JsonResponse(reminderTypeSerializer.data, safe=False)
         else:
             return JsonResponse("", safe=False)
     except:

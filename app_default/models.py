@@ -143,3 +143,13 @@ class AccessLink(models.Model):
     AccessLinkName = models.CharField(max_length=300)
     AccessLink = models.CharField(max_length=400)
     UserPermission = models.CharField(max_length=300)
+
+
+class RecurrenceChoice(models.Model):
+    RecurrenceChoiceId = models.AutoField(primary_key=True, editable=False)
+    RecurrenceChoice = models.CharField(max_length=300)
+
+
+class ReminderType(models.Model):
+    ReminderTypeId = models.AutoField(primary_key=True, editable=False)
+    ReminderType = models.CharField(max_length=300)

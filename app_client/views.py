@@ -6,8 +6,8 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
-from app_client.models import Client, ClientAddress, ClientBankDetails, ClientDocuments, ClientOtherDetails, ClientVisitRegister, ContactPerson
-from app_client.serializers import ClientAddressSerializer, ClientBankDetailsSerializer, ClientDocumentsSerializer, ClientOtherDetailsSerializer, ClientSerializer, ClientVisitRegisterSerializer, ContactPersonSerializer
+from app_client.models import Client, ClientAddress, ClientBankDetails, ClientDocuments, ClientOtherDetails, ClientReminder, ClientVisitRegister, ContactPerson
+from app_client.serializers import ClientAddressSerializer, ClientBankDetailsSerializer, ClientDocumentsSerializer, ClientOtherDetailsSerializer, ClientReminderSerializer, ClientSerializer, ClientVisitRegisterSerializer, ContactPersonSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -197,6 +197,12 @@ def ClientApiById(request, ClientId=""):
             clientDocumentsSerializer = ClientDocumentsSerializer(
                 clientDocuments, many=True)
             clientData['ClientDocuments'] = clientDocumentsSerializer.data
+
+            clientReminder = ClientReminder.objects.filter(ClientId=ClientId)
+            clientReminderSerializer = ClientReminderSerializer(
+                clientReminder, many=True)
+            clientData['ClientReminder'] = clientReminderSerializer.data
+
             clientAddress = ClientAddress.objects.filter(ClientId=ClientId)
             clientAddressSerializer = ClientAddressSerializer(
                 clientAddress, many=True)
@@ -786,6 +792,67 @@ def ClientBankDetailsApiByClientId(request, ClientId=""):
             clientBankDetailsSerializer = ClientBankDetailsSerializer(
                 clientBankDetails, many=True)
             return JsonResponse(clientBankDetailsSerializer.data, safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=ClientReminderSerializer, operation_description="NOTE: API for save ClientReminder")
+@swagger_auto_schema(method='PUT', request_body=ClientReminderSerializer, operation_description="NOTE: API for edit ClientReminder")
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get all ClientReminder",)
+@api_view(['GET', 'POST', 'PUT'])
+@retry(retries=3, delay=2)
+def ClientReminderApi(request):
+    try:
+        if request.method == 'GET':
+            contactPerson = ClientReminder.objects.all()
+            contactPersonSerializer = ClientReminderSerializer(
+                contactPerson, many=True)
+            return JsonResponse(contactPersonSerializer.data, safe=False)
+        elif request.method == 'POST':
+            contactPersonData = JSONParser().parse(request)
+            contactPersonSerializer = ClientReminderSerializer(
+                data=contactPersonData)
+            if contactPersonSerializer.is_valid():
+                contactPersonSerializer.save()
+                return JsonResponse(contactPersonSerializer.data['ClientReminderId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            contactPersonData = JSONParser().parse(request)
+            contactPerson = ClientReminder.objects.get(
+                ClientReminderId=contactPersonData['ClientReminderId'])
+            contactPersonSerializer = ClientReminderSerializer(
+                contactPerson, data=contactPersonData)
+            if contactPersonSerializer.is_valid():
+                contactPersonSerializer.save()
+                return JsonResponse(contactPersonSerializer.data['ClientReminderId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get ClientReminder by ClientReminderId",)
+@swagger_auto_schema(method='DELETE', operation_description="NOTE: API for delete ClientReminder by ClientReminderId",)
+@api_view(['GET', 'DELETE'])
+@retry(retries=3, delay=2)
+def ClientReminderApiById(request, ClientReminderId=""):
+    try:
+        if request.method == 'GET':
+            contactPerson = ClientReminder.objects.get(
+                ClientReminderId=ClientReminderId)
+            contactPersonSerializer = ClientReminderSerializer(
+                contactPerson)
+            return JsonResponse(contactPersonSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            contactPerson = ClientReminder.objects.get(
+                ClientReminderId=ClientReminderId)
+            contactPerson.delete()
+            return JsonResponse("Deleted successfully", safe=False)
         else:
             return JsonResponse("", safe=False)
     except:

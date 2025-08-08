@@ -7,23 +7,14 @@ urlpatterns = [
     url(r'^TaskStatusById/(?P<StatusId>[0-9a-zA-Z\-]+)$',
         views.TaskStatusApiById),
     path('get_permissions/', views.get_permissions),
-
     path('UserType/', views.UserTypeApi),
-
-
-
     path('Currency/', views.CurrencyApi),
     path('PaymentMode/', views.PaymentModeApi),
     path('DepositTo/', views.DepositToApi),
     path('InvoiceStatus/', views.InvoiceStatusApi),
-
-
     path('StaffStatusApi/', views.StaffStatusApi),
     path('LeaveTypeApi/', views.LeaveTypeApi),
     path('LeaveStatus/', views.LeaveStatusApi),
-
-
-
     path('DocumentTypeApi/', views.DocumentTypeApi),
     path('SectionTypeApi/', views.SectionTypeApi),
     path('CategoryTypeApi/', views.CategoryTypeApi),
@@ -39,7 +30,8 @@ urlpatterns = [
     path('CountryCodeApi/', views.CountryCodeApi),
     path('ClientReferenceApi/', views.ClientReferenceApi),
     path('AccessLinkApi/', views.AccessLinkApi),
-
     path('SiteContactType/', views.SiteContactTypeApi),
+    path('RecurrenceChoiceApi/', views.RecurrenceChoiceApi),
+    path('ReminderTypeApi/', views.ReminderTypeApi),
 
 ]
