@@ -215,7 +215,7 @@ def LoginHistoryApi(request):
                 obj, created = DeviceToken.objects.update_or_create(
                     Token=Token,
                     defaults={'UserId': UserId,
-                              'Active': True, UserType: UserType}
+                              'Active': True, 'UserType': UserType}
                 )
             # login = Login.objects.get(UserId=loginHistoryData['UserId'])
             # login.Token = loginHistoryData['Token']
