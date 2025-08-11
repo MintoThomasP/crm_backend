@@ -1479,10 +1479,26 @@ def CommentApi(request, pk=""):
                         "notification_type": "Comment",
                         "id": ""
                     })
-                if task.TaskAssignedBy == commentSerializer.data['CommentedBy'] and task.TaskAssignedTo != commentSerializer.data['CommentedBy']:
+
+                elif task.TaskAssignedBy == commentSerializer.data['CommentedBy'] and task.TaskAssignedTo != commentSerializer.data['CommentedBy']:
                     # login = Login.objects.get(
                     #     UserId=task.TaskAssignedTo)
                     # if login.Token:
+                    staff = Staff.objects.get(
+                        StaffId=commentSerializer.data['CommentedBy'])
+                    staffSerializer = StaffSerializer(staff)
+                    sendNotification({
+                        "title": "Comments",
+                        "body": commentSerializer.data['Comment'],
+                        # "token": login.Token,
+                        "fromuser": commentSerializer.data['CommentedBy'],
+                        "touser": task.TaskAssignedTo,
+                        "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
+                        "notification_type": "Comment",
+                        "id": ""
+                    })
+                else:
+
                     staff = Staff.objects.get(
                         StaffId=commentSerializer.data['CommentedBy'])
                     staffSerializer = StaffSerializer(staff)
