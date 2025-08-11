@@ -13,7 +13,7 @@ class DeviceToken(models.Model):
     Token = models.CharField(max_length=512, unique=True)
     CreatedAt = models.DateTimeField(auto_now_add=True)
     Active = models.BooleanField(default=True)
-    UserType = models.CharField(max_length=50, unique=True)
+    UserType = models.CharField(max_length=50)
 
     def __str__(self):
         return f"{self.UserId} - {self.Token[:20]}..."
