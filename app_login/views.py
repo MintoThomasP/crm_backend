@@ -188,90 +188,90 @@ def UpdateUserTypeApi(request, pk=""):
 @api_view(['GET', 'POST', 'PUT'])
 @retry(retries=3, delay=2)
 def LoginHistoryApi(request):
-    try:
-        if request.method == 'GET':
-            loginHistory = LoginHistory.objects.all().order_by('-SortId')
-            loginHistorySerializer = LoginHistorySerializer(
-                loginHistory, many=True)
-            return JsonResponse(loginHistorySerializer.data, safe=False)
-        elif request.method == 'POST':
-            loginHistoryData = JSONParser().parse(request)
-            loginHistorySerializer = LoginHistorySerializer(
-                data=loginHistoryData)
+    # try:
+    if request.method == 'GET':
+        loginHistory = LoginHistory.objects.all().order_by('-SortId')
+        loginHistorySerializer = LoginHistorySerializer(
+            loginHistory, many=True)
+        return JsonResponse(loginHistorySerializer.data, safe=False)
+    elif request.method == 'POST':
+        loginHistoryData = JSONParser().parse(request)
+        loginHistorySerializer = LoginHistorySerializer(
+            data=loginHistoryData)
+        try:
+            loginHistoryOld = LoginHistory.objects.get(Q(Q(LogoutTime__isnull=True) | Q(
+                LogoutTime='')) & Q(UserId=loginHistoryData['UserId']))
+            loginHistoryOld.LogoutTime = loginHistoryData['LoginTime']
+            loginHistoryOld.save()
+        except:
+            p = ""
+        if loginHistorySerializer.is_valid():
+            loginHistorySerializer.save()
+
+            UserId = loginHistoryData['UserId']
+            Token = loginHistoryData['Token']
+            UserType = loginHistoryData['UserType']
+            if Token:
+                obj, created = DeviceToken.objects.update_or_create(
+                    Token=Token,
+                    defaults={'UserId': UserId,
+                              'Active': True, UserType: UserType}
+                )
+            # login = Login.objects.get(UserId=loginHistoryData['UserId'])
+            # login.Token = loginHistoryData['Token']
+            # login.save()
+            return JsonResponse(loginHistorySerializer.data['LoginHistoryId'], safe=False)
+        return JsonResponse("Failed to add", safe=False)
+    elif request.method == 'PUT':
+        loginHistoryData = JSONParser().parse(request)
+        loginHistory = LoginHistory.objects.get(
+            LoginHistoryId=loginHistoryData['LoginHistoryId'])
+        loginHistorySerializer = LoginHistorySerializer(
+            loginHistory, data=loginHistoryData)
+        if loginHistorySerializer.is_valid():
+            loginHistorySerializer.save()
             try:
-                loginHistoryOld = LoginHistory.objects.get(Q(Q(LogoutTime__isnull=True) | Q(
-                    LogoutTime='')) & Q(UserId=loginHistoryData['UserId']))
-                loginHistoryOld.LogoutTime = loginHistoryData['LoginTime']
-                loginHistoryOld.save()
+                deviceToken = DeviceToken.objects.get(
+                    Token=loginHistoryData['Token'])
+                if deviceToken:
+                    deviceToken.Active = False
+                    deviceToken.save()
             except:
                 p = ""
-            if loginHistorySerializer.is_valid():
-                loginHistorySerializer.save()
-
-                UserId = loginHistoryData['UserId']
-                Token = loginHistoryData['Token']
-                UserType = loginHistoryData['UserType']
-                if Token:
-                    obj, created = DeviceToken.objects.update_or_create(
-                        Token=Token,
-                        defaults={'UserId': UserId,
-                                  'Active': True, UserType: UserType}
+            try:
+                login = Login.objects.get(UserId=loginHistory.UserId)
+                login.Token = ""
+                login.save()
+            except:
+                p = ""
+            try:
+                projectTask = ProjectTask.objects.filter(
+                    TaskAssignedTo=loginHistoryData['UserId'])
+                projectTaskSerializer = ProjectTaskSerializer(
+                    projectTask, many=True)
+                for row in projectTaskSerializer.data:
+                    taskTimings = ProjectTaskTiming.objects.filter(
+                        Q(EndDate__isnull=True) | Q(EndDate=""),
+                        ProjectTaskId=row['ProjectTaskId']
                     )
-                # login = Login.objects.get(UserId=loginHistoryData['UserId'])
-                # login.Token = loginHistoryData['Token']
-                # login.save()
-                return JsonResponse(loginHistorySerializer.data['LoginHistoryId'], safe=False)
-            return JsonResponse("Failed to add", safe=False)
-        elif request.method == 'PUT':
-            loginHistoryData = JSONParser().parse(request)
-            loginHistory = LoginHistory.objects.get(
-                LoginHistoryId=loginHistoryData['LoginHistoryId'])
-            loginHistorySerializer = LoginHistorySerializer(
-                loginHistory, data=loginHistoryData)
-            if loginHistorySerializer.is_valid():
-                loginHistorySerializer.save()
-                try:
-                    deviceToken = DeviceToken.objects.get(
-                        Token=loginHistoryData['Token'])
-                    if deviceToken:
-                        deviceToken.Active = False
-                        deviceToken.save()
-                except:
-                    p = ""
-                try:
-                    login = Login.objects.get(UserId=loginHistory.UserId)
-                    login.Token = ""
-                    login.save()
-                except:
-                    p = ""
-                try:
-                    projectTask = ProjectTask.objects.filter(
-                        TaskAssignedTo=loginHistoryData['UserId'])
-                    projectTaskSerializer = ProjectTaskSerializer(
-                        projectTask, many=True)
-                    for row in projectTaskSerializer.data:
-                        taskTimings = ProjectTaskTiming.objects.filter(
-                            Q(EndDate__isnull=True) | Q(EndDate=""),
-                            ProjectTaskId=row['ProjectTaskId']
-                        )
 
-                        for taskTiming in taskTimings:
-                            taskTiming.EndDate = loginHistoryData['LogoutTime']
-                            taskTiming.save()
-                        projectTask = ProjectTask.objects.get(
-                            ProjectTaskId=row['ProjectTaskId'])
-                        if projectTask.Status == '2':
-                            projectTask.Status = 10
-                            projectTask.EndDate = loginHistoryData['LogoutTime']
-                            projectTask.save()
-                except:
-                    p = ""
-                return JsonResponse(loginHistorySerializer.data['LoginHistoryId'], safe=False)
-            return JsonResponse("Failed to Update", safe=False)
-        else:
-            return JsonResponse("", safe=False)
-    except:
+                    for taskTiming in taskTimings:
+                        taskTiming.EndDate = loginHistoryData['LogoutTime']
+                        taskTiming.save()
+                    projectTask = ProjectTask.objects.get(
+                        ProjectTaskId=row['ProjectTaskId'])
+                    if projectTask.Status == '2':
+                        projectTask.Status = 10
+                        projectTask.EndDate = loginHistoryData['LogoutTime']
+                        projectTask.save()
+            except:
+                p = ""
+            return JsonResponse(loginHistorySerializer.data['LoginHistoryId'], safe=False)
+        return JsonResponse("Failed to Update", safe=False)
+    else:
         return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
 
 
 @csrf_exempt
