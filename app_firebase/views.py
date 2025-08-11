@@ -1,4 +1,6 @@
 
+from html import unescape
+import re
 from django.conf import settings
 from app_site.serializers import NotificationSerializer
 import firebase_admin
@@ -111,12 +113,17 @@ def init_firebase():
 # optional helper to send message
 
 
+def remove_html_tags(text):
+    clean = re.sub(r'<[^>]*>', '', text or "")
+    return unescape(clean)
+
+
 def send_message_to_Token(Token: str, title: str, body: str, data: dict = None):
     init_firebase()
     message = messaging.Message(
         notification=messaging.Notification(
-            title=title,
-            body=body
+            title=remove_html_tags(title),
+            body=remove_html_tags(body)
         ),
         token=Token,
         data=data or {}
