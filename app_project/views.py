@@ -3,6 +3,7 @@ import base64
 from django.core.files.base import ContentFile
 import shutil
 import os
+from app_firebase.models import DeviceToken
 from app_firebase.views import saveNotification, send_message_to_Token
 from firebase_admin import messaging, initialize_app, credentials
 from django.http import JsonResponse
@@ -633,25 +634,25 @@ def ProjectTaskApi(request):
 
             if projectTaskSerializer.data['TaskType'] == "Task" or projectTaskSerializer.data['TaskType'] == "Ticket":
                 try:
-                    login = Login.objects.get(
-                        UserId=projectTaskSerializer.data['TaskAssignedTo'])
-                    if login.Token:
-                        title = "New task added"
-                        if projectTaskSerializer.data['TaskType'] == "Ticket":
-                            title = "New ticket raised"
-                        staff = Staff.objects.get(
-                            StaffId=projectTaskSerializer.data['TaskAssignedBy'])
-                        staffSerializer = StaffSerializer(staff)
-                        sendNotification({
-                            "title": title,
-                            "body": projectTaskSerializer.data['Title'],
-                            "token": login.Token,
-                            "fromuser": projectTaskSerializer.data['TaskAssignedBy'],
-                            "touser": projectTaskSerializer.data['TaskAssignedTo'],
-                            "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
-                            "notification_type": "Task",
-                            "id": projectTaskSerializer.data['ProjectTaskId']
-                        })
+                    # login = Login.objects.get(
+                    #     UserId=projectTaskSerializer.data['TaskAssignedTo'])
+                    # if login.Token:
+                    title = "New task added"
+                    if projectTaskSerializer.data['TaskType'] == "Ticket":
+                        title = "New ticket raised"
+                    staff = Staff.objects.get(
+                        StaffId=projectTaskSerializer.data['TaskAssignedBy'])
+                    staffSerializer = StaffSerializer(staff)
+                    sendNotification({
+                        "title": title,
+                        "body": projectTaskSerializer.data['Title'],
+                        # "token": login.Token,
+                        "fromuser": projectTaskSerializer.data['TaskAssignedBy'],
+                        "touser": projectTaskSerializer.data['TaskAssignedTo'],
+                        "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
+                        "notification_type": "Task",
+                        "id": projectTaskSerializer.data['ProjectTaskId']
+                    })
 
                 except:
                     p = ""
@@ -683,43 +684,43 @@ def ProjectTaskApi(request):
                         projectTaskSerializer.data)
                     projectTaskPoint.save()
                 if projectTaskSerializer.data['Status'] == '3':
-                    login = Login.objects.get(
-                        UserId=projectTaskSerializer.data['TaskAssignedBy'])
+                    # login = Login.objects.get(
+                    #     UserId=projectTaskSerializer.data['TaskAssignedBy'])
                     title = "Need verification"
                     if projectTaskSerializer.data['TaskType'] == "Ticket":
                         title = "Ticket closed"
-                    if login.Token:
+                    # if login.Token:
 
-                        staff = Staff.objects.get(
-                            StaffId=projectTaskSerializer.data['TaskAssignedTo'])
-                        staffSerializer = StaffSerializer(staff)
-                        sendNotification({
-                            "title": title,
-                            "body": projectTaskSerializer.data['Title'],
-                            "token": login.Token,
-                            "fromuser": projectTaskSerializer.data['TaskAssignedTo'],
-                            "touser": projectTaskSerializer.data['TaskAssignedBy'],
-                            "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
-                            "notification_type": "Task",
-                            "id": projectTaskSerializer.data['ProjectTaskId']
-                        })
+                    staff = Staff.objects.get(
+                        StaffId=projectTaskSerializer.data['TaskAssignedTo'])
+                    staffSerializer = StaffSerializer(staff)
+                    sendNotification({
+                        "title": title,
+                        "body": projectTaskSerializer.data['Title'],
+                        # "token": login.Token,
+                        "fromuser": projectTaskSerializer.data['TaskAssignedTo'],
+                        "touser": projectTaskSerializer.data['TaskAssignedBy'],
+                        "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
+                        "notification_type": "Task",
+                        "id": projectTaskSerializer.data['ProjectTaskId']
+                    })
                 elif projectTaskSerializer.data['Status'] == '4' or projectTaskSerializer.data['Status'] == '5' or projectTaskSerializer.data['Status'] == '6':
-                    login = Login.objects.get(
-                        UserId=projectTaskSerializer.data['TaskAssignedTo'])
-                    if login.Token:
-                        staff = Staff.objects.get(
-                            StaffId=projectTaskSerializer.data['TaskAssignedBy'])
-                        staffSerializer = StaffSerializer(staff)
-                        sendNotification({
-                            "title": title,
-                            "body": projectTaskSerializer.data['Title'],
-                            "token": login.Token,
-                            "fromuser": projectTaskSerializer.data['TaskAssignedBy'],
-                            "touser": projectTaskSerializer.data['TaskAssignedTo'],
-                            "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
-                            "notification_type": "Task",
-                            "id": projectTaskSerializer.data['ProjectTaskId']
-                        })
+                    # login = Login.objects.get(
+                    #     UserId=projectTaskSerializer.data['TaskAssignedTo'])
+                    # if login.Token:
+                    staff = Staff.objects.get(
+                        StaffId=projectTaskSerializer.data['TaskAssignedBy'])
+                    staffSerializer = StaffSerializer(staff)
+                    sendNotification({
+                        "title": title,
+                        "body": projectTaskSerializer.data['Title'],
+                        # "token": login.Token,
+                        "fromuser": projectTaskSerializer.data['TaskAssignedBy'],
+                        "touser": projectTaskSerializer.data['TaskAssignedTo'],
+                        "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
+                        "notification_type": "Task",
+                        "id": projectTaskSerializer.data['ProjectTaskId']
+                    })
                 elif projectTaskSerializer.data['Status'] == '7' or projectTaskSerializer.data['Status'] == '8' or projectTaskSerializer.data['Status'] == '9':
                     if projectTaskSerializer.data['ClientId']:
                         payload = {
@@ -733,22 +734,22 @@ def ProjectTaskApi(request):
                             data=payload)
                         if clientVisitRegisterSerializer.is_valid():
                             clientVisitRegisterSerializer.save()
-                    login = Login.objects.get(
-                        UserId=projectTaskSerializer.data['TaskAssignedTo'])
-                    if login.Token:
-                        staff = Staff.objects.get(
-                            StaffId=projectTaskSerializer.data['TaskAssignedBy'])
-                        staffSerializer = StaffSerializer(staff)
-                        sendNotification({
-                            "title": "Verified",
-                            "body": projectTaskSerializer.data['Title'],
-                            "token": login.Token,
-                            "fromuser": projectTaskSerializer.data['TaskAssignedBy'],
-                            "touser": projectTaskSerializer.data['TaskAssignedTo'],
-                            "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
-                            "notification_type": "Task",
-                            "id": projectTaskSerializer.data['ProjectTaskId']
-                        })
+                    # login = Login.objects.get(
+                    #     UserId=projectTaskSerializer.data['TaskAssignedTo'])
+                    # if login.Token:
+                    staff = Staff.objects.get(
+                        StaffId=projectTaskSerializer.data['TaskAssignedBy'])
+                    staffSerializer = StaffSerializer(staff)
+                    sendNotification({
+                        "title": "Verified",
+                        "body": projectTaskSerializer.data['Title'],
+                        # "token": login.Token,
+                        "fromuser": projectTaskSerializer.data['TaskAssignedBy'],
+                        "touser": projectTaskSerializer.data['TaskAssignedTo'],
+                        "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
+                        "notification_type": "Task",
+                        "id": projectTaskSerializer.data['ProjectTaskId']
+                    })
 
             return JsonResponse(projectTaskSerializer.data['ProjectTaskId'], safe=False)
 
@@ -1462,39 +1463,39 @@ def CommentApi(request, pk=""):
         # try:
             if comment['ShowNotification']:
                 if task.TaskAssignedBy != commentSerializer.data['CommentedBy'] and task.TaskAssignedTo == commentSerializer.data['CommentedBy']:
-                    login = Login.objects.get(
-                        UserId=task.TaskAssignedBy)
-                    if login.Token:
-                        staff = Staff.objects.get(
-                            StaffId=commentSerializer.data['CommentedBy'])
-                        staffSerializer = StaffSerializer(staff)
-                        sendNotification({
-                            "title": "Comments",
-                            "body": commentSerializer.data['Comment'],
-                            "token": login.Token,
-                            "fromuser": commentSerializer.data['CommentedBy'],
-                            "touser": task.TaskAssignedBy,
-                            "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
-                            "notification_type": "Comment",
-                            "id": ""
-                        })
+                    # login = Login.objects.get(
+                    #     UserId=task.TaskAssignedBy)
+                    # if login.Token:
+                    staff = Staff.objects.get(
+                        StaffId=commentSerializer.data['CommentedBy'])
+                    staffSerializer = StaffSerializer(staff)
+                    sendNotification({
+                        "title": "Comments",
+                        "body": commentSerializer.data['Comment'],
+                        # "token": login.Token,
+                        "fromuser": commentSerializer.data['CommentedBy'],
+                        "touser": task.TaskAssignedBy,
+                        "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
+                        "notification_type": "Comment",
+                        "id": ""
+                    })
                 if task.TaskAssignedBy == commentSerializer.data['CommentedBy'] and task.TaskAssignedTo != commentSerializer.data['CommentedBy']:
-                    login = Login.objects.get(
-                        UserId=task.TaskAssignedTo)
-                    if login.Token:
-                        staff = Staff.objects.get(
-                            StaffId=commentSerializer.data['CommentedBy'])
-                        staffSerializer = StaffSerializer(staff)
-                        sendNotification({
-                            "title": "Comments",
-                            "body": commentSerializer.data['Comment'],
-                            "token": login.Token,
-                            "fromuser": commentSerializer.data['CommentedBy'],
-                            "touser": task.TaskAssignedTo,
-                            "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
-                            "notification_type": "Comment",
-                            "id": ""
-                        })
+                    # login = Login.objects.get(
+                    #     UserId=task.TaskAssignedTo)
+                    # if login.Token:
+                    staff = Staff.objects.get(
+                        StaffId=commentSerializer.data['CommentedBy'])
+                    staffSerializer = StaffSerializer(staff)
+                    sendNotification({
+                        "title": "Comments",
+                        "body": commentSerializer.data['Comment'],
+                        # "token": login.Token,
+                        "fromuser": commentSerializer.data['CommentedBy'],
+                        "touser": task.TaskAssignedTo,
+                        "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
+                        "notification_type": "Comment",
+                        "id": ""
+                    })
         # except:
         #     p = ""
 
@@ -2068,11 +2069,16 @@ def sendNotification(notifyData):
         "notification_type": notifyData.notification_type,
         "id": notifyData.id
     }
-    send_message_to_Token(
-        notifyData.token,
-        notifyData.title,
-        notifyData.body,
-        data)
+
+    Tokens = DeviceToken.objects.filter(
+        UserId=notifyData.touser, Active=True).values_list('Token', flat=True)
+    if Tokens:
+        for Token in Tokens:
+            send_message_to_Token(
+                Token,
+                notifyData.title,
+                notifyData.body,
+                data)
     saveNotification(
         notifyData.fromuser,
         notifyData.touser,
