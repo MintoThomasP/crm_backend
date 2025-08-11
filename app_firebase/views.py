@@ -24,7 +24,7 @@ class DeviceTokenCreateView(APIView):
         # create or update
         obj, created = DeviceToken.objects.update_or_create(
             Token=Token,
-            defaults={'UserId': UserId, 'Active': True, UserType: UserType}
+            defaults={'UserId': UserId, 'Active': True, 'UserType': UserType}
         )
         serializer = DeviceTokenSerializer(obj)
         return Response(serializer.data, status=status.HTTP_201_CREATED if created else status.HTTP_200_OK)
