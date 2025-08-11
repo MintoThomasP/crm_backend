@@ -2081,25 +2081,25 @@ def schedule_repeated_tasks(request):
 def sendNotification(notifyData):
 
     data = {
-        "icon": notifyData.icon,
-        "notification_type": notifyData.notification_type,
-        "id": notifyData.id
+        "icon": notifyData['icon'],
+        "notification_type": notifyData['notification_type'],
+        "id": notifyData['id']
     }
 
     Tokens = DeviceToken.objects.filter(
-        UserId=notifyData.touser, Active=True).values_list('Token', flat=True)
+        UserId=notifyData['touser'], Active=True).values_list('Token', flat=True)
     if Tokens:
         for Token in Tokens:
             send_message_to_Token(
                 Token,
-                notifyData.title,
-                notifyData.body,
+                notifyData['title'],
+                notifyData['body'],
                 data)
     saveNotification(
-        notifyData.fromuser,
-        notifyData.touser,
-        notifyData.title,
-        notifyData.body,
+        notifyData['fromuser'],
+        notifyData['touser'],
+        notifyData['title'],
+        notifyData['body'],
         data)
 
 
