@@ -1445,92 +1445,92 @@ class UploadProjectTaskFile(APIView):
 @api_view(['GET', 'POST', 'PUT'])
 @retry(retries=3, delay=2)
 def CommentApi(request, pk=""):
-    # try:
-    if request.method == 'GET':
-        comment = Comments.objects.all()
-        commentSerializer = CommentsSerializer(
-            comment, many=True)
-        return JsonResponse(commentSerializer.data, safe=False)
-    elif request.method == 'POST':
-        comment = JSONParser().parse(request)
-        commentSerializer = CommentsSerializer(
-            data=comment)
+    try:
+        if request.method == 'GET':
+            comment = Comments.objects.all()
+            commentSerializer = CommentsSerializer(
+                comment, many=True)
+            return JsonResponse(commentSerializer.data, safe=False)
+        elif request.method == 'POST':
+            comment = JSONParser().parse(request)
+            commentSerializer = CommentsSerializer(
+                data=comment)
 
-        if commentSerializer.is_valid():
-            commentSerializer.save()
-            task = ProjectTask.objects.get(
-                ProjectTaskId=commentSerializer.data['ProjectTaskId'])
-        # try:
-            if comment['ShowNotification']:
-                if task.TaskAssignedBy != commentSerializer.data['CommentedBy'] and task.TaskAssignedTo == commentSerializer.data['CommentedBy']:
-                    # login = Login.objects.get(
-                    #     UserId=task.TaskAssignedBy)
-                    # if login.Token:
-                    staff = Staff.objects.get(
-                        StaffId=commentSerializer.data['CommentedBy'])
-                    staffSerializer = StaffSerializer(staff)
-                    sendNotification({
-                        "title": "Comments",
-                        "body": commentSerializer.data['Comment'],
-                        # "token": login.Token,
-                        "fromuser": commentSerializer.data['CommentedBy'],
-                        "touser": task.TaskAssignedBy,
-                        "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
-                        "notification_type": "Comment",
-                        "id": ""
-                    })
+            if commentSerializer.is_valid():
+                commentSerializer.save()
+                task = ProjectTask.objects.get(
+                    ProjectTaskId=commentSerializer.data['ProjectTaskId'])
+                try:
+                    if comment['ShowNotification']:
+                        if task.TaskAssignedBy != commentSerializer.data['CommentedBy'] and task.TaskAssignedTo == commentSerializer.data['CommentedBy']:
+                            # login = Login.objects.get(
+                            #     UserId=task.TaskAssignedBy)
+                            # if login.Token:
+                            staff = Staff.objects.get(
+                                StaffId=commentSerializer.data['CommentedBy'])
+                            staffSerializer = StaffSerializer(staff)
+                            sendNotification({
+                                "title": "Comments",
+                                "body": commentSerializer.data['Comment'],
+                                # "token": login.Token,
+                                "fromuser": commentSerializer.data['CommentedBy'],
+                                "touser": task.TaskAssignedBy,
+                                "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
+                                "notification_type": "Comment",
+                                "id": ""
+                            })
 
-                elif task.TaskAssignedBy == commentSerializer.data['CommentedBy'] and task.TaskAssignedTo != commentSerializer.data['CommentedBy']:
-                    # login = Login.objects.get(
-                    #     UserId=task.TaskAssignedTo)
-                    # if login.Token:
-                    staff = Staff.objects.get(
-                        StaffId=commentSerializer.data['CommentedBy'])
-                    staffSerializer = StaffSerializer(staff)
-                    sendNotification({
-                        "title": "Comments",
-                        "body": commentSerializer.data['Comment'],
-                        # "token": login.Token,
-                        "fromuser": commentSerializer.data['CommentedBy'],
-                        "touser": task.TaskAssignedTo,
-                        "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
-                        "notification_type": "Comment",
-                        "id": ""
-                    })
-                else:
+                        elif task.TaskAssignedBy == commentSerializer.data['CommentedBy'] and task.TaskAssignedTo != commentSerializer.data['CommentedBy']:
+                            # login = Login.objects.get(
+                            #     UserId=task.TaskAssignedTo)
+                            # if login.Token:
+                            staff = Staff.objects.get(
+                                StaffId=commentSerializer.data['CommentedBy'])
+                            staffSerializer = StaffSerializer(staff)
+                            sendNotification({
+                                "title": "Comments",
+                                "body": commentSerializer.data['Comment'],
+                                # "token": login.Token,
+                                "fromuser": commentSerializer.data['CommentedBy'],
+                                "touser": task.TaskAssignedTo,
+                                "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
+                                "notification_type": "Comment",
+                                "id": ""
+                            })
+                        else:
 
-                    staff = Staff.objects.get(
-                        StaffId=commentSerializer.data['CommentedBy'])
-                    staffSerializer = StaffSerializer(staff)
-                    sendNotification({
-                        "title": "Comments",
-                        "body": commentSerializer.data['Comment'],
-                        # "token": login.Token,
-                        "fromuser": commentSerializer.data['CommentedBy'],
-                        "touser": task.TaskAssignedTo,
-                        "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
-                        "notification_type": "Comment",
-                        "id": ""
-                    })
-        # except:
-        #     p = ""
+                            staff = Staff.objects.get(
+                                StaffId=commentSerializer.data['CommentedBy'])
+                            staffSerializer = StaffSerializer(staff)
+                            sendNotification({
+                                "title": "Comments",
+                                "body": commentSerializer.data['Comment'],
+                                # "token": login.Token,
+                                "fromuser": commentSerializer.data['CommentedBy'],
+                                "touser": task.TaskAssignedTo,
+                                "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
+                                "notification_type": "Comment",
+                                "id": ""
+                            })
+                except:
+                    p = ""
 
-            return JsonResponse(commentSerializer.data['CommentId'], safe=False)
-        return JsonResponse("Failed to add", safe=False)
-    elif request.method == 'PUT':
-        commentdata = JSONParser().parse(request)
-        comment = Comments.objects.get(
-            CommentId=commentdata['CommentId'])
-        commentSerializer = CommentsSerializer(
-            comment, data=commentdata)
-        if commentSerializer.is_valid():
-            commentSerializer.save()
-            return JsonResponse(commentSerializer.data['CommentId'], safe=False)
-        return JsonResponse("Failed to Update", safe=False)
-    else:
+                return JsonResponse(commentSerializer.data['CommentId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            commentdata = JSONParser().parse(request)
+            comment = Comments.objects.get(
+                CommentId=commentdata['CommentId'])
+            commentSerializer = CommentsSerializer(
+                comment, data=commentdata)
+            if commentSerializer.is_valid():
+                commentSerializer.save()
+                return JsonResponse(commentSerializer.data['CommentId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
         return JsonResponse("", safe=False)
-    # except:
-    #     return JsonResponse("", safe=False)
 
 
 @csrf_exempt
