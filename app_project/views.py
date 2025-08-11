@@ -3,6 +3,7 @@ import base64
 from django.core.files.base import ContentFile
 import shutil
 import os
+from app_firebase.views import saveNotification, send_message_to_Token
 from firebase_admin import messaging, initialize_app, credentials
 from django.http import JsonResponse
 from datetime import date
@@ -638,12 +639,18 @@ def ProjectTaskApi(request):
                         title = "New task added"
                         if projectTaskSerializer.data['TaskType'] == "Ticket":
                             title = "New ticket raised"
+                        staff = Staff.objects.get(
+                            StaffId=projectTaskSerializer.data['TaskAssignedBy'])
+                        staffSerializer = StaffSerializer(staff)
                         sendNotification({
                             "title": title,
                             "body": projectTaskSerializer.data['Title'],
                             "token": login.Token,
                             "fromuser": projectTaskSerializer.data['TaskAssignedBy'],
-                            "touser": projectTaskSerializer.data['TaskAssignedTo']
+                            "touser": projectTaskSerializer.data['TaskAssignedTo'],
+                            "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
+                            "notification_type": "Task",
+                            "id": projectTaskSerializer.data['ProjectTaskId']
                         })
 
                 except:
@@ -682,24 +689,36 @@ def ProjectTaskApi(request):
                     if projectTaskSerializer.data['TaskType'] == "Ticket":
                         title = "Ticket closed"
                     if login.Token:
+
+                        staff = Staff.objects.get(
+                            StaffId=projectTaskSerializer.data['TaskAssignedTo'])
+                        staffSerializer = StaffSerializer(staff)
                         sendNotification({
                             "title": title,
                             "body": projectTaskSerializer.data['Title'],
                             "token": login.Token,
                             "fromuser": projectTaskSerializer.data['TaskAssignedTo'],
-                            "touser": projectTaskSerializer.data['TaskAssignedBy']
+                            "touser": projectTaskSerializer.data['TaskAssignedBy'],
+                            "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
+                            "notification_type": "Task",
+                            "id": projectTaskSerializer.data['ProjectTaskId']
                         })
                 elif projectTaskSerializer.data['Status'] == '4' or projectTaskSerializer.data['Status'] == '5' or projectTaskSerializer.data['Status'] == '6':
                     login = Login.objects.get(
                         UserId=projectTaskSerializer.data['TaskAssignedTo'])
                     if login.Token:
+                        staff = Staff.objects.get(
+                            StaffId=projectTaskSerializer.data['TaskAssignedBy'])
+                        staffSerializer = StaffSerializer(staff)
                         sendNotification({
-                            "title": "Not verified",
+                            "title": title,
                             "body": projectTaskSerializer.data['Title'],
                             "token": login.Token,
                             "fromuser": projectTaskSerializer.data['TaskAssignedBy'],
-                            "touser": projectTaskSerializer.data['TaskAssignedTo']
-
+                            "touser": projectTaskSerializer.data['TaskAssignedTo'],
+                            "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
+                            "notification_type": "Task",
+                            "id": projectTaskSerializer.data['ProjectTaskId']
                         })
                 elif projectTaskSerializer.data['Status'] == '7' or projectTaskSerializer.data['Status'] == '8' or projectTaskSerializer.data['Status'] == '9':
                     if projectTaskSerializer.data['ClientId']:
@@ -717,12 +736,18 @@ def ProjectTaskApi(request):
                     login = Login.objects.get(
                         UserId=projectTaskSerializer.data['TaskAssignedTo'])
                     if login.Token:
+                        staff = Staff.objects.get(
+                            StaffId=projectTaskSerializer.data['TaskAssignedBy'])
+                        staffSerializer = StaffSerializer(staff)
                         sendNotification({
                             "title": "Verified",
                             "body": projectTaskSerializer.data['Title'],
                             "token": login.Token,
                             "fromuser": projectTaskSerializer.data['TaskAssignedBy'],
-                            "touser": projectTaskSerializer.data['TaskAssignedTo']
+                            "touser": projectTaskSerializer.data['TaskAssignedTo'],
+                            "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
+                            "notification_type": "Task",
+                            "id": projectTaskSerializer.data['ProjectTaskId']
                         })
 
             return JsonResponse(projectTaskSerializer.data['ProjectTaskId'], safe=False)
@@ -1440,23 +1465,35 @@ def CommentApi(request, pk=""):
                             login = Login.objects.get(
                                 UserId=task.TaskAssignedBy)
                             if login.Token:
+                                staff = Staff.objects.get(
+                                    StaffId=commentSerializer.data['CommentedBy'])
+                                staffSerializer = StaffSerializer(staff)
                                 sendNotification({
                                     "title": "Comments",
                                     "body": commentSerializer.data['Comment'],
                                     "token": login.Token,
                                     "fromuser": commentSerializer.data['CommentedBy'],
-                                    "touser": task.TaskAssignedBy
+                                    "touser": task.TaskAssignedBy,
+                                    "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
+                                    "notification_type": "Comment",
+                                    "id": ""
                                 })
                         if task.TaskAssignedBy == commentSerializer.data['CommentedBy'] and task.TaskAssignedTo != commentSerializer.data['CommentedBy']:
                             login = Login.objects.get(
                                 UserId=task.TaskAssignedTo)
                             if login.Token:
+                                staff = Staff.objects.get(
+                                    StaffId=commentSerializer.data['CommentedBy'])
+                                staffSerializer = StaffSerializer(staff)
                                 sendNotification({
                                     "title": "Comments",
                                     "body": commentSerializer.data['Comment'],
                                     "token": login.Token,
                                     "fromuser": commentSerializer.data['CommentedBy'],
-                                    "touser": task.TaskAssignedTo
+                                    "touser": task.TaskAssignedTo,
+                                    "icon": "https://crm-api-live.cubexizsoft.com"+staffSerializer.data['ProfilePhoto'],
+                                    "notification_type": "Comment",
+                                    "id": ""
                                 })
                 except:
                     p = ""
@@ -1858,209 +1895,6 @@ def GetAllProjectTaskApiByFiltering(request):
         return JsonResponse("", safe=False)
 
 
-# @api_view(['GET'])
-# def schedule_repeated_tasks(request):
-
-#     retries = 3
-#     for _ in range(retries):
-#         try:
-#             now = timezone.now()
-#             repeated_tasks = ProjectTask.objects.filter(IsRepeated=True)
-#             projectTaskSerializer = ProjectTaskSerializer(
-#                     repeated_tasks, many=True)
-#             data=[]
-#             i=0
-#             for task in repeated_tasks:
-#                 next_due_date = None
-
-#                 if task.RepeatInterval == 'daily':
-#                     next_due_date = task.LastAssigned + timedelta(days=1)
-
-#                 elif task.RepeatInterval == 'weekly':
-#                     next_due_date = task.LastAssigned + timedelta(weeks=1)
-#                 elif task.RepeatInterval == 'monthly':
-#                     next_due_date = task.LastAssigned + relativedelta(months=1)
-
-#                 if next_due_date and now <= next_due_date:
-#                     scheduled_deadline = next_due_date.strftime("%Y-%m-%dT%H:%M")
-#                     new_task = {
-#                         "ProjectId":task.ProjectId,
-#                         "TaskAssignedTo":task.TaskAssignedTo,
-#                         "TaskAssignedBy":task.TaskAssignedBy,
-#                         "Title":task.Title,
-#                         "Description":task.Description,
-#                         "Duration":task.Duration,
-#                         "Status":1,
-#                         "CreatedDate":now.strftime("%Y-%m-%d"),
-#                         "ScheduledDeadline":scheduled_deadline,
-#                         "TaskPoint":task.TaskPoint,
-#                         "TaskType":task.TaskType,
-#                         "RefId":task.RefId,
-#                         "IsRepeated":task.IsRepeated,
-#                         'RepeatInterval':task.RepeatInterval,
-#                         "LastAssigned":now
-#                     }
-#                     new_taskserializer = ProjectTaskSerializer(data=new_task)
-
-#                     if new_taskserializer.is_valid():
-#                         new_taskserializer.save()
-#                         subtasks = ProjectTask.objects.filter(RefId=task.ProjectTaskId)
-#                         subtaskSerializer=ProjectTaskSerializer(subtasks,many=True)
-#                         for subtask in subtaskSerializer.data:
-#                             new_subtask_data = {
-#                                 "ProjectId": subtask['ProjectId'],
-#                                 "TaskAssignedTo": subtask['TaskAssignedTo'],
-#                                 "TaskAssignedBy": subtask['TaskAssignedBy'],
-#                                 "Title": subtask['Title'],
-#                                 "Description": subtask['Description'],
-#                                 "Status": 1,
-#                                 "CreatedDate": now.strftime("%Y-%m-%d"),
-#                                 "ScheduledDeadline": scheduled_deadline,
-#                                 "TaskPoint": subtask['TaskPoint'],
-#                                 "TaskType": subtask['TaskType'],
-#                                 "RefId": new_taskserializer.data['ProjectTaskId']
-
-#                             }
-#                             new_subtaskserializer = ProjectTaskSerializer(data=new_subtask_data)
-#                             if new_subtaskserializer.is_valid():
-#                                 new_subtaskserializer.save()
-#                             else:
-
-#                                 print(new_subtaskserializer.errors)
-
-#                         i=i+1
-#                         data.append(new_taskserializer.data)
-
-
-#             return JsonResponse({"message": "Repeated tasks scheduled successfully.","data":data,"projectTaskSerializer":projectTaskSerializer.data,"count":i},safe=False)
-#         except NotImplementedError as e:
-#             # time.sleep(1)
-#             return JsonResponse({"error": "NotImplementedError occurred"}, status=500)
-#         # except Exception as e:
-#         #     # logger.error("Error: %s", e)
-#         #     return JsonResponse({"error": str(e)}, status=500)
-
-
-# from datetime import datetime
-# import json
-# from datetime import date
-# @api_view(['GET'])
-# def schedule_repeated_tasks(request):
-
-#     retries = 3
-#     for _ in range(retries):
-#         try:
-#             now = timezone.now()
-#             repeated_tasks = ProjectTask.objects.filter(IsRepeated=True)
-#             projectTaskSerializer = ProjectTaskSerializer(
-#                     repeated_tasks, many=True)
-#             data = []
-#             i = 0
-#             for task in repeated_tasks:
-#                 given_date = datetime.now()
-#                 day_of_week = int((given_date.weekday()+ 1))
-
-#                 next_Schduled_date = None
-#                 scheduled_deadline = None
-#                 if task.RepeatInterval == 'daily':
-#                     scheduled_days_str = task.ScheduledDays.strip('[] ')
-#                     ScheduledDays = list(map(int, scheduled_days_str.split(',')))
-#                     if day_of_week in ScheduledDays:
-#                         next_Schduled_date = now + timedelta(days=1)
-#                         scheduled_deadline = now + timedelta(days=1)
-#                         # next_Schduled_date = (timezone.now() + timedelta(days=1))
-#                         # scheduled_deadline = now + timedelta(days=1)
-#                         # next_Schduled_date = next_Schduled_date.date()
-#                         # for day in ScheduledDays:
-#                         #     n=1
-#                         #     next_date = given_date + timedelta(days=n)
-#                         #     next_day = next_date.weekday() + 1
-#                         #     print(next_day,"next_day")
-#                         #     n+1
-#                         #     if day in ScheduledDays:
-#                         #         next_Schduled_date =next_date
-#                         #         print(next_Schduled_date)
-
-#                         #         break
-
-
-#                 elif task.RepeatInterval == 'weekly':
-#                     next_Schduled_date = task.LastAssigned + timedelta(weeks=1)
-#                     scheduled_deadline = now + timedelta(weeks=1)
-#                 elif task.RepeatInterval == 'monthly':
-#                     # now=date.today()
-#                     scheduled_days_str = task.ScheduledDays.strip('[] ')
-#                     ScheduledDays = list(map(int, scheduled_days_str.split(',')))
-#                     month=int(given_date.strftime("%m"))
-#                     day=given_date.strftime("%d")
-#                     year=given_date.strftime("%Y")
-#                     if month in ScheduledDays:
-#                         createdDay=(task.SortId).strftime("%d")
-#                         if createdDay == day:
-#                             next_Schduled_date = date(year=int(year), month=int(month), day=int(day))
-#                             next_Schduled_date = datetime.combine(next_Schduled_date, datetime.min.time())
-#                             scheduled_deadline =  now + relativedelta(months=1)
-#                             # next_Schduled_date=f"{year}-{month}-{day}"
-#                             # next_Schduled_date = datetime.date(datetime.strptime(next_Schduled_date, '%Y-%m-%d'))
-
-
-#                             # next_Schduled_date = task.LastAssigned + relativedelta(months=1)
-#                             # scheduled_deadline = next_Schduled_date.strftime("%Y-%m-%dT%H:%M")
-#                             # print(scheduled_deadline)
-
-#                 if next_Schduled_date and now <= next_Schduled_date:
-#                     # scheduled_deadline = timezone.now() + relativedelta(months=1)
-
-#                     new_task = {
-#                         "ProjectId":task.ProjectId,
-#                         "TaskAssignedTo":task.TaskAssignedTo,
-#                         "TaskAssignedBy":task.TaskAssignedBy,
-#                         "Title":task.Title,
-#                         "Description":task.Description,
-#                         "Duration":task.Duration,
-#                         "Status":1,
-#                         "CreatedDate":given_date.strftime("%Y-%m-%dT%H:%M:%S%z"),
-#                         "ScheduledDeadline":scheduled_deadline.strftime("%Y-%m-%dT%H:%M"),
-#                         "TaskPoint":task.TaskPoint,
-#                         "TaskType":task.TaskType,
-#                         "RefId":task.RefId,
-#                         "LastAssigned":given_date,
-#                         "ClientId":task.ClientId
-#                     }
-
-#                     new_taskserializer = ProjectTaskSerializer(data=new_task)
-
-#                     if new_taskserializer.is_valid():
-#                         new_taskserializer.save()
-#                         subtasks = ProjectTask.objects.filter(RefId=task.ProjectTaskId)
-#                         subtaskSerializer=ProjectTaskSerializer(subtasks,many=True)
-#                         for subtask in subtaskSerializer.data:
-#                             new_subtask_data = {
-#                                 "ProjectId": subtask['ProjectId'],
-#                                 "TaskAssignedTo": subtask['TaskAssignedTo'],
-#                                 "TaskAssignedBy": subtask['TaskAssignedBy'],
-#                                 "Title": subtask['Title'],
-#                                 "Description": subtask['Description'],
-#                                 "Status": 1,
-#                                 "CreatedDate": given_date,
-#                                 "ScheduledDeadline": scheduled_deadline,
-#                                 "TaskPoint": subtask['TaskPoint'],
-#                                 "TaskType": subtask['TaskType'],
-#                                 "RefId": new_taskserializer.data['ProjectTaskId']
-
-#                             }
-#                             new_subtaskserializer = ProjectTaskSerializer(data=new_subtask_data)
-#                             if new_subtaskserializer.is_valid():
-#                                 new_subtaskserializer.save()
-#                             else:
-#                                 print(new_subtaskserializer.errors)
-
-#                         i=i+1
-#                         data.append(new_taskserializer.data)
-
-#             return JsonResponse({"message": "Repeated tasks scheduled successfully.","data":data,"projectTaskSerializer":projectTaskSerializer.data,"count":i},safe=False)
-#         except NotImplementedError as e:
-#             return JsonResponse({"error": "NotImplementedError occurred"}, status=500)
 @swagger_auto_schema(method='GET', operation_description="NOTE: API for Auto schedule repeated task",)
 @api_view(['GET'])
 def schedule_repeated_tasks(request):
@@ -2227,43 +2061,24 @@ def schedule_repeated_tasks(request):
 # initialize_app(cred)
 
 
-@csrf_exempt
-@api_view(['POST'])
-def send_notification(request):
-    notifyData = JSONParser().parse(request)
-
-    sendNotification(notifyData)
-
-
 def sendNotification(notifyData):
 
-    token = notifyData['token']
-    if not token:
-        return JsonResponse({'error': 'Token is required'}, status=400)
-
-    message = messaging.Message(
-        notification=messaging.Notification(
-            title=notifyData['title'],
-            body=notifyData['body'],
-        ),
-        token=token,
-    )
-
-    try:
-        response = messaging.send(message)
-        notificationdata = {
-            "Title": notifyData['title'],
-            "Message": notifyData['body'],
-            "FromUser": notifyData['fromuser'],
-            "ToUser": notifyData['touser'],
-        }
-        notificationSerializer = NotificationSerializer(
-            data=notificationdata)
-        if notificationSerializer.is_valid():
-            notificationSerializer.save()
-        return JsonResponse({'message': 'Notification sent', 'response': response})
-    except Exception as e:
-        return JsonResponse({'error': str(e)}, status=500)
+    data = {
+        "icon": notifyData.icon,
+        "notification_type": notifyData.notification_type,
+        "id": notifyData.id
+    }
+    send_message_to_Token(
+        notifyData.token,
+        notifyData.title,
+        notifyData.body,
+        data)
+    saveNotification(
+        notifyData.fromuser,
+        notifyData.touser,
+        notifyData.title,
+        notifyData.body,
+        data)
 
 
 @csrf_exempt

@@ -51,24 +51,28 @@ class SendNotificationToUserView(APIView):
                 icon="https://crm-api-live.cubexizsoft.com/media/FavIcon/11722800570325.webp")
             try:
                 resp = send_message_to_Token(Token, title, body, data)
+                saveNotification(FormUserId, ToUserId, title, body, data)
                 results.append({"Token": Token, "response": resp})
-
             except Exception as e:
                 results.append({"Token": Token, "error": str(e)})
 
-            notificationdata = {
-                "Title": title,
-                "Message": body,
-                "FromUser": FormUserId,
-                "ToUser": ToUserId,
-            }
-            notificationSerializer = NotificationSerializer(
-                data=notificationdata)
-            if notificationSerializer.is_valid():
-                notificationSerializer.save()
         return Response({"results": results})
 
 # optional: send to specific Token
+
+
+def saveNotification(FormUserId, ToUserId, title, body, data):
+    notificationdata = {
+        "Title": title,
+        "Message": body,
+        "FromUser": FormUserId,
+        "ToUser": ToUserId,
+        "Data": data
+    }
+    notificationSerializer = NotificationSerializer(
+        data=notificationdata)
+    if notificationSerializer.is_valid():
+        notificationSerializer.save()
 
 
 class SendNotificationToTokenView(APIView):

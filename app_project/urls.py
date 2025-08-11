@@ -61,9 +61,7 @@ urlpatterns = [
     path('GetAllProjectTaskApiByFiltering/',
          views.GetAllProjectTaskApiByFiltering),  # Get all task filtering
 
-    #  url(r'^send_notification/(?P<ProjectTaskId>[0-9a-zA-Z\-]+)$', views.send_notification_on_comment),
     path('schedule_repeated_tasks/', views.schedule_repeated_tasks),
-    path('send_notification/', views.send_notification),
 
     path('ProjectTaskTimingApi/', views.ProjectTaskTimingApi),
     url(r'^CURDprojectTaskTimingApiById/(?P<ProjectTaskTimingId>[0-9a-zA-Z\-]+)$',
