@@ -33,8 +33,7 @@ class SiteSettingsSerializer(serializers.ModelSerializer):
                   'StaffCodePrefix',
                   'DefaultMobilePrefix',
                   'BankAccount'
-        )
-
+                  )
 
 
 class SaveSiteSettingsSerializer(serializers.ModelSerializer):
@@ -63,9 +62,8 @@ class SaveSiteSettingsSerializer(serializers.ModelSerializer):
                   'SecondaryColor',
                   'StaffCodePrefix',
                   'DefaultMobilePrefix',
-                  'BankAccount'        
-        )
-
+                  'BankAccount'
+                  )
 
 
 class UploadSiteSettingsSerializer(serializers.ModelSerializer):
@@ -75,7 +73,7 @@ class UploadSiteSettingsSerializer(serializers.ModelSerializer):
                   'Logo',
                   'CompanySeal',
                   'FavIcon'
-        )
+                  )
 
 
 class NotificationSerializer(serializers.ModelSerializer):
@@ -86,8 +84,10 @@ class NotificationSerializer(serializers.ModelSerializer):
                   'Message',
                   'FromUser',
                   'ToUser',
-                  'CreatedDate'
-        )
+                  'CreatedDate',
+                  'Data'
+                  )
+
 
 class SiteMessageSerializer(serializers.ModelSerializer):
     class Meta:
@@ -97,7 +97,7 @@ class SiteMessageSerializer(serializers.ModelSerializer):
                   'CompanyId',
                   'SiteMessage',
                   'ExpiryDate'
-        )
+                  )
 
 
 class SiteContactSerializer(serializers.ModelSerializer):
@@ -113,5 +113,5 @@ class SiteContactSerializer(serializers.ModelSerializer):
                   'Message',
                   'Services',
                   'CompanyId'
-                 
+
                   )

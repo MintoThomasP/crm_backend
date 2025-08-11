@@ -28,12 +28,12 @@ from drf_yasg import openapi
 
 schema_view = get_schema_view(
     openapi.Info(
-      title="PROJECT MANAGE API",
-      default_version='v1',
-      description="Welcome to the Spog website documentation page",
-      terms_of_service="https://www.google.com/policies/terms/",
-      contact=openapi.Contact(email="contact@snippets234.local"),
-      license=openapi.License(name=""),
+        title="PROJECT MANAGE API",
+        default_version='v1',
+        description="Welcome to the Spog website documentation page",
+        terms_of_service="https://www.google.com/policies/terms/",
+        contact=openapi.Contact(email="contact@snippets234.local"),
+        license=openapi.License(name=""),
     ),
     public=False,
     permission_classes=(permissions.IsAuthenticated,),
@@ -58,13 +58,17 @@ urlpatterns = [
     path('api-credential/', include('app_credential.urls')),
     path('api-website-email/', include('app_website_email.urls')),
     path('api-vendor/', include('app_vendor.urls')),
+    path('api-noti/', include('app_firebase.urls')),
     path('swagger-json/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    path('swagger<str:format>', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
-    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    path('swagger<str:format>', schema_view.without_ui(
+        cache_timeout=0), name='schema-json'),
+    path('swagger/', schema_view.with_ui('swagger',
+         cache_timeout=0), name='schema-swagger-ui'),
+    path('redoc/', schema_view.with_ui('redoc',
+         cache_timeout=0), name='schema-redoc'),
     # url(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT,}),
 ]
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 
-admin.site.site_url = '/swagger/' 
+admin.site.site_url = '/swagger/'

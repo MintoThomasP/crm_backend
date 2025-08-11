@@ -2,59 +2,61 @@ from django.db import models
 import uuid
 from datetime import datetime
 # Create your models here.
-class SiteSettings(models.Model):
-    SiteSettingsId=models.CharField(
-        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
-    CompanyId=models.CharField(blank=True, null=True, max_length=50) 
-    Address=models.TextField(null=True,blank=True)
-    Email1=models.CharField(blank=True, null=True, max_length=150) 
-    Email2=models.CharField(blank=True, null=True, max_length=150) 
-    Phone1=models.CharField(blank=True, null=True, max_length=20)
-    Phone2=models.CharField(blank=True, null=True, max_length=20)
-    WhatsappNumber=models.CharField(blank=True, null=True, max_length=15)
-    GoogleMapLink=models.TextField(null=True,blank=True)  
-    InvoicePrefix=models.CharField(blank=True, null=True, max_length=300)
-    StaffCodePrefix=models.CharField(blank=True, null=True, max_length=300)
-    VendorCodePrefix=models.CharField(blank=True, null=True, max_length=300) 
-    QuotationPrefix=models.CharField(blank=True, null=True, max_length=300) 
-    DefaultMobilePrefix=models.CharField(blank=True, null=True, max_length=10)          
-    MobilePrefix=models.CharField(blank=True, null=True, max_length=10)          
-    TaxPercentage = models.CharField(max_length=4, blank=True, null=True) 
-    TaxType  = models.CharField(max_length=300, blank=True, null=True)            
-    CurrencyType = models.CharField(max_length=300, blank=True, null=True)
-    InvoiceTemplate=models.CharField(max_length=300, blank=True, null=True)
-    MobilePattern=models.CharField(blank=True, null=True, max_length=300)   
-    WhatsAppPattern = models.CharField(max_length=300, blank=True, null=True)
-    CompanySeal=models.FileField(upload_to='CompanySeal/',null=True,blank=True,max_length=300)
-    Logo=models.FileField(upload_to='logo/',null=True,blank=True,max_length=300)
-    PrimaryColor=models.CharField(max_length=50, blank=True, null=True)
-    SecondaryColor=models.CharField(max_length=50, blank=True, null=True)
-    FavIcon=models.FileField(upload_to='FavIcon/',null=True,blank=True,max_length=300)
-    BankAccount=models.TextField(null=True,blank=True)
 
+
+class SiteSettings(models.Model):
+    SiteSettingsId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    CompanyId = models.CharField(blank=True, null=True, max_length=50)
+    Address = models.TextField(null=True, blank=True)
+    Email1 = models.CharField(blank=True, null=True, max_length=150)
+    Email2 = models.CharField(blank=True, null=True, max_length=150)
+    Phone1 = models.CharField(blank=True, null=True, max_length=20)
+    Phone2 = models.CharField(blank=True, null=True, max_length=20)
+    WhatsappNumber = models.CharField(blank=True, null=True, max_length=15)
+    GoogleMapLink = models.TextField(null=True, blank=True)
+    InvoicePrefix = models.CharField(blank=True, null=True, max_length=300)
+    StaffCodePrefix = models.CharField(blank=True, null=True, max_length=300)
+    VendorCodePrefix = models.CharField(blank=True, null=True, max_length=300)
+    QuotationPrefix = models.CharField(blank=True, null=True, max_length=300)
+    DefaultMobilePrefix = models.CharField(
+        blank=True, null=True, max_length=10)
+    MobilePrefix = models.CharField(blank=True, null=True, max_length=10)
+    TaxPercentage = models.CharField(max_length=4, blank=True, null=True)
+    TaxType = models.CharField(max_length=300, blank=True, null=True)
+    CurrencyType = models.CharField(max_length=300, blank=True, null=True)
+    InvoiceTemplate = models.CharField(max_length=300, blank=True, null=True)
+    MobilePattern = models.CharField(blank=True, null=True, max_length=300)
+    WhatsAppPattern = models.CharField(max_length=300, blank=True, null=True)
+    CompanySeal = models.FileField(
+        upload_to='CompanySeal/', null=True, blank=True, max_length=300)
+    Logo = models.FileField(upload_to='logo/', null=True,
+                            blank=True, max_length=300)
+    PrimaryColor = models.CharField(max_length=50, blank=True, null=True)
+    SecondaryColor = models.CharField(max_length=50, blank=True, null=True)
+    FavIcon = models.FileField(
+        upload_to='FavIcon/', null=True, blank=True, max_length=300)
+    BankAccount = models.TextField(null=True, blank=True)
 
 
 class Notification(models.Model):
     NotificationId = models.CharField(
         max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
-    Title=models.CharField(blank=True, null=True, max_length=300)
-    Message=models.TextField(blank=True, null=True)
-    FromUser=models.CharField(blank=True, null=True, max_length=50)
-    ToUser=models.CharField(blank=True, null=True, max_length=300)
-    CreatedDate=models.DateTimeField(editable=False, default=datetime.now)
-
-
+    Title = models.CharField(blank=True, null=True, max_length=300)
+    Message = models.TextField(blank=True, null=True)
+    FromUser = models.CharField(blank=True, null=True, max_length=50)
+    ToUser = models.CharField(blank=True, null=True, max_length=300)
+    CreatedDate = models.DateTimeField(editable=False, default=datetime.now)
+    Data = models.JSONField(null=True)
 
 
 class SiteMessage(models.Model):
     SortId = models.DateTimeField(editable=False, default=datetime.now)
     SiteMessageId = models.CharField(
         max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
-    CompanyId=models.CharField(blank=True, null=True, max_length=50) 
-    SiteMessage = models.TextField( blank=True, null=True)
+    CompanyId = models.CharField(blank=True, null=True, max_length=50)
+    SiteMessage = models.TextField(blank=True, null=True)
     ExpiryDate = models.TextField(blank=True, null=True)
-
-
 
 
 class SiteContact(models.Model):
@@ -64,10 +66,9 @@ class SiteContact(models.Model):
     ContactType = models.CharField(max_length=300, blank=True, null=True)
     Name = models.CharField(max_length=300, blank=True, null=True)
     Email = models.CharField(max_length=300, blank=True, null=True)
-    
+
     PhoneNumber = models.CharField(max_length=50, blank=True, null=True)
     CompanyName = models.CharField(max_length=300, blank=True, null=True)
     Message = models.TextField(blank=True, null=True)
-    Services=models.CharField(max_length=300, blank=True, null=True)
-    CompanyId=models.CharField(max_length=50, blank=True, null=True)
-    
+    Services = models.CharField(max_length=300, blank=True, null=True)
+    CompanyId = models.CharField(max_length=50, blank=True, null=True)

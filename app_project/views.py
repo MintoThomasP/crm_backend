@@ -2215,16 +2215,16 @@ def schedule_repeated_tasks(request):
 #          next_run=timezone.now() + timedelta(seconds=10))
 
 
-# path to credentials.json file
-cred = credentials.Certificate(settings.GOOGLE_APPLICATION_CREDENTIALS)
+# # path to credentials.json file
+# cred = credentials.Certificate(settings.GOOGLE_APPLICATION_CREDENTIALS)
 
 
-firebase_app = firebase_admin.initialize_app(cred, name='app_project')
+# firebase_app = firebase_admin.initialize_app(cred, name='app_project')
 
 
-# Initialize the Firebase app (you only need to do this once)
-cred = credentials.Certificate(settings.GOOGLE_APPLICATION_CREDENTIALS)
-initialize_app(cred)
+# # Initialize the Firebase app (you only need to do this once)
+# cred = credentials.Certificate(settings.GOOGLE_APPLICATION_CREDENTIALS)
+# initialize_app(cred)
 
 
 @csrf_exempt

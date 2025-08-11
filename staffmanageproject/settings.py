@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import os
 from pathlib import Path
 import pymysql
 
@@ -28,7 +29,8 @@ SECRET_KEY = 'django-insecure-_5@07uks53!#s287u04jba(%+hqtq^jk50m4t$pxjz&rn7-hu8
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['127.0.0.1','crm-api.cubexizsoft.com','54.151.144.203','crm-api-live.cubexizsoft.com','192.168.1.14']
+ALLOWED_HOSTS = ['127.0.0.1', 'crm-api.cubexizsoft.com',
+                 '54.151.144.203', 'crm-api-live.cubexizsoft.com', '192.168.1.14']
 
 
 # Application definition
@@ -60,9 +62,9 @@ INSTALLED_APPS = [
     'app_todo',
     'app_website_email',
     'app_credential',
-    'app_vendor'
-    
-    
+    'app_vendor',
+    'app_firebase'
+
 ]
 
 MIDDLEWARE = [
@@ -77,7 +79,7 @@ MIDDLEWARE = [
     'django.middleware.gzip.GZipMiddleware',
     # 'staffmanageproject.corsmiddleware.DynamicCORSOriginMiddleware',
 ]
-CORS_ORIGIN_ALLOW_ALL=True
+CORS_ORIGIN_ALLOW_ALL = True
 
 # Set CORS_ORIGIN_ALLOW_ALL and CORS_ALLOWED_ORIGINS to defaults
 # CORS_ORIGIN_ALLOW_ALL = False
@@ -106,34 +108,32 @@ WSGI_APPLICATION = 'staffmanageproject.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': BASE_DIR / 'db.sqlite3',
-    # }
-
-     'default': {
-        'ENGINE': 'dj_db_conn_pool.backends.mysql',
-        # 'NAME': 'staffmanage_db2',
-        # 'USER': 'root',
-        # 'PASSWORD': '',
-        # 'PORT': '3309',
-        'NAME': 'staffmanage_db',
-        'USER': 'python_user',
-        'PASSWORD': 'Kq#oCWJN0sAR',
-        'PORT': '3306',
-        'HOST': 'localhost',
-        'POOL_OPTIONS' : {
-            'POOL_SIZE': 40,
-            'MAX_OVERFLOW': 60,
-            'RECYCLE': 3 * 60 * 60
-        },
-        'OPTIONS': {
-            'sql_mode': 'traditional',
-        }
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
+
+    #  'default': {
+    #     'ENGINE': 'dj_db_conn_pool.backends.mysql',
+    #     # 'NAME': 'staffmanage_db2',
+    #     # 'USER': 'root',
+    #     # 'PASSWORD': '',
+    #     # 'PORT': '3309',
+    #     'NAME': 'staffmanage_db',
+    #     'USER': 'python_user',
+    #     'PASSWORD': 'Kq#oCWJN0sAR',
+    #     'PORT': '3306',
+    #     'HOST': 'localhost',
+    #     'POOL_OPTIONS' : {
+    #         'POOL_SIZE': 40,
+    #         'MAX_OVERFLOW': 60,
+    #         'RECYCLE': 3 * 60 * 60
+    #     },
+    #     'OPTIONS': {
+    #         'sql_mode': 'traditional',
+    #     }
+    # }
 }
-
-
 
 
 # Password validation
@@ -164,22 +164,21 @@ TIME_ZONE = 'Asia/Kolkata'
 
 USE_I18N = True
 
-USE_TZ = False  
+USE_TZ = False
 
-import os
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/4.2/howto/static-files/
 
 STATIC_URL = '/static/'
 STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 
-MEDIA_URL='/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR,'media')
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 40, 
-    
+    'PAGE_SIZE': 40,
+
 }
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -191,29 +190,20 @@ Q_CLUSTER = {
     'name': 'DjangORM',
     'orm': 'default',  # Use Django's ORM + database for broker
 }
-GOOGLE_APPLICATION_CREDENTIALS='serviceAccountKey.json'
-# cred = credentials.Certificate("..\serviceAccountKey.json")
-# firebase_admin.initialize_app(cred)
-# import os
-# from firebase_admin import credentials
 
-# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-
-# firebase_cred = credentials.Certificate(os.path.join(BASE_DIR, 'serviceAccountKey.json'))
-
-WEBBUREAU_LOGO="https://webbureau.ae/assets/images/logo_dark.png"
+FIREBASE_SERVICE_ACCOUNT_PATH = BASE_DIR / "serviceAccountKey.json"
+WEBBUREAU_LOGO = "https://webbureau.ae/assets/images/logo_dark.png"
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.office365.com'
-EMAIL_HOST_USER_NAME='WEBBUREAU'
+EMAIL_HOST_USER_NAME = 'WEBBUREAU'
 EMAIL_HOST_USER = 'test.paintmart@outlook.com'
 EMAIL_HOST_PASSWORD = 'paintmart@123'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 
-CUBEXIZSOFT_MAIL_REGRADS="""Best Regards, 
+CUBEXIZSOFT_MAIL_REGRADS = """Best Regards, 
         <br/>
         
         <br/>
         """
-
