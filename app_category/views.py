@@ -335,7 +335,6 @@ def GetLedgerByCategoryType(request):
         data = []
         # for category_type in categoryType_serializer.data:
         categories = Category.objects.filter(
-            Q(RefId__isnull=True) | Q(RefId=""),
             ActiveStatus=1,
             SectionType=category_data['SectionType'], CategoryType__in=category_data[
                 'CategoryType'], CompanyId=category_data['CompanyId']
