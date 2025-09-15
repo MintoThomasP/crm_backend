@@ -369,7 +369,7 @@
             </div>
             {%if invoiceItems.count < 3 %} 
             <div class="sub_table1">
-                <table style="width:100%;border-bottom: 1px solid black;border-top: 1px solid black;">
+                <table style="width:100%;border-top: 1px solid black;">
                     <tr>
                         <td style="width: 10%;"></td>
                         <td style="width: 40%;"></td>
@@ -379,7 +379,9 @@
 
                     </tr>
 
-        {% comment %} {% if invoice.TaxType == "GST" and invoice.TaxAmount %} {% endcomment %}
+                </table>
+        {% if invoice.TaxType == "GST" and invoice.TaxAmount %}
+                <table style="width:100%;">
                     <tr >
                         <td style="width: 10%;"></td>
                         <td style="width: 40%;"></td>
@@ -396,8 +398,10 @@
                         <td style="width: 30%; text-align: right;">{{siteSettings.CurrencyType}} {{HalfTaxAmount | floatformat:2}}</td>
 
                     </tr>
-        {% comment %} {%endif%}
-                                        {%if invoice.TaxType == "IGST" and invoice.TaxAmount %}  {% endcomment %}
+                </table>
+        {%endif%}
+                                        {%if invoice.TaxType == "IGST" and invoice.TaxAmount %} 
+                <table style="width:100%;">
                     <tr >
                         <td style="width: 10%;"></td>
                         <td style="width: 40%;"></td>
@@ -406,8 +410,10 @@
                         <td style="width: 30%; text-align: right;">{{siteSettings.CurrencyType}} {{invoice.TaxAmount | floatformat:2}}</td>
 
                     </tr>
-        {% comment %} {%endif%}
-                                        {%if invoice.TaxType == "VAT" and invoice.TaxAmount %}  {% endcomment %}
+                </table>
+        {%endif%}
+                                        {%if invoice.TaxType == "VAT" and invoice.TaxAmount %} 
+                <table style="width:100%;">
                     <tr>
                         <td style="width: 10%;"></td>
                         <td style="width: 40%;"></td>
@@ -416,9 +422,9 @@
                         <td style="width: 30%; text-align: right;">{{siteSettings.CurrencyType}} {{invoice.TaxAmount | floatformat:2}}</td>
 
                     </tr>
-        {% comment %} {%endif%} {% endcomment %}
+        {%endif%}
                 </table>
-                <table style="width:100%;">
+                <table style="width:100%;border-top: 1px solid black;">
                     <tr>
                         <td style="width: 50%;" colspan="2">Amount in Words: <b>{{amountinwords}}</b></td>
                         <!-- <td style="width: 5%;"></td> -->
