@@ -369,7 +369,7 @@
             </div>
             {%if invoiceItems.count < 3 %} 
             <div class="sub_table1">
-                <table style="width:100%;border-top: 1px solid black;">
+                <table style="width:100%;border-top: 1px solid black;margin:0px;">
                     <tr>
                         <td style="width: 10%;"></td>
                         <td style="width: 40%;"></td>
@@ -381,7 +381,7 @@
 
                 </table>
         {% if invoice.TaxType == "GST" and invoice.TaxAmount %}
-                <table style="width:100%;">
+                <table style="width:100%;margin:0px;">
                     <tr >
                         <td style="width: 10%;"></td>
                         <td style="width: 40%;"></td>
@@ -401,7 +401,7 @@
                 </table>
         {%endif%}
                                         {%if invoice.TaxType == "IGST" and invoice.TaxAmount %} 
-                <table style="width:100%;">
+                <table style="width:100%;margin:0px;">
                     <tr >
                         <td style="width: 10%;"></td>
                         <td style="width: 40%;"></td>
@@ -413,7 +413,7 @@
                 </table>
         {%endif%}
                                         {%if invoice.TaxType == "VAT" and invoice.TaxAmount %} 
-                <table style="width:100%;">
+                <table style="width:100%;margin:0px;">
                     <tr>
                         <td style="width: 10%;"></td>
                         <td style="width: 40%;"></td>
