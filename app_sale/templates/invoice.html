@@ -378,6 +378,59 @@
                         <td style="width: 30%; text-align: right;">{{siteSettings.CurrencyType}} {{invoice.SubTotalAmount | floatformat:2}}</td>
 
                     </tr>
+
+                                        {% comment %} <h4 *ngIf="TaxType=='GST' && TaxAmount">
+                                            CGST{{' @ '}}{{InvoiceForm.value.TaxPercentage/2}} % :
+                                            {{Currency}} {{TaxAmount/2 |number:'1.2-2'}}<br />
+                                            SGST{{' @ '}}{{InvoiceForm.value.TaxPercentage/2}} % :
+                                            {{Currency}} {{TaxAmount/2 | number:'1.2-2'}}
+                                        </h4>
+                                        <h4 *ngIf="TaxType=='IGST' && TaxAmount">
+                                            IGST{{' @ '}}{{InvoiceForm.value.TaxPercentage}} % :
+                                            {{Currency}} {{TaxAmount | number:'1.2-2'}}
+                                        </h4>
+                                        <h4 *ngIf="TaxType=='VAT' && TaxAmount">
+                                            VAT{{' @ '}}{{InvoiceForm.value.TaxPercentage}} % :
+                                            {{Currency}} {{TaxAmount | number:'1.2-2'}}
+                                        </h4> {% endcomment %}
+                                        {%if invoice.axType=='GST' and invoice.TaxAmount %} 
+                    <tr style="border-bottom: 1px solid black;border-top: 1px solid black;">
+                        <td style="width: 10%;"></td>
+                        <td style="width: 40%;"></td>
+                        
+                        <td style="width: 20%; text-align: right; vertical-align: middle;"><b>CGST{{'@'}}{{invoice.TaxPercentage/2}}% </b></td>
+                        <td style="width: 30%; text-align: right;">{{siteSettings.CurrencyType}} {{invoice.TaxAmount/2 | floatformat:2}}</td>
+
+                    </tr>
+                    <tr style="border-bottom: 1px solid black;border-top: 1px solid black;">
+                        <td style="width: 10%;"></td>
+                        <td style="width: 40%;"></td>
+                        
+                        <td style="width: 20%; text-align: right; vertical-align: middle;"><b>SGST{{'@'}}{{invoice.TaxPercentage/2}}%</b></td>
+                        <td style="width: 30%; text-align: right;">{{siteSettings.CurrencyType}} {{invoice.TaxAmount/2 | floatformat:2}}</td>
+
+                    </tr>
+        {%endif%}
+                                        {%if invoice.TaxType=='IGST' and invoice.TaxAmount %} 
+                    <tr style="border-bottom: 1px solid black;border-top: 1px solid black;">
+                        <td style="width: 10%;"></td>
+                        <td style="width: 40%;"></td>
+                        
+                        <td style="width: 20%; text-align: right; vertical-align: middle;"><b>IGST{{'@'}}{{invoice.TaxPercentage/2}}%</b></td>
+                        <td style="width: 30%; text-align: right;">{{siteSettings.CurrencyType}} {{invoice.TaxAmount | floatformat:2}}</td>
+
+                    </tr>
+        {%endif%}
+                                        {%if invoice.TaxType=='VAT' and invoice.TaxAmount %} 
+                    <tr style="border-bottom: 1px solid black;border-top: 1px solid black;">
+                        <td style="width: 10%;"></td>
+                        <td style="width: 40%;"></td>
+                        
+                        <td style="width: 20%; text-align: right; vertical-align: middle;"><b>VAT{{'@'}}{{invoice.TaxPercentage/2}}%</b></td>
+                        <td style="width: 30%; text-align: right;">{{siteSettings.CurrencyType}} {{invoice.TaxAmount | floatformat:2}}</td>
+
+                    </tr>
+        {%endif%}
                     <tr>
                         <td style="width: 50%;" colspan="2">Amount in Words: <b>{{amountinwords}}</b></td>
                         <!-- <td style="width: 5%;"></td> -->

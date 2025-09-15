@@ -15,6 +15,7 @@ class CompanySerializer(serializers.ModelSerializer):
             'RegisteredOn',
             'Address',
             'Country',
+            'State',
             'UserGroup',
             'ActiveStatus'
         )

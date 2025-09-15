@@ -14,6 +14,7 @@ class Company(models.Model):
     RegisteredOn = models.CharField(max_length=150, blank=True, null=True)
     Address = models.TextField(blank=True, null=True)
     Country = models.CharField(blank=True, null=True, max_length=50)
+    State = models.CharField(blank=True, null=True, max_length=50)
     UserGroup = models.CharField(blank=True, null=True, max_length=300)
     ActiveStatus = models.BooleanField(default=True)
 
