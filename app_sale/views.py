@@ -828,7 +828,7 @@ class DownloadPDF(View):
         clientadrress = ClientAddress.objects.get(ClientId=invoice.ClientId)
         billingAddress = json.loads(invoice.BillingAddress)
         totalAmount = Decimal(invoice.TotalAmount)
-        invoice['HalfTax'] = float(invoice.TaxPercentage) / 2
+        HalfTax = float(invoice.TaxPercentage) / 2
 
         siteSettings = SiteSettings.objects.get(CompanyId=invoice.CompanyId)
         currencyType = siteSettings.CurrencyType
@@ -852,6 +852,7 @@ class DownloadPDF(View):
                    'amountinwords': amountinwords,
                    'company': company,
                    'client': client,
+                   'HalfTax': HalfTax,
                    'logo': logo}
         if siteSettings.InvoiceTemplate == 'invoice.html':
             pdf = render_to_pdf('invoice.html', context)
@@ -927,7 +928,7 @@ def ViewPDF(request, InvoiceId=""):
                 CompanyId=invoice.CompanyId)
             currencyType = siteSettings.CurrencyType
 
-            invoice['HalfTax'] = float(invoice.TaxPercentage) / 2
+            HalfTax = float(invoice.TaxPercentage) / 2
             amountinwords = decimal_number_to_words(totalAmount, currencyType)
             # amountinwords=decimal_number_to_words(totalAmount)
             try:
@@ -973,6 +974,7 @@ def ViewPDF(request, InvoiceId=""):
                 'client': client,
                 'company': company,
                 'bankAccount': bankAccount,
+                'HalfTax': HalfTax
             }
             if siteSettings.InvoiceTemplate == 'invoice.html':
 
