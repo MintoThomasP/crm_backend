@@ -14,9 +14,12 @@ class CompanySerializer(serializers.ModelSerializer):
             'Website',
             'RegisteredOn',
             'Address',
+            'Country',
             'UserGroup',
             'ActiveStatus'
         )
+
+
 class CompanyDocumentsSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompanyDocuments
@@ -31,6 +34,7 @@ class CompanyDocumentsSerializer(serializers.ModelSerializer):
             'DocumentNumber'
         )
 
+
 class SaveCompanyDocumentsSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompanyDocuments
@@ -43,25 +47,27 @@ class SaveCompanyDocumentsSerializer(serializers.ModelSerializer):
             'ExpiryDate',
             'DocumentNumber'
         )
+
+
 class UploadCompanyDocumentsSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompanyDocuments
         fields = (
-           
+
             'CompanyDocumentId',
             'Document',
         )
+
 
 class CompanyBankDetailsSerializer(serializers.ModelSerializer):
     class Meta:
         model = CompanyBankDetails
         fields = ('SortId',
-'BankDetailId',
-'CompanyId',
-'AccountHolderName',
-'BankName',
-'AccountNumber',
-'IFSCCode',
-'PrimaryAccount'
-)
-   
+                  'BankDetailId',
+                  'CompanyId',
+                  'AccountHolderName',
+                  'BankName',
+                  'AccountNumber',
+                  'IFSCCode',
+                  'PrimaryAccount'
+                  )
