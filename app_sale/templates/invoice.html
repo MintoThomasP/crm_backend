@@ -398,7 +398,7 @@
                         <td style="width: 10%;"></td>
                         <td style="width: 40%;"></td>
                         
-                        <td style="width: 20%; text-align: right; vertical-align: middle;"><b>CGST{{'@'}}{{invoice.TaxPercentage/2}}% </b></td>
+                        <td style="width: 20%; text-align: right; vertical-align: middle;"><b>CGST{{'@'}}{{invoice.HalfTax}}% </b></td>
                         <td style="width: 30%; text-align: right;">{{siteSettings.CurrencyType}} {{invoice.TaxAmount/2 | floatformat:2}}</td>
 
                     </tr>
@@ -406,7 +406,7 @@
                         <td style="width: 10%;"></td>
                         <td style="width: 40%;"></td>
                         
-                        <td style="width: 20%; text-align: right; vertical-align: middle;"><b>SGST{{'@'}}{{invoice.TaxPercentage/2}}%</b></td>
+                        <td style="width: 20%; text-align: right; vertical-align: middle;"><b>SGST{{'@'}}{{invoice.HalfTax}}%</b></td>
                         <td style="width: 30%; text-align: right;">{{siteSettings.CurrencyType}} {{invoice.TaxAmount/2 | floatformat:2}}</td>
 
                     </tr>

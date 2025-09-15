@@ -828,6 +828,8 @@ class DownloadPDF(View):
         clientadrress = ClientAddress.objects.get(ClientId=invoice.ClientId)
         billingAddress = json.loads(invoice.BillingAddress)
         totalAmount = Decimal(invoice.TotalAmount)
+        invoice['HalfTax'] = invoice.TaxPercentage / 2
+
         siteSettings = SiteSettings.objects.get(CompanyId=invoice.CompanyId)
         currencyType = siteSettings.CurrencyType
 
@@ -925,6 +927,7 @@ def ViewPDF(request, InvoiceId=""):
                 CompanyId=invoice.CompanyId)
             currencyType = siteSettings.CurrencyType
 
+            invoice['HalfTax'] = invoice.TaxPercentage / 2
             amountinwords = decimal_number_to_words(totalAmount, currencyType)
             # amountinwords=decimal_number_to_words(totalAmount)
             try:
