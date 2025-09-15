@@ -27,7 +27,9 @@ class ClientSerializer(serializers.ModelSerializer):
             'BalanceSheetLedger',
             'TotalWorkingHoursPerMonth',
             'TotalVisitPerMonth',
-            'Reference'
+            'Reference',
+            'TaxType',
+            'TaxId'
         )
 
 

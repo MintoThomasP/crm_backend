@@ -33,6 +33,8 @@ class Client(models.Model):
     TotalVisitPerMonth = models.IntegerField(default=0)
     # digital marketing, GoogleAds
     Reference = models.CharField(max_length=300, blank=True, null=True)
+    TaxType = models.CharField(max_length=300, blank=True, null=True)
+    TaxId = models.CharField(max_length=300, blank=True, null=True)
 
 
 class ClientOtherDetails(models.Model):

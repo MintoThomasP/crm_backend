@@ -326,6 +326,9 @@
                             {% if billingAddress.ZipCode %}
                             {{billingAddress.ZipCode}}
                             {% endif %}
+                            {% if client.TaxType and client.TaxId %}
+                            {{client.TaxType}}: {{client.TaxId}}
+                            {% endif %}
                         </p>
 
                     </td>

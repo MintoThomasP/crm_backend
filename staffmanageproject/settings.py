@@ -108,31 +108,31 @@ WSGI_APPLICATION = 'staffmanageproject.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 DATABASES = {
-    # 'default': {
-    #     'ENGINE': 'django.db.backends.sqlite3',
-    #     'NAME': BASE_DIR / 'db.sqlite3',
-    # }
-
     'default': {
-        'ENGINE': 'dj_db_conn_pool.backends.mysql',
-        # 'NAME': 'staffmanage_db2',
-        # 'USER': 'root',
-        # 'PASSWORD': '',
-        # 'PORT': '3309',
-        'NAME': 'staffmanage_db',
-        'USER': 'python_user',
-        'PASSWORD': 'Kq#oCWJN0sAR',
-        'PORT': '3306',
-        'HOST': 'localhost',
-        'POOL_OPTIONS': {
-            'POOL_SIZE': 40,
-            'MAX_OVERFLOW': 60,
-            'RECYCLE': 3 * 60 * 60
-        },
-        'OPTIONS': {
-            'sql_mode': 'traditional',
-        }
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
+
+    # 'default': {
+    #     'ENGINE': 'dj_db_conn_pool.backends.mysql',
+    #     # 'NAME': 'staffmanage_db2',
+    #     # 'USER': 'root',
+    #     # 'PASSWORD': '',
+    #     # 'PORT': '3309',
+    #     'NAME': 'staffmanage_db',
+    #     'USER': 'python_user',
+    #     'PASSWORD': 'Kq#oCWJN0sAR',
+    #     'PORT': '3306',
+    #     'HOST': 'localhost',
+    #     'POOL_OPTIONS': {
+    #         'POOL_SIZE': 40,
+    #         'MAX_OVERFLOW': 60,
+    #         'RECYCLE': 3 * 60 * 60
+    #     },
+    #     'OPTIONS': {
+    #         'sql_mode': 'traditional',
+    #     }
+    # }
 }
 
 
