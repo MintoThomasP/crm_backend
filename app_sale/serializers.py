@@ -66,6 +66,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
                   'SubTotalAmount',
                   'TaxPercentage',
                   'TaxAmount',
+                  'TaxType',
                   'TotalAmount',
                   'AmountDue',
                   'InvoiceFile',

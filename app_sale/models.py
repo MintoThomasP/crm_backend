@@ -64,6 +64,7 @@ class Invoice(models.Model):
     SubTotalAmount = models.CharField(blank=True, null=True, max_length=15)
     TaxPercentage = models.CharField(blank=True, null=True, max_length=15)
     TaxAmount = models.CharField(blank=True, null=True, max_length=15)
+    TaxType = models.CharField(blank=True, null=True, max_length=15)
     TotalAmount = models.CharField(blank=True, null=True, max_length=15)
     AmountDue = models.CharField(
         blank=True, null=True, max_length=15, default="0.00")
