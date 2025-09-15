@@ -65,7 +65,7 @@ class InvoiceSerializer(serializers.ModelSerializer):
                   'BillingAddress',
                   'SubTotalAmount',
                   'TaxPercentage',
-                  'TaxAmount'
+                  'TaxAmount',
                   'TotalAmount',
                   'AmountDue',
                   'InvoiceFile',

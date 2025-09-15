@@ -512,41 +512,41 @@ class InvoiceApiByCompanyId(generics.ListAPIView):
     serializer_class = InvoiceSerializer
 
     def post(self, request, *args, **kwargs):
-        # try:
-        filterData = JSONParser().parse(request)
-        if filterData['CompanyId']:
-            self.queryset = self.queryset.filter(
-                CompanyId=filterData['CompanyId'])
-        page = self.paginate_queryset(self.queryset)
-        if page is not None:
-            serializer = self.get_serializer(page, many=True)
-            data = []
+        try:
+            filterData = JSONParser().parse(request)
+            if filterData['CompanyId']:
+                self.queryset = self.queryset.filter(
+                    CompanyId=filterData['CompanyId'])
+            page = self.paginate_queryset(self.queryset)
+            if page is not None:
+                serializer = self.get_serializer(page, many=True)
+                data = []
 
-            for row in serializer.data:
-                try:
-                    client = Client.objects.get(ClientId=row['ClientId'])
-                    clientSerializer = ClientSerializer(client)
-                    row['ClientName'] = clientSerializer.data['CustomerDisplayName']
-                except:
-                    row['ClientName'] = []
-                try:
-                    invoiceStatus = InvoiceStatus.objects.get(
-                        InvoiceStatusId=row['Status'])
-                    invoiceStatusSerializer = InvoiceStatusSerializer(
-                        invoiceStatus)
-                    row['StatusName'] = invoiceStatusSerializer.data['InvoiceStatus']
-                except:
-                    row['StatusName'] = []
-                try:
-                    staff = Staff.objects.get(StaffId=row['SalesPerson'])
-                    staffSerializer = StaffSerializer(staff)
-                    row['StaffName'] = staffSerializer.data['StaffName']
-                except:
-                    row['StaffName'] = []
-                data.append(row)
-            return self.get_paginated_response(data)
-        # except:
-        #     return JsonResponse("", safe=False)
+                for row in serializer.data:
+                    try:
+                        client = Client.objects.get(ClientId=row['ClientId'])
+                        clientSerializer = ClientSerializer(client)
+                        row['ClientName'] = clientSerializer.data['CustomerDisplayName']
+                    except:
+                        row['ClientName'] = []
+                    try:
+                        invoiceStatus = InvoiceStatus.objects.get(
+                            InvoiceStatusId=row['Status'])
+                        invoiceStatusSerializer = InvoiceStatusSerializer(
+                            invoiceStatus)
+                        row['StatusName'] = invoiceStatusSerializer.data['InvoiceStatus']
+                    except:
+                        row['StatusName'] = []
+                    try:
+                        staff = Staff.objects.get(StaffId=row['SalesPerson'])
+                        staffSerializer = StaffSerializer(staff)
+                        row['StaffName'] = staffSerializer.data['StaffName']
+                    except:
+                        row['StaffName'] = []
+                    data.append(row)
+                return self.get_paginated_response(data)
+        except:
+            return JsonResponse("", safe=False)
 
 
 @csrf_exempt
