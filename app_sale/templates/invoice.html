@@ -393,7 +393,7 @@
                                             VAT{{' @ '}}{{InvoiceForm.value.TaxPercentage}} % :
                                             {{Currency}} {{TaxAmount | number:'1.2-2'}}
                                         </h4> {% endcomment %}
-                                        {%if invoice.TaxType=='GST' and invoice.TaxAmount %} 
+                                        {% if invoice.TaxType == "GST" and invoice.TaxAmount %}
                     <tr style="border-bottom: 1px solid black;border-top: 1px solid black;">
                         <td style="width: 10%;"></td>
                         <td style="width: 40%;"></td>
@@ -411,7 +411,7 @@
 
                     </tr>
         {%endif%}
-                                        {%if invoice.TaxType=='IGST' and invoice.TaxAmount %} 
+                                        {%if invoice.TaxType == "IGST" and invoice.TaxAmount %} 
                     <tr style="border-bottom: 1px solid black;border-top: 1px solid black;">
                         <td style="width: 10%;"></td>
                         <td style="width: 40%;"></td>
@@ -421,7 +421,7 @@
 
                     </tr>
         {%endif%}
-                                        {%if invoice.TaxType=='VAT' and invoice.TaxAmount %} 
+                                        {%if invoice.TaxType == "VAT" and invoice.TaxAmount %} 
                     <tr style="border-bottom: 1px solid black;border-top: 1px solid black;">
                         <td style="width: 10%;"></td>
                         <td style="width: 40%;"></td>
