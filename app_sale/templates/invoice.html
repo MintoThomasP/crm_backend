@@ -379,7 +379,7 @@
 
                     </tr>
 
-        {% if invoice.TaxType == "GST" and invoice.TaxAmount %}
+        {% comment %} {% if invoice.TaxType == "GST" and invoice.TaxAmount %} {% endcomment %}
                     <tr >
                         <td style="width: 10%;"></td>
                         <td style="width: 40%;"></td>
@@ -396,8 +396,8 @@
                         <td style="width: 30%; text-align: right;">{{siteSettings.CurrencyType}} {{HalfTaxAmount | floatformat:2}}</td>
 
                     </tr>
-        {%endif%}
-                                        {%if invoice.TaxType == "IGST" and invoice.TaxAmount %} 
+        {% comment %} {%endif%}
+                                        {%if invoice.TaxType == "IGST" and invoice.TaxAmount %}  {% endcomment %}
                     <tr >
                         <td style="width: 10%;"></td>
                         <td style="width: 40%;"></td>
@@ -406,8 +406,8 @@
                         <td style="width: 30%; text-align: right;">{{siteSettings.CurrencyType}} {{invoice.TaxAmount | floatformat:2}}</td>
 
                     </tr>
-        {%endif%}
-                                        {%if invoice.TaxType == "VAT" and invoice.TaxAmount %} 
+        {% comment %} {%endif%}
+                                        {%if invoice.TaxType == "VAT" and invoice.TaxAmount %}  {% endcomment %}
                     <tr>
                         <td style="width: 10%;"></td>
                         <td style="width: 40%;"></td>
@@ -416,7 +416,7 @@
                         <td style="width: 30%; text-align: right;">{{siteSettings.CurrencyType}} {{invoice.TaxAmount | floatformat:2}}</td>
 
                     </tr>
-        {%endif%}
+        {% comment %} {%endif%} {% endcomment %}
                 </table>
                 <table style="width:100%;">
                     <tr>
