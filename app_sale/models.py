@@ -51,7 +51,7 @@ class Invoice(models.Model):
     InvoiceId = models.CharField(
         max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
     InvoiceNumber = models.CharField(blank=True, null=True, max_length=50)
-    OrderNumber = models.CharField(blank=True, null=True, max_length=50)
+    OrderNumber = models.IntegerField(blank=True, null=True)
     CompanyId = models.CharField(blank=True, null=True, max_length=50)
     ClientId = models.CharField(blank=True, null=True, max_length=50)
     InvoiceDate = models.CharField(blank=True, null=True, max_length=50)
