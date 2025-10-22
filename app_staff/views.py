@@ -1,7 +1,5 @@
-from dateutil.relativedelta import relativedelta
 from datetime import datetime, date, timedelta
 import calendar
-import logging
 from django.db import connection
 from django.db.models import DateTimeField
 from django.db.models.functions import Cast
@@ -1204,131 +1202,88 @@ def GetSalarySlipByStaffId(request, StaffId=""):
         return JsonResponse("", safe=False)
 
 
-MONTHS = {
-    'january': 1, 'february': 2, 'march': 3, 'april': 4,
-    'may': 5, 'june': 6, 'july': 7, 'august': 8,
-    'september': 9, 'october': 10, 'november': 11, 'december': 12
-}
-
-logger = logging.getLogger(__name__)
-
-
 @csrf_exempt
 @swagger_auto_schema(method='GET', operation_description="NOTE: API for Create salary slip")
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def CreateSalarySlipApi(request, CompanyId=""):
-    if request.method != 'GET':
-        return JsonResponse({'error': 'Invalid request method'}, status=405)
-
     # try:
-    # ---------------------------
-    # 1️⃣ Determine target month
-    # ---------------------------
-    month_param = request.GET.get('month', '').strip()
-    year_param = request.GET.get('year', '').strip()
+    if request.method == 'GET':
+        staffDa = Staff.objects.filter(Status=1, CompanyId=CompanyId)
+        staffSerializer = StaffSerializer(
+            staffDa, many=True)
+        # return JsonResponse(staffSerializer.data, safe=False)
+        today = datetime.today()
+        first_day_of_this_month = today.replace(day=1)
+        last_day_of_last_month = first_day_of_this_month - timedelta(days=1)
+        last_month = last_day_of_last_month.month
+        last_month_year = last_day_of_last_month.year
+        days_in_last_month = calendar.monthrange(
+            last_month_year, last_month)[1]
 
-    today = timezone.localdate()
+        # First day of last month
+        first_day_of_last_month = last_day_of_last_month.replace(day=1)
 
-    if month_param:
-        # Normalize input
-        if '-' in month_param:  # e.g. "2025-09"
-            year, month = map(int, month_param.split('-'))
-        elif month_param.isdigit():  # e.g. "9"
-            month = int(month_param)
-            year = int(year_param) if year_param else today.year
-        else:  # e.g. "September"
-            month = MONTHS.get(month_param.lower())
-            if not month:
-                return JsonResponse({'error': f'Invalid month name: {month_param}'}, status=400)
-            year = int(year_param) if year_param else today.year
-    else:
-        # Default to last month
-        first_day_this_month = today.replace(day=1)
-        last_day_last_month = first_day_this_month - timedelta(days=1)
-        month = last_day_last_month.month
-        year = last_day_last_month.year
+        # Get the number of days in the last month
+        days_in_last_month = calendar.monthrange(
+            last_month_year, last_month)[1]
 
-    # Get first & last day of the month
-
-    first_day = make_aware_if_naive(datetime(year, month, 1))
-    days_in_month = calendar.monthrange(year, month)[1]
-    last_day = make_aware_if_naive(datetime(year, month, days_in_month))
-
-    # ---------------------------
-    # 2️⃣ Fetch staff data
-    # ---------------------------
-    staff_data = Staff.objects.filter(Status=1, CompanyId=CompanyId)
-    staff_serializer = StaffSerializer(staff_data, many=True)
-
-    created_count = 0
-    skipped_count = 0
-
-    # ---------------------------
-    # 3️⃣ Loop through each staff
-    # ---------------------------
-    for staff in staff_serializer.data:
-        try:
+        # Formatting the dates
+        first_day_str = str(first_day_of_last_month.strftime('%Y-%m-%d'))
+        last_day_str = str(last_day_of_last_month.strftime('%Y-%m-%d'))
+        for staff in staffSerializer.data:
+            # try:
+            first_day_time = datetime.fromisoformat(first_day_str)
+            last_day_time = datetime.fromisoformat(last_day_str)
             joining_date = datetime.fromisoformat(staff['JoinedOn'])
             no_working_days = 0
-
-            if first_day < joining_date:
-                no_working_days += (joining_date - first_day).days + 1
-
-            if staff['LeavingDate']:
-                relieving_date = datetime.fromisoformat(
-                    staff['LeavingDate'])
-                if last_day > relieving_date:
-                    no_working_days += (last_day - relieving_date).days + 1
-
-            total_working_days = days_in_month - no_working_days
-
-            # Leave Applications
-            leave_apps = LeaveApplication.objects.filter(
-                Q(LeaveFrom__range=(first_day, last_day)) |
-                Q(LeaveTo__range=(first_day, last_day)),
-                Status=2,
-                StaffId=staff['StaffId']
-            )
-            leave_serializer = LeaveApplicationSerializer(
-                leave_apps, many=True)
-            LOP = calculate_leave(leave_serializer.data, year, month)
-
-            PaidDays = total_working_days - LOP
+            if first_day_time < joining_date:
+                no_working_days = no_working_days + \
+                    (joining_date - first_day_time).days+1
+            if staff['LeavingDate'] is not None:
+                try:
+                    relieving_date = datetime.fromisoformat(
+                        staff['LeavingDate'])
+                    if last_day_time > relieving_date:
+                        no_working_days = no_working_days + \
+                            (last_day_time - relieving_date).days+1
+                except:
+                    p = 0
+            total_working_days = days_in_last_month-no_working_days
             salary = float(staff['Salary'])
-            salaryPay = (salary / days_in_month) * PaidDays
-
-            # Breakdown
-            BasicPay = salaryPay * 0.6
-            ConveyanceAllowance = salaryPay * 0.1
-            MedicalAllowance = salaryPay * 0.1
-            OtherAllowance = salaryPay * 0.2
-
-            # Performance Bonus
-            performance_point = ProjectTask.objects.filter(
-                Status__in=[7, 8, 9],
-                TaskAssignedTo=staff['StaffId'],
-                CreatedDate__range=(first_day, last_day),
-                TaskType='Task'
-            ).aggregate(average=Avg('TaskPoint'))['average']
-
+            start_date = timezone.datetime.strptime(
+                first_day_str, '%Y-%m-%d').date()
+            end_date = (timezone.datetime.strptime(
+                last_day_str, '%Y-%m-%d') + timezone.timedelta(days=1)).date()
+            leaveApplication = LeaveApplication.objects.filter(Q(LeaveFrom__range=(start_date, end_date)) | Q(
+                LeaveTo__range=(start_date, end_date)), Status__in=[2], StaffId=staff['StaffId'])
+            leaveApplicationSerializer = LeaveApplicationSerializer(
+                leaveApplication, many=True)
+            LOP = calculate_leave(
+                leaveApplicationSerializer.data, last_month_year, last_month)
+            PaidDays = total_working_days-LOP
+            Leave = 0
+            salaryPay = (float(salary)/float(days_in_last_month)*(PaidDays))
+            BasicPay = salaryPay*.6
+            ConveyanceAllowance = salaryPay*.1
+            MedicalAllowance = salaryPay*.1
+            OtherAllowance = salaryPay*.2
             AppreciationBonus = 0
-            if performance_point and float(performance_point) >= 1.5:
+            PerformancePoint = ProjectTask.objects.filter(Status__in=[7, 8, 9], TaskAssignedTo=staff['StaffId'], CreatedDate__range=(
+                start_date, end_date), TaskType='Task').aggregate(average=Avg('TaskPoint'))['average']
+            if PerformancePoint and float(PerformancePoint) >= 1.5:
                 AppreciationBonus = (
-                    (float(performance_point) - 1.5) * 2) * (salaryPay * 0.1)
+                    (float(PerformancePoint)-float(1.5))*2)*(salaryPay*.1)
 
-            GrossPay = salaryPay + AppreciationBonus
+            GrossPay = salaryPay+AppreciationBonus
+            # staffBankDetails=StaffBankDetails.objects.get(PrimaryAccount=1,StaffId=staff['StaffId'])
+            # bankSerializer=StaffBankDetailsSerializer(staffBankDetails)
 
-            # Avoid duplicates
-            if SalarySlip.objects.filter(StaffId=staff['StaffId'], Year=year, Month=month).exists():
-                skipped_count += 1
-                continue
-
-            # Create slip
             data = {
+                'SalarySlipId': '',
                 'StaffId': staff['StaffId'],
-                'Year': year,
-                'Month': month,
+                'Year': last_month_year,
+                'Month': last_month,
                 'BasicPay': round(BasicPay, 2),
                 'ConveyanceAllowance': round(ConveyanceAllowance, 2),
                 'MedicalAllowance': round(MedicalAllowance, 2),
@@ -1337,62 +1292,47 @@ def CreateSalarySlipApi(request, CompanyId=""):
                 'TotalWorkingDays': total_working_days,
                 'LOP': LOP,
                 'PaidDays': PaidDays,
-                'Leave': 0,
+                'Leave': Leave,
                 'GrossPay': round(GrossPay, 2),
+                # 'BankAccount': bankSerializer.data,
             }
+            salarySlip = SalarySlipSerializer(
+                data=data)
+            if salarySlip.is_valid():
+                salarySlip.save()
 
-            serializer = SalarySlipSerializer(data=data)
-            if serializer.is_valid():
-                serializer.save()
-                created_count += 1
-            else:
-                logger.warning(
-                    f"Invalid data for staff {staff['StaffId']}: {serializer.errors}")
-
-        except Exception as e:
-            logger.error(f"Error processing staff {staff['StaffId']}: {e}")
-
-    return JsonResponse({
-        'message': 'Salary slip generation complete',
-        'month': calendar.month_name[month],
-        'year': year,
-        'created': created_count,
-        'skipped_existing': skipped_count
-    }, status=200)
-
-    # except Exception as e:
-    #     logger.error(f"Salary slip generation failed: {e}")
-    #     return JsonResponse({'error': str(e)}, status=500)
-
-
-def make_aware_if_naive(dt):
-    """Ensure datetime is timezone-aware."""
-    if dt and timezone.is_naive(dt):
-        return timezone.make_aware(dt)
-    return dt
+            # except:
+            #     p=""
+        return JsonResponse("staffSerializer.data", safe=False)
+    else:
+        return JsonResponse("", safe=False)
+    # except:
+    #     return JsonResponse("", safe=False)
 
 
 def calculate_leave(leave_entries, target_year, target_month):
+
     total_leave_days = 0
-    from dateutil.relativedelta import relativedelta
 
     for entry in leave_entries:
         leave_type = entry['LeaveType']
-        leave_from = datetime.fromisoformat(entry['LeaveFrom'])
-        leave_to = datetime.fromisoformat(entry['LeaveTo'])
+        leave_from = datetime.fromisoformat(entry['LeaveFrom']) if isinstance(
+            entry['LeaveFrom'], str) else entry['LeaveFrom']
+        leave_to = datetime.fromisoformat(entry['LeaveTo']) if isinstance(
+            entry['LeaveTo'], str) else entry['LeaveTo']
 
-        start_of_month = datetime(target_year, target_month, 1)
-        end_of_month = start_of_month + \
-            relativedelta(months=1) - timedelta(days=1)
+        # Calculate the start and end dates within July
+        start_date = max(leave_from, datetime(target_year, target_month, 1))
+        end_date = min(leave_to, datetime(
+            target_year, target_month + 1, 1) - timedelta(days=1))
 
-        start_date = max(leave_from, start_of_month)
-        end_date = min(leave_to, end_of_month)
-
+        # Calculate the number of leave days if there's an overlap
         if start_date <= end_date:
             if leave_type == '1' and start_date.month == target_month:
                 total_leave_days += 0.5
             else:
-                total_leave_days += (end_date - start_date).days + 1
+                leave_days = (end_date - start_date).days + 1
+                total_leave_days += leave_days
 
     return total_leave_days
 
