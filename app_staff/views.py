@@ -1221,148 +1221,148 @@ def CreateSalarySlipApi(request, CompanyId=""):
     if request.method != 'GET':
         return JsonResponse({'error': 'Invalid request method'}, status=405)
 
-    try:
-        # ---------------------------
-        # 1️⃣ Determine target month
-        # ---------------------------
-        month_param = request.GET.get('month', '').strip()
-        year_param = request.GET.get('year', '').strip()
+    # try:
+    # ---------------------------
+    # 1️⃣ Determine target month
+    # ---------------------------
+    month_param = request.GET.get('month', '').strip()
+    year_param = request.GET.get('year', '').strip()
 
-        today = timezone.localdate()
+    today = timezone.localdate()
 
-        if month_param:
-            # Normalize input
-            if '-' in month_param:  # e.g. "2025-09"
-                year, month = map(int, month_param.split('-'))
-            elif month_param.isdigit():  # e.g. "9"
-                month = int(month_param)
-                year = int(year_param) if year_param else today.year
-            else:  # e.g. "September"
-                month = MONTHS.get(month_param.lower())
-                if not month:
-                    return JsonResponse({'error': f'Invalid month name: {month_param}'}, status=400)
-                year = int(year_param) if year_param else today.year
-        else:
-            # Default to last month
-            first_day_this_month = today.replace(day=1)
-            last_day_last_month = first_day_this_month - timedelta(days=1)
-            month = last_day_last_month.month
-            year = last_day_last_month.year
+    if month_param:
+        # Normalize input
+        if '-' in month_param:  # e.g. "2025-09"
+            year, month = map(int, month_param.split('-'))
+        elif month_param.isdigit():  # e.g. "9"
+            month = int(month_param)
+            year = int(year_param) if year_param else today.year
+        else:  # e.g. "September"
+            month = MONTHS.get(month_param.lower())
+            if not month:
+                return JsonResponse({'error': f'Invalid month name: {month_param}'}, status=400)
+            year = int(year_param) if year_param else today.year
+    else:
+        # Default to last month
+        first_day_this_month = today.replace(day=1)
+        last_day_last_month = first_day_this_month - timedelta(days=1)
+        month = last_day_last_month.month
+        year = last_day_last_month.year
 
-        # Get first & last day of the month
+    # Get first & last day of the month
 
-        first_day = make_aware_if_naive(datetime(year, month, 1))
-        days_in_month = calendar.monthrange(year, month)[1]
-        last_day = make_aware_if_naive(datetime(year, month, days_in_month))
+    first_day = make_aware_if_naive(datetime(year, month, 1))
+    days_in_month = calendar.monthrange(year, month)[1]
+    last_day = make_aware_if_naive(datetime(year, month, days_in_month))
 
-        # ---------------------------
-        # 2️⃣ Fetch staff data
-        # ---------------------------
-        staff_data = Staff.objects.filter(Status=1, CompanyId=CompanyId)
-        staff_serializer = StaffSerializer(staff_data, many=True)
+    # ---------------------------
+    # 2️⃣ Fetch staff data
+    # ---------------------------
+    staff_data = Staff.objects.filter(Status=1, CompanyId=CompanyId)
+    staff_serializer = StaffSerializer(staff_data, many=True)
 
-        created_count = 0
-        skipped_count = 0
+    created_count = 0
+    skipped_count = 0
 
-        # ---------------------------
-        # 3️⃣ Loop through each staff
-        # ---------------------------
-        for staff in staff_serializer.data:
-            try:
-                joining_date = datetime.fromisoformat(staff['JoinedOn'])
-                no_working_days = 0
+    # ---------------------------
+    # 3️⃣ Loop through each staff
+    # ---------------------------
+    for staff in staff_serializer.data:
+        try:
+            joining_date = datetime.fromisoformat(staff['JoinedOn'])
+            no_working_days = 0
 
-                if first_day < joining_date:
-                    no_working_days += (joining_date - first_day).days + 1
+            if first_day < joining_date:
+                no_working_days += (joining_date - first_day).days + 1
 
-                if staff['LeavingDate']:
-                    relieving_date = datetime.fromisoformat(
-                        staff['LeavingDate'])
-                    if last_day > relieving_date:
-                        no_working_days += (last_day - relieving_date).days + 1
+            if staff['LeavingDate']:
+                relieving_date = datetime.fromisoformat(
+                    staff['LeavingDate'])
+                if last_day > relieving_date:
+                    no_working_days += (last_day - relieving_date).days + 1
 
-                total_working_days = days_in_month - no_working_days
+            total_working_days = days_in_month - no_working_days
 
-                # Leave Applications
-                leave_apps = LeaveApplication.objects.filter(
-                    Q(LeaveFrom__range=(first_day, last_day)) |
-                    Q(LeaveTo__range=(first_day, last_day)),
-                    Status=2,
-                    StaffId=staff['StaffId']
-                )
-                leave_serializer = LeaveApplicationSerializer(
-                    leave_apps, many=True)
-                LOP = calculate_leave(leave_serializer.data, year, month)
+            # Leave Applications
+            leave_apps = LeaveApplication.objects.filter(
+                Q(LeaveFrom__range=(first_day, last_day)) |
+                Q(LeaveTo__range=(first_day, last_day)),
+                Status=2,
+                StaffId=staff['StaffId']
+            )
+            leave_serializer = LeaveApplicationSerializer(
+                leave_apps, many=True)
+            LOP = calculate_leave(leave_serializer.data, year, month)
 
-                PaidDays = total_working_days - LOP
-                salary = float(staff['Salary'])
-                salaryPay = (salary / days_in_month) * PaidDays
+            PaidDays = total_working_days - LOP
+            salary = float(staff['Salary'])
+            salaryPay = (salary / days_in_month) * PaidDays
 
-                # Breakdown
-                BasicPay = salaryPay * 0.6
-                ConveyanceAllowance = salaryPay * 0.1
-                MedicalAllowance = salaryPay * 0.1
-                OtherAllowance = salaryPay * 0.2
+            # Breakdown
+            BasicPay = salaryPay * 0.6
+            ConveyanceAllowance = salaryPay * 0.1
+            MedicalAllowance = salaryPay * 0.1
+            OtherAllowance = salaryPay * 0.2
 
-                # Performance Bonus
-                performance_point = ProjectTask.objects.filter(
-                    Status__in=[7, 8, 9],
-                    TaskAssignedTo=staff['StaffId'],
-                    CreatedDate__range=(first_day, last_day),
-                    TaskType='Task'
-                ).aggregate(average=Avg('TaskPoint'))['average']
+            # Performance Bonus
+            performance_point = ProjectTask.objects.filter(
+                Status__in=[7, 8, 9],
+                TaskAssignedTo=staff['StaffId'],
+                CreatedDate__range=(first_day, last_day),
+                TaskType='Task'
+            ).aggregate(average=Avg('TaskPoint'))['average']
 
-                AppreciationBonus = 0
-                if performance_point and float(performance_point) >= 1.5:
-                    AppreciationBonus = (
-                        (float(performance_point) - 1.5) * 2) * (salaryPay * 0.1)
+            AppreciationBonus = 0
+            if performance_point and float(performance_point) >= 1.5:
+                AppreciationBonus = (
+                    (float(performance_point) - 1.5) * 2) * (salaryPay * 0.1)
 
-                GrossPay = salaryPay + AppreciationBonus
+            GrossPay = salaryPay + AppreciationBonus
 
-                # Avoid duplicates
-                if SalarySlip.objects.filter(StaffId=staff['StaffId'], Year=year, Month=month).exists():
-                    skipped_count += 1
-                    continue
+            # Avoid duplicates
+            if SalarySlip.objects.filter(StaffId=staff['StaffId'], Year=year, Month=month).exists():
+                skipped_count += 1
+                continue
 
-                # Create slip
-                data = {
-                    'StaffId': staff['StaffId'],
-                    'Year': year,
-                    'Month': month,
-                    'BasicPay': round(BasicPay, 2),
-                    'ConveyanceAllowance': round(ConveyanceAllowance, 2),
-                    'MedicalAllowance': round(MedicalAllowance, 2),
-                    'OtherAllowance': round(OtherAllowance, 2),
-                    'AppreciationBonus': round(AppreciationBonus, 2),
-                    'TotalWorkingDays': total_working_days,
-                    'LOP': LOP,
-                    'PaidDays': PaidDays,
-                    'Leave': 0,
-                    'GrossPay': round(GrossPay, 2),
-                }
+            # Create slip
+            data = {
+                'StaffId': staff['StaffId'],
+                'Year': year,
+                'Month': month,
+                'BasicPay': round(BasicPay, 2),
+                'ConveyanceAllowance': round(ConveyanceAllowance, 2),
+                'MedicalAllowance': round(MedicalAllowance, 2),
+                'OtherAllowance': round(OtherAllowance, 2),
+                'AppreciationBonus': round(AppreciationBonus, 2),
+                'TotalWorkingDays': total_working_days,
+                'LOP': LOP,
+                'PaidDays': PaidDays,
+                'Leave': 0,
+                'GrossPay': round(GrossPay, 2),
+            }
 
-                serializer = SalarySlipSerializer(data=data)
-                if serializer.is_valid():
-                    serializer.save()
-                    created_count += 1
-                else:
-                    logger.warning(
-                        f"Invalid data for staff {staff['StaffId']}: {serializer.errors}")
+            serializer = SalarySlipSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                created_count += 1
+            else:
+                logger.warning(
+                    f"Invalid data for staff {staff['StaffId']}: {serializer.errors}")
 
-            except Exception as e:
-                logger.error(f"Error processing staff {staff['StaffId']}: {e}")
+        except Exception as e:
+            logger.error(f"Error processing staff {staff['StaffId']}: {e}")
 
-        return JsonResponse({
-            'message': 'Salary slip generation complete',
-            'month': calendar.month_name[month],
-            'year': year,
-            'created': created_count,
-            'skipped_existing': skipped_count
-        }, status=200)
+    return JsonResponse({
+        'message': 'Salary slip generation complete',
+        'month': calendar.month_name[month],
+        'year': year,
+        'created': created_count,
+        'skipped_existing': skipped_count
+    }, status=200)
 
-    except Exception as e:
-        logger.error(f"Salary slip generation failed: {e}")
-        return JsonResponse({'error': str(e)}, status=500)
+    # except Exception as e:
+    #     logger.error(f"Salary slip generation failed: {e}")
+    #     return JsonResponse({'error': str(e)}, status=500)
 
 
 def make_aware_if_naive(dt):
