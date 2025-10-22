@@ -1250,9 +1250,10 @@ def CreateSalarySlipApi(request, CompanyId=""):
             year = last_day_last_month.year
 
         # Get first & last day of the month
-        first_day = datetime(year, month, 1)
+
+        first_day = make_aware_if_naive(datetime(year, month, 1))
         days_in_month = calendar.monthrange(year, month)[1]
-        last_day = datetime(year, month, days_in_month)
+        last_day = make_aware_if_naive(datetime(year, month, days_in_month))
 
         # ---------------------------
         # 2️⃣ Fetch staff data
@@ -1362,6 +1363,13 @@ def CreateSalarySlipApi(request, CompanyId=""):
     except Exception as e:
         logger.error(f"Salary slip generation failed: {e}")
         return JsonResponse({'error': str(e)}, status=500)
+
+
+def make_aware_if_naive(dt):
+    """Ensure datetime is timezone-aware."""
+    if dt and timezone.is_naive(dt):
+        return timezone.make_aware(dt)
+    return dt
 
 
 def calculate_leave(leave_entries, target_year, target_month):
