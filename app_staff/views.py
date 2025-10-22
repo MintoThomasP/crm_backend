@@ -1294,7 +1294,7 @@ def CreateSalarySlipApi(request, CompanyId=""):
                 'PaidDays': PaidDays,
                 'Leave': Leave,
                 'GrossPay': round(GrossPay, 2),
-                # 'BankAccount': bankSerializer.data,
+                'BankAccount': staff['BankAccount'],
             }
             salarySlip = SalarySlipSerializer(
                 data=data)
