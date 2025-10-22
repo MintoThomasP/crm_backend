@@ -1206,7 +1206,7 @@ def GetSalarySlipByStaffId(request, StaffId=""):
 @swagger_auto_schema(method='GET', operation_description="NOTE: API for Create salary slip")
 @api_view(['GET'])
 @retry(retries=3, delay=2)
-def CreateSalarySlipApi(request, CompanyId="", year="", month=""):
+def CreateSalarySlipApi(request, CompanyId="", Year="", Month=""):
     # try:
     if request.method == 'GET':
         staffDa = Staff.objects.filter(Status=1, CompanyId=CompanyId)
@@ -1215,8 +1215,8 @@ def CreateSalarySlipApi(request, CompanyId="", year="", month=""):
         # return JsonResponse(staffSerializer.data, safe=False)
 
         today = datetime.today()
-        if year and month:
-            today = datetime.now().replace(year=year, month=month, day=1)
+        if Year and Month:
+            today = datetime.now().replace(year=Year, month=Month, day=1)
         first_day_of_this_month = today.replace(day=1)
         last_day_of_last_month = first_day_of_this_month - timedelta(days=1)
         last_month = last_day_of_last_month.month
