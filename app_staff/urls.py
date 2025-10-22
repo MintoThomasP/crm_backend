@@ -62,6 +62,8 @@ urlpatterns = [
 
     path('staffSalaryByPerformance/', views.staffSalaryByPerformanceApi),
     path('CreateSalarySlip/<str:CompanyId>/', views.CreateSalarySlipApi),
+    path('CreateSalarySlip/<str:CompanyId>/<str:Year>/<str:Month>/',
+         views.CreateSalarySlipApi),
     # url(r'^CreateSalarySlip/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.CreateSalarySlipApi),
     path('DownloadSalarySlip/<str:Month>/<str:Year>/<str:StaffId>',
          views.DownloadSalarySlip),
