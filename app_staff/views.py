@@ -1216,7 +1216,7 @@ def CreateSalarySlipApi(request, CompanyId="", Year="", Month=""):
 
         today = datetime.today()
         if Year and Month:
-            today = datetime.now().replace(year=Year, month=Month, day=1)
+            today = datetime.now().replace(year=int(Year), month=int(Month), day=1)
         first_day_of_this_month = today.replace(day=1)
         last_day_of_last_month = first_day_of_this_month - timedelta(days=1)
         last_month = last_day_of_last_month.month
