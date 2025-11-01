@@ -62,8 +62,10 @@ class Invoice(models.Model):
     TermsNConditions = models.TextField(blank=True, null=True)
     BillingAddress = models.TextField(blank=True, null=True)
     SubTotalAmount = models.CharField(blank=True, null=True, max_length=15)
-    TaxPercentage = models.CharField(blank=True, null=True, max_length=15)
-    TaxAmount = models.CharField(blank=True, null=True, max_length=15)
+    TaxPercentage = models.CharField(
+        blank=True, null=True, default='0', max_length=15)
+    TaxAmount = models.CharField(
+        blank=True, null=True, default='0', max_length=15)
     TaxType = models.CharField(blank=True, null=True, max_length=15)
     TotalAmount = models.CharField(blank=True, null=True, max_length=15)
     AmountDue = models.CharField(

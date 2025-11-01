@@ -914,91 +914,91 @@ def render_to_pdf(template_src, context_dict={}):
 @swagger_auto_schema(method='GET', operation_description="NOTE: API for view invoice PDF",)
 @api_view(['GET'])
 def ViewPDF(request, InvoiceId=""):
-    # try:
-    if request.method == 'GET':
-        invoice = Invoice.objects.get(InvoiceId=InvoiceId)
-        invoiceItems = InvoiceItem.objects.filter(
-            InvoiceId=InvoiceId).order_by('OrderNo')
-        company = Company.objects.get(CompanyId=invoice.CompanyId)
-        client = Client.objects.get(ClientId=invoice.ClientId)
-        clientaddress = ClientAddress.objects.get(
-            ClientId=invoice.ClientId)
-        billingAddress = json.loads(invoice.BillingAddress)
-        totalAmount = Decimal(invoice.TotalAmount)
-        siteSettings = SiteSettings.objects.get(
-            CompanyId=invoice.CompanyId)
-        currencyType = siteSettings.CurrencyType
-
-        HalfTax = float(invoice.TaxPercentage) / 2
-        HalfTaxAmount = float(invoice.TaxAmount) / 2
-        amountinwords = decimal_number_to_words(totalAmount, currencyType)
-        # amountinwords=decimal_number_to_words(totalAmount)
-        try:
+    try:
+        if request.method == 'GET':
+            invoice = Invoice.objects.get(InvoiceId=InvoiceId)
+            invoiceItems = InvoiceItem.objects.filter(
+                InvoiceId=InvoiceId).order_by('OrderNo')
+            company = Company.objects.get(CompanyId=invoice.CompanyId)
+            client = Client.objects.get(ClientId=invoice.ClientId)
+            clientaddress = ClientAddress.objects.get(
+                ClientId=invoice.ClientId)
+            billingAddress = json.loads(invoice.BillingAddress)
+            totalAmount = Decimal(invoice.TotalAmount)
             siteSettings = SiteSettings.objects.get(
                 CompanyId=invoice.CompanyId)
-            siteSettingsSerializer = SiteSettingsSerializer(siteSettings)
-            logo = os.path.join(settings.BASE_DIR) + \
-                siteSettingsSerializer.data['Logo']
+            currencyType = siteSettings.CurrencyType
 
-        except:
-            logo = ""
+            HalfTax = float(invoice.TaxPercentage) / 2
+            HalfTaxAmount = float(invoice.TaxAmount) / 2
+            amountinwords = decimal_number_to_words(totalAmount, currencyType)
+            # amountinwords=decimal_number_to_words(totalAmount)
+            try:
+                siteSettings = SiteSettings.objects.get(
+                    CompanyId=invoice.CompanyId)
+                siteSettingsSerializer = SiteSettingsSerializer(siteSettings)
+                logo = os.path.join(settings.BASE_DIR) + \
+                    siteSettingsSerializer.data['Logo']
 
-        bankAccount = ""
-        if invoice.AddBankAccount == True:
-            bankAccount = siteSettings.BankAccount
-        else:
+            except:
+                logo = ""
+
             bankAccount = ""
+            if invoice.AddBankAccount == True:
+                bankAccount = siteSettings.BankAccount
+            else:
+                bankAccount = ""
 
-        try:
-            InvoiceDate = datetime.strptime(
-                invoice.InvoiceDate, '%Y-%m-%d')
+            try:
+                InvoiceDate = datetime.strptime(
+                    invoice.InvoiceDate, '%Y-%m-%d')
 
-            # Format the date in '25 Mar 2024' format
-            invoice.InvoiceDate = InvoiceDate.strftime('%d %b %Y')
+                # Format the date in '25 Mar 2024' format
+                invoice.InvoiceDate = InvoiceDate.strftime('%d %b %Y')
 
-        except:
-            p = ""
-        try:
-            DueDate = datetime.strptime(invoice.DueDate, '%Y-%m-%d')
+            except:
+                p = ""
+            try:
+                DueDate = datetime.strptime(invoice.DueDate, '%Y-%m-%d')
 
-            # Format the date in '25 Mar 2024' format
-            invoice.DueDate = DueDate.strftime('%d %b %Y')
-        except:
-            p = ""
-        context = {
-            'invoice': invoice,
-            'invoiceItems': invoiceItems,
-            'clientaddress': clientaddress,
-            'logo': logo,
-            'amountinwords': amountinwords,
-            'siteSettings': siteSettings,
-            'billingAddress': billingAddress,
-            'client': client,
-            'company': company,
-            'bankAccount': bankAccount,
-            'HalfTax': HalfTax,
-            'HalfTaxAmount': HalfTaxAmount
-        }
-        if siteSettings.InvoiceTemplate == 'invoice.html':
+                # Format the date in '25 Mar 2024' format
+                invoice.DueDate = DueDate.strftime('%d %b %Y')
+            except:
+                p = ""
+            context = {
+                'invoice': invoice,
+                'invoiceItems': invoiceItems,
+                'clientaddress': clientaddress,
+                'logo': logo,
+                'amountinwords': amountinwords,
+                'siteSettings': siteSettings,
+                'billingAddress': billingAddress,
+                'client': client,
+                'company': company,
+                'bankAccount': bankAccount,
+                'HalfTax': HalfTax,
+                'HalfTaxAmount': HalfTaxAmount
+            }
+            if siteSettings.InvoiceTemplate == 'invoice.html':
 
-            pdf = render_to_pdf('invoice.html', context)
-        elif siteSettings.InvoiceTemplate == 'woodsInvoice.html':
+                pdf = render_to_pdf('invoice.html', context)
+            elif siteSettings.InvoiceTemplate == 'woodsInvoice.html':
 
-            pdf = render_to_pdf('woodsInvoice.html', context)
+                pdf = render_to_pdf('woodsInvoice.html', context)
 
-        filename = "%s.pdf" % (context['invoice'].InvoiceNumber)
+            filename = "%s.pdf" % (context['invoice'].InvoiceNumber)
 
-        if invoice.InvoiceFile:
-            invoice.InvoiceFile.delete(save=True)
-            invoice.InvoiceFile.save(filename, ContentFile(pdf.content))
+            if invoice.InvoiceFile:
+                invoice.InvoiceFile.delete(save=True)
+                invoice.InvoiceFile.save(filename, ContentFile(pdf.content))
+            else:
+                invoice.InvoiceFile.save(filename, ContentFile(pdf.content))
+            return HttpResponse(pdf.content, content_type='application/pdf')
+
         else:
-            invoice.InvoiceFile.save(filename, ContentFile(pdf.content))
-        return HttpResponse(pdf.content, content_type='application/pdf')
-
-    else:
-        return JsonResponse({"error": "Invalid method"}, status=405)
-    # except Exception as e:
-    #     return JsonResponse({"error": str(e)}, status=500)
+            return JsonResponse({"error": "Invalid method"}, status=405)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 @csrf_exempt
