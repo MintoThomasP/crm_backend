@@ -452,7 +452,7 @@ def send_ms_graph_email(to_email, subject, body_html, logo_base64=None):
 @api_view(['POST'])
 def send_contact_email(request):
     try:
-        data = json.loads(request.body)
+        data = request.data
         name = data.get('name')
         email = data.get('email')
         message = data.get('message')
