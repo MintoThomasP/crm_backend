@@ -63,8 +63,7 @@ INSTALLED_APPS = [
     'app_website_email',
     'app_credential',
     'app_vendor',
-    'app_firebase',
-    'app_minto'
+    'app_firebase'
 
 ]
 

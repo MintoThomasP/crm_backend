@@ -58,7 +58,6 @@ urlpatterns = [
     path('api-credential/', include('app_credential.urls')),
     path('api-website-email/', include('app_website_email.urls')),
     path('api-vendor/', include('app_vendor.urls')),
-    path('api-minto/', include('app_minto.urls')),
     path('api-noti/', include('app_firebase.urls')),
     path('swagger-json/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger<str:format>', schema_view.without_ui(

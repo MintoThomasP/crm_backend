@@ -32,6 +32,7 @@ urlpatterns = [
     path('CURDSiteContact/', views.CURDSiteContactApi),
     url(r'^CURDSiteContact/(?P<SiteContactId>[0-9a-zA-Z\-]+)$',
         views.CURDSiteContactApiById),
+    path('minto-send-email/', send_contact_email, name='send_contact_email'),
 
 ]
 if settings.DEBUG:
