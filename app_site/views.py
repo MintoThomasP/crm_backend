@@ -363,7 +363,7 @@ HTML_TEMPLATE = """
 <body>
     <div class="container">
         <div class="header">
-            <img src="cid:logo_cid" alt="Minto Thomas Logo" class="logo">
+            <img src="https://mintothomas.com/assets/images/logo.png" alt="Minto Thomas Logo" class="logo">
         </div>
         <div class="content">
             <div class="title">New Inquiry from Portfolio</div>
@@ -395,7 +395,7 @@ THANK_YOU_TEMPLATE = """
 </head>
 <body>
     <div class="container">
-        <div class="header"><img src="cid:logo_cid" alt="Minto Thomas Logo" class="logo"></div>
+        <div class="header"><img src="https://mintothomas.com/assets/images/logo.png" alt="Minto Thomas Logo" class="logo"></div>
         <div class="content">
             <div class="title">Thank You, {name}!</div>
             <p class="message">I've received your message and will get back to you as soon as possible.</p>
