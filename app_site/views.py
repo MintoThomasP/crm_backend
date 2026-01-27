@@ -336,7 +336,7 @@ MS_CONFIG = {
     "client_id": "ab3e8431-9019-4d60-ae79-9511ead4705d",
     "client_secret": "REMOVED_AZURE_SECRET",
     "scope": "https://graph.microsoft.com/.default",
-    "sender_email": "connect@mintothomas.com",
+    "sender_email": "no-reply@mintothomas.com",
     "recipient_email": "mintothomas.p@gmail.com",
     # Update this path to where your logo is stored in your Django static files
     "logo_path": "assets/images/logo.png"
