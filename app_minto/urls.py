@@ -1,10 +1,7 @@
-
-from django.urls import path, re_path as url
-from app_todo import views
-
+from django.urls import path
+from .views import send_contact_email
 
 urlpatterns = [
-    path('Todo/', views.TodoApi),
-    url(r'^TodoApiById/(?P<TodoId>[0-9a-zA-Z\-]+)$', views.TodoApiById),
-        path('TodoPagination/', views.TodoPagination.as_view()), 
+    # Update This to match your desired API path
+    path('minto-send-email/', send_contact_email, name='send_contact_email'),
 ]
