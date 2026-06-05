@@ -59,6 +59,7 @@ urlpatterns = [
     path('api-website-email/', include('app_website_email.urls')),
     path('api-vendor/', include('app_vendor.urls')),
     path('api-noti/', include('app_firebase.urls')),
+    path('api-blog/', include('app_blog.urls')),
     path('swagger-json/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger<str:format>', schema_view.without_ui(
         cache_timeout=0), name='schema-json'),
@@ -68,7 +69,12 @@ urlpatterns = [
          cache_timeout=0), name='schema-redoc'),
     # url(r'^media/(?P<path>.*)$', serve, {'document_root': settings.MEDIA_ROOT,}),
 ]
+# 1. Fallback for Static Files
 urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
+# 2. Add this conditional check to serve Media Uploads during local development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL,
+                          document_root=settings.MEDIA_ROOT)
 
 admin.site.site_url = '/swagger/'

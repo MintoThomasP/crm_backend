@@ -56,3 +56,4 @@ Thumbs.db
 /media
 
 *.zip
+*.sqlite3
