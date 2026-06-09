@@ -132,7 +132,9 @@ DATABASES = {
         },
         'OPTIONS': {
             'sql_mode': 'traditional',
-        }
+            'charset': 'utf8mb4',
+            'use_unicode': True,
+        },
     }
 }
 
