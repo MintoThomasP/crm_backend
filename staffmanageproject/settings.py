@@ -64,7 +64,8 @@ INSTALLED_APPS = [
     'app_credential',
     'app_vendor',
     'app_firebase',
-    'app_blog'
+    'app_blog',
+    'app_accounting'
 
 ]
 
