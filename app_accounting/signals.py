@@ -173,11 +173,12 @@ def create_payment_journal_entry(sender, instance, created, **kwargs):
         journal_entry.save()
 
     # Create JournalItems:
-    # 1. Debit Cash/Bank
+    # 1. Debit Cash/Bank (Full payment amount before charges)
+    full_amount = amount_received + bank_charges
     JournalItem.objects.create(
         JournalEntryId=journal_entry.JournalEntryId,
         AccountId=accounts['1010'].AccountId,
-        Debit=f"{amount_received:.2f}",
+        Debit=f"{full_amount:.2f}",
         Credit="0.00",
         ClientId=instance.ClientId
     )
@@ -191,14 +192,22 @@ def create_payment_journal_entry(sender, instance, created, **kwargs):
             Credit="0.00",
             ClientId=instance.ClientId
         )
+        
+        # 3. Credit Cash/Bank (Cash outflow for bank charges)
+        JournalItem.objects.create(
+            JournalEntryId=journal_entry.JournalEntryId,
+            AccountId=accounts['1010'].AccountId,
+            Debit="0.00",
+            Credit=f"{bank_charges:.2f}",
+            ClientId=instance.ClientId
+        )
 
-    # 3. Credit Accounts Receivable (receivable credit = cash received + bank charges)
-    total_credit = amount_received + bank_charges
+    # 4. Credit Accounts Receivable (receivable credit = full payment amount)
     JournalItem.objects.create(
         JournalEntryId=journal_entry.JournalEntryId,
         AccountId=accounts['1200'].AccountId,
         Debit="0.00",
-        Credit=f"{total_credit:.2f}",
+        Credit=f"{full_amount:.2f}",
         ClientId=instance.ClientId
     )
 

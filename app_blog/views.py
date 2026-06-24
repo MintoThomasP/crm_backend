@@ -150,3 +150,24 @@ def get_content_by_slug(request):
         }, status=status.HTTP_200_OK)
 
     return Response({'error': 'Slug has no associated content'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+def get_all_slugs(request):
+    """
+    Retrieve all global slug data records.
+    """
+    slugs = GlobalSlug.objects.all().order_by('slug')
+    data = []
+    for s in slugs:
+        entity_type = "page" if s.page else "category" if s.category else "unknown"
+        entity_id = s.page.id if s.page else s.category.id if s.category else None
+        entity_title = s.page.title if s.page else s.category.name if s.category else ""
+        data.append({
+            'slug': s.slug,
+            'entity_type': entity_type,
+            'entity_id': entity_id,
+            'entity_title': entity_title,
+            'created_at': s.created_at
+        })
+    return Response(data, status=status.HTTP_200_OK)

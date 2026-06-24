@@ -182,7 +182,7 @@ def NextExpenseNumber(request, CompanyId=""):
 @api_view(['GET', 'POST'])
 def ExpenseApi(request):
     if request.method == 'GET':
-        expenses = Expense.objects.all().order_by('Date', 'SortId')
+        expenses = Expense.objects.all().order_by('Date', 'ExpenseNumber')
         serializer = ExpenseSerializer(expenses, many=True)
         return JsonResponse(serializer.data, safe=False)
     
@@ -224,7 +224,7 @@ def ExpenseApiById(request, ExpenseId=""):
 
 @api_view(['GET'])
 def ExpenseByCompanyId(request, CompanyId=""):
-    expenses = Expense.objects.filter(CompanyId=CompanyId).order_by('Date', 'SortId')
+    expenses = Expense.objects.filter(CompanyId=CompanyId).order_by('Date', 'ExpenseNumber')
     enriched_expenses = []
     for exp in expenses:
         data = ExpenseSerializer(exp).data
