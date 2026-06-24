@@ -87,8 +87,32 @@ def JournalItemByAccountId(request, AccountId=""):
     return JsonResponse(enriched_items, safe=False)
 
 
+from datetime import datetime
+
+def safe_float(val):
+    try:
+        return float(val) if val else 0.0
+    except ValueError:
+        return 0.0
+
+def parse_date(date_str):
+    if not date_str:
+        return None
+    for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%Y/%m/%d', '%d-%m-%Y'):
+        try:
+            return datetime.strptime(date_str, fmt).date()
+        except ValueError:
+            pass
+    return None
+
 @api_view(['GET'])
 def CashBookByCompanyId(request, CompanyId=""):
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    
+    start_date_obj = parse_date(start_date)
+    end_date_obj = parse_date(end_date)
+    
     # Fetch all Accounts for this Company that are marked as Cash or Bank
     cash_bank_accounts = Account.objects.filter(CompanyId=CompanyId, IsCashOrBank=True)
     account_ids = [acc.AccountId for acc in cash_bank_accounts]
@@ -96,9 +120,29 @@ def CashBookByCompanyId(request, CompanyId=""):
     # Fetch all JournalItems for these Accounts
     items = JournalItem.objects.filter(AccountId__in=account_ids).order_by('SortId')
     
-    # Enrich with JournalEntry info
-    enriched_items = []
+    opening_balance = 0.0
+    period_items = []
+    
     for item in items:
+        try:
+            entry = JournalEntry.objects.get(JournalEntryId=item.JournalEntryId)
+            entry_date = entry.Date
+        except JournalEntry.DoesNotExist:
+            entry_date = None
+            
+        entry_date_obj = parse_date(entry_date)
+        
+        debit_val = safe_float(item.Debit)
+        credit_val = safe_float(item.Credit)
+        
+        if start_date_obj and entry_date_obj and entry_date_obj < start_date_obj:
+            opening_balance += (debit_val - credit_val)
+            continue
+            
+        if end_date_obj and entry_date_obj and entry_date_obj > end_date_obj:
+            continue
+            
+        # Enrich with JournalEntry info
         item_data = JournalItemSerializer(item).data
         try:
             account = Account.objects.get(AccountId=item.AccountId)
@@ -108,8 +152,7 @@ def CashBookByCompanyId(request, CompanyId=""):
             item_data['AccountName'] = ""
             item_data['AccountCode'] = ""
             
-        try:
-            entry = JournalEntry.objects.get(JournalEntryId=item.JournalEntryId)
+        if entry_date:
             item_data['Date'] = entry.Date
             item_data['ReferenceNumber'] = entry.ReferenceNumber
             item_data['Source'] = entry.Source
@@ -162,8 +205,7 @@ def CashBookByCompanyId(request, CompanyId=""):
                     item_data['BankCharges'] = "0.00"
             else:
                 item_data['BankCharges'] = "0.00"
-                
-        except JournalEntry.DoesNotExist:
+        else:
             item_data['Date'] = ""
             item_data['ReferenceNumber'] = ""
             item_data['Source'] = ""
@@ -178,11 +220,24 @@ def CashBookByCompanyId(request, CompanyId=""):
         except:
             item_data['ClientName'] = ""
             
-        enriched_items.append(item_data)
+        period_items.append(item_data)
         
     # Sort in ascending order of Date, then SortId
-    enriched_items.sort(key=lambda x: (x.get('Date') or '', x.get('SortId') or ''))
-    return JsonResponse(enriched_items, safe=False)
+    period_items.sort(key=lambda x: (x.get('Date') or '', x.get('SortId') or ''))
+    
+    closing_balance = opening_balance
+    for item in period_items:
+        closing_balance += (safe_float(item.get('Debit')) - safe_float(item.get('Credit')))
+        
+    # Return structured dict if date range parameters exist, else return raw list for backward compatibility
+    if start_date or end_date:
+        return JsonResponse({
+            "opening_balance": f"{opening_balance:.2f}",
+            "closing_balance": f"{closing_balance:.2f}",
+            "items": period_items
+        }, safe=False)
+    else:
+        return JsonResponse(period_items, safe=False)
 
 
 @api_view(['POST'])
@@ -452,4 +507,331 @@ def JournalEntryApiById(request, JournalEntryId=""):
         JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId).delete()
         entry.delete()
         return JsonResponse("Deleted successfully", safe=False)
+
+
+@api_view(['GET'])
+def ExportCashBook(request, CompanyId=""):
+    print("ExportCashBook VIEW REACHED! CompanyId:", CompanyId)
+    start_date = request.GET.get('start_date')
+    end_date = request.GET.get('end_date')
+    export_format = request.GET.get('export_format', request.GET.get('format', 'pdf')).lower()
+    
+    start_date_obj = parse_date(start_date)
+    end_date_obj = parse_date(end_date)
+    
+    # Fetch all Accounts for this Company that are marked as Cash or Bank
+    cash_bank_accounts = Account.objects.filter(CompanyId=CompanyId, IsCashOrBank=True)
+    account_ids = [acc.AccountId for acc in cash_bank_accounts]
+    
+    # Fetch all JournalItems for these Accounts
+    items = JournalItem.objects.filter(AccountId__in=account_ids).order_by('SortId')
+    
+    opening_balance = 0.0
+    period_items = []
+    
+    for item in items:
+        try:
+            entry = JournalEntry.objects.get(JournalEntryId=item.JournalEntryId)
+            entry_date = entry.Date
+        except JournalEntry.DoesNotExist:
+            entry_date = None
+            
+        entry_date_obj = parse_date(entry_date)
+        
+        debit_val = safe_float(item.Debit)
+        credit_val = safe_float(item.Credit)
+        
+        if start_date_obj and entry_date_obj and entry_date_obj < start_date_obj:
+            opening_balance += (debit_val - credit_val)
+            continue
+            
+        if end_date_obj and entry_date_obj and entry_date_obj > end_date_obj:
+            continue
+            
+        # Enrich
+        item_data = {
+            'Date': entry_date or "",
+            'ReferenceNumber': entry.ReferenceNumber if entry_date else "",
+            'Source': entry.Source if entry_date else "",
+            'Narration': entry.Narration if entry_date else "",
+            'Debit': f"{debit_val:.2f}",
+            'Credit': f"{credit_val:.2f}",
+            'SortId': item.SortId
+        }
+        
+        # Get Contra account
+        other_items = JournalItem.objects.filter(JournalEntryId=item.JournalEntryId).exclude(JournalItemId=item.JournalItemId)
+        non_cb_items = []
+        for o_item in other_items:
+            try:
+                acc = Account.objects.get(AccountId=o_item.AccountId)
+                if not acc.IsCashOrBank:
+                    non_cb_items.append((o_item, acc))
+            except Account.DoesNotExist:
+                pass
+        
+        if not non_cb_items:
+            for o_item in other_items:
+                try:
+                    acc = Account.objects.get(AccountId=o_item.AccountId)
+                    non_cb_items.append((o_item, acc))
+                except Account.DoesNotExist:
+                    pass
+                    
+        if len(non_cb_items) == 1:
+            item_data['ContraAccountName'] = non_cb_items[0][1].Name
+            item_data['ContraAccountCode'] = non_cb_items[0][1].Code
+        elif len(non_cb_items) > 1:
+            if entry_date and entry.Source == 'payment':
+                ar_item = next((x for x in non_cb_items if x[1].Code == '1200'), None)
+                if ar_item:
+                    item_data['ContraAccountName'] = ar_item[1].Name
+                    item_data['ContraAccountCode'] = ar_item[1].Code
+                else:
+                    item_data['ContraAccountName'] = "Multiple Accounts"
+                    item_data['ContraAccountCode'] = "Split"
+            else:
+                item_data['ContraAccountName'] = ", ".join([x[1].Name for x in non_cb_items if x[1].Name])
+                item_data['ContraAccountCode'] = ", ".join([x[1].Code for x in non_cb_items if x[1].Code])
+        else:
+            item_data['ContraAccountName'] = ""
+            item_data['ContraAccountCode'] = ""
+            
+        period_items.append(item_data)
+        
+    period_items.sort(key=lambda x: (x.get('Date') or '', x.get('SortId') or ''))
+    
+    closing_balance = opening_balance
+    running_balance = opening_balance
+    for i in range(len(period_items)):
+        row = period_items[i]
+        deb = safe_float(row['Debit'])
+        crd = safe_float(row['Credit'])
+        running_balance += (deb - crd)
+        row['RunningBalance'] = f"{running_balance:.2f}"
+    closing_balance = running_balance
+    
+    # Fetch company header info
+    company_name = "CRM Cash Book Report"
+    try:
+        from app_company.models import Company
+        company = Company.objects.filter(CompanyId=CompanyId).first()
+        if company and company.CompanyName:
+            company_name = company.CompanyName
+    except:
+        pass
+        
+    period_str = f"{start_date or 'Beginning'} to {end_date or 'Present'}"
+    
+    if export_format == 'excel':
+        import openpyxl
+        from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+        from django.http import HttpResponse
+        
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "Cash Book"
+        
+        title_font = Font(name="Arial", size=16, bold=True, color="1E3A8A")
+        subtitle_font = Font(name="Arial", size=11, italic=True, color="4B5563")
+        header_font = Font(name="Arial", size=11, bold=True, color="FFFFFF")
+        bold_font = Font(name="Arial", size=11, bold=True)
+        regular_font = Font(name="Arial", size=10)
+        
+        header_fill = PatternFill(start_color="1E3A8A", end_color="1E3A8A", fill_type="solid")
+        summary_fill = PatternFill(start_color="F3F4F6", end_color="F3F4F6", fill_type="solid")
+        
+        thin_border = Border(
+            left=Side(style='thin', color="D1D5DB"),
+            right=Side(style='thin', color="D1D5DB"),
+            top=Side(style='thin', color="D1D5DB"),
+            bottom=Side(style='thin', color="D1D5DB")
+        )
+        double_bottom_border = Border(
+            top=Side(style='thin', color="9CA3AF"),
+            bottom=Side(style='double', color="1E3A8A")
+        )
+        
+        ws.merge_cells("A1:G1")
+        ws["A1"] = company_name
+        ws["A1"].font = title_font
+        ws["A1"].alignment = Alignment(horizontal="center")
+        
+        ws.merge_cells("A2:G2")
+        ws["A2"] = f"Period: {period_str}"
+        ws["A2"].font = subtitle_font
+        ws["A2"].alignment = Alignment(horizontal="center")
+        
+        ws.append([]) # Empty row
+        
+        ws.append(["Opening Balance", "", "", "", "", "", f"INR {opening_balance:.2f}"])
+        ws.merge_cells(f"A4:F4")
+        ws["A4"].font = bold_font
+        ws["G4"].font = bold_font
+        ws["G4"].alignment = Alignment(horizontal="right")
+        ws["A4"].fill = summary_fill
+        ws["G4"].fill = summary_fill
+        
+        headers = ["Date", "Reference", "Contra Account", "Narration", "Receipt (Dr)", "Payment (Cr)", "Running Balance"]
+        ws.append(headers)
+        header_row = 5
+        for col_idx, h in enumerate(headers, 1):
+            cell = ws.cell(row=header_row, column=col_idx)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal="center" if col_idx <= 3 else "left" if col_idx == 4 else "right")
+            
+        current_row = 6
+        for row in period_items:
+            ws.append([
+                row['Date'],
+                row['ReferenceNumber'],
+                f"{row['ContraAccountCode']} - {row['ContraAccountName']}" if row['ContraAccountCode'] else row['ContraAccountName'],
+                row['Narration'],
+                f"INR {row['Debit']}" if safe_float(row['Debit']) > 0 else "-",
+                f"INR {row['Credit']}" if safe_float(row['Credit']) > 0 else "-",
+                f"INR {row['RunningBalance']}"
+            ])
+            for col_idx in range(1, 8):
+                cell = ws.cell(row=current_row, column=col_idx)
+                cell.font = regular_font
+                cell.border = thin_border
+                cell.alignment = Alignment(horizontal="center" if col_idx <= 2 else "left" if col_idx in (3, 4) else "right")
+            current_row += 1
+            
+        ws.append(["Closing Balance", "", "", "", "", "", f"INR {closing_balance:.2f}"])
+        ws.merge_cells(f"A{current_row}:F{current_row}")
+        ws[f"A{current_row}"].font = bold_font
+        ws[f"G{current_row}"].font = bold_font
+        ws[f"G{current_row}"].alignment = Alignment(horizontal="right")
+        ws[f"A{current_row}"].border = double_bottom_border
+        ws[f"G{current_row}"].border = double_bottom_border
+        ws[f"A{current_row}"].fill = summary_fill
+        ws[f"G{current_row}"].fill = summary_fill
+        
+        for col in ws.columns:
+            max_len = max(len(str(cell.value or '')) for cell in col)
+            col_letter = openpyxl.utils.get_column_letter(col[0].column)
+            ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
+            
+        response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+        response['Content-Disposition'] = f'attachment; filename="CashBook_{CompanyId}.xlsx"'
+        wb.save(response)
+        return response
+        
+    else:
+        from django.http import HttpResponse
+        from reportlab.lib.pagesizes import letter, landscape
+        from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+        from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+        from reportlab.lib import colors
+        
+        response = HttpResponse(content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="CashBook_{CompanyId}.pdf"'
+        
+        doc = SimpleDocTemplate(response, pagesize=landscape(letter), rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+        story = []
+        
+        styles = getSampleStyleSheet()
+        title_style = ParagraphStyle(
+            'DocTitle',
+            parent=styles['Heading1'],
+            fontName='Helvetica-Bold',
+            fontSize=18,
+            textColor=colors.HexColor("#1e3a8a"),
+            spaceAfter=6
+        )
+        subtitle_style = ParagraphStyle(
+            'DocSub',
+            parent=styles['Normal'],
+            fontName='Helvetica-Oblique',
+            fontSize=10,
+            textColor=colors.HexColor("#4b5563"),
+            spaceAfter=15
+        )
+        cell_style = ParagraphStyle(
+            'CellText',
+            parent=styles['Normal'],
+            fontName='Helvetica',
+            fontSize=8,
+            leading=10
+        )
+        cell_bold = ParagraphStyle(
+            'CellBold',
+            parent=styles['Normal'],
+            fontName='Helvetica-Bold',
+            fontSize=8,
+            leading=10
+        )
+        header_cell_style = ParagraphStyle(
+            'HeaderCell',
+            parent=styles['Normal'],
+            fontName='Helvetica-Bold',
+            fontSize=9,
+            leading=11,
+            textColor=colors.white
+        )
+        
+        story.append(Paragraph(company_name, title_style))
+        story.append(Paragraph(f"Cash Book Statement &mdash; Period: {period_str}", subtitle_style))
+        
+        col_widths = [65, 65, 110, 190, 95, 95, 100]
+        
+        table_data = []
+        table_data.append([
+            Paragraph("Date", header_cell_style),
+            Paragraph("Reference", header_cell_style),
+            Paragraph("Contra Account", header_cell_style),
+            Paragraph("Narration", header_cell_style),
+            Paragraph("Receipt (Dr)", header_cell_style),
+            Paragraph("Payment (Cr)", header_cell_style),
+            Paragraph("Running Balance", header_cell_style)
+        ])
+        
+        table_data.append([
+            Paragraph("<b>Opening Balance</b>", cell_bold),
+            "", "", "", "", "",
+            Paragraph(f"<b>INR {opening_balance:.2f}</b>", cell_bold)
+        ])
+        
+        for row in period_items:
+            table_data.append([
+                Paragraph(row['Date'], cell_style),
+                Paragraph(row['ReferenceNumber'], cell_style),
+                Paragraph(f"{row['ContraAccountCode']} - {row['ContraAccountName']}" if row['ContraAccountCode'] else row['ContraAccountName'], cell_style),
+                Paragraph(row['Narration'], cell_style),
+                Paragraph(f"INR {row['Debit']}" if safe_float(row['Debit']) > 0 else "-", cell_style),
+                Paragraph(f"INR {row['Credit']}" if safe_float(row['Credit']) > 0 else "-", cell_style),
+                Paragraph(f"INR {row['RunningBalance']}", cell_style)
+            ])
+            
+        table_data.append([
+            Paragraph("<b>Closing Balance</b>", cell_bold),
+            "", "", "", "", "",
+            Paragraph(f"<b>INR {closing_balance:.2f}</b>", cell_bold)
+        ])
+        
+        t = Table(table_data, colWidths=col_widths, repeatRows=1)
+        t_style = TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#1e3a8a")),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+            ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#e5e7eb")),
+            
+            ('SPAN', (0, 1), (5, 1)),
+            ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor("#f3f4f6")),
+            ('ALIGN', (6, 1), (6, 1), 'RIGHT'),
+            
+            ('SPAN', (0, -1), (5, -1)),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#f3f4f6")),
+            ('ALIGN', (6, -1), (6, -1), 'RIGHT'),
+            
+            ('TOPPADDING', (0, 0), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+        ])
+        t.setStyle(t_style)
+        story.append(t)
+        
+        doc.build(story)
+        return response
 
