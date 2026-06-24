@@ -42,3 +42,19 @@ class JournalItem(models.Model):
 
     def __str__(self):
         return f"Item {self.JournalItemId} - Entry {self.JournalEntryId} - Account {self.AccountId}"
+
+
+class Expense(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    ExpenseId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    ExpenseNumber = models.CharField(blank=True, null=True, max_length=50)
+    Date = models.CharField(blank=True, null=True, max_length=50)
+    AccountId = models.CharField(blank=True, null=True, max_length=50)  # Expense account (Salaries, Rent, Utilities, etc.)
+    PaymentAccountId = models.CharField(blank=True, null=True, max_length=50)  # Bank/Cash account paid from
+    Amount = models.CharField(blank=True, null=True, max_length=15)
+    Narration = models.TextField(blank=True, null=True)
+    CompanyId = models.CharField(blank=True, null=True, max_length=50)
+
+    def __str__(self):
+        return f"Expense {self.ExpenseNumber} - {self.Amount} - {self.Date}"

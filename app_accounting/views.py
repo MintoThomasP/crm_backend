@@ -133,7 +133,8 @@ def CashBookByCompanyId(request, CompanyId=""):
 def SyncLedger(request):
     try:
         from app_sale.models import Invoice, PaymentReceived
-        from app_accounting.signals import create_invoice_journal_entry, create_payment_journal_entry
+        from app_accounting.models import Expense
+        from app_accounting.signals import create_invoice_journal_entry, create_payment_journal_entry, create_expense_journal_entry
         
         invoices = Invoice.objects.all()
         for invoice in invoices:
@@ -143,6 +144,102 @@ def SyncLedger(request):
         for payment in payments:
             create_payment_journal_entry(sender=PaymentReceived, instance=payment, created=True)
             
+        expenses = Expense.objects.all()
+        for expense in expenses:
+            create_expense_journal_entry(sender=Expense, instance=expense, created=True)
+            
         return JsonResponse({"message": "Successfully synchronized ledger and cash book using existing records"}, status=200)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+
+from app_accounting.models import Expense
+from app_accounting.serializers import ExpenseSerializer
+import re
+
+def get_next_expense_number(company_id):
+    expenses = Expense.objects.filter(CompanyId=company_id, ExpenseNumber__startswith='EXP-')
+    max_num = 0
+    for exp in expenses:
+        match = re.match(r'^EXP-(\d+)$', exp.ExpenseNumber or '')
+        if match:
+            num = int(match.group(1))
+            if num > max_num:
+                max_num = num
+    next_num = max_num + 1
+    return f"EXP-{next_num:07d}"
+
+
+@api_view(['GET'])
+def NextExpenseNumber(request, CompanyId=""):
+    return JsonResponse({"NextExpenseNumber": get_next_expense_number(CompanyId)}, safe=False)
+
+
+@api_view(['GET', 'POST'])
+def ExpenseApi(request):
+    if request.method == 'GET':
+        expenses = Expense.objects.all().order_by('-SortId')
+        serializer = ExpenseSerializer(expenses, many=True)
+        return JsonResponse(serializer.data, safe=False)
+    
+    elif request.method == 'POST':
+        data = JSONParser().parse(request)
+        company_id = data.get('CompanyId')
+        if company_id:
+            data['ExpenseNumber'] = get_next_expense_number(company_id)
+        serializer = ExpenseSerializer(data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data['ExpenseId'], safe=False)
+        return JsonResponse("Failed to add Expense", safe=False, status=400)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+def ExpenseApiById(request, ExpenseId=""):
+    try:
+        expense = Expense.objects.get(ExpenseId=ExpenseId)
+    except Expense.DoesNotExist:
+        return JsonResponse("Expense does not exist", safe=False, status=404)
+
+    if request.method == 'GET':
+        serializer = ExpenseSerializer(expense)
+        return JsonResponse(serializer.data, safe=False)
+    
+    elif request.method == 'PUT':
+        data = JSONParser().parse(request)
+        serializer = ExpenseSerializer(expense, data=data)
+        if serializer.is_valid():
+            serializer.save()
+            return JsonResponse(serializer.data['ExpenseId'], safe=False)
+        return JsonResponse("Failed to update Expense", safe=False, status=400)
+    
+    elif request.method == 'DELETE':
+        expense.delete()
+        return JsonResponse("Deleted successfully", safe=False)
+
+
+@api_view(['GET'])
+def ExpenseByCompanyId(request, CompanyId=""):
+    expenses = Expense.objects.filter(CompanyId=CompanyId).order_by('-SortId')
+    enriched_expenses = []
+    for exp in expenses:
+        data = ExpenseSerializer(exp).data
+        try:
+            account = Account.objects.get(AccountId=exp.AccountId)
+            data['AccountName'] = account.Name
+            data['AccountCode'] = account.Code
+        except Account.DoesNotExist:
+            data['AccountName'] = ""
+            data['AccountCode'] = ""
+            
+        try:
+            payment_account = Account.objects.get(AccountId=exp.PaymentAccountId)
+            data['PaymentAccountName'] = payment_account.Name
+            data['PaymentAccountCode'] = payment_account.Code
+        except Account.DoesNotExist:
+            data['PaymentAccountName'] = ""
+            data['PaymentAccountCode'] = ""
+            
+        enriched_expenses.append(data)
+        
+    return JsonResponse(enriched_expenses, safe=False)

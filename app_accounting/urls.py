@@ -8,4 +8,8 @@ urlpatterns = [
     url(r'^JournalItemByAccountId/(?P<AccountId>[0-9a-zA-Z\-]+)$', views.JournalItemByAccountId),
     url(r'^CashBookByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.CashBookByCompanyId),
     path('SyncLedger/', views.SyncLedger),
+    url(r'^NextExpenseNumber/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.NextExpenseNumber),
+    path('Expense/', views.ExpenseApi),
+    url(r'^ExpenseApiById/(?P<ExpenseId>[0-9a-zA-Z\-]+)$', views.ExpenseApiById),
+    url(r'^ExpenseByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.ExpenseByCompanyId),
 ]
