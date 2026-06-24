@@ -173,8 +173,8 @@ def create_payment_journal_entry(sender, instance, created, **kwargs):
         journal_entry.save()
 
     # Create JournalItems:
-    # 1. Debit Cash/Bank (Full payment amount before charges)
-    full_amount = amount_received + bank_charges
+    # 1. Debit Cash/Bank (Full payment amount including charges)
+    full_amount = amount_received
     JournalItem.objects.create(
         JournalEntryId=journal_entry.JournalEntryId,
         AccountId=accounts['1010'].AccountId,
