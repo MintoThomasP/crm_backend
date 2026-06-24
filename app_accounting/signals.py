@@ -13,6 +13,9 @@ def get_or_create_default_accounts(company_id):
     '1010': ('Cash/Bank', 'Asset', True),
     '2200': ('Tax Payable', 'Liability', False),
     
+    # Equity
+    '3000': ('Opening Balance Equity', 'Equity', False),
+    
     # Revenue
     '4000': ('Revenue', 'Revenue', False),
     
