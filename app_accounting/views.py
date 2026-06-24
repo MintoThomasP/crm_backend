@@ -548,17 +548,6 @@ def ExportCashBook(request, CompanyId=""):
         if end_date_obj and entry_date_obj and entry_date_obj > end_date_obj:
             continue
             
-        # Enrich
-        item_data = {
-            'Date': entry_date or "",
-            'ReferenceNumber': entry.ReferenceNumber if entry_date else "",
-            'Source': entry.Source if entry_date else "",
-            'Narration': entry.Narration if entry_date else "",
-            'Debit': f"{debit_val:.2f}",
-            'Credit': f"{credit_val:.2f}",
-            'SortId': item.SortId
-        }
-        
         # Get Contra account
         other_items = JournalItem.objects.filter(JournalEntryId=item.JournalEntryId).exclude(JournalItemId=item.JournalItemId)
         non_cb_items = []
@@ -578,28 +567,81 @@ def ExportCashBook(request, CompanyId=""):
                 except Account.DoesNotExist:
                     pass
                     
-        if len(non_cb_items) == 1:
-            item_data['ContraAccountName'] = non_cb_items[0][1].Name
-            item_data['ContraAccountCode'] = non_cb_items[0][1].Code
-        elif len(non_cb_items) > 1:
-            if entry_date and entry.Source == 'payment':
-                ar_item = next((x for x in non_cb_items if x[1].Code == '1200'), None)
-                if ar_item:
-                    item_data['ContraAccountName'] = ar_item[1].Name
-                    item_data['ContraAccountCode'] = ar_item[1].Code
-                else:
-                    item_data['ContraAccountName'] = "Multiple Accounts"
-                    item_data['ContraAccountCode'] = "Split"
-            else:
-                item_data['ContraAccountName'] = ", ".join([x[1].Name for x in non_cb_items if x[1].Name])
-                item_data['ContraAccountCode'] = ", ".join([x[1].Code for x in non_cb_items if x[1].Code])
-        else:
-            item_data['ContraAccountName'] = ""
-            item_data['ContraAccountCode'] = ""
+        # Check for Bank Charges
+        bank_charges = 0.0
+        if entry_date and entry.Source == 'payment':
+            charges_item = next((x for x in non_cb_items if x[1].Code == '6150'), None)
+            if charges_item:
+                bank_charges = safe_float(charges_item[0].Debit)
+                
+        if entry_date and entry.Source == 'payment' and bank_charges > 0.0:
+            # 1. Gross Cash Addition Row
+            ar_item = next((x for x in non_cb_items if x[1].Code == '1200'), None)
+            contra_name = ar_item[1].Name if ar_item else "Accounts Receivable"
+            contra_code = ar_item[1].Code if ar_item else "1200"
+            gross_debit = debit_val + bank_charges
             
-        period_items.append(item_data)
-        
-    period_items.sort(key=lambda x: (x.get('Date') or '', x.get('SortId') or ''))
+            period_items.append({
+                'Date': entry_date,
+                'ReferenceNumber': entry.ReferenceNumber,
+                'Source': entry.Source,
+                'Narration': f"{entry.Narration} (Gross Receipt)",
+                'Debit': f"{gross_debit:.2f}",
+                'Credit': "0.00",
+                'SortId': item.SortId,
+                'ContraAccountName': contra_name,
+                'ContraAccountCode': contra_code,
+            })
+            
+            # 2. Bank Charges Deduction Row
+            period_items.append({
+                'Date': entry_date,
+                'ReferenceNumber': entry.ReferenceNumber,
+                'Source': entry.Source,
+                'Narration': f"{entry.Narration} (Bank Charges)",
+                'Debit': "0.00",
+                'Credit': f"{bank_charges:.2f}",
+                'SortId': item.SortId,
+                'ContraAccountName': "Bank Charges",
+                'ContraAccountCode': "6150",
+            })
+        else:
+            contra_name = ""
+            contra_code = ""
+            if len(non_cb_items) == 1:
+                contra_name = non_cb_items[0][1].Name
+                contra_code = non_cb_items[0][1].Code
+            elif len(non_cb_items) > 1:
+                if entry_date and entry.Source == 'payment':
+                    ar_item = next((x for x in non_cb_items if x[1].Code == '1200'), None)
+                    if ar_item:
+                        contra_name = ar_item[1].Name
+                        contra_code = ar_item[1].Code
+                    else:
+                        contra_name = "Multiple Accounts"
+                        contra_code = "Split"
+                else:
+                    contra_name = ", ".join([x[1].Name for x in non_cb_items if x[1].Name])
+                    contra_code = ", ".join([x[1].Code for x in non_cb_items if x[1].Code])
+                    
+            period_items.append({
+                'Date': entry_date or "",
+                'ReferenceNumber': entry.ReferenceNumber if entry_date else "",
+                'Source': entry.Source if entry_date else "",
+                'Narration': entry.Narration if entry_date else "",
+                'Debit': f"{debit_val:.2f}",
+                'Credit': f"{credit_val:.2f}",
+                'SortId': item.SortId,
+                'ContraAccountName': contra_name,
+                'ContraAccountCode': contra_code,
+            })
+            
+    # Sort: Date, SortId, then Debit row first
+    period_items.sort(key=lambda x: (
+        x.get('Date') or '',
+        x.get('SortId') or '',
+        0 if safe_float(x.get('Debit')) > 0 else 1
+    ))
     
     closing_balance = opening_balance
     running_balance = opening_balance
