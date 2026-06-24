@@ -12,4 +12,6 @@ urlpatterns = [
     path('Expense/', views.ExpenseApi),
     url(r'^ExpenseApiById/(?P<ExpenseId>[0-9a-zA-Z\-]+)$', views.ExpenseApiById),
     url(r'^ExpenseByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.ExpenseByCompanyId),
+    path('JournalEntry/', views.JournalEntryApi),
+    url(r'^JournalEntryApiById/(?P<JournalEntryId>[0-9a-zA-Z\-]+)$', views.JournalEntryApiById),
 ]
