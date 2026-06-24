@@ -172,19 +172,58 @@ def create_payment_journal_entry(sender, instance, created, **kwargs):
         journal_entry.Narration = f"Payment Received {ref_num} from Client {client_name}"
         journal_entry.save()
 
-    # Create JournalItems:
-    # 1. Debit Cash/Bank (Full payment amount including charges)
-    full_amount = amount_received
-    JournalItem.objects.create(
-        JournalEntryId=journal_entry.JournalEntryId,
-        AccountId=accounts['1010'].AccountId,
-        Debit=f"{full_amount:.2f}",
-        Credit="0.00",
-        ClientId=instance.ClientId
-    )
+    # Resolve the Cash/Bank account for this payment
+    bank_account_id = accounts['1010'].AccountId  # Fallback to default Cash/Bank
+    
+    if instance.DepositTo:
+        from app_default.models import DepositTo
+        from django.core.exceptions import ValidationError
+        dep_name = None
+        try:
+            dep = DepositTo.objects.get(DepositToId=instance.DepositTo)
+            dep_name = dep.DepositTo
+        except (DepositTo.DoesNotExist, ValueError, ValidationError):
+            # If not a valid UUID or does not exist, treat it as a direct name
+            dep_name = instance.DepositTo
+        
+        if dep_name:
+            acc = Account.objects.filter(
+                CompanyId=company_id,
+                Name__iexact=dep_name,
+                IsCashOrBank=True
+            ).first()
+            if acc:
+                bank_account_id = acc.AccountId
+            else:
+                acc = Account.objects.filter(
+                    CompanyId=company_id,
+                    Code=dep_name,
+                    IsCashOrBank=True
+                ).first()
+                if acc:
+                    bank_account_id = acc.AccountId
+        else:
+            acc = Account.objects.filter(
+                CompanyId=company_id,
+                AccountId=instance.DepositTo,
+                IsCashOrBank=True
+            ).first()
+            if acc:
+                bank_account_id = acc.AccountId
 
-    # 2. Debit Bank Charges (if any)
+    # Create JournalItems:
     if bank_charges > 0:
+        # Row 1: Actual Bank Deposit (net deposit = amount_received - bank_charges)
+        net_amount = amount_received - bank_charges
+        JournalItem.objects.create(
+            JournalEntryId=journal_entry.JournalEntryId,
+            AccountId=bank_account_id,
+            Debit=f"{net_amount:.2f}",
+            Credit="0.00",
+            ClientId=instance.ClientId
+        )
+
+        # Row 2: The Fee Expense
         JournalItem.objects.create(
             JournalEntryId=journal_entry.JournalEntryId,
             AccountId=accounts['6150'].AccountId,
@@ -192,22 +231,22 @@ def create_payment_journal_entry(sender, instance, created, **kwargs):
             Credit="0.00",
             ClientId=instance.ClientId
         )
-        
-        # 3. Credit Cash/Bank (Cash outflow for bank charges)
+    else:
+        # Row 1: Actual Bank Deposit (full amount)
         JournalItem.objects.create(
             JournalEntryId=journal_entry.JournalEntryId,
-            AccountId=accounts['1010'].AccountId,
-            Debit="0.00",
-            Credit=f"{bank_charges:.2f}",
+            AccountId=bank_account_id,
+            Debit=f"{amount_received:.2f}",
+            Credit="0.00",
             ClientId=instance.ClientId
         )
 
-    # 4. Credit Accounts Receivable (receivable credit = full payment amount)
+    # Row 3 (or 2): Credit Accounts Receivable (clearing gross invoice amount)
     JournalItem.objects.create(
         JournalEntryId=journal_entry.JournalEntryId,
         AccountId=accounts['1200'].AccountId,
         Debit="0.00",
-        Credit=f"{full_amount:.2f}",
+        Credit=f"{amount_received:.2f}",
         ClientId=instance.ClientId
     )
 

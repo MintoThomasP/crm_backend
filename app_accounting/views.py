@@ -114,11 +114,63 @@ def CashBookByCompanyId(request, CompanyId=""):
             item_data['ReferenceNumber'] = entry.ReferenceNumber
             item_data['Source'] = entry.Source
             item_data['Narration'] = entry.Narration
+            
+            # Resolve Contra Account
+            other_items = JournalItem.objects.filter(JournalEntryId=item.JournalEntryId).exclude(JournalItemId=item.JournalItemId)
+            non_cb_items = []
+            for o_item in other_items:
+                try:
+                    acc = Account.objects.get(AccountId=o_item.AccountId)
+                    if not acc.IsCashOrBank:
+                        non_cb_items.append((o_item, acc))
+                except Account.DoesNotExist:
+                    pass
+            
+            if not non_cb_items:
+                for o_item in other_items:
+                    try:
+                        acc = Account.objects.get(AccountId=o_item.AccountId)
+                        non_cb_items.append((o_item, acc))
+                    except Account.DoesNotExist:
+                        pass
+                        
+            if len(non_cb_items) == 1:
+                item_data['ContraAccountName'] = non_cb_items[0][1].Name
+                item_data['ContraAccountCode'] = non_cb_items[0][1].Code
+            elif len(non_cb_items) > 1:
+                if entry.Source == 'payment':
+                    ar_item = next((x for x in non_cb_items if x[1].Code == '1200'), None)
+                    if ar_item:
+                        item_data['ContraAccountName'] = ar_item[1].Name
+                        item_data['ContraAccountCode'] = ar_item[1].Code
+                    else:
+                        item_data['ContraAccountName'] = "Multiple Accounts"
+                        item_data['ContraAccountCode'] = "Split"
+                else:
+                    item_data['ContraAccountName'] = ", ".join([x[1].Name for x in non_cb_items if x[1].Name])
+                    item_data['ContraAccountCode'] = ", ".join([x[1].Code for x in non_cb_items if x[1].Code])
+            else:
+                item_data['ContraAccountName'] = ""
+                item_data['ContraAccountCode'] = ""
+                
+            # Get Bank Charges for payment received
+            if entry.Source == 'payment':
+                charges_item = next((x for x in non_cb_items if x[1].Code == '6150'), None)
+                if charges_item:
+                    item_data['BankCharges'] = charges_item[0].Debit
+                else:
+                    item_data['BankCharges'] = "0.00"
+            else:
+                item_data['BankCharges'] = "0.00"
+                
         except JournalEntry.DoesNotExist:
             item_data['Date'] = ""
             item_data['ReferenceNumber'] = ""
             item_data['Source'] = ""
             item_data['Narration'] = ""
+            item_data['ContraAccountName'] = ""
+            item_data['ContraAccountCode'] = ""
+            item_data['BankCharges'] = "0.00"
             
         try:
             client = Client.objects.get(ClientId=item.ClientId)
