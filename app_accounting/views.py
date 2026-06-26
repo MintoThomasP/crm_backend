@@ -567,6 +567,12 @@ def ExportCashBook(request, CompanyId=""):
                 except Account.DoesNotExist:
                     pass
                     
+        client_name = ""
+        if item.ClientId:
+            client = Client.objects.filter(ClientId=item.ClientId).first()
+            if client:
+                client_name = client.CustomerDisplayName
+
         # Check for Bank Charges
         bank_charges = 0.0
         if entry_date and entry.Source == 'payment':
@@ -591,6 +597,7 @@ def ExportCashBook(request, CompanyId=""):
                 'SortId': item.SortId,
                 'ContraAccountName': contra_name,
                 'ContraAccountCode': contra_code,
+                'ClientName': client_name,
             })
             
             # 2. Bank Charges Deduction Row
@@ -604,6 +611,7 @@ def ExportCashBook(request, CompanyId=""):
                 'SortId': item.SortId,
                 'ContraAccountName': "Bank Charges",
                 'ContraAccountCode': "6150",
+                'ClientName': "",
             })
         else:
             contra_name = ""
@@ -634,6 +642,7 @@ def ExportCashBook(request, CompanyId=""):
                 'SortId': item.SortId,
                 'ContraAccountName': contra_name,
                 'ContraAccountCode': contra_code,
+                'ClientName': client_name,
             })
             
     # Sort: Date, SortId, then Debit row first
@@ -726,15 +735,9 @@ def ExportCashBook(request, CompanyId=""):
         from django.http import HttpResponse
             
         if currency_type == 'INR':
-            excel_format = '"₹"#,##,##0.00;("₹"#,##,##0.00);"-"'
-        elif currency_type == 'USD':
-            excel_format = '"$"#,##0.00;("$"#,##0.00);"-"'
-        elif currency_type == 'AED':
-            excel_format = '"AED "#,##0.00;("AED "#,##0.00);"-"'
-        elif currency_type == 'EUR':
-            excel_format = '"€"#,##0.00;("€"#,##0.00);"-"'
+            excel_format = '#,##,##0.00;(#,##,##0.00);"-"'
         else:
-            excel_format = f'"{currency_type} "#,##0.00;("{currency_type} "#,##0.00);"-"'
+            excel_format = '#,##0.00;(#,##0.00);"-"'
 
         wb = openpyxl.Workbook()
         ws = wb.active
@@ -760,70 +763,77 @@ def ExportCashBook(request, CompanyId=""):
             bottom=Side(style='double', color="1E3A8A")
         )
         
-        ws.merge_cells("A1:G1")
+        ws.merge_cells("A1:I1")
         ws["A1"] = company_name
         ws["A1"].font = title_font
         ws["A1"].alignment = Alignment(horizontal="center")
         
-        ws.merge_cells("A2:G2")
+        ws.merge_cells("A2:I2")
         ws["A2"] = f"Period: {period_str}"
         ws["A2"].font = subtitle_font
         ws["A2"].alignment = Alignment(horizontal="center")
         
-        ws.append([]) # Empty row
+        ws.merge_cells("A3:I3")
+        ws["A3"] = "Note: All financial figures and transaction amounts are represented in Indian Rupees (INR)."
+        ws["A3"].font = Font(name="Arial", size=10, italic=True, color="4B5563")
+        ws["A3"].alignment = Alignment(horizontal="left")
         
-        ws.append(["Opening Balance", "", "", "", "", "", opening_balance])
-        ws.merge_cells(f"A4:F4")
-        ws["A4"].font = bold_font
-        ws["G4"].font = bold_font
-        ws["G4"].alignment = Alignment(horizontal="right")
-        ws["G4"].number_format = excel_format
-        ws["A4"].fill = summary_fill
-        ws["G4"].fill = summary_fill
+        ws.append([]) # Row 4 empty
         
-        headers = ["Date", "Reference", "Contra Account", "Narration", "Receipt (Dr)", "Payment (Cr)", "Running Balance"]
+        ws.append(["Opening Balance", "", "", "", "", "", "", "", opening_balance])
+        ws.merge_cells(f"A5:H5")
+        ws["A5"].font = bold_font
+        ws["I5"].font = bold_font
+        ws["I5"].alignment = Alignment(horizontal="right")
+        ws["I5"].number_format = excel_format
+        ws["A5"].fill = summary_fill
+        ws["I5"].fill = summary_fill
+        
+        headers = ["#", "Date", "Reference", "Account", "Narration", "Client", "Receipt (Dr)", "Payment (Cr)", "Running Balance"]
         ws.append(headers)
-        header_row = 5
+        header_row = 6
         for col_idx, h in enumerate(headers, 1):
             cell = ws.cell(row=header_row, column=col_idx)
             cell.font = header_font
             cell.fill = header_fill
-            cell.alignment = Alignment(horizontal="center" if col_idx <= 3 else "left" if col_idx == 4 else "right")
+            cell.alignment = Alignment(horizontal="left" if col_idx <= 6 else "right")
             
-        current_row = 6
-        for row in period_items:
+        current_row = 7
+        for idx, row in enumerate(period_items, 1):
             debit_val = safe_float(row['Debit'])
             credit_val = safe_float(row['Credit'])
             bal_val = safe_float(row['RunningBalance'])
             
             ws.append([
+                idx,
                 row['Date'],
                 row['ReferenceNumber'],
                 f"{row['ContraAccountCode']} - {row['ContraAccountName']}" if row['ContraAccountCode'] else row['ContraAccountName'],
                 row['Narration'],
+                row.get('ClientName', '') or '-',
                 debit_val,
                 credit_val,
                 bal_val
             ])
-            for col_idx in range(1, 8):
+            for col_idx in range(1, 10):
                 cell = ws.cell(row=current_row, column=col_idx)
                 cell.font = regular_font
                 cell.border = thin_border
-                cell.alignment = Alignment(horizontal="center" if col_idx <= 2 else "left" if col_idx in (3, 4) else "right")
-                if col_idx in (5, 6, 7):
+                cell.alignment = Alignment(horizontal="left" if col_idx <= 6 else "right")
+                if col_idx in (7, 8, 9):
                     cell.number_format = excel_format
             current_row += 1
             
-        ws.append(["Closing Balance", "", "", "", "", "", closing_balance])
-        ws.merge_cells(f"A{current_row}:F{current_row}")
+        ws.append(["Closing Balance", "", "", "", "", "", "", "", closing_balance])
+        ws.merge_cells(f"A{current_row}:H{current_row}")
         ws[f"A{current_row}"].font = bold_font
-        ws[f"G{current_row}"].font = bold_font
-        ws[f"G{current_row}"].alignment = Alignment(horizontal="right")
-        ws[f"G{current_row}"].number_format = excel_format
+        ws[f"I{current_row}"].font = bold_font
+        ws[f"I{current_row}"].alignment = Alignment(horizontal="right")
+        ws[f"I{current_row}"].number_format = excel_format
         ws[f"A{current_row}"].border = double_bottom_border
-        ws[f"G{current_row}"].border = double_bottom_border
+        ws[f"I{current_row}"].border = double_bottom_border
         ws[f"A{current_row}"].fill = summary_fill
-        ws[f"G{current_row}"].fill = summary_fill
+        ws[f"I{current_row}"].fill = summary_fill
         
         for col in ws.columns:
             max_len = max(len(str(cell.value or '')) for cell in col)
@@ -842,8 +852,55 @@ def ExportCashBook(request, CompanyId=""):
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib import colors
         from reportlab.lib.enums import TA_RIGHT
-        from app_sale.templatetags.currency_filters import format_finance_currency
         
+        def format_raw_currency(value, currency_code):
+            if value is None or value == '':
+                value = 0.0
+            try:
+                num = float(value)
+            except (ValueError, TypeError):
+                return ''
+            
+            is_negative = num < 0
+            abs_num = abs(num)
+            fixed_num = f"{abs_num:.2f}"
+            parts = fixed_num.split('.')
+            integer_part = parts[0]
+            decimal_part = parts[1]
+            
+            code = (currency_code or '').strip().upper()
+            
+            if code == 'INR':
+                if len(integer_part) <= 3:
+                    formatted_integer = integer_part
+                else:
+                    last_three = integer_part[-3:]
+                    remaining = integer_part[:-3]
+                    chunks = []
+                    while len(remaining) > 0:
+                        chunks.insert(0, remaining[-2:])
+                        remaining = remaining[:-2]
+                    formatted_integer = ','.join(chunks) + ',' + last_three
+                return f"{'-' if is_negative else ''}{formatted_integer}.{decimal_part}"
+                
+            elif code == 'EUR':
+                chunks = []
+                remaining = integer_part
+                while len(remaining) > 0:
+                    chunks.insert(0, remaining[-3:])
+                    remaining = remaining[:-3]
+                formatted_integer = '.'.join(chunks)
+                return f"{'-' if is_negative else ''}{formatted_integer},{decimal_part}"
+                
+            else:
+                chunks = []
+                remaining = integer_part
+                while len(remaining) > 0:
+                    chunks.insert(0, remaining[-3:])
+                    remaining = remaining[:-3]
+                formatted_integer = ','.join(chunks)
+                return f"{'-' if is_negative else ''}{formatted_integer}.{decimal_part}"
+
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
         
@@ -864,6 +921,14 @@ def ExportCashBook(request, CompanyId=""):
             parent=styles['Normal'],
             fontName='Helvetica-Oblique',
             fontSize=10,
+            textColor=colors.HexColor("#4b5563"),
+            spaceAfter=8
+        )
+        note_style = ParagraphStyle(
+            'DocNote',
+            parent=styles['Normal'],
+            fontName='Helvetica-Oblique',
+            fontSize=9,
             textColor=colors.HexColor("#4b5563"),
             spaceAfter=15
         )
@@ -917,15 +982,18 @@ def ExportCashBook(request, CompanyId=""):
         
         story.append(Paragraph(company_name, title_style))
         story.append(Paragraph(f"Cash Book Statement &mdash; Period: {period_str}", subtitle_style))
+        story.append(Paragraph("Note: All financial figures and transaction amounts are represented in Indian Rupees (INR).", note_style))
         
-        col_widths = [65, 65, 110, 190, 95, 95, 100]
+        col_widths = [30, 65, 65, 105, 175, 100, 60, 60, 60]
         
         table_data = []
         table_data.append([
+            Paragraph("#", header_cell_style),
             Paragraph("Date", header_cell_style),
             Paragraph("Reference", header_cell_style),
-            Paragraph("Contra Account", header_cell_style),
+            Paragraph("Account", header_cell_style),
             Paragraph("Narration", header_cell_style),
+            Paragraph("Client", header_cell_style),
             Paragraph("Receipt (Dr)", header_cell_style_right),
             Paragraph("Payment (Cr)", header_cell_style_right),
             Paragraph("Running Balance", header_cell_style_right)
@@ -933,24 +1001,26 @@ def ExportCashBook(request, CompanyId=""):
         
         table_data.append([
             Paragraph("<b>Opening Balance</b>", cell_bold),
-            "", "", "", "", "",
-            Paragraph(f"<b>{format_finance_currency(opening_balance, currency_type)}</b>", cell_bold_right)
+            "", "", "", "", "", "", "",
+            Paragraph(f"<b>{format_raw_currency(opening_balance, currency_type)}</b>", cell_bold_right)
         ])
         
-        for row in period_items:
+        for idx, row in enumerate(period_items, 1):
             debit_val = safe_float(row['Debit'])
             credit_val = safe_float(row['Credit'])
             running_val = safe_float(row['RunningBalance'])
             
-            debit_str = format_finance_currency(debit_val, currency_type) if debit_val > 0 else "-"
-            credit_str = format_finance_currency(credit_val, currency_type) if credit_val > 0 else "-"
-            running_str = format_finance_currency(running_val, currency_type)
+            debit_str = format_raw_currency(debit_val, currency_type) if debit_val > 0 else "-"
+            credit_str = format_raw_currency(credit_val, currency_type) if credit_val > 0 else "-"
+            running_str = format_raw_currency(running_val, currency_type)
             
             table_data.append([
+                Paragraph(str(idx), cell_style),
                 Paragraph(row['Date'], cell_style),
                 Paragraph(row['ReferenceNumber'], cell_style),
                 Paragraph(f"{row['ContraAccountCode']} - {row['ContraAccountName']}" if row['ContraAccountCode'] else row['ContraAccountName'], cell_style),
                 Paragraph(row['Narration'], cell_style),
+                Paragraph(row.get('ClientName', '') or '-', cell_style),
                 Paragraph(debit_str, cell_style_right),
                 Paragraph(credit_str, cell_style_right),
                 Paragraph(running_str, cell_style_right)
@@ -958,8 +1028,8 @@ def ExportCashBook(request, CompanyId=""):
             
         table_data.append([
             Paragraph("<b>Closing Balance</b>", cell_bold),
-            "", "", "", "", "",
-            Paragraph(f"<b>{format_finance_currency(closing_balance, currency_type)}</b>", cell_bold_right)
+            "", "", "", "", "", "", "",
+            Paragraph(f"<b>{format_raw_currency(closing_balance, currency_type)}</b>", cell_bold_right)
         ])
         
         t = Table(table_data, colWidths=col_widths, repeatRows=1)
@@ -969,13 +1039,13 @@ def ExportCashBook(request, CompanyId=""):
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#e5e7eb")),
             
-            ('SPAN', (0, 1), (5, 1)),
+            ('SPAN', (0, 1), (7, 1)),
             ('BACKGROUND', (0, 1), (-1, 1), colors.HexColor("#f3f4f6")),
-            ('ALIGN', (6, 1), (6, 1), 'RIGHT'),
+            ('ALIGN', (8, 1), (8, 1), 'RIGHT'),
             
-            ('SPAN', (0, -1), (5, -1)),
+            ('SPAN', (0, -1), (7, -1)),
             ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#f3f4f6")),
-            ('ALIGN', (6, -1), (6, -1), 'RIGHT'),
+            ('ALIGN', (8, -1), (8, -1), 'RIGHT'),
             
             ('TOPPADDING', (0, 0), (-1, -1), 5),
             ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
