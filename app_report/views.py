@@ -1124,6 +1124,16 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
                     data.append(item)
 
 
+                currency_type = 'INR'
+                try:
+                    client = Client.objects.filter(ClientId=ClientId).first()
+                    if client:
+                        site_settings = SiteSettings.objects.filter(CompanyId=client.CompanyId).first()
+                        if site_settings and site_settings.CurrencyType:
+                            currency_type = site_settings.CurrencyType
+                except Exception:
+                    pass
+
                 context = {
                     # "formatted_data": formatted_data[0],
                     # "formatted_head_title": formatted_head_title[0],
@@ -1132,8 +1142,8 @@ def getFinanceReport(request, startdate="", enddate="",ClientId="",ReportType=""
                     "cell_length":cell_length,
                     "BaseValue":BaseValue,
                     "expectField":expectField,
-                    "NoOfMonths":int(NoOfMonths)
-    ,
+                    "NoOfMonths":int(NoOfMonths),
+                    "CurrencyType": currency_type,
                 }
                 return context
         
@@ -1389,7 +1399,34 @@ def FinanceReportExcel(request, startdate="", enddate="",ClientId="",ReportType=
     if 'Level' in df.columns:
         df['Item'] = df.apply(lambda row: '    ' * (row['Level'] - 1) + row['Item'], axis=1)
     
+    # Convert numerical columns from strings to float numbers for correct Excel rendering
+    for col in df.columns:
+        if col != 'Item':
+            df[col] = df[col].astype(str).str.replace('%', '', regex=False)
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+            
     df = df.fillna(0)
+    
+    currency_code = 'INR'
+    try:
+        client = Client.objects.filter(ClientId=ClientId).first()
+        if client:
+            site_settings = SiteSettings.objects.filter(CompanyId=client.CompanyId).first()
+            if site_settings and site_settings.CurrencyType:
+                currency_code = site_settings.CurrencyType.strip().upper()
+    except Exception:
+        pass
+        
+    if currency_code == 'INR':
+        excel_format = '"₹"#,##,##0.00;("₹"#,##,##0.00);"-"'
+    elif currency_code == 'USD':
+        excel_format = '"$"#,##0.00;("$"#,##0.00);"-"'
+    elif currency_code == 'AED':
+        excel_format = '"AED "#,##0.00;("AED "#,##0.00);"-"'
+    elif currency_code == 'EUR':
+        excel_format = '"€"#,##0.00;("€"#,##0.00);"-"'
+    else:
+        excel_format = f'"{currency_code} "#,##0.00;("{currency_code} "#,##0.00);"-"'
     
     buffer = BytesIO()
     with pd.ExcelWriter(buffer, engine='openpyxl') as writer:
@@ -1418,10 +1455,19 @@ def FinanceReportExcel(request, startdate="", enddate="",ClientId="",ReportType=
             adjusted_width = max_length + 2  # Adjust width with some padding
             worksheet.column_dimensions[get_column_letter(col_idx)].width = adjusted_width
 
-        # Right-align data from the second column onwards
-        for row in worksheet.iter_rows(min_row=4, min_col=2, max_col=num_columns):
-            for cell in row:
+        # Right-align data from the second column onwards and apply format
+        for col_idx in range(2, num_columns + 1):
+            header_val = str(worksheet.cell(row=4, column=col_idx).value or '')
+            is_pct = '%' in header_val
+            for row_idx in range(4, worksheet.max_row + 1):
+                cell = worksheet.cell(row=row_idx, column=col_idx)
                 cell.alignment = Alignment(horizontal='right')
+                if row_idx >= 5 and isinstance(cell.value, (int, float)):
+                    if is_pct:
+                        cell.number_format = '0.00"%"'
+                    else:
+                        cell.number_format = excel_format
+                        
         # Add alternating row background colors
         light_gray_fill = PatternFill(start_color='D3D3D3', end_color='D3D3D3', fill_type='solid')
         white_fill = PatternFill(start_color='FFFFFF', end_color='FFFFFF', fill_type='solid')

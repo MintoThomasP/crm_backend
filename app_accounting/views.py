@@ -665,11 +665,45 @@ def ExportCashBook(request, CompanyId=""):
         
     period_str = f"{start_date or 'Beginning'} to {end_date or 'Present'}"
     
+    import re
+    clean_company = re.sub(r'[^a-zA-Z0-9_\-]', '_', company_name)
+    clean_company = re.sub(r'_+', '_', clean_company).strip('_')
+    if not clean_company:
+        clean_company = "Report"
+        
+    from_date_str = start_date if start_date else "Beginning"
+    to_date_str = end_date if end_date else "Present"
+    from_date_str = re.sub(r'[^a-zA-Z0-9_\-]', '_', from_date_str)
+    to_date_str = re.sub(r'[^a-zA-Z0-9_\-]', '_', to_date_str)
+    date_range_str = f"{from_date_str}_to_{to_date_str}"
+    
+    filename = f"CashBook-{clean_company}-{date_range_str}"
+    
     if export_format == 'excel':
         import openpyxl
         from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
         from django.http import HttpResponse
         
+        currency_type = 'INR'
+        try:
+            from app_site.models import SiteSettings
+            siteSettings = SiteSettings.objects.filter(CompanyId=CompanyId).first()
+            if siteSettings and siteSettings.CurrencyType:
+                currency_type = siteSettings.CurrencyType.strip().upper()
+        except:
+            pass
+            
+        if currency_type == 'INR':
+            excel_format = '"₹"#,##,##0.00;("₹"#,##,##0.00);"-"'
+        elif currency_type == 'USD':
+            excel_format = '"$"#,##0.00;("$"#,##0.00);"-"'
+        elif currency_type == 'AED':
+            excel_format = '"AED "#,##0.00;("AED "#,##0.00);"-"'
+        elif currency_type == 'EUR':
+            excel_format = '"€"#,##0.00;("€"#,##0.00);"-"'
+        else:
+            excel_format = f'"{currency_type} "#,##0.00;("{currency_type} "#,##0.00);"-"'
+
         wb = openpyxl.Workbook()
         ws = wb.active
         ws.title = "Cash Book"
@@ -706,11 +740,12 @@ def ExportCashBook(request, CompanyId=""):
         
         ws.append([]) # Empty row
         
-        ws.append(["Opening Balance", "", "", "", "", "", f"INR {opening_balance:.2f}"])
+        ws.append(["Opening Balance", "", "", "", "", "", opening_balance])
         ws.merge_cells(f"A4:F4")
         ws["A4"].font = bold_font
         ws["G4"].font = bold_font
         ws["G4"].alignment = Alignment(horizontal="right")
+        ws["G4"].number_format = excel_format
         ws["A4"].fill = summary_fill
         ws["G4"].fill = summary_fill
         
@@ -725,27 +760,34 @@ def ExportCashBook(request, CompanyId=""):
             
         current_row = 6
         for row in period_items:
+            debit_val = safe_float(row['Debit'])
+            credit_val = safe_float(row['Credit'])
+            bal_val = safe_float(row['RunningBalance'])
+            
             ws.append([
                 row['Date'],
                 row['ReferenceNumber'],
                 f"{row['ContraAccountCode']} - {row['ContraAccountName']}" if row['ContraAccountCode'] else row['ContraAccountName'],
                 row['Narration'],
-                f"INR {row['Debit']}" if safe_float(row['Debit']) > 0 else "-",
-                f"INR {row['Credit']}" if safe_float(row['Credit']) > 0 else "-",
-                f"INR {row['RunningBalance']}"
+                debit_val,
+                credit_val,
+                bal_val
             ])
             for col_idx in range(1, 8):
                 cell = ws.cell(row=current_row, column=col_idx)
                 cell.font = regular_font
                 cell.border = thin_border
                 cell.alignment = Alignment(horizontal="center" if col_idx <= 2 else "left" if col_idx in (3, 4) else "right")
+                if col_idx in (5, 6, 7):
+                    cell.number_format = excel_format
             current_row += 1
             
-        ws.append(["Closing Balance", "", "", "", "", "", f"INR {closing_balance:.2f}"])
+        ws.append(["Closing Balance", "", "", "", "", "", closing_balance])
         ws.merge_cells(f"A{current_row}:F{current_row}")
         ws[f"A{current_row}"].font = bold_font
         ws[f"G{current_row}"].font = bold_font
         ws[f"G{current_row}"].alignment = Alignment(horizontal="right")
+        ws[f"G{current_row}"].number_format = excel_format
         ws[f"A{current_row}"].border = double_bottom_border
         ws[f"G{current_row}"].border = double_bottom_border
         ws[f"A{current_row}"].fill = summary_fill
@@ -757,7 +799,7 @@ def ExportCashBook(request, CompanyId=""):
             ws.column_dimensions[col_letter].width = max(max_len + 3, 12)
             
         response = HttpResponse(content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-        response['Content-Disposition'] = f'attachment; filename="CashBook_{CompanyId}.xlsx"'
+        response['Content-Disposition'] = f'attachment; filename="{filename}.xlsx"'
         wb.save(response)
         return response
         
@@ -769,7 +811,7 @@ def ExportCashBook(request, CompanyId=""):
         from reportlab.lib import colors
         
         response = HttpResponse(content_type='application/pdf')
-        response['Content-Disposition'] = f'attachment; filename="CashBook_{CompanyId}.pdf"'
+        response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
         
         doc = SimpleDocTemplate(response, pagesize=landscape(letter), rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
         story = []

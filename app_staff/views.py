@@ -1399,7 +1399,8 @@ def DownloadSalarySlip(request, Month, Year, StaffId):
         'logo': logo,
         'Month':  calendar.month_name[int(Month)],
         'Year': Year,
-        'staffBankDetails': bankDetails
+        'staffBankDetails': bankDetails,
+        'siteSettings': siteSettings
     }
     # return JsonResponse("", safe=False)
     pdf = render_to_pdf('salary_slip.html', context)

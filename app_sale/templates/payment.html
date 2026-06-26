@@ -1,3 +1,4 @@
+{% load currency_filters %}
 <!DOCTYPE html>
 
 <html lang="en">
@@ -106,7 +107,7 @@
                                     <td style="width:45%; border-bottom: 1px solid grey; padding-top: 5px;">{{paymentDate}}</td>
                                     <td style="width:5%;"></td>
                                     <td rowspan="3" style="width:25%; background-color: rgb(134, 196, 134);padding:5px; font-size: 15px; text-align: center;">Amount Received
-                                        <br>AED {{payment.AmountReceived|floatformat:2}}
+                                        <br>{{payment.AmountReceived|format_currency:siteSettings.CurrencyType}}
                                         </td>
                                 </tr>
                                 <tr>
@@ -145,7 +146,7 @@
 <div style="width:100%; margin-top:80px;">
     <table style="width:100%;">
         <tr style="border-top: 1px solid grey; padding: 10px; border-bottom: 1px solid grey;">
-            <td><p>Over payment<br>{{payment.AmountReceived|floatformat:2}}</p></td>
+            <td><p>Over payment<br>{{payment.AmountReceived|format_currency:siteSettings.CurrencyType}}</p></td>
             
         </tr>
     </table>

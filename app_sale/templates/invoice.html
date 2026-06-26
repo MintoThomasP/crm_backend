@@ -1,3 +1,4 @@
+{% load currency_filters %}
 <!DOCTYPE html>
 <html lang="en">
 
@@ -287,7 +288,7 @@
                             <b style="font-size:16px;"># {{invoice.InvoiceNumber}}</b>
                             <br/>
                             <span>Balance Due<br>
-                                <b style="font-size:20px;">{{siteSettings.CurrencyType}} {{invoice.AmountDue | floatformat:2}}</b></span>
+                                <b style="font-size:20px;">{{invoice.AmountDue | format_currency:siteSettings.CurrencyType}}</b></span>
                         </div>
 
 
@@ -352,7 +353,7 @@
                         <th style="width: 9%;text-align: center;">Code</th>
                         <th style="width: 50%; text-align: left;">Item & Description </th>
                         <th style="width: 5%;text-align: center;">Qty</th>
-                        <th style="width: 20%;text-align: center;">Rate</th>
+                        <th style="width: 20%;text-align: right;">Rate</th>
                         <th style="width: 20%;text-align: right;">Amount</th>
                     </tr>
                     {%for row in invoiceItems%}
@@ -361,8 +362,8 @@
                         <td style="width: 9%;text-align: center;">{{row.Code}}</td>
                         <td style="width: 45%; text-align: left;">{{row.ItemDetails|safe}}</td>
                         <td style="width: 5%;text-align: center;">{{row.Quantity}}</td>
-                        <td style="width: 18%; text-align: center;"> {{row.Rate | floatformat:2}}</td>
-                        <td style="width: 18%; text-align: right;"> {{row.Amount | floatformat:2}}</td>
+                        <td style="width: 18%; text-align: right;"> {{row.Rate | format_currency:siteSettings.CurrencyType}}</td>
+                        <td style="width: 18%; text-align: right;"> {{row.Amount | format_currency:siteSettings.CurrencyType}}</td>
 
                     </tr>
                     {%endfor%}
@@ -376,7 +377,7 @@
                         <td style="width: 40%;"></td>
                         
                         <td style="width: 20%; text-align: right; vertical-align: middle;"><b>Sub Total</b></td>
-                        <td style="width: 30%; text-align: right;">{{siteSettings.CurrencyType}} {{invoice.SubTotalAmount | floatformat:2}}</td>
+                        <td style="width: 30%; text-align: right;">{{invoice.SubTotalAmount | format_currency:siteSettings.CurrencyType}}</td>
 
                     </tr>
 
@@ -388,7 +389,7 @@
                         <td style="width: 40%;"></td>
                         
                         <td style="width: 20%; text-align: right; vertical-align: middle;"><b>CGST{{'@'}}{{HalfTax}}% </b></td>
-                        <td style="width: 30%; text-align: right;">{{siteSettings.CurrencyType}} {{HalfTaxAmount | floatformat:2}}</td>
+                        <td style="width: 30%; text-align: right;">{{HalfTaxAmount | format_currency:siteSettings.CurrencyType}}</td>
 
                     </tr>
                     <tr >
@@ -396,7 +397,7 @@
                         <td style="width: 40%;"></td>
                         
                         <td style="width: 20%; text-align: right; vertical-align: middle;"><b>SGST{{'@'}}{{HalfTax}}%</b></td>
-                        <td style="width: 30%; text-align: right;">{{siteSettings.CurrencyType}} {{HalfTaxAmount | floatformat:2}}</td>
+                        <td style="width: 30%; text-align: right;">{{HalfTaxAmount | format_currency:siteSettings.CurrencyType}}</td>
 
                     </tr>
                 </table>
@@ -408,7 +409,7 @@
                         <td style="width: 40%;"></td>
                         
                         <td style="width: 20%; text-align: right; vertical-align: middle;"><b>IGST{{'@'}}{{invoice.TaxPercentage}}%</b></td>
-                        <td style="width: 30%; text-align: right;">{{siteSettings.CurrencyType}} {{invoice.TaxAmount | floatformat:2}}</td>
+                        <td style="width: 30%; text-align: right;">{{invoice.TaxAmount | format_currency:siteSettings.CurrencyType}}</td>
 
                     </tr>
                 </table>
@@ -420,7 +421,7 @@
                         <td style="width: 40%;"></td>
                         
                         <td style="width: 20%; text-align: right; vertical-align: middle;"><b>VAT{{'@'}}{{invoice.TaxPercentage}}%</b></td>
-                        <td style="width: 30%; text-align: right;">{{siteSettings.CurrencyType}} {{invoice.TaxAmount | floatformat:2}}</td>
+                        <td style="width: 30%; text-align: right;">{{invoice.TaxAmount | format_currency:siteSettings.CurrencyType}}</td>
 
                     </tr>
         {%endif%}
@@ -430,7 +431,7 @@
                         <td style="width: 50%;" colspan="2">Amount in Words: <b>{{amountinwords}}</b></td>
                         <!-- <td style="width: 5%;"></td> -->
                         <td style="width: 20%; text-align: right;"><b>Total</b> </td>
-                        <td style="width: 30%; text-align: right;"><b>{{siteSettings.CurrencyType}} {{invoice.TotalAmount | floatformat:2}}</b></td>
+                        <td style="width: 30%; text-align: right;"><b>{{invoice.TotalAmount | format_currency:siteSettings.CurrencyType}}</b></td>
 
                     </tr>
 
@@ -444,14 +445,14 @@
                     <td style="width: 30%;"></td>
                     
                     <td style="width: 20%; text-align: right;"><b>Sub Total</b></td>
-                    <td style="width: 30%; text-align: right;">{{siteSettings.CurrencyType}} {{invoice.SubTotalAmount | floatformat:2}}</td>
+                    <td style="width: 30%; text-align: right;">{{invoice.SubTotalAmount | format_currency:siteSettings.CurrencyType}}</td>
 
                 </tr>
                 <tr>
                     <td style="width: 50%;" colspan="2">Amount in Words: <b>{{amountinwords}}</b></td>
                     <!-- <td style="width: 5%;"></td> -->
                     <td style="width: 20%; text-align: right;"><b>Total</b> </td>
-                    <td style="width: 30%; text-align: right;"><b>{{siteSettings.CurrencyType}} {{invoice.TotalAmount | floatformat:2}}</b></td>
+                    <td style="width: 30%; text-align: right;"><b>{{invoice.TotalAmount | format_currency:siteSettings.CurrencyType}}</b></td>
 
                 </tr>
 

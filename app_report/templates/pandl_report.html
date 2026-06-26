@@ -1,3 +1,4 @@
+{% load currency_filters %}
 <!DOCTYPE html>
 
 <html lang="en">
@@ -217,7 +218,7 @@
                     <b>
                         {% if key != '0'%}
                         <div style="text-align: right;">
-                            {{ value }}
+                            {{ value|format_currency:CurrencyType }}
                         </div>
                         {% else %}
                         {{ value }}
@@ -228,11 +229,11 @@
                     &nbsp;&nbsp;&nbsp;&nbsp;{{ value }}
                     {% elif i.Level == 3 or key != '0'%}
                     <div style="text-align: right;">
-                        {{ value }}
+                        {{ value|format_currency:CurrencyType }}
                     </div>
                     {% elif i.Level == 0 %}
                     <div style="text-align: right;">
-                        <b>{{ value }}</b>
+                        <b>{{ value|format_currency:CurrencyType }}</b>
                     </div>
                     {% endif %}
                     {% elif i.Level == 1 %}

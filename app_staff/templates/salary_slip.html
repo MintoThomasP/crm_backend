@@ -1,3 +1,4 @@
+{% load currency_filters %}
 <!DOCTYPE html>
 
 <html lang="en">
@@ -167,7 +168,7 @@
             </tr>
             <tr>
                 <td class="ItemName">Gross Wages</td>
-                <td class="text-right ItemValue">{{salarySlip.GrossPay}}</td>
+                <td class="text-right ItemValue">{{salarySlip.GrossPay|format_currency:siteSettings.CurrencyType}}</td>
                 <td class="ItemName"></td>
                 <td class="ItemValue"></td>
             </tr>
@@ -189,43 +190,43 @@
             </tr>
             <tr>
                 <td class="ItemName">Basic</td>
-                <td class="text-right ItemValue">{{salarySlip.BasicPay}}</td>
+                <td class="text-right ItemValue">{{salarySlip.BasicPay|format_currency:siteSettings.CurrencyType}}</td>
                 <td class="ItemName"></td>
                 <td class="text-right ItemValue"></td>
             </tr>
             <tr>
                 <td class="ItemName">Conveyance Allowance</td>
-                <td class="text-right ItemValue">{{salarySlip.ConveyanceAllowance}}</td>
+                <td class="text-right ItemValue">{{salarySlip.ConveyanceAllowance|format_currency:siteSettings.CurrencyType}}</td>
                 <td class="ItemName"></td>
                 <td class="text-right ItemValue"></td>
             </tr>
             <tr>
                 <td class="ItemName">Medical Allowance</td>
-                <td class="text-right ItemValue">{{salarySlip.MedicalAllowance}}</td>
+                <td class="text-right ItemValue">{{salarySlip.MedicalAllowance|format_currency:siteSettings.CurrencyType}}</td>
                 <td class="ItemName"></td>
                 <td class="text-right ItemValue"></td>
             </tr>
             <tr>
                 <td class="ItemName">Other Allowances</td>
-                <td class="text-right ItemValue">{{salarySlip.OtherAllowance}}</td>
+                <td class="text-right ItemValue">{{salarySlip.OtherAllowance|format_currency:siteSettings.CurrencyType}}</td>
                 <td class="ItemName"></td>
                 <td class="text-right ItemValue"></td>
             </tr>
             <tr>
                 <td class="ItemName">Appreciation Bonus</td>
-                <td class="text-right ItemValue">{{salarySlip.AppreciationBonus}}</td>
+                <td class="text-right ItemValue">{{salarySlip.AppreciationBonus|format_currency:siteSettings.CurrencyType}}</td>
                 <td class="ItemName"></td>
                 <td class="text-right ItemValue"></td>
             </tr>
             <tr>
                 <td class="ItemName">Total Earnings</td>
-                <td class="text-right ItemValue">{{TotalEarnings}}</td>
+                <td class="text-right ItemValue">{{TotalEarnings|format_currency:siteSettings.CurrencyType}}</td>
                 <td class="ItemName">Total Deductions</td>
-                <td class="text-right ItemValue">{{TotalDeductions}}</td>
+                <td class="text-right ItemValue">{{TotalDeductions|format_currency:siteSettings.CurrencyType}}</td>
             </tr>
             <tr>
                 <td colspan="3" class="text-right bold">Net Salary</td>
-                <td class="text-right ItemValue">{{NetSalary}}</td>
+                <td class="text-right ItemValue">{{NetSalary|format_currency:siteSettings.CurrencyType}}</td>
             </tr>
         </tbody>
     </table>

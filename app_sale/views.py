@@ -1392,6 +1392,7 @@ def ViewPaymentPDF(request, PaymentReceivedId=""):
             client = Client.objects.get(ClientId=payment.ClientId)
 
             # amountinwords=decimal_number_to_words(totalAmount)
+            siteSettings = None
             try:
                 siteSettings = SiteSettings.objects.get(
                     CompanyId=payment.CompanyId)
@@ -1408,8 +1409,8 @@ def ViewPaymentPDF(request, PaymentReceivedId=""):
                 'paymentMode': paymentMode,
                 'billingaddressdata': billingaddressdata,
                 'client': client,
-                'logo': logo
-
+                'logo': logo,
+                'siteSettings': siteSettings
             }
 
             pdf = render_to_pdf('payment.html', context)
@@ -1441,6 +1442,7 @@ class DownloadPaymentPDF(View):
         client = Client.objects.get(ClientId=payment.ClientId)
 
         # amountinwords=decimal_number_to_words(totalAmount)
+        siteSettings = None
         try:
             siteSettings = SiteSettings.objects.get(
                 CompanyId=payment.CompanyId)
@@ -1455,8 +1457,8 @@ class DownloadPaymentPDF(View):
             'billingAdress': billingAdress,
             'client': client,
             'company': company,
-            'logo': logo
-
+            'logo': logo,
+            'siteSettings': siteSettings
         }
         pdf = render_to_pdf('Payment.html', context)
         response = HttpResponse(pdf, content_type='application/pdf')

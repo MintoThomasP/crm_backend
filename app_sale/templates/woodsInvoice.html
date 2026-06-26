@@ -1,3 +1,4 @@
+{% load currency_filters %}
 <!DOCTYPE html>
 
 <html lang="en">
@@ -241,7 +242,7 @@
             <th style="width: 9%; text-align: center">Code</th>
             <th style="width: 50%; text-align: left">Item & Description</th>
             <th style="width: 5%; text-align: center">Qty</th>
-            <th style="width: 20%; text-align: center">Rate</th>
+            <th style="width: 20%; text-align: right">Rate</th>
             <th style="width: 20%; text-align: right">Amount</th>
           </tr>
           {%for row in invoiceItems%}
@@ -252,11 +253,11 @@
               {{row.ItemDetails|safe}}
             </td>
             <td style="width: 5%; text-align: center">{{row.Quantity}}</td>
-            <td style="width: 18%; text-align: center">
-              {{row.Rate | floatformat:2}}
+            <td style="width: 18%; text-align: right">
+              {{row.Rate | format_currency:siteSettings.CurrencyType}}
             </td>
             <td style="width: 18%; text-align: right">
-              {{row.Amount | floatformat:2}}
+              {{row.Amount | format_currency:siteSettings.CurrencyType}}
             </td>
           </tr>
           {%endfor%}
@@ -287,7 +288,7 @@
                 border-bottom: 1px solid black;
               "
             >
-              AED {{invoice.SubTotalAmount}}
+              {{invoice.SubTotalAmount | format_currency:siteSettings.CurrencyType}}
             </td>
           </tr>
           <!-- <tr>
@@ -312,7 +313,7 @@
                 border-bottom: 1px solid black;
               "
             >
-              <b>AED {{invoice.TotalAmount}}</b>
+              <b>{{invoice.TotalAmount | format_currency:siteSettings.CurrencyType}}</b>
             </td>
           </tr>
           <tr>
