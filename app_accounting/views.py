@@ -665,33 +665,65 @@ def ExportCashBook(request, CompanyId=""):
         
     period_str = f"{start_date or 'Beginning'} to {end_date or 'Present'}"
     
-    import re
-    clean_company = re.sub(r'[^a-zA-Z0-9_\-]', '_', company_name)
-    clean_company = re.sub(r'_+', '_', clean_company).strip('_')
-    if not clean_company:
-        clean_company = "Report"
-        
-    from_date_str = start_date if start_date else "Beginning"
-    to_date_str = end_date if end_date else "Present"
-    from_date_str = re.sub(r'[^a-zA-Z0-9_\-]', '_', from_date_str)
-    to_date_str = re.sub(r'[^a-zA-Z0-9_\-]', '_', to_date_str)
-    date_range_str = f"{from_date_str}_to_{to_date_str}"
+    currency_type = 'INR'
+    try:
+        from app_site.models import SiteSettings
+        siteSettings = SiteSettings.objects.filter(CompanyId=CompanyId).first()
+        if siteSettings and siteSettings.CurrencyType:
+            currency_type = siteSettings.CurrencyType.strip().upper()
+    except:
+        pass
+
+    import datetime
+    import calendar
     
-    filename = f"CashBook-{clean_company}-{date_range_str}"
+    def parse_dt(d_str):
+        if not d_str:
+            return None
+        for fmt in ('%Y-%m-%d', '%Y/%m/%d', '%d-%m-%Y', '%d/%m/%Y'):
+            try:
+                return datetime.datetime.strptime(d_str.strip(), fmt).date()
+            except ValueError:
+                continue
+        return None
+        
+    start_dt = parse_dt(start_date)
+    end_dt = parse_dt(end_date)
+    
+    if not start_dt and not end_dt:
+        suffix = "All"
+    elif start_dt and not end_dt:
+        suffix = f"from_{start_dt.strftime('%Y%m%d')}"
+    elif not start_dt and end_dt:
+        suffix = f"to_{end_dt.strftime('%Y%m%d')}"
+    else:
+        last_day = calendar.monthrange(start_dt.year, start_dt.month)[1]
+        if start_dt.year == end_dt.year and start_dt.month == end_dt.month and start_dt.day == 1 and end_dt.day == last_day:
+            suffix = f"Monthly_{start_dt.strftime('%B')}_{start_dt.year}"
+        elif start_dt.month == 4 and start_dt.day == 1 and end_dt.month == 3 and end_dt.day == 31 and end_dt.year == start_dt.year + 1:
+            fy_start = str(start_dt.year)[2:]
+            fy_end = str(end_dt.year)[2:]
+            suffix = f"FY{fy_start}-{fy_end}"
+        elif start_dt.year == end_dt.year and start_dt.day == 1:
+            if start_dt.month == 1 and end_dt.month == 3 and end_dt.day == 31:
+                suffix = f"Quarterly_Q1_{start_dt.year}"
+            elif start_dt.month == 4 and end_dt.month == 6 and end_dt.day == 30:
+                suffix = f"Quarterly_Q2_{start_dt.year}"
+            elif start_dt.month == 7 and end_dt.month == 9 and end_dt.day == 30:
+                suffix = f"Quarterly_Q3_{start_dt.year}"
+            elif start_dt.month == 10 and end_dt.month == 12 and end_dt.day == 31:
+                suffix = f"Quarterly_Q4_{start_dt.year}"
+            else:
+                suffix = f"{start_dt.strftime('%Y%m%d')}_to_{end_dt.strftime('%Y%m%d')}"
+        else:
+            suffix = f"{start_dt.strftime('%Y%m%d')}_to_{end_dt.strftime('%Y%m%d')}"
+            
+    filename = f"Cash_Book_{suffix}"
     
     if export_format == 'excel':
         import openpyxl
         from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
         from django.http import HttpResponse
-        
-        currency_type = 'INR'
-        try:
-            from app_site.models import SiteSettings
-            siteSettings = SiteSettings.objects.filter(CompanyId=CompanyId).first()
-            if siteSettings and siteSettings.CurrencyType:
-                currency_type = siteSettings.CurrencyType.strip().upper()
-        except:
-            pass
             
         if currency_type == 'INR':
             excel_format = '"₹"#,##,##0.00;("₹"#,##,##0.00);"-"'
@@ -809,6 +841,8 @@ def ExportCashBook(request, CompanyId=""):
         from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
         from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
         from reportlab.lib import colors
+        from reportlab.lib.enums import TA_RIGHT
+        from app_sale.templatetags.currency_filters import format_finance_currency
         
         response = HttpResponse(content_type='application/pdf')
         response['Content-Disposition'] = f'attachment; filename="{filename}.pdf"'
@@ -840,12 +874,28 @@ def ExportCashBook(request, CompanyId=""):
             fontSize=8,
             leading=10
         )
+        cell_style_right = ParagraphStyle(
+            'CellTextRight',
+            parent=styles['Normal'],
+            fontName='Helvetica',
+            fontSize=8,
+            leading=10,
+            alignment=TA_RIGHT
+        )
         cell_bold = ParagraphStyle(
             'CellBold',
             parent=styles['Normal'],
             fontName='Helvetica-Bold',
             fontSize=8,
             leading=10
+        )
+        cell_bold_right = ParagraphStyle(
+            'CellBoldRight',
+            parent=styles['Normal'],
+            fontName='Helvetica-Bold',
+            fontSize=8,
+            leading=10,
+            alignment=TA_RIGHT
         )
         header_cell_style = ParagraphStyle(
             'HeaderCell',
@@ -854,6 +904,15 @@ def ExportCashBook(request, CompanyId=""):
             fontSize=9,
             leading=11,
             textColor=colors.white
+        )
+        header_cell_style_right = ParagraphStyle(
+            'HeaderCellRight',
+            parent=styles['Normal'],
+            fontName='Helvetica-Bold',
+            fontSize=9,
+            leading=11,
+            textColor=colors.white,
+            alignment=TA_RIGHT
         )
         
         story.append(Paragraph(company_name, title_style))
@@ -867,32 +926,40 @@ def ExportCashBook(request, CompanyId=""):
             Paragraph("Reference", header_cell_style),
             Paragraph("Contra Account", header_cell_style),
             Paragraph("Narration", header_cell_style),
-            Paragraph("Receipt (Dr)", header_cell_style),
-            Paragraph("Payment (Cr)", header_cell_style),
-            Paragraph("Running Balance", header_cell_style)
+            Paragraph("Receipt (Dr)", header_cell_style_right),
+            Paragraph("Payment (Cr)", header_cell_style_right),
+            Paragraph("Running Balance", header_cell_style_right)
         ])
         
         table_data.append([
             Paragraph("<b>Opening Balance</b>", cell_bold),
             "", "", "", "", "",
-            Paragraph(f"<b>INR {opening_balance:.2f}</b>", cell_bold)
+            Paragraph(f"<b>{format_finance_currency(opening_balance, currency_type)}</b>", cell_bold_right)
         ])
         
         for row in period_items:
+            debit_val = safe_float(row['Debit'])
+            credit_val = safe_float(row['Credit'])
+            running_val = safe_float(row['RunningBalance'])
+            
+            debit_str = format_finance_currency(debit_val, currency_type) if debit_val > 0 else "-"
+            credit_str = format_finance_currency(credit_val, currency_type) if credit_val > 0 else "-"
+            running_str = format_finance_currency(running_val, currency_type)
+            
             table_data.append([
                 Paragraph(row['Date'], cell_style),
                 Paragraph(row['ReferenceNumber'], cell_style),
                 Paragraph(f"{row['ContraAccountCode']} - {row['ContraAccountName']}" if row['ContraAccountCode'] else row['ContraAccountName'], cell_style),
                 Paragraph(row['Narration'], cell_style),
-                Paragraph(f"INR {row['Debit']}" if safe_float(row['Debit']) > 0 else "-", cell_style),
-                Paragraph(f"INR {row['Credit']}" if safe_float(row['Credit']) > 0 else "-", cell_style),
-                Paragraph(f"INR {row['RunningBalance']}", cell_style)
+                Paragraph(debit_str, cell_style_right),
+                Paragraph(credit_str, cell_style_right),
+                Paragraph(running_str, cell_style_right)
             ])
             
         table_data.append([
             Paragraph("<b>Closing Balance</b>", cell_bold),
             "", "", "", "", "",
-            Paragraph(f"<b>INR {closing_balance:.2f}</b>", cell_bold)
+            Paragraph(f"<b>{format_finance_currency(closing_balance, currency_type)}</b>", cell_bold_right)
         ])
         
         t = Table(table_data, colWidths=col_widths, repeatRows=1)
