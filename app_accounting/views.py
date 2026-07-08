@@ -1,10 +1,13 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, parser_classes
 from django.http.response import JsonResponse
-from rest_framework.parsers import JSONParser
-from app_accounting.models import Account, JournalEntry, JournalItem
-from app_accounting.serializers import AccountSerializer, JournalEntrySerializer, JournalItemSerializer
+from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
+from django.db import transaction
+from app_accounting.models import Account, JournalEntry, JournalItem, Expense, ExpenseClaim
+from app_accounting.serializers import AccountSerializer, JournalEntrySerializer, JournalItemSerializer, ExpenseSerializer, ExpenseClaimSerializer
 from app_client.models import Client
 from app_client.serializers import ClientSerializer
+from app_staff.models import Staff
+
 
 @api_view(['GET', 'POST'])
 def AccountApi(request):
@@ -48,9 +51,12 @@ def AccountApiById(request, AccountId=""):
 
 @api_view(['GET'])
 def AccountByCompanyId(request, CompanyId=""):
+    from app_accounting.signals import get_or_create_default_accounts
+    get_or_create_default_accounts(CompanyId)
     accounts = Account.objects.filter(CompanyId=CompanyId).order_by('Code')
     serializer = AccountSerializer(accounts, many=True)
     return JsonResponse(serializer.data, safe=False)
+
 
 
 @api_view(['GET'])
@@ -356,7 +362,288 @@ def ExpenseByCompanyId(request, CompanyId=""):
     return JsonResponse(enriched_expenses, safe=False)
 
 
+def get_next_claim_number(company_id):
+    claims = ExpenseClaim.objects.filter(CompanyId=company_id, ClaimNumber__startswith='CLM-')
+    max_num = 0
+    for clm in claims:
+        match = re.match(r'^CLM-(\d+)$', clm.ClaimNumber or '')
+        if match:
+            num = int(match.group(1))
+            if num > max_num:
+                max_num = num
+    next_num = max_num + 1
+    return f"CLM-{next_num:07d}"
+
+
+def post_claim_journal_entries(claim):
+    from app_accounting.signals import get_or_create_default_accounts
+    company_id = claim.CompanyId
+    if not company_id:
+        return
+
+    accounts = get_or_create_default_accounts(company_id)
+    clearing_account = accounts.get('2300')
+    if not clearing_account:
+        clearing_account, _ = Account.objects.get_or_create(
+            Code='2300',
+            CompanyId=company_id,
+            defaults={'Name': 'Due to Directors / Expense Clearing', 'Type': 'Liability', 'IsCashOrBank': False}
+        )
+
+    staff_name = ""
+    if claim.StaffId:
+        try:
+            staff = Staff.objects.get(StaffId=claim.StaffId)
+            staff_name = staff.StaffName or ""
+        except Staff.DoesNotExist:
+            pass
+
+    ref_num = f"EXP-CLAIM-{claim.ClaimNumber}"
+    narration = f"Expense Claim {claim.ClaimNumber} paid out-of-pocket by {staff_name} - {claim.Description or ''}"
+
+    with transaction.atomic():
+        journal_entry, entry_created = JournalEntry.objects.get_or_create(
+            ReferenceNumber=ref_num,
+            Source='expense_claim',
+            CompanyId=company_id,
+            defaults={
+                'Date': claim.Date or datetime.now().strftime('%Y-%m-%d'),
+                'Narration': narration
+            }
+        )
+
+        if not entry_created:
+            JournalItem.objects.filter(JournalEntryId=journal_entry.JournalEntryId).delete()
+            journal_entry.Date = claim.Date or journal_entry.Date
+            journal_entry.Narration = narration
+            journal_entry.save()
+
+        claim.ExpenseJournalEntryId = journal_entry.JournalEntryId
+
+        # Debit Expense Account
+        JournalItem.objects.create(
+            JournalEntryId=journal_entry.JournalEntryId,
+            AccountId=claim.AccountId,
+            Debit=f"{float(claim.Amount or 0.0):.2f}",
+            Credit="0.00"
+        )
+
+        # Credit Liability clearing account
+        JournalItem.objects.create(
+            JournalEntryId=journal_entry.JournalEntryId,
+            AccountId=clearing_account.AccountId,
+            Debit="0.00",
+            Credit=f"{float(claim.Amount or 0.0):.2f}"
+        )
+
+
+def post_reimbursement_journal_entries(claim):
+    from app_accounting.signals import get_or_create_default_accounts
+    company_id = claim.CompanyId
+    if not company_id or not claim.IsReimbursed or not claim.ReimbursementAccountId:
+        return
+
+    accounts = get_or_create_default_accounts(company_id)
+    clearing_account = accounts.get('2300')
+    if not clearing_account:
+        clearing_account, _ = Account.objects.get_or_create(
+            Code='2300',
+            CompanyId=company_id,
+            defaults={'Name': 'Due to Directors / Expense Clearing', 'Type': 'Liability', 'IsCashOrBank': False}
+        )
+
+    staff_name = ""
+    if claim.StaffId:
+        try:
+            staff = Staff.objects.get(StaffId=claim.StaffId)
+            staff_name = staff.StaffName or ""
+        except Staff.DoesNotExist:
+            pass
+
+    ref_num = f"REIMB-{claim.ClaimNumber}"
+    narration = f"Reimbursement of Claim {claim.ClaimNumber} to {staff_name}"
+
+    with transaction.atomic():
+        journal_entry, entry_created = JournalEntry.objects.get_or_create(
+            ReferenceNumber=ref_num,
+            Source='expense_claim_repay',
+            CompanyId=company_id,
+            defaults={
+                'Date': claim.ReimbursementDate or datetime.now().strftime('%Y-%m-%d'),
+                'Narration': narration
+            }
+        )
+
+        if not entry_created:
+            JournalItem.objects.filter(JournalEntryId=journal_entry.JournalEntryId).delete()
+            journal_entry.Date = claim.ReimbursementDate or journal_entry.Date
+            journal_entry.Narration = narration
+            journal_entry.save()
+
+        claim.ReimbursementJournalEntryId = journal_entry.JournalEntryId
+
+        # Debit Liability clearing account
+        JournalItem.objects.create(
+            JournalEntryId=journal_entry.JournalEntryId,
+            AccountId=clearing_account.AccountId,
+            Debit=f"{float(claim.Amount or 0.0):.2f}",
+            Credit="0.00"
+        )
+
+        # Credit Selected Cash/Bank Account
+        JournalItem.objects.create(
+            JournalEntryId=journal_entry.JournalEntryId,
+            AccountId=claim.ReimbursementAccountId,
+            Debit="0.00",
+            Credit=f"{float(claim.Amount or 0.0):.2f}"
+        )
+
+
 @api_view(['GET', 'POST'])
+def ExpenseClaimApi(request):
+    if request.method == 'GET':
+        claims = ExpenseClaim.objects.all().order_by('-SortId')
+        serializer = ExpenseClaimSerializer(claims, many=True)
+        return JsonResponse(serializer.data, safe=False)
+
+    elif request.method == 'POST':
+        data = JSONParser().parse(request)
+        company_id = data.get('CompanyId')
+        if company_id:
+            data['ClaimNumber'] = get_next_claim_number(company_id)
+        
+        serializer = ExpenseClaimSerializer(data=data)
+        if serializer.is_valid():
+            claim = serializer.save()
+            post_claim_journal_entries(claim)
+            claim.save()
+            return JsonResponse(claim.ExpenseClaimId, safe=False)
+        return JsonResponse("Failed to add Expense Claim", safe=False, status=400)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+def ExpenseClaimApiById(request, ExpenseClaimId=""):
+    try:
+        claim = ExpenseClaim.objects.get(ExpenseClaimId=ExpenseClaimId)
+    except ExpenseClaim.DoesNotExist:
+        return JsonResponse("Expense Claim does not exist", safe=False, status=404)
+
+    if request.method == 'GET':
+        serializer = ExpenseClaimSerializer(claim)
+        return JsonResponse(serializer.data, safe=False)
+
+    elif request.method == 'PUT':
+        data = JSONParser().parse(request)
+        serializer = ExpenseClaimSerializer(claim, data=data)
+        if serializer.is_valid():
+            claim = serializer.save()
+            post_claim_journal_entries(claim)
+            if claim.IsReimbursed:
+                post_reimbursement_journal_entries(claim)
+            else:
+                if claim.ReimbursementJournalEntryId:
+                    JournalItem.objects.filter(JournalEntryId=claim.ReimbursementJournalEntryId).delete()
+                    JournalEntry.objects.filter(JournalEntryId=claim.ReimbursementJournalEntryId).delete()
+                    claim.ReimbursementJournalEntryId = None
+            claim.save()
+            return JsonResponse(claim.ExpenseClaimId, safe=False)
+        return JsonResponse("Failed to update Expense Claim", safe=False, status=400)
+
+    elif request.method == 'DELETE':
+        with transaction.atomic():
+            if claim.ExpenseJournalEntryId:
+                JournalItem.objects.filter(JournalEntryId=claim.ExpenseJournalEntryId).delete()
+                JournalEntry.objects.filter(JournalEntryId=claim.ExpenseJournalEntryId).delete()
+            if claim.ReimbursementJournalEntryId:
+                JournalItem.objects.filter(JournalEntryId=claim.ReimbursementJournalEntryId).delete()
+                JournalEntry.objects.filter(JournalEntryId=claim.ReimbursementJournalEntryId).delete()
+            claim.delete()
+        return JsonResponse("Deleted successfully", safe=False)
+
+
+@api_view(['GET'])
+def ExpenseClaimByCompanyId(request, CompanyId=""):
+    claims = ExpenseClaim.objects.filter(CompanyId=CompanyId).order_by('-Date', '-ClaimNumber')
+    enriched_claims = []
+    for claim in claims:
+        data = ExpenseClaimSerializer(claim).data
+        try:
+            account = Account.objects.get(AccountId=claim.AccountId)
+            data['AccountName'] = account.Name
+            data['AccountCode'] = account.Code
+        except Account.DoesNotExist:
+            data['AccountName'] = ""
+            data['AccountCode'] = ""
+
+        try:
+            if claim.ReimbursementAccountId:
+                reimb_acc = Account.objects.get(AccountId=claim.ReimbursementAccountId)
+                data['ReimbursementAccountName'] = reimb_acc.Name
+                data['ReimbursementAccountCode'] = reimb_acc.Code
+            else:
+                data['ReimbursementAccountName'] = ""
+                data['ReimbursementAccountCode'] = ""
+        except Account.DoesNotExist:
+            data['ReimbursementAccountName'] = ""
+            data['ReimbursementAccountCode'] = ""
+
+        try:
+            if claim.StaffId:
+                staff = Staff.objects.get(StaffId=claim.StaffId)
+                data['StaffName'] = staff.StaffName
+            else:
+                data['StaffName'] = ""
+        except Staff.DoesNotExist:
+            data['StaffName'] = ""
+
+        enriched_claims.append(data)
+
+    return JsonResponse(enriched_claims, safe=False)
+
+
+@api_view(['POST'])
+def ExpenseClaimReimburse(request, ExpenseClaimId=""):
+    try:
+        claim = ExpenseClaim.objects.get(ExpenseClaimId=ExpenseClaimId)
+    except ExpenseClaim.DoesNotExist:
+        return JsonResponse("Expense Claim does not exist", safe=False, status=404)
+
+    data = JSONParser().parse(request)
+    reimbursement_account_id = data.get('ReimbursementAccountId')
+    reimbursement_date = data.get('ReimbursementDate')
+
+    if not reimbursement_account_id or not reimbursement_date:
+        return JsonResponse("ReimbursementAccountId and ReimbursementDate are required", safe=False, status=400)
+
+    claim.IsReimbursed = True
+    claim.ReimbursementAccountId = reimbursement_account_id
+    claim.ReimbursementDate = reimbursement_date
+    post_reimbursement_journal_entries(claim)
+    claim.save()
+
+    return JsonResponse(claim.ExpenseClaimId, safe=False)
+
+
+@api_view(['POST'])
+@parser_classes([MultiPartParser, FormParser])
+def ExpenseClaimUploadReceipt(request, ExpenseClaimId=""):
+    try:
+        claim = ExpenseClaim.objects.get(ExpenseClaimId=ExpenseClaimId)
+    except ExpenseClaim.DoesNotExist:
+        return JsonResponse("Expense Claim does not exist", safe=False, status=404)
+
+    file_obj = request.FILES.get('Receipt')
+    if not file_obj:
+        return JsonResponse("No receipt file provided", safe=False, status=400)
+
+    claim.Receipt = file_obj
+    claim.save()
+
+    return JsonResponse("Uploaded successfully", safe=False)
+
+
+@api_view(['GET', 'POST'])
+
 def JournalEntryApi(request):
     if request.method == 'GET':
         company_id = request.GET.get('CompanyId') or request.query_params.get('CompanyId')

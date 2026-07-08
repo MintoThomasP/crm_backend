@@ -15,4 +15,10 @@ urlpatterns = [
     path('JournalEntry/', views.JournalEntryApi),
     url(r'^JournalEntryApiById/(?P<JournalEntryId>[0-9a-zA-Z\-]+)$', views.JournalEntryApiById),
     url(r'^ExportCashBook/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.ExportCashBook),
+    
+    path('ExpenseClaim/', views.ExpenseClaimApi),
+    url(r'^ExpenseClaimApiById/(?P<ExpenseClaimId>[0-9a-zA-Z\-]+)$', views.ExpenseClaimApiById),
+    url(r'^ExpenseClaimByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.ExpenseClaimByCompanyId),
+    url(r'^ExpenseClaimReimburse/(?P<ExpenseClaimId>[0-9a-zA-Z\-]+)$', views.ExpenseClaimReimburse),
+    url(r'^ExpenseClaimUploadReceipt/(?P<ExpenseClaimId>[0-9a-zA-Z\-]+)$', views.ExpenseClaimUploadReceipt),
 ]

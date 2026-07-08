@@ -1,38 +1,50 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from datetime import datetime
+from decimal import Decimal, InvalidOperation
+from django.db import transaction
 from app_sale.models import Invoice, PaymentReceived
 from app_accounting.models import Account, JournalEntry, JournalItem, Expense
 from app_client.models import Client
 
+def safe_decimal(val):
+    if not val:
+        return Decimal('0.00')
+    try:
+        cleaned = str(val).strip().replace(',', '')
+        return Decimal(cleaned)
+    except (ValueError, InvalidOperation, TypeError):
+        return Decimal('0.00')
+
 def get_or_create_default_accounts(company_id):
     # Default Accounts dictionary: Code -> (Name, Type, IsCashOrBank)
     defaults = {
-    # Assets & Liabilities
-    '1200': ('Accounts Receivable', 'Asset', False),
-    '1010': ('Cash/Bank', 'Asset', True),
-    '2200': ('Tax Payable', 'Liability', False),
-    '2400': ('Loans Payable', 'Liability', False),
-    
-    # Equity
-    '3000': ('Opening Balance Equity', 'Equity', False),
-    '3100': ('Owner Capital / Investment', 'Equity', False),
-    
-    # Revenue
-    '4000': ('Revenue', 'Revenue', False),
-    
-    # Expenses
-    '6150': ('Bank Charges', 'Expense', False),
-    '6010': ('Salaries Expense', 'Expense', False),         # Salaries & Wages
-    '6015': ('Staff Welfare & Benefits', 'Expense', False),  # Added
-    '6020': ('Rent Expense', 'Expense', False),              # Office Rent
-    '6030': ('Utilities Expense', 'Expense', False),         # Utilities
-    '6035': ('Software & Subscriptions', 'Expense', False),  # Added
-    '6040': ('General Expense', 'Expense', False),
-    '6045': ('Marketing & Advertising', 'Expense', False),   # Added
-    '6050': ('Legal & Professional Fees', 'Expense', False), # Added
-    '6060': ('Miscellaneous / Sundry Expense', 'Expense', False) # Added
-}
+        # Assets & Liabilities
+        '1200': ('Accounts Receivable', 'Asset', False),
+        '1010': ('Cash/Bank', 'Asset', True),
+        '2200': ('Tax Payable', 'Liability', False),
+        '2300': ('Due to Directors / Expense Clearing', 'Liability', False),
+        '2400': ('Loans Payable', 'Liability', False),
+        
+        # Equity
+        '3000': ('Opening Balance Equity', 'Equity', False),
+        '3100': ('Owner Capital / Investment', 'Equity', False),
+        
+        # Revenue
+        '4000': ('Revenue', 'Revenue', False),
+        
+        # Expenses
+        '6150': ('Bank Charges', 'Expense', False),
+        '6010': ('Salaries Expense', 'Expense', False),         # Salaries & Wages
+        '6015': ('Staff Welfare & Benefits', 'Expense', False),  # Added
+        '6020': ('Rent Expense', 'Expense', False),              # Office Rent
+        '6030': ('Utilities Expense', 'Expense', False),         # Utilities
+        '6035': ('Software & Subscriptions', 'Expense', False),  # Added
+        '6040': ('General Expense', 'Expense', False),
+        '6045': ('Marketing & Advertising', 'Expense', False),   # Added
+        '6050': ('Legal & Professional Fees', 'Expense', False), # Added
+        '6060': ('Miscellaneous / Sundry Expense', 'Expense', False) # Added
+    }
     accounts = {}
     for code, (name, type_, is_cash_or_bank) in defaults.items():
         account, created = Account.objects.get_or_create(
@@ -56,24 +68,28 @@ def create_invoice_journal_entry(sender, instance, created, **kwargs):
 
     accounts = get_or_create_default_accounts(company_id)
 
-    # Safely convert string values to floats
-    def safe_float(val):
-        try:
-            return float(val) if val else 0.0
-        except ValueError:
-            return 0.0
+    total_amount = safe_decimal(instance.TotalAmount)
+    subtotal_amount = safe_decimal(instance.SubTotalAmount)
+    tax_amount = safe_decimal(instance.TaxAmount)
 
-    total_amount = safe_float(instance.TotalAmount)
-    subtotal_amount = safe_float(instance.SubTotalAmount)
-    tax_amount = safe_float(instance.TaxAmount)
+    # 1. DEBIT: Account 1200 - Accounts Receivable
+    #    Amount: Invoice.TotalAmount
+    # 2. CREDIT: Account 4000 - Revenue
+    #    Amount: Invoice.SubTotalAmount
+    # 3. CREDIT: Account 2200 - Tax Payable (Only if TaxAmount > 0)
+    #    Amount: Invoice.TaxAmount
 
-    # Ensure balanced entry
-    calculated_total = subtotal_amount + tax_amount
-    if abs(calculated_total - total_amount) > 0.001:
-        subtotal_amount = total_amount - tax_amount
+    credits_sum = subtotal_amount
+    if tax_amount > Decimal('0.00'):
+        credits_sum += tax_amount
 
-    ref_num = instance.InvoiceNumber or instance.InvoiceId
-    
+    # Ensure that the net total of Debits strictly equals Credits before saving the transaction splits
+    if total_amount != credits_sum:
+        raise ValueError(
+            f"Balanced splits validation failed for Invoice {instance.InvoiceId}: "
+            f"Total DEBITs ({total_amount}) != Total CREDITs ({credits_sum})"
+        )
+
     client_name = instance.ClientId
     if instance.ClientId:
         try:
@@ -82,50 +98,56 @@ def create_invoice_journal_entry(sender, instance, created, **kwargs):
         except Client.DoesNotExist:
             pass
 
-    journal_entry, entry_created = JournalEntry.objects.get_or_create(
-        ReferenceNumber=ref_num,
-        Source='invoice',
-        CompanyId=company_id,
-        defaults={
-            'Date': instance.InvoiceDate or datetime.now().strftime('%Y-%m-%d'),
-            'Narration': f"Invoice {ref_num} for Client {client_name}"
-        }
-    )
+    # Use InvoiceId as unique ReferenceNumber for idempotency
+    ref_id = instance.InvoiceId
+    inv_num_part = f" #{instance.InvoiceNumber}" if instance.InvoiceNumber else ""
+    narration = f"Invoice{inv_num_part} for Client {client_name}"
 
-    if not entry_created:
-        JournalItem.objects.filter(JournalEntryId=journal_entry.JournalEntryId).delete()
-        journal_entry.Date = instance.InvoiceDate or journal_entry.Date
-        journal_entry.Narration = f"Invoice {ref_num} for Client {client_name}"
-        journal_entry.save()
+    with transaction.atomic():
+        journal_entry, entry_created = JournalEntry.objects.get_or_create(
+            ReferenceNumber=ref_id,
+            Source='invoice',
+            CompanyId=company_id,
+            defaults={
+                'Date': instance.InvoiceDate or datetime.now().strftime('%Y-%m-%d'),
+                'Narration': narration
+            }
+        )
 
-    # Create JournalItems:
-    # 1. Debit Accounts Receivable
-    JournalItem.objects.create(
-        JournalEntryId=journal_entry.JournalEntryId,
-        AccountId=accounts['1200'].AccountId,
-        Debit=f"{total_amount:.2f}",
-        Credit="0.00",
-        ClientId=instance.ClientId
-    )
+        if not entry_created:
+            JournalItem.objects.filter(JournalEntryId=journal_entry.JournalEntryId).delete()
+            journal_entry.Date = instance.InvoiceDate or journal_entry.Date
+            journal_entry.Narration = narration
+            journal_entry.save()
 
-    # 2. Credit Revenue
-    JournalItem.objects.create(
-        JournalEntryId=journal_entry.JournalEntryId,
-        AccountId=accounts['4000'].AccountId,
-        Debit="0.00",
-        Credit=f"{subtotal_amount:.2f}",
-        ClientId=instance.ClientId
-    )
-
-    # 3. Credit Tax (if greater than 0)
-    if tax_amount > 0:
+        # Create JournalItems splits:
+        # DEBIT: 1200 - Accounts Receivable
         JournalItem.objects.create(
             JournalEntryId=journal_entry.JournalEntryId,
-            AccountId=accounts['2200'].AccountId,
-            Debit="0.00",
-            Credit=f"{tax_amount:.2f}",
+            AccountId=accounts['1200'].AccountId,
+            Debit=f"{total_amount:.2f}",
+            Credit="0.00",
             ClientId=instance.ClientId
         )
+
+        # CREDIT: 4000 - Revenue
+        JournalItem.objects.create(
+            JournalEntryId=journal_entry.JournalEntryId,
+            AccountId=accounts['4000'].AccountId,
+            Debit="0.00",
+            Credit=f"{subtotal_amount:.2f}",
+            ClientId=instance.ClientId
+        )
+
+        # CREDIT: 2200 - Tax Payable (Only if TaxAmount > 0)
+        if tax_amount > Decimal('0.00'):
+            JournalItem.objects.create(
+                JournalEntryId=journal_entry.JournalEntryId,
+                AccountId=accounts['2200'].AccountId,
+                Debit="0.00",
+                Credit=f"{tax_amount:.2f}",
+                ClientId=instance.ClientId
+            )
 
 
 @receiver(post_save, sender=PaymentReceived)
@@ -136,18 +158,31 @@ def create_payment_journal_entry(sender, instance, created, **kwargs):
 
     accounts = get_or_create_default_accounts(company_id)
 
-    # Safely convert string values to floats
-    def safe_float(val):
-        try:
-            return float(val) if val else 0.0
-        except ValueError:
-            return 0.0
+    amount_received = safe_decimal(instance.AmountReceived)
+    bank_charges = safe_decimal(instance.BankCharges)
 
-    amount_received = safe_float(instance.AmountReceived)
-    bank_charges = safe_float(instance.BankCharges)
+    # 1. DEBIT: Account 1010 - Cash/Bank
+    #    Amount: PaymentReceived.AmountReceived - PaymentReceived.BankCharges (Net deposit cash)
+    # 2. DEBIT: Account 6150 - Bank Charges (Only if BankCharges > 0)
+    #    Amount: PaymentReceived.BankCharges
+    # 3. CREDIT: Account 1200 - Accounts Receivable
+    #    Amount: PaymentReceived.AmountReceived (Gross amount clearing customer's open balance)
 
-    ref_num = instance.ReferenceNumber or instance.PaymentNumber or instance.PaymentReceivedId
-    
+    net_amount = amount_received - bank_charges
+
+    debits_sum = net_amount
+    if bank_charges > Decimal('0.00'):
+        debits_sum += bank_charges
+
+    credits_sum = amount_received
+
+    # Ensure that the net total of Debits strictly equals Credits before saving the transaction splits
+    if debits_sum != credits_sum:
+        raise ValueError(
+            f"Balanced splits validation failed for PaymentReceived {instance.PaymentReceivedId}: "
+            f"Total DEBITs ({debits_sum}) != Total CREDITs ({credits_sum})"
+        )
+
     client_name = instance.ClientId
     if instance.ClientId:
         try:
@@ -156,99 +191,56 @@ def create_payment_journal_entry(sender, instance, created, **kwargs):
         except Client.DoesNotExist:
             pass
 
-    journal_entry, entry_created = JournalEntry.objects.get_or_create(
-        ReferenceNumber=ref_num,
-        Source='payment',
-        CompanyId=company_id,
-        defaults={
-            'Date': instance.PaymentDate or datetime.now().strftime('%Y-%m-%d'),
-            'Narration': f"Payment Received {ref_num} from Client {client_name}"
-        }
-    )
+    # Use PaymentReceivedId as unique ReferenceNumber for idempotency
+    ref_id = instance.PaymentReceivedId
+    pay_num_part = f" #{instance.PaymentNumber}" if instance.PaymentNumber else ""
+    narration = f"Payment Received{pay_num_part} from Client {client_name}"
 
-    if not entry_created:
-        JournalItem.objects.filter(JournalEntryId=journal_entry.JournalEntryId).delete()
-        journal_entry.Date = instance.PaymentDate or journal_entry.Date
-        journal_entry.Narration = f"Payment Received {ref_num} from Client {client_name}"
-        journal_entry.save()
+    with transaction.atomic():
+        journal_entry, entry_created = JournalEntry.objects.get_or_create(
+            ReferenceNumber=ref_id,
+            Source='payment',
+            CompanyId=company_id,
+            defaults={
+                'Date': instance.PaymentDate or datetime.now().strftime('%Y-%m-%d'),
+                'Narration': narration
+            }
+        )
 
-    # Resolve the Cash/Bank account for this payment
-    bank_account_id = accounts['1010'].AccountId  # Fallback to default Cash/Bank
-    
-    if instance.DepositTo:
-        from app_default.models import DepositTo
-        from django.core.exceptions import ValidationError
-        dep_name = None
-        try:
-            dep = DepositTo.objects.get(DepositToId=instance.DepositTo)
-            dep_name = dep.DepositTo
-        except (DepositTo.DoesNotExist, ValueError, ValidationError):
-            # If not a valid UUID or does not exist, treat it as a direct name
-            dep_name = instance.DepositTo
-        
-        if dep_name:
-            acc = Account.objects.filter(
-                CompanyId=company_id,
-                Name__iexact=dep_name,
-                IsCashOrBank=True
-            ).first()
-            if acc:
-                bank_account_id = acc.AccountId
-            else:
-                acc = Account.objects.filter(
-                    CompanyId=company_id,
-                    Code=dep_name,
-                    IsCashOrBank=True
-                ).first()
-                if acc:
-                    bank_account_id = acc.AccountId
-        else:
-            acc = Account.objects.filter(
-                CompanyId=company_id,
-                AccountId=instance.DepositTo,
-                IsCashOrBank=True
-            ).first()
-            if acc:
-                bank_account_id = acc.AccountId
+        if not entry_created:
+            JournalItem.objects.filter(JournalEntryId=journal_entry.JournalEntryId).delete()
+            journal_entry.Date = instance.PaymentDate or journal_entry.Date
+            journal_entry.Narration = narration
+            journal_entry.save()
 
-    # Create JournalItems:
-    if bank_charges > 0:
-        # Row 1: Actual Bank Deposit (net deposit = amount_received - bank_charges)
-        net_amount = amount_received - bank_charges
+        # Create JournalItems splits:
+        # DEBIT: 1010 - Cash/Bank
         JournalItem.objects.create(
             JournalEntryId=journal_entry.JournalEntryId,
-            AccountId=bank_account_id,
+            AccountId=accounts['1010'].AccountId,
             Debit=f"{net_amount:.2f}",
             Credit="0.00",
             ClientId=instance.ClientId
         )
 
-        # Row 2: The Fee Expense
-        JournalItem.objects.create(
-            JournalEntryId=journal_entry.JournalEntryId,
-            AccountId=accounts['6150'].AccountId,
-            Debit=f"{bank_charges:.2f}",
-            Credit="0.00",
-            ClientId=instance.ClientId
-        )
-    else:
-        # Row 1: Actual Bank Deposit (full amount)
-        JournalItem.objects.create(
-            JournalEntryId=journal_entry.JournalEntryId,
-            AccountId=bank_account_id,
-            Debit=f"{amount_received:.2f}",
-            Credit="0.00",
-            ClientId=instance.ClientId
-        )
+        # DEBIT: 6150 - Bank Charges (Only if BankCharges > 0)
+        if bank_charges > Decimal('0.00'):
+            JournalItem.objects.create(
+                JournalEntryId=journal_entry.JournalEntryId,
+                AccountId=accounts['6150'].AccountId,
+                Debit=f"{bank_charges:.2f}",
+                Credit="0.00",
+                ClientId=instance.ClientId
+            )
 
-    # Row 3 (or 2): Credit Accounts Receivable (clearing gross invoice amount)
-    JournalItem.objects.create(
-        JournalEntryId=journal_entry.JournalEntryId,
-        AccountId=accounts['1200'].AccountId,
-        Debit="0.00",
-        Credit=f"{amount_received:.2f}",
-        ClientId=instance.ClientId
-    )
+        # CREDIT: 1200 - Accounts Receivable
+        JournalItem.objects.create(
+            JournalEntryId=journal_entry.JournalEntryId,
+            AccountId=accounts['1200'].AccountId,
+            Debit="0.00",
+            Credit=f"{amount_received:.2f}",
+            ClientId=instance.ClientId
+        )
 
 
 @receiver(post_save, sender=Expense)

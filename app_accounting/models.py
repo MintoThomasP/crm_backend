@@ -58,3 +58,26 @@ class Expense(models.Model):
 
     def __str__(self):
         return f"Expense {self.ExpenseNumber} - {self.Amount} - {self.Date}"
+
+
+class ExpenseClaim(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    ExpenseClaimId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    ClaimNumber = models.CharField(blank=True, null=True, max_length=50)
+    Date = models.CharField(blank=True, null=True, max_length=50)
+    StaffId = models.CharField(blank=True, null=True, max_length=50)  # Director/Employee (Staff model)
+    AccountId = models.CharField(blank=True, null=True, max_length=50)  # Expense Account (Debit)
+    Amount = models.CharField(blank=True, null=True, max_length=15)
+    Description = models.TextField(blank=True, null=True)
+    Receipt = models.FileField(upload_to='receipts/', null=True, blank=True)
+    IsReimbursed = models.BooleanField(default=False)
+    ReimbursementDate = models.CharField(blank=True, null=True, max_length=50)
+    ReimbursementAccountId = models.CharField(blank=True, null=True, max_length=50)  # Cash/Bank (Credit)
+    CompanyId = models.CharField(blank=True, null=True, max_length=50)
+    ExpenseJournalEntryId = models.CharField(blank=True, null=True, max_length=50)  # Step 1 JE
+    ReimbursementJournalEntryId = models.CharField(blank=True, null=True, max_length=50)  # Step 2 JE
+
+    def __str__(self):
+        return f"Claim {self.ClaimNumber} - {self.Amount} - {self.Date}"
+
