@@ -13,5 +13,5 @@ url(r'^CURDFollowUpApiByEnquiryId/(?P<EnquiryId>[0-9a-zA-Z\-]+)$', views.CURDFol
 # url(r'^EnquiryByScheduledTo/(?P<ScheduledTo>[0-9a-zA-Z\-]+)$', views.EnquiryByScheduledTo),
 
 path('EnquiryByScheduledTo/', views.EnquiryByScheduledTo.as_view()),
-
+path('leads/webhook/', views.lead_webhook_api),
 ]

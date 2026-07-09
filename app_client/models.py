@@ -128,3 +128,31 @@ class ClientBankDetails(models.Model):
     AccountNumber = models.CharField(blank=True, null=True, max_length=50)
     IFSCCode = models.CharField(blank=True, null=True, max_length=50)
     PrimaryAccount = models.BooleanField(default=False)
+
+
+class Opportunity(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    OpportunityId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    CompanyId = models.CharField(max_length=50, blank=True, null=True)
+    ClientId = models.CharField(max_length=50, blank=True, null=True)
+    Title = models.CharField(max_length=300, blank=True, null=True)
+    Stage = models.CharField(max_length=50, default='qualification')
+    WinProbability = models.IntegerField(default=50)
+    ExpectedValue = models.DecimalField(max_digits=15, decimal_places=2, default=0.00)
+    CloseDate = models.CharField(max_length=50, blank=True, null=True)
+    AssignedStaffId = models.CharField(max_length=50, blank=True, null=True)
+
+
+class SupportTicket(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    TicketId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    CompanyId = models.CharField(max_length=50, blank=True, null=True)
+    ClientId = models.CharField(max_length=50, blank=True, null=True)
+    Subject = models.CharField(max_length=300, blank=True, null=True)
+    Status = models.CharField(max_length=50, default='open')
+    Priority = models.CharField(max_length=20, default='medium')
+    SlaDeadline = models.CharField(max_length=50, blank=True, null=True)
+    AssignedStaffId = models.CharField(max_length=50, blank=True, null=True)
+

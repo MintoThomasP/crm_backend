@@ -19,6 +19,8 @@ class Enquiry(models.Model):
     CompanyId=models.CharField(max_length=50,null=True, blank=True)
     CountryCode=models.CharField(max_length=10,null=True, blank=True)
     ServiceType=models.CharField(max_length=50,null=True, blank=True)
+    LeadScore=models.IntegerField(default=0)
+    OpportunityId=models.CharField(max_length=50,null=True, blank=True)
 
 
 

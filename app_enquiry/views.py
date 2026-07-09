@@ -370,3 +370,45 @@ class EnquiryByScheduledTo(generics.ListAPIView):
                 return self.get_paginated_response(data)
         except:
             return JsonResponse("", safe=False)
+
+
+@csrf_exempt
+@api_view(['POST'])
+def lead_webhook_api(request):
+    try:
+        data = JSONParser().parse(request)
+        company_id = data.get('company_id')
+        customer_name = data.get('customer_name')
+        email = data.get('email')
+        phone = data.get('phone')
+        source = data.get('source', '')
+        description = data.get('description', '')
+
+        score = 0
+        if phone:
+            score += 30
+        if email:
+            score += 20
+        if description:
+            score += 10
+        if source.lower() in ['googleads', 'website', 'referral']:
+            score += 20
+
+        enquiry = Enquiry.objects.create(
+            CustomerName=customer_name,
+            Description=description,
+            EnquirySource=source,
+            EmailId=email,
+            PhoneNumber=phone,
+            CompanyId=company_id,
+            Status='1',
+            LeadScore=score
+        )
+
+        return JsonResponse({
+            "message": "Lead ingested successfully",
+            "enquiry_id": enquiry.EnquiryId,
+            "lead_score": enquiry.LeadScore
+        }, status=201, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400, safe=False)

@@ -1,4 +1,4 @@
-from app_client.models import Client, ClientAddress, ClientBankDetails, ClientDocuments, ClientOtherDetails, ClientReminder, ClientVisitRegister, ContactPerson
+from app_client.models import Client, ClientAddress, ClientBankDetails, ClientDocuments, ClientOtherDetails, ClientReminder, ClientVisitRegister, ContactPerson, Opportunity, SupportTicket
 from rest_framework import serializers
 
 
@@ -142,3 +142,37 @@ class ClientBankDetailsSerializer(serializers.ModelSerializer):
                   'IFSCCode',
                   'PrimaryAccount'
                   )
+
+
+class OpportunitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Opportunity
+        fields = (
+            'SortId',
+            'OpportunityId',
+            'CompanyId',
+            'ClientId',
+            'Title',
+            'Stage',
+            'WinProbability',
+            'ExpectedValue',
+            'CloseDate',
+            'AssignedStaffId'
+        )
+
+
+class SupportTicketSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = SupportTicket
+        fields = (
+            'SortId',
+            'TicketId',
+            'CompanyId',
+            'ClientId',
+            'Subject',
+            'Status',
+            'Priority',
+            'SlaDeadline',
+            'AssignedStaffId'
+        )
+

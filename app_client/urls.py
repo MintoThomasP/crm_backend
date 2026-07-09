@@ -51,4 +51,9 @@ urlpatterns = [
         views.ClientBankDetailsApiById),
     url(r'^ClientBankDetailsApiByClientId/(?P<ClientId>[0-9a-zA-Z\-]+)$',
         views.ClientBankDetailsApiByClientId),
+
+    url(r'^Opportunity/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.OpportunityApi),
+    url(r'^OpportunityApiById/(?P<OpportunityId>[0-9a-zA-Z\-]+)$', views.OpportunityApiById),
+    url(r'^SupportTicket/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.SupportTicketApi),
+    url(r'^SupportTicketApiById/(?P<TicketId>[0-9a-zA-Z\-]+)$', views.SupportTicketApiById),
 ]

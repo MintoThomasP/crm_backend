@@ -24,6 +24,8 @@ class Quotation(models.Model):
     TotalAmount = models.CharField(blank=True, null=True, max_length=15)
     QuotationFile = models.FileField(
         null=True, blank=True, upload_to='QuotationFile')
+    VersionNumber = models.IntegerField(default=1)
+    ApprovalStatus = models.CharField(max_length=50, default='draft')
 
 
 class QuotationItem(models.Model):

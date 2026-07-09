@@ -6,8 +6,8 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
-from app_client.models import Client, ClientAddress, ClientBankDetails, ClientDocuments, ClientOtherDetails, ClientReminder, ClientVisitRegister, ContactPerson
-from app_client.serializers import ClientAddressSerializer, ClientBankDetailsSerializer, ClientDocumentsSerializer, ClientOtherDetailsSerializer, ClientReminderSerializer, ClientSerializer, ClientVisitRegisterSerializer, ContactPersonSerializer
+from app_client.models import Client, ClientAddress, ClientBankDetails, ClientDocuments, ClientOtherDetails, ClientReminder, ClientVisitRegister, ContactPerson, Opportunity, SupportTicket
+from app_client.serializers import ClientAddressSerializer, ClientBankDetailsSerializer, ClientDocumentsSerializer, ClientOtherDetailsSerializer, ClientReminderSerializer, ClientSerializer, ClientVisitRegisterSerializer, ContactPersonSerializer, OpportunitySerializer, SupportTicketSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -857,3 +857,98 @@ def ClientReminderApiById(request, ClientReminderId=""):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=OpportunitySerializer, operation_description="NOTE: API for save Opportunity")
+@swagger_auto_schema(method='PUT', request_body=OpportunitySerializer, operation_description="NOTE: API for edit Opportunity")
+@api_view(['GET', 'POST', 'PUT'])
+@retry(retries=3, delay=2)
+def OpportunityApi(request, CompanyId=""):
+    try:
+        if request.method == 'GET':
+            opportunities = Opportunity.objects.filter(CompanyId=CompanyId).order_by('-SortId')
+            serializer = OpportunitySerializer(opportunities, many=True)
+            return JsonResponse(serializer.data, safe=False)
+        elif request.method == 'POST':
+            data = JSONParser().parse(request)
+            serializer = OpportunitySerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse("Add successfully", safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            data = JSONParser().parse(request)
+            opp = Opportunity.objects.get(OpportunityId=data['OpportunityId'])
+            serializer = OpportunitySerializer(opp, data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse("Update successfully", safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+    except Exception as e:
+        return JsonResponse(f"Invalid operation: {str(e)}", safe=False)
+
+
+@csrf_exempt
+@api_view(['GET', 'DELETE'])
+@retry(retries=3, delay=2)
+def OpportunityApiById(request, OpportunityId=""):
+    try:
+        if request.method == 'GET':
+            opp = Opportunity.objects.get(OpportunityId=OpportunityId)
+            serializer = OpportunitySerializer(opp)
+            return JsonResponse(serializer.data, safe=False)
+        elif request.method == 'DELETE':
+            opp = Opportunity.objects.get(OpportunityId=OpportunityId)
+            opp.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+    except Exception as e:
+        return JsonResponse(f"Invalid operation: {str(e)}", safe=False)
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=SupportTicketSerializer, operation_description="NOTE: API for save SupportTicket")
+@swagger_auto_schema(method='PUT', request_body=SupportTicketSerializer, operation_description="NOTE: API for edit SupportTicket")
+@api_view(['GET', 'POST', 'PUT'])
+@retry(retries=3, delay=2)
+def SupportTicketApi(request, CompanyId=""):
+    try:
+        if request.method == 'GET':
+            tickets = SupportTicket.objects.filter(CompanyId=CompanyId).order_by('-SortId')
+            serializer = SupportTicketSerializer(tickets, many=True)
+            return JsonResponse(serializer.data, safe=False)
+        elif request.method == 'POST':
+            data = JSONParser().parse(request)
+            serializer = SupportTicketSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse("Add successfully", safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            data = JSONParser().parse(request)
+            ticket = SupportTicket.objects.get(TicketId=data['TicketId'])
+            serializer = SupportTicketSerializer(ticket, data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse("Update successfully", safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+    except Exception as e:
+        return JsonResponse(f"Invalid operation: {str(e)}", safe=False)
+
+
+@csrf_exempt
+@api_view(['GET', 'DELETE'])
+@retry(retries=3, delay=2)
+def SupportTicketApiById(request, TicketId=""):
+    try:
+        if request.method == 'GET':
+            ticket = SupportTicket.objects.get(TicketId=TicketId)
+            serializer = SupportTicketSerializer(ticket)
+            return JsonResponse(serializer.data, safe=False)
+        elif request.method == 'DELETE':
+            ticket = SupportTicket.objects.get(TicketId=TicketId)
+            ticket.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+    except Exception as e:
+        return JsonResponse(f"Invalid operation: {str(e)}", safe=False)
+
