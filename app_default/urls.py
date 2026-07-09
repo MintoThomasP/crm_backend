@@ -33,5 +33,6 @@ urlpatterns = [
     path('SiteContactType/', views.SiteContactTypeApi),
     path('RecurrenceChoiceApi/', views.RecurrenceChoiceApi),
     path('ReminderTypeApi/', views.ReminderTypeApi),
-
+    path('UserDashboardWidget/', views.UserDashboardWidgetApi),
+    url(r'^UserDashboardWidget/(?P<UserId>[0-9a-zA-Z\-]+)$', views.UserDashboardWidgetApi),
 ]

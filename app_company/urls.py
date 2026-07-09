@@ -21,8 +21,5 @@ urlpatterns = [
     path('CompanyBankDetailsApi/', views.CompanyBankDetailsApi),
     url(r'^CompanyBankDetailsApiById/(?P<BankDetailId>[0-9a-zA-Z\-]+)$', views.CompanyBankDetailsApiById),
     url(r'^CompanyBankDetailsApiByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.CompanyBankDetailsApiByCompanyId),
- 
-
-
-#  path('SendWhatsappmessage/', views.SendWhatsappmessage),
+    url(r'^dashboard_analytics/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.get_dashboard_analytics_api),
 ]

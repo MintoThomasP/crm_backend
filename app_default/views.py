@@ -5,8 +5,8 @@ from django.views.decorators.csrf import csrf_exempt
 import requests
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
-from app_default.models import AccessLink, CategoryType, ClientReference, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquirySource, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, RecurrenceChoice, ReminderType, ReportType, SectionType, ServiceType, SiteContactType, StaffStatus,  TaskStatus, UserType
-from app_default.serializers import AccessLinkSerializer, CategoryTypeSerializer, ClientReferenceSerializer, CompanyDocumentTypeSerializer, CountryCodeSerializer, CurrencySerializer, DepositToSerializer, EnquiryStatusSerializer, EnquirySourceSerializer, FollowUpStatusSerializer, FollowUpTypeSerializer, InvoiceStatusSerializer, LeaveStatusSerializer, LeaveTypeSerializer, MeetingTypeSerializer, PaymentModeSerializer, RecurrenceChoiceSerializer, ReminderTypeSerializer, ReportTypeSerializer, SectionTypeSerializer, ServiceTypeSerializer, SiteContactTypeSerializer, StaffStatusSerializer, TaskStatusSerializer, UserTypeSerializer
+from app_default.models import AccessLink, CategoryType, ClientReference, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquirySource, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, RecurrenceChoice, ReminderType, ReportType, SectionType, ServiceType, SiteContactType, StaffStatus,  TaskStatus, UserType, UserDashboardWidget
+from app_default.serializers import AccessLinkSerializer, CategoryTypeSerializer, ClientReferenceSerializer, CompanyDocumentTypeSerializer, CountryCodeSerializer, CurrencySerializer, DepositToSerializer, EnquiryStatusSerializer, EnquirySourceSerializer, FollowUpStatusSerializer, FollowUpTypeSerializer, InvoiceStatusSerializer, LeaveStatusSerializer, LeaveTypeSerializer, MeetingTypeSerializer, PaymentModeSerializer, RecurrenceChoiceSerializer, ReminderTypeSerializer, ReportTypeSerializer, SectionTypeSerializer, ServiceTypeSerializer, SiteContactTypeSerializer, StaffStatusSerializer, TaskStatusSerializer, UserTypeSerializer, UserDashboardWidgetSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 import time
@@ -511,3 +511,34 @@ def ReminderTypeApi(request):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("Invalid", safe=False)
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=UserDashboardWidgetSerializer, operation_description="NOTE: API for save UserDashboardWidget")
+@swagger_auto_schema(method='PUT', request_body=UserDashboardWidgetSerializer, operation_description="NOTE: API for edit UserDashboardWidget")
+@api_view(['GET', 'POST', 'PUT'])
+@retry(retries=3, delay=2)
+def UserDashboardWidgetApi(request, UserId=""):
+    try:
+        if request.method == 'GET':
+            widgets = UserDashboardWidget.objects.filter(UserId=UserId)
+            serializer = UserDashboardWidgetSerializer(widgets, many=True)
+            return JsonResponse(serializer.data, safe=False)
+        elif request.method == 'POST':
+            data = JSONParser().parse(request)
+            serializer = UserDashboardWidgetSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse("Add successfully", safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            data = JSONParser().parse(request)
+            widget = UserDashboardWidget.objects.get(WidgetId=data['WidgetId'])
+            serializer = UserDashboardWidgetSerializer(widget, data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse("Update successfully", safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+    except Exception as e:
+        return JsonResponse(f"Invalid operation: {str(e)}", safe=False)
+

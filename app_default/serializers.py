@@ -1,7 +1,22 @@
 
 from xml.dom.minidom import DocumentType
-from app_default.models import AccessLink, CategoryType, ClientReference, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquirySource, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, RecurrenceChoice, ReminderType, ReportType, SectionType, ServiceType, SiteContactType, StaffStatus, TaskStatus, UserType
+from app_default.models import AccessLink, CategoryType, ClientReference, CompanyDocumentType, CountryCode, Currency, DepositTo, EnquiryStatus, EnquirySource, FollowUpStatus, FollowUpType, InvoiceStatus, LeaveStatus, LeaveType, MeetingType, PaymentMode, RecurrenceChoice, ReminderType, ReportType, SectionType, ServiceType, SiteContactType, StaffStatus, TaskStatus, UserType, UserDashboardWidget
 from rest_framework import serializers
+
+
+
+class UserDashboardWidgetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserDashboardWidget
+        fields = (
+            'WidgetId',
+            'UserId',
+            'WidgetKey',
+            'PositionIndex',
+            'IsVisible',
+            'CustomConfig'
+        )
+
 
 
 class TaskStatusSerializer(serializers.ModelSerializer):

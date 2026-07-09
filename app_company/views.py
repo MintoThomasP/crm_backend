@@ -1,5 +1,6 @@
 from datetime import date, datetime,timedelta
 from django.db import connection
+from django.core.cache import cache
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
@@ -269,8 +270,12 @@ import calendar
 @api_view(['GET'])
 @retry(retries=3, delay=2)
 def CompanyPerformanceById(request, CompanyId=""):
-    # try:
-        if request.method == 'GET': 
+    if request.method == 'GET':
+        cache_key = f"company_performance_{CompanyId}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return JsonResponse(cached_data, safe=False)
+
             company = Company.objects.get(CompanyId=CompanyId)
             companySerializer = CompanySerializer(company)
             companyData = companySerializer.data
@@ -431,7 +436,7 @@ def CompanyPerformanceById(request, CompanyId=""):
                         j = j + 1
                 task_performance_data.append(task_data)
             companyData['TaskDetails']=task_performance_data
-            
+            cache.set(cache_key, companyData, 300)
             return JsonResponse(companyData, safe=False)
         
        
@@ -724,3 +729,166 @@ def CompanyBankDetailsApiByCompanyId(request, CompanyId=""):
 #     message = 'Hello from Django!' 
 #     whatsapp_url = f"https://wa.me/{phone_number[1:]}?text={message.replace(' ', '%20')}"
 #     return redirect(whatsapp_url)
+
+
+@csrf_exempt
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def get_dashboard_analytics_api(request, CompanyId=""):
+    try:
+        cache_key = f"dashboard_analytics_{CompanyId}"
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return JsonResponse(cached_data, safe=False)
+
+        # 1. Sales Pipeline Metrics
+        invoices = Invoice.objects.filter(CompanyId=CompanyId)
+        quotations = Quotation.objects.filter(CompanyId=CompanyId)
+        
+        total_invoices_val = 0.0
+        for inv in invoices:
+            try:
+                total_invoices_val += float(inv.TotalAmount or 0.0)
+            except:
+                pass
+                
+        total_quotes_val = 0.0
+        for q in quotations:
+            try:
+                total_quotes_val += float(q.TotalAmount or 0.0)
+            except:
+                pass
+
+        sales_metrics = {
+            "invoice_count": invoices.count(),
+            "invoice_volume": f"{total_invoices_val:.2f}",
+            "quotation_count": quotations.count(),
+            "quotation_volume": f"{total_quotes_val:.2f}"
+        }
+
+        # 2. Finance Metrics (Cash Flow & Aging Receivables)
+        inflow = 0.0
+        outflow = 0.0
+        with connection.cursor() as cursor:
+            sql = """
+                SELECT COALESCE(SUM(CAST(ji.Debit AS DECIMAL(15,2))), 0) AS Inflow, 
+                       COALESCE(SUM(CAST(ji.Credit AS DECIMAL(15,2))), 0) AS Outflow 
+                FROM app_accounting_journalitem ji 
+                JOIN app_accounting_account a ON ji.AccountId = a.AccountId 
+                WHERE a.IsCashOrBank = 1 AND a.CompanyId = %s
+            """
+            cursor.execute(sql, [CompanyId])
+            row = cursor.fetchone()
+            if row:
+                inflow = float(row[0])
+                outflow = float(row[1])
+
+        # Aging Receivables calculation
+        current_date_str = date.today().strftime("%Y-%m-%d")
+        aging_current = 0.0
+        aging_30 = 0.0
+        aging_60 = 0.0
+        aging_over_60 = 0.0
+
+        for inv in invoices:
+            if not inv.AmountDue:
+                continue
+            try:
+                amount_due = float(inv.AmountDue)
+                if amount_due <= 0.0:
+                    continue
+                if not inv.DueDate:
+                    aging_current += amount_due
+                    continue
+                
+                due_dt = datetime.strptime(inv.DueDate, "%Y-%m-%d").date()
+                today_dt = date.today()
+                diff_days = (today_dt - due_dt).days
+
+                if diff_days <= 0:
+                    aging_current += amount_due
+                elif diff_days <= 30:
+                    aging_30 += amount_due
+                elif diff_days <= 60:
+                    aging_60 += amount_due
+                else:
+                    aging_over_60 += amount_due
+            except:
+                pass
+
+        finance_metrics = {
+            "cash_flow": {
+                "inflow": f"{inflow:.2f}",
+                "outflow": f"{outflow:.2f}",
+                "net": f"{(inflow - outflow):.2f}"
+            },
+            "receivables_aging": {
+                "current": f"{aging_current:.2f}",
+                "1_30_days": f"{aging_30:.2f}",
+                "31_60_days": f"{aging_60:.2f}",
+                "over_60_days": f"{aging_over_60:.2f}"
+            }
+        }
+
+        # 3. Customer Dashboard Metrics
+        clients_count = Client.objects.filter(CompanyId=CompanyId, ActiveStatus=1).count()
+        enquiries_count = Enquiry.objects.filter(CompanyId=CompanyId).count()
+        followups_count = FollowUp.objects.filter(CompanyId=CompanyId).count()
+
+        customer_metrics = {
+            "active_clients": clients_count,
+            "total_enquiries": enquiries_count,
+            "total_followups": followups_count
+        }
+
+        # 4. Calendar Timeline Widget Feeds
+        calendar_events = []
+        # Due Invoices
+        for inv in invoices:
+            try:
+                amount_due = float(inv.AmountDue or 0.0)
+                if amount_due > 0.0 and inv.DueDate:
+                    calendar_events.append({
+                        "id": inv.InvoiceId,
+                        "title": f"Invoice Due: {inv.InvoiceNumber or 'N/A'}",
+                        "date": inv.DueDate,
+                        "type": "invoice_due",
+                        "amount": f"{amount_due:.2f}"
+                    })
+            except:
+                pass
+
+        # Project Task Deadlines
+        tasks = ProjectTask.objects.filter(CompanyId=CompanyId, Status__in=[1, 2, 4, 5, 6, 10])
+        for t in tasks:
+            if t.ScheduledDeadline:
+                try:
+                    deadline_str = t.ScheduledDeadline
+                    if isinstance(deadline_str, (date, datetime)):
+                        deadline_str = deadline_str.strftime("%Y-%m-%d")
+                    else:
+                        deadline_str = str(deadline_str)[:10]
+                    calendar_events.append({
+                        "id": t.ProjectTaskId,
+                        "title": f"Task: {t.TaskName or 'N/A'}",
+                        "date": deadline_str,
+                        "type": "task_deadline",
+                        "priority": "normal"
+                    })
+                except:
+                    pass
+
+        # Sort calendar by date
+        calendar_events = sorted(calendar_events, key=lambda x: x['date'])[:15]
+
+        analytics_data = {
+            "sales": sales_metrics,
+            "finance": finance_metrics,
+            "customer": customer_metrics,
+            "calendar": calendar_events
+        }
+
+        cache.set(cache_key, analytics_data, 300)
+        return JsonResponse(analytics_data, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, safe=False)

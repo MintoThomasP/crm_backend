@@ -153,3 +153,13 @@ class RecurrenceChoice(models.Model):
 class ReminderType(models.Model):
     ReminderTypeId = models.AutoField(primary_key=True, editable=False)
     ReminderType = models.CharField(max_length=300)
+
+
+class UserDashboardWidget(models.Model):
+    WidgetId = models.CharField(max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    UserId = models.CharField(max_length=50)
+    WidgetKey = models.CharField(max_length=150)
+    PositionIndex = models.IntegerField(default=0)
+    IsVisible = models.BooleanField(default=True)
+    CustomConfig = models.TextField(blank=True, null=True)
+
