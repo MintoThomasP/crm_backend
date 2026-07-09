@@ -832,8 +832,10 @@ def get_dashboard_analytics_api(request, CompanyId=""):
 
         # 3. Customer Dashboard Metrics
         clients_count = Client.objects.filter(CompanyId=CompanyId, ActiveStatus=1).count()
-        enquiries_count = Enquiry.objects.filter(CompanyId=CompanyId).count()
-        followups_count = FollowUp.objects.filter(CompanyId=CompanyId).count()
+        enquiries = Enquiry.objects.filter(CompanyId=CompanyId)
+        enquiries_count = enquiries.count()
+        enquiry_ids = enquiries.values_list('EnquiryId', flat=True)
+        followups_count = FollowUp.objects.filter(EnquiryId__in=enquiry_ids).count()
 
         customer_metrics = {
             "active_clients": clients_count,
