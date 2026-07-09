@@ -271,10 +271,10 @@ import calendar
 @retry(retries=3, delay=2)
 def CompanyPerformanceById(request, CompanyId=""):
     if request.method == 'GET':
-        cache_key = f"company_performance_{CompanyId}"
-        cached_data = cache.get(cache_key)
-        if cached_data:
-            return JsonResponse(cached_data, safe=False)
+        # cache_key = f"company_performance_{CompanyId}"
+        # cached_data = cache.get(cache_key)
+        # if cached_data:
+        #     return JsonResponse(cached_data, safe=False)
 
             company = Company.objects.get(CompanyId=CompanyId)
             companySerializer = CompanySerializer(company)
@@ -436,13 +436,13 @@ def CompanyPerformanceById(request, CompanyId=""):
                         j = j + 1
                 task_performance_data.append(task_data)
             companyData['TaskDetails']=task_performance_data
-            cache.set(cache_key, companyData, 300)
+            # cache.set(cache_key, companyData, 300)
             return JsonResponse(companyData, safe=False)
         
        
         
-        else:
-            return JsonResponse("", safe=False)
+        # else:
+        #     return JsonResponse("", safe=False)
     
     # except:
     #     return JsonResponse("", safe=False)
