@@ -30,7 +30,9 @@ class ClientSerializer(serializers.ModelSerializer):
             'Reference',
             'TaxType',
             'TaxId',
-            'ContactGroupId'
+            'ContactGroupId',
+            'CreditLimit',
+            'CreditLimitEnforced'
         )
 
 
@@ -76,7 +78,8 @@ class ClientDocumentsSerializer(serializers.ModelSerializer):
             'ImageType',
             'Comment',
             'ExpiryDate',
-            'IssuedOn'
+            'IssuedOn',
+            'DocumentType'
         )
 
 
@@ -185,7 +188,10 @@ class ContactGroupSerializer(serializers.ModelSerializer):
             'SortId',
             'GroupId',
             'GroupName',
-            'CompanyId'
+            'CompanyId',
+            'TaxProfile',
+            'DiscountPercent',
+            'PricingTier'
         )
 
 

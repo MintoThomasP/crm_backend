@@ -36,6 +36,8 @@ class Client(models.Model):
     TaxType = models.CharField(max_length=300, blank=True, null=True)
     TaxId = models.CharField(max_length=300, blank=True, null=True)
     ContactGroupId = models.CharField(max_length=50, blank=True, null=True)
+    CreditLimit = models.CharField(max_length=15, blank=True, null=True, default="0.00")
+    CreditLimitEnforced = models.BooleanField(default=False)
 
 
 class ClientOtherDetails(models.Model):
@@ -60,6 +62,7 @@ class ClientDocuments(models.Model):
     IssuedOn = models.CharField(blank=True, null=True, max_length=50)
     ExpiryDate = models.CharField(blank=True, null=True, max_length=50)
     Comment = models.TextField(blank=True, null=True)
+    DocumentType = models.CharField(blank=True, null=True, max_length=50, default="Other")
 
 
 class ClientReminder(models.Model):
@@ -164,6 +167,9 @@ class ContactGroup(models.Model):
         max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
     GroupName = models.CharField(max_length=150)
     CompanyId = models.CharField(max_length=50, blank=True, null=True)
+    TaxProfile = models.CharField(max_length=100, blank=True, null=True)
+    DiscountPercent = models.CharField(max_length=15, blank=True, null=True, default="0.00")
+    PricingTier = models.CharField(max_length=50, blank=True, null=True, default="Standard")
 
 
 class InteractionLog(models.Model):

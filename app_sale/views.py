@@ -314,6 +314,58 @@ def QuotationFileApiById(request, QuotationFileId=""):
         return JsonResponse("", safe=False)
 
 
+def check_credit_limit(client_id, new_invoice_amount, current_invoice_id=None):
+    from app_client.models import Client
+    from app_accounting.models import Account, JournalItem, JournalEntry
+
+    try:
+        if not client_id:
+            return True, ""
+        client = Client.objects.filter(ClientId=client_id).first()
+        if not client or not client.CreditLimitEnforced:
+            return True, ""
+
+        try:
+            limit = float(client.CreditLimit or "0.00")
+        except ValueError:
+            limit = 0.0
+
+        if limit <= 0.0:
+            return True, ""
+
+        # Accounts Receivable code is '1200'
+        accounts = Account.objects.filter(Code='1200')
+        account_ids = [acc.AccountId for acc in accounts]
+
+        # Calculate current outstanding balance (Debits - Credits)
+        items = JournalItem.objects.filter(ClientId=client_id, AccountId__in=account_ids)
+
+        if current_invoice_id:
+            # Exclude journal items associated with the invoice being updated
+            exclude_entry_ids = list(JournalEntry.objects.filter(
+                ReferenceNumber=current_invoice_id,
+                Source='invoice'
+            ).values_list('JournalEntryId', flat=True))
+            if exclude_entry_ids:
+                items = items.exclude(JournalEntryId__in=exclude_entry_ids)
+
+        outstanding_balance = 0.0
+        for item in items:
+            outstanding_balance += (float(item.Debit or "0.00") - float(item.Credit or "0.00"))
+
+        try:
+            new_amount = float(new_invoice_amount or "0.00")
+        except ValueError:
+            new_amount = 0.0
+
+        if outstanding_balance + new_amount > limit:
+            return False, f"Credit limit of {limit:.2f} exceeded. Current outstanding balance is {outstanding_balance:.2f}, and this invoice is {new_amount:.2f} (Total: {(outstanding_balance + new_amount):.2f})."
+        return True, ""
+    except Exception as e:
+        # Fail-open in production to prevent user workflow block on system error
+        return True, ""
+
+
 @csrf_exempt
 @swagger_auto_schema(method='POST', request_body=InvoiceSerializer, operation_description="NOTE: API for save Invoice")
 @swagger_auto_schema(method='PUT', request_body=InvoiceSerializer, operation_description="NOTE: API for edit Invoice")
@@ -322,6 +374,13 @@ def QuotationFileApiById(request, QuotationFileId=""):
 @retry(retries=3, delay=2)
 def InvoiceApi(request):
     try:
+        from app_client.models import Client
+        from app_client.serializers import ClientSerializer
+        from app_staff.models import Staff
+        from app_staff.serializers import StaffSerializer
+        from app_sale.models import InvoiceStatus
+        from app_sale.serializers import InvoiceStatusSerializer
+
         if request.method == 'GET':
             invoice = Invoice.objects.all().order_by('-SortId')
             invoiceSerializer = InvoiceSerializer(
@@ -352,6 +411,13 @@ def InvoiceApi(request):
             return JsonResponse(invoiceData, safe=False)
         elif request.method == 'POST':
             invoiceData = JSONParser().parse(request)
+            client_id = invoiceData.get('ClientId')
+            total_amount = invoiceData.get('TotalAmount', '0.00')
+
+            allowed, msg = check_credit_limit(client_id, total_amount)
+            if not allowed:
+                return JsonResponse({"error": msg}, status=400)
+
             invoiceSerializer = InvoiceSerializer(
                 data=invoiceData)
             if invoiceSerializer.is_valid():
@@ -360,6 +426,14 @@ def InvoiceApi(request):
             return JsonResponse("Failed to add", safe=False)
         elif request.method == 'PUT':
             invoiceData = JSONParser().parse(request)
+            client_id = invoiceData.get('ClientId')
+            total_amount = invoiceData.get('TotalAmount', '0.00')
+            invoice_id = invoiceData.get('InvoiceId')
+
+            allowed, msg = check_credit_limit(client_id, total_amount, current_invoice_id=invoice_id)
+            if not allowed:
+                return JsonResponse({"error": msg}, status=400)
+
             invoice = Invoice.objects.get(
                 InvoiceId=invoiceData['InvoiceId'])
             invoiceSerializer = InvoiceSerializer(
@@ -370,8 +444,8 @@ def InvoiceApi(request):
             return JsonResponse("Failed to Update", safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
 
 
 @csrf_exempt

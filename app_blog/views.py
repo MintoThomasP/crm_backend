@@ -38,6 +38,31 @@ class PageViewSet(viewsets.ModelViewSet):
     queryset = Page.objects.all()
     serializer_class = PageSerializer
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        category_id = self.request.query_params.get('category', None)
+        if category_id is not None:
+            queryset = queryset.filter(category_id=category_id)
+        return queryset
+
+    @action(detail=False, methods=['get'], url_path='by-category-slug')
+    def by_category_slug(self, request):
+        """
+        Retrieve pages by category slug query parameter e.g., ?slug=my-category
+        """
+        category_slug = request.query_params.get('slug', None)
+        if not category_slug:
+            return Response({'error': 'slug query parameter is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            global_slug = GlobalSlug.objects.get(slug=category_slug, category__isnull=False)
+            category = global_slug.category
+        except GlobalSlug.DoesNotExist:
+            return Response({'error': f'Category with slug "{category_slug}" not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        pages = Page.objects.filter(category=category)
+        serializer = self.get_serializer(pages, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     @action(detail=True, methods=['post'], url_path='increment-view')
     def increment_view(self, request, pk=None):
         """
@@ -171,3 +196,33 @@ def get_all_slugs(request):
             'created_at': s.created_at
         })
     return Response(data, status=status.HTTP_200_OK)
+
+
+@api_view(['GET'])
+def pages_by_category(request, category_id):
+    """
+    Retrieve all blog pages belonging to a specific category ID.
+    """
+    try:
+        pages = Page.objects.filter(category_id=category_id)
+        serializer = PageSerializer(pages, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+@api_view(['GET'])
+def pages_by_category_slug(request, category_slug):
+    """
+    Retrieve all blog pages belonging to a specific category slug.
+    """
+    try:
+        global_slug = GlobalSlug.objects.filter(slug=category_slug, category__isnull=False).first()
+        if not global_slug:
+            return Response({'error': f'Category with slug "{category_slug}" not found.'}, status=status.HTTP_404_NOT_FOUND)
+        
+        pages = Page.objects.filter(category=global_slug.category)
+        serializer = PageSerializer(pages, many=True, context={'request': request})
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Exception as e:
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

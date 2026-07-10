@@ -1026,3 +1026,144 @@ def InteractionLogApiByClientId(request, ClientId=""):
         return JsonResponse(f"Invalid operation: {str(e)}", safe=False)
 
 
+@csrf_exempt
+@api_view(['GET'])
+def ClientLedgerApi(request, ClientId=""):
+    try:
+        from app_accounting.models import Account, JournalItem, JournalEntry
+        from app_client.models import Client, ClientOtherDetails
+
+        try:
+            client = Client.objects.get(ClientId=ClientId)
+        except Client.DoesNotExist:
+            return JsonResponse({"error": "Client not found"}, status=404)
+
+        # Accounts Receivable code is '1200'
+        accounts = Account.objects.filter(Code='1200')
+        account_ids = [acc.AccountId for acc in accounts]
+
+        # Get all JournalItems for this Client under Accounts Receivable
+        items = JournalItem.objects.filter(ClientId=ClientId, AccountId__in=account_ids).order_by('SortId')
+
+        ledger_items = []
+        running_balance = 0.0
+
+        for item in items:
+            try:
+                entry = JournalEntry.objects.get(JournalEntryId=item.JournalEntryId)
+                entry_date = entry.Date
+                ref_num = entry.ReferenceNumber
+                source = entry.Source
+                narration = entry.Narration
+            except JournalEntry.DoesNotExist:
+                entry_date = ""
+                ref_num = ""
+                source = ""
+                narration = ""
+
+            debit = float(item.Debit or "0.00")
+            credit = float(item.Credit or "0.00")
+            running_balance += (debit - credit)
+
+            ledger_items.append({
+                "Date": entry_date,
+                "ReferenceNumber": ref_num,
+                "Source": source,
+                "Narration": narration,
+                "Debit": f"{debit:.2f}",
+                "Credit": f"{credit:.2f}",
+                "RunningBalance": f"{running_balance:.2f}"
+            })
+
+        # Calculate opening balance (for now, default to 0.00 or check other details)
+        opening_bal = 0.00
+        try:
+            other_details = ClientOtherDetails.objects.filter(ClientId=ClientId).first()
+            if other_details and other_details.OpeningBalance:
+                opening_bal = float(other_details.OpeningBalance)
+        except:
+            pass
+
+        return JsonResponse({
+            "ClientId": ClientId,
+            "CustomerDisplayName": client.CustomerDisplayName,
+            "OpeningBalance": f"{opening_bal:.2f}",
+            "ClosingBalance": f"{(opening_bal + running_balance):.2f}",
+            "LedgerItems": ledger_items
+        }, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@csrf_exempt
+@api_view(['GET'])
+def ClientAgingOverviewApi(request, ClientId=""):
+    try:
+        from app_sale.models import Invoice, PaymentReceived
+        from datetime import datetime, date
+
+        invoices = Invoice.objects.filter(ClientId=ClientId)
+        
+        aging_current = 0.0
+        aging_30 = 0.0
+        aging_60 = 0.0
+        aging_over_60 = 0.0
+        total_outstanding = 0.0
+
+        for inv in invoices:
+            if not inv.AmountDue:
+                continue
+            try:
+                amount_due = float(inv.AmountDue)
+                if amount_due <= 0.0:
+                    continue
+                
+                total_outstanding += amount_due
+                if not inv.DueDate:
+                    aging_current += amount_due
+                    continue
+                
+                due_dt = datetime.strptime(inv.DueDate, "%Y-%m-%d").date()
+                today_dt = date.today()
+                diff_days = (today_dt - due_dt).days
+
+                if diff_days <= 0:
+                    aging_current += amount_due
+                elif diff_days <= 30:
+                    aging_30 += amount_due
+                elif diff_days <= 60:
+                    aging_60 += amount_due
+                else:
+                    aging_over_60 += amount_due
+            except:
+                pass
+
+        # Also get payment history log for this client
+        payments = PaymentReceived.objects.filter(ClientId=ClientId).order_by('-SortId')
+        payments_data = []
+        for p in payments:
+            payments_data.append({
+                "PaymentReceivedId": p.PaymentReceivedId,
+                "AmountReceived": p.AmountReceived,
+                "PaymentDate": p.PaymentDate,
+                "PaymentNumber": p.PaymentNumber,
+                "PaymentMode": p.PaymentMode,
+                "ReferenceNumber": p.ReferenceNumber
+            })
+
+        return JsonResponse({
+            "ClientId": ClientId,
+            "TotalOutstanding": f"{total_outstanding:.2f}",
+            "Aging": {
+                "current": f"{aging_current:.2f}",
+                "1_30_days": f"{aging_30:.2f}",
+                "31_60_days": f"{aging_60:.2f}",
+                "over_60_days": f"{aging_over_60:.2f}"
+            },
+            "Payments": payments_data
+        }, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+
