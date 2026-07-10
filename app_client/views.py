@@ -6,8 +6,8 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
-from app_client.models import Client, ClientAddress, ClientBankDetails, ClientDocuments, ClientOtherDetails, ClientReminder, ClientVisitRegister, ContactPerson, Opportunity, SupportTicket
-from app_client.serializers import ClientAddressSerializer, ClientBankDetailsSerializer, ClientDocumentsSerializer, ClientOtherDetailsSerializer, ClientReminderSerializer, ClientSerializer, ClientVisitRegisterSerializer, ContactPersonSerializer, OpportunitySerializer, SupportTicketSerializer
+from app_client.models import Client, ClientAddress, ClientBankDetails, ClientDocuments, ClientOtherDetails, ClientReminder, ClientVisitRegister, ContactPerson, Opportunity, SupportTicket, ContactGroup, InteractionLog
+from app_client.serializers import ClientAddressSerializer, ClientBankDetailsSerializer, ClientDocumentsSerializer, ClientOtherDetailsSerializer, ClientReminderSerializer, ClientSerializer, ClientVisitRegisterSerializer, ContactPersonSerializer, OpportunitySerializer, SupportTicketSerializer, ContactGroupSerializer, InteractionLogSerializer
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -951,4 +951,78 @@ def SupportTicketApiById(request, TicketId=""):
             return JsonResponse("Deleted successfully", safe=False)
     except Exception as e:
         return JsonResponse(f"Invalid operation: {str(e)}", safe=False)
+
+
+@csrf_exempt
+@api_view(['GET', 'POST', 'PUT'])
+def ContactGroupApi(request, CompanyId=""):
+    try:
+        if request.method == 'GET':
+            groups = ContactGroup.objects.filter(CompanyId=CompanyId)
+            serializer = ContactGroupSerializer(groups, many=True)
+            return JsonResponse(serializer.data, safe=False)
+        elif request.method == 'POST':
+            data = JSONParser().parse(request)
+            serializer = ContactGroupSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse("Add successfully", safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            data = JSONParser().parse(request)
+            group = ContactGroup.objects.get(GroupId=data['GroupId'])
+            serializer = ContactGroupSerializer(group, data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse("Update successfully", safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+    except Exception as e:
+        return JsonResponse(f"Invalid operation: {str(e)}", safe=False)
+
+
+@csrf_exempt
+@api_view(['GET', 'DELETE'])
+def ContactGroupApiById(request, GroupId=""):
+    try:
+        if request.method == 'GET':
+            group = ContactGroup.objects.get(GroupId=GroupId)
+            serializer = ContactGroupSerializer(group)
+            return JsonResponse(serializer.data, safe=False)
+        elif request.method == 'DELETE':
+            group = ContactGroup.objects.get(GroupId=GroupId)
+            group.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+    except Exception as e:
+        return JsonResponse(f"Invalid operation: {str(e)}", safe=False)
+
+
+@csrf_exempt
+@api_view(['GET', 'POST'])
+def InteractionLogApi(request, CompanyId=""):
+    try:
+        if request.method == 'GET':
+            logs = InteractionLog.objects.filter(CompanyId=CompanyId)
+            serializer = InteractionLogSerializer(logs, many=True)
+            return JsonResponse(serializer.data, safe=False)
+        elif request.method == 'POST':
+            data = JSONParser().parse(request)
+            serializer = InteractionLogSerializer(data=data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse("Add successfully", safe=False)
+            return JsonResponse("Failed to add", safe=False)
+    except Exception as e:
+        return JsonResponse(f"Invalid operation: {str(e)}", safe=False)
+
+
+@csrf_exempt
+@api_view(['GET'])
+def InteractionLogApiByClientId(request, ClientId=""):
+    try:
+        logs = InteractionLog.objects.filter(ClientId=ClientId).order_by('-SortId')
+        serializer = InteractionLogSerializer(logs, many=True)
+        return JsonResponse(serializer.data, safe=False)
+    except Exception as e:
+        return JsonResponse(f"Invalid operation: {str(e)}", safe=False)
+
 

@@ -21,7 +21,10 @@ class QuotationSerializer(serializers.ModelSerializer):
                   'TermsNConditions',
                   'SubTotalAmount',
                   'TotalAmount',
-                  'QuotationFile')
+                  'QuotationFile',
+                  'VersionNumber',
+                  'ApprovalStatus',
+                  'TemplateName')
 
 
 class QuotationItemSerializer(serializers.ModelSerializer):

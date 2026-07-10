@@ -412,3 +412,49 @@ def lead_webhook_api(request):
         }, status=201, safe=False)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400, safe=False)
+
+
+@csrf_exempt
+@api_view(['POST'])
+def convert_lead_to_opportunity_api(request, EnquiryId=""):
+    try:
+        from app_client.models import Opportunity, Client
+        enquiry = Enquiry.objects.get(EnquiryId=EnquiryId)
+        
+        if enquiry.OpportunityId:
+            return JsonResponse({
+                "message": "Lead already converted",
+                "opportunity_id": enquiry.OpportunityId
+            }, status=200, safe=False)
+            
+        client = Client.objects.filter(CompanyId=enquiry.CompanyId, EmailId=enquiry.EmailId).first()
+        if not client:
+            client = Client.objects.create(
+                CompanyId=enquiry.CompanyId,
+                CustomerDisplayName=enquiry.CustomerName or "Lead Client",
+                EmailId=enquiry.EmailId,
+                Phone1=enquiry.PhoneNumber,
+                CustomerType='Individual',
+                ActiveStatus=True
+            )
+
+        opp = Opportunity.objects.create(
+            CompanyId=enquiry.CompanyId,
+            ClientId=client.ClientId,
+            Title=f"Deal from lead: {enquiry.CustomerName}",
+            Stage='qualification',
+            WinProbability=20,
+            ExpectedValue=0.00
+        )
+
+        enquiry.OpportunityId = opp.OpportunityId
+        enquiry.Status = '3'
+        enquiry.save()
+
+        return JsonResponse({
+            "message": "Successfully converted lead to opportunity",
+            "opportunity_id": opp.OpportunityId,
+            "client_id": client.ClientId
+        }, status=201, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400, safe=False)

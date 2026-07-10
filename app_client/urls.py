@@ -56,4 +56,9 @@ urlpatterns = [
     url(r'^OpportunityApiById/(?P<OpportunityId>[0-9a-zA-Z\-]+)$', views.OpportunityApiById),
     url(r'^SupportTicket/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.SupportTicketApi),
     url(r'^SupportTicketApiById/(?P<TicketId>[0-9a-zA-Z\-]+)$', views.SupportTicketApiById),
+    
+    url(r'^ContactGroup/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.ContactGroupApi),
+    url(r'^ContactGroupApiById/(?P<GroupId>[0-9a-zA-Z\-]+)$', views.ContactGroupApiById),
+    url(r'^InteractionLog/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.InteractionLogApi),
+    url(r'^InteractionLogByClientId/(?P<ClientId>[0-9a-zA-Z\-]+)$', views.InteractionLogApiByClientId),
 ]

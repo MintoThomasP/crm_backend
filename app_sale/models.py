@@ -26,6 +26,7 @@ class Quotation(models.Model):
         null=True, blank=True, upload_to='QuotationFile')
     VersionNumber = models.IntegerField(default=1)
     ApprovalStatus = models.CharField(max_length=50, default='draft')
+    TemplateName = models.CharField(max_length=50, default='default')
 
 
 class QuotationItem(models.Model):

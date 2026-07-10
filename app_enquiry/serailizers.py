@@ -19,7 +19,9 @@ class EnquirySerializer(serializers.ModelSerializer):
 'CreatedBy',
 'CompanyId',
 'CountryCode',
-'ServiceType')
+'ServiceType',
+'LeadScore',
+'OpportunityId')
 
         
 

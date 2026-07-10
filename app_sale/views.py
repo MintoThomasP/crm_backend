@@ -1534,7 +1534,13 @@ def ViewQuotationPDF(request, QuotationId=""):
 
         }
 
-        pdf = render_to_pdf('quotation.html', context)
+        template_src = 'quotation.html'
+        if quote.TemplateName == 'modern':
+            template_src = 'quotation_modern.html'
+        elif quote.TemplateName == 'classic':
+            template_src = 'quotation_classic.html'
+
+        pdf = render_to_pdf(template_src, context)
 
         invoice_file_name = f'{quote.QuotationNumber}.pdf'
 
@@ -1549,5 +1555,94 @@ def ViewQuotationPDF(request, QuotationId=""):
 
     else:
         return JsonResponse({"error": "Invalid method"}, status=405)
+
+
+@csrf_exempt
+@api_view(['POST'])
+def create_quotation_version_api(request, QuotationId=""):
+    try:
+        quote = Quotation.objects.get(QuotationId=QuotationId)
+        items = QuotationItem.objects.filter(QuotationId=QuotationId)
+        
+        new_quote = Quotation.objects.create(
+            ClientId=quote.ClientId,
+            CompanyId=quote.CompanyId,
+            QuotationNumber=quote.QuotationNumber,
+            ReferenceNumber=quote.ReferenceNumber,
+            QuoteDate=quote.QuoteDate,
+            ExpiryDate=quote.ExpiryDate,
+            SalesPerson=quote.SalesPerson,
+            ProjectId=quote.ProjectId,
+            Subject=quote.Subject,
+            CustomerNotes=quote.CustomerNotes,
+            TermsNConditions=quote.TermsNConditions,
+            SubTotalAmount=quote.SubTotalAmount,
+            TotalAmount=quote.TotalAmount,
+            VersionNumber=quote.VersionNumber + 1,
+            ApprovalStatus='draft',
+            TemplateName=quote.TemplateName
+        )
+        
+        for item in items:
+            QuotationItem.objects.create(
+                QuotationId=new_quote.QuotationId,
+                ItemName=item.ItemName,
+                Quantity=item.Quantity,
+                Rate=item.Rate,
+                DiscountPercent=item.DiscountPercent,
+                Amount=item.Amount
+            )
+            
+        return JsonResponse({
+            "message": "New quotation version created successfully",
+            "new_quotation_id": new_quote.QuotationId,
+            "version_number": new_quote.VersionNumber
+        }, status=201, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400, safe=False)
+
+
+@csrf_exempt
+@api_view(['POST'])
+def approve_quotation_workflow_api(request, QuotationId=""):
+    try:
+        data = JSONParser().parse(request)
+        action = data.get('action')
+        quote = Quotation.objects.get(QuotationId=QuotationId)
+        
+        current_status = quote.ApprovalStatus.lower()
+        new_status = current_status
+        
+        if action == 'submit_for_approval':
+            if current_status == 'draft':
+                new_status = 'pending_manager'
+            else:
+                return JsonResponse({"error": "Can only submit a draft quote"}, status=400, safe=False)
+        elif action == 'approve':
+            if current_status == 'pending_manager':
+                new_status = 'pending_finance'
+            elif current_status == 'pending_finance':
+                new_status = 'approved'
+            else:
+                return JsonResponse({"error": f"Cannot approve quote in status: {current_status}"}, status=400, safe=False)
+        elif action == 'reject':
+            if current_status in ['pending_manager', 'pending_finance']:
+                new_status = 'rejected'
+            else:
+                return JsonResponse({"error": "Can only reject pending quotes"}, status=400, safe=False)
+        else:
+            return JsonResponse({"error": "Invalid action"}, status=400, safe=False)
+            
+        quote.ApprovalStatus = new_status
+        quote.save()
+        
+        return JsonResponse({
+            "message": f"Quotation status updated to {new_status}",
+            "quotation_id": quote.QuotationId,
+            "status": quote.ApprovalStatus
+        }, status=200, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400, safe=False)
+
     # except Exception as e:
     #     return JsonResponse({"error": str(e)}, status=500)

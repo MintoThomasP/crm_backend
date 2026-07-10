@@ -71,6 +71,10 @@ urlpatterns = [
 
     url(r'^ViewQuotationPDF/(?P<QuotationId>[0-9a-zA-Z\-]+)$',
         views.ViewQuotationPDF),
+    url(r'^Quotation/create_version/(?P<QuotationId>[0-9a-zA-Z\-]+)$',
+        views.create_quotation_version_api),
+    url(r'^Quotation/approve/(?P<QuotationId>[0-9a-zA-Z\-]+)$',
+        views.approve_quotation_workflow_api),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL,

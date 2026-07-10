@@ -35,6 +35,7 @@ class Client(models.Model):
     Reference = models.CharField(max_length=300, blank=True, null=True)
     TaxType = models.CharField(max_length=300, blank=True, null=True)
     TaxId = models.CharField(max_length=300, blank=True, null=True)
+    ContactGroupId = models.CharField(max_length=50, blank=True, null=True)
 
 
 class ClientOtherDetails(models.Model):
@@ -155,4 +156,26 @@ class SupportTicket(models.Model):
     Priority = models.CharField(max_length=20, default='medium')
     SlaDeadline = models.CharField(max_length=50, blank=True, null=True)
     AssignedStaffId = models.CharField(max_length=50, blank=True, null=True)
+
+
+class ContactGroup(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    GroupId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    GroupName = models.CharField(max_length=150)
+    CompanyId = models.CharField(max_length=50, blank=True, null=True)
+
+
+class InteractionLog(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    InteractionId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    CompanyId = models.CharField(max_length=50, blank=True, null=True)
+    ClientId = models.CharField(max_length=50, blank=True, null=True)
+    Type = models.CharField(max_length=50, default='Call') # Call, Email, Meeting, Note
+    Summary = models.CharField(max_length=300, blank=True, null=True)
+    Details = models.TextField(blank=True, null=True)
+    InteractionDate = models.DateTimeField(default=datetime.now)
+    StaffId = models.CharField(max_length=50, blank=True, null=True)
+
 

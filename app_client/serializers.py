@@ -1,4 +1,4 @@
-from app_client.models import Client, ClientAddress, ClientBankDetails, ClientDocuments, ClientOtherDetails, ClientReminder, ClientVisitRegister, ContactPerson, Opportunity, SupportTicket
+from app_client.models import Client, ClientAddress, ClientBankDetails, ClientDocuments, ClientOtherDetails, ClientReminder, ClientVisitRegister, ContactPerson, Opportunity, SupportTicket, ContactGroup, InteractionLog
 from rest_framework import serializers
 
 
@@ -29,7 +29,8 @@ class ClientSerializer(serializers.ModelSerializer):
             'TotalVisitPerMonth',
             'Reference',
             'TaxType',
-            'TaxId'
+            'TaxId',
+            'ContactGroupId'
         )
 
 
@@ -175,4 +176,32 @@ class SupportTicketSerializer(serializers.ModelSerializer):
             'SlaDeadline',
             'AssignedStaffId'
         )
+
+
+class ContactGroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ContactGroup
+        fields = (
+            'SortId',
+            'GroupId',
+            'GroupName',
+            'CompanyId'
+        )
+
+
+class InteractionLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InteractionLog
+        fields = (
+            'SortId',
+            'InteractionId',
+            'CompanyId',
+            'ClientId',
+            'Type',
+            'Summary',
+            'Details',
+            'InteractionDate',
+            'StaffId'
+        )
+
 
