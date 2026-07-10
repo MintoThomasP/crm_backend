@@ -32,7 +32,7 @@ def format_finance_currency(value, currency_code):
                 chunks.insert(0, remaining[-2:])
                 remaining = remaining[:-2]
             formatted_integer = ','.join(chunks) + ',' + last_three
-        symbol = '₹'
+        symbol = f"{code} "
         return f"{'-' if is_negative else ''}{symbol}{formatted_integer}.{decimal_part}"
         
     elif code == 'USD':
@@ -43,7 +43,7 @@ def format_finance_currency(value, currency_code):
             chunks.insert(0, remaining[-3:])
             remaining = remaining[:-3]
         formatted_integer = ','.join(chunks)
-        symbol = '$'
+        symbol = f"{code} "
         return f"{'-' if is_negative else ''}{symbol}{formatted_integer}.{decimal_part}"
         
     elif code == 'AED':
@@ -54,7 +54,7 @@ def format_finance_currency(value, currency_code):
             chunks.insert(0, remaining[-3:])
             remaining = remaining[:-3]
         formatted_integer = ','.join(chunks)
-        symbol = 'AED '
+        symbol = f"{code} "
         return f"{'-' if is_negative else ''}{symbol}{formatted_integer}.{decimal_part}"
         
     elif code == 'EUR':
@@ -65,7 +65,7 @@ def format_finance_currency(value, currency_code):
             chunks.insert(0, remaining[-3:])
             remaining = remaining[:-3]
         formatted_integer = '.'.join(chunks)
-        symbol = '€'
+        symbol = f"{code} "
         return f"{'-' if is_negative else ''}{symbol}{formatted_integer},{decimal_part}"
         
     else:
