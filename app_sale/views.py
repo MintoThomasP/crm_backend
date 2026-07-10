@@ -1476,7 +1476,11 @@ def ViewQuotationPDF(request, QuotationId=""):
     if request.method == 'GET':
         quote = Quotation.objects.get(QuotationId=QuotationId)
         invoiceItems = QuotationItem.objects.filter(QuotationId=QuotationId)
-        company = Company.objects.get(CompanyId=quote.CompanyId)
+        try:
+            company = Company.objects.get(CompanyId=quote.CompanyId)
+        except:
+            company = Company.objects.first()
+
         client = Client.objects.get(ClientId=quote.ClientId)
         try:
             clientaddress = ClientAddress.objects.get(ClientId=quote.ClientId)
@@ -1494,17 +1498,24 @@ def ViewQuotationPDF(request, QuotationId=""):
             })()
 
         totalAmount = Decimal(quote.TotalAmount)
-        siteSettings = SiteSettings.objects.get(CompanyId=quote.CompanyId)
-        currencyType = siteSettings.CurrencyType
-
-        amountinwords = decimal_number_to_words(totalAmount, currencyType)
-        # amountinwords=decimal_number_to_words(totalAmount)
         try:
             siteSettings = SiteSettings.objects.get(CompanyId=quote.CompanyId)
-            siteSettingsSerializer = SiteSettingsSerializer(siteSettings)
-            logo = os.path.join(settings.BASE_DIR) + \
-                siteSettingsSerializer.data['Logo']
+        except:
+            siteSettings = SiteSettings.objects.first()
 
+        if not siteSettings:
+            siteSettings = type('Settings', (object,), {
+                'CurrencyType': 'INR',
+                'QuotationPrefix': 'QT-',
+                'Logo': '',
+                'BankAccount': ''
+            })()
+
+        currencyType = siteSettings.CurrencyType
+        amountinwords = decimal_number_to_words(totalAmount, currencyType)
+
+        try:
+            logo = os.path.join(settings.BASE_DIR) + siteSettings.Logo
         except:
             logo = ""
 
