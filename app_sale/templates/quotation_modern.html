@@ -99,11 +99,11 @@
             {% for item in invoiceItems %}
             <tr>
                 <td style="text-align: center;">{{forloop.counter}}</td>
-                <td><strong>{{item.ItemName}}</strong></td>
+                <td><strong>{{item.ItemName|safe}}</strong></td>
                 <td style="text-align: center;">{{item.Quantity}}</td>
-                <td style="text-align: right;">{{item.Rate|format_currency:siteSettings.CurrencyType}}</td>
+                <td style="text-align: right; white-space: nowrap;">{{item.Rate|format_currency:siteSettings.CurrencyType}}</td>
                 <td style="text-align: center;">{{item.DiscountPercent}}%</td>
-                <td style="text-align: right;">{{item.Amount|format_currency:siteSettings.CurrencyType}}</td>
+                <td style="text-align: right; white-space: nowrap;">{{item.Amount|format_currency:siteSettings.CurrencyType}}</td>
             </tr>
             {% empty %}
             <tr>
@@ -119,11 +119,11 @@
                 <table style="width: 100%;">
                     <tr>
                         <td style="padding: 4px 0;">Subtotal:</td>
-                        <td style="text-align: right; font-weight: 600;">{{quote.SubTotalAmount|format_currency:siteSettings.CurrencyType}}</td>
+                        <td style="text-align: right; font-weight: 600; white-space: nowrap;">{{quote.SubTotalAmount|format_currency:siteSettings.CurrencyType}}</td>
                     </tr>
                     <tr style="border-top: 1px solid #e2e8f0; font-size: 14px; font-weight: 700;">
                         <td style="padding: 8px 0; color: #4f46e5;">Total:</td>
-                        <td style="text-align: right; padding: 8px 0; color: #4f46e5;">{{quote.TotalAmount|format_currency:siteSettings.CurrencyType}}</td>
+                        <td style="text-align: right; padding: 8px 0; color: #4f46e5; white-space: nowrap;">{{quote.TotalAmount|format_currency:siteSettings.CurrencyType}}</td>
                     </tr>
                 </table>
             </div>

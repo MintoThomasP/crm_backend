@@ -104,20 +104,20 @@
             <td style="text-align: center;">{{forloop.counter}}</td>
             <td>{{row.ItemName|safe}}</td>
             <td style="text-align: center;">{{row.Quantity}}</td>
-            <td style="text-align: right;">{{row.Rate | format_currency:siteSettings.CurrencyType}}</td>
+            <td style="text-align: right; white-space: nowrap;">{{row.Rate | format_currency:siteSettings.CurrencyType}}</td>
             <td style="text-align: center;">{{row.DiscountPercent}}</td>
-            <td style="text-align: right;">{{row.Amount | format_currency:siteSettings.CurrencyType}}</td>
+            <td style="text-align: right; white-space: nowrap;">{{row.Amount | format_currency:siteSettings.CurrencyType}}</td>
         </tr>
         {%endfor%}
         <tr style="border-top: 1px solid black;">
             <td colspan="4"></td>
             <td style="text-align: right;"><b>Sub Total</b></td>
-            <td style="text-align: right;"><b>{{quote.SubTotalAmount | format_currency:siteSettings.CurrencyType}}</b></td>
+            <td style="text-align: right; white-space: nowrap;"><b>{{quote.SubTotalAmount | format_currency:siteSettings.CurrencyType}}</b></td>
         </tr>
         <tr style="border-top: 1px solid black;">
             <td colspan="4">Amount in Words: <b>{{amountinwords}}</b></td>
             <td style="text-align: right;"><b>Total</b></td>
-            <td style="text-align: right;"><b>{{quote.TotalAmount | format_currency:siteSettings.CurrencyType}}</b></td>
+            <td style="text-align: right; white-space: nowrap;"><b>{{quote.TotalAmount | format_currency:siteSettings.CurrencyType}}</b></td>
         </tr>
     </table>
     
