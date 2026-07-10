@@ -1478,13 +1478,20 @@ def ViewQuotationPDF(request, QuotationId=""):
         invoiceItems = QuotationItem.objects.filter(QuotationId=QuotationId)
         company = Company.objects.get(CompanyId=quote.CompanyId)
         client = Client.objects.get(ClientId=quote.ClientId)
-        clientaddress = ClientAddress.objects.get(ClientId=quote.ClientId)
         try:
-            country = Country.objects.get(CountryId=clientaddress.Country)
-            countrySerializer = CountrySerializer(country)
-            clientaddress.Country = countrySerializer.data['Country']
+            clientaddress = ClientAddress.objects.get(ClientId=quote.ClientId)
+            try:
+                country = Country.objects.get(CountryId=clientaddress.Country)
+                countrySerializer = CountrySerializer(country)
+                clientaddress.Country = countrySerializer.data['Country']
+            except:
+                clientaddress.Country = ""
         except:
-            clientaddress.Country = ""
+            clientaddress = type('Addr', (object,), {
+                'Address1': '',
+                'Address2': '',
+                'Country': ''
+            })()
 
         totalAmount = Decimal(quote.TotalAmount)
         siteSettings = SiteSettings.objects.get(CompanyId=quote.CompanyId)

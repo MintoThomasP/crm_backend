@@ -121,7 +121,7 @@ DATABASES = {
         # 'NAME': 'staffmanage_db2',
         # 'USER': 'root',
         # 'PASSWORD': '',
-        # 'PORT': '3309',
+        # 'PORT': '3306',
         'NAME': 'staffmanage_db',
         'USER': 'python_user',
         'PASSWORD': 'Kq#oCWJN0sAR',
