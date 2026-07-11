@@ -45,6 +45,62 @@ class PageViewSet(viewsets.ModelViewSet):
             queryset = queryset.filter(category_id=category_id)
         return queryset
 
+    def retrieve(self, request, *args, **kwargs):
+        """
+        Increments the view_count counter when a single page details API is requested.
+        """
+        instance = self.get_object()
+        instance.view_count = F('view_count') + 1
+        instance.save(update_fields=['view_count'])
+        instance.refresh_from_db()
+        serializer = self.get_serializer(instance)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def featured(self, request):
+        """
+        Retrieves top Featured pages with slicing limits.
+        """
+        limit = request.query_params.get('limit', None)
+        queryset = self.get_queryset().filter(is_featured=True)
+        if limit is not None:
+            try:
+                queryset = queryset[:int(limit)]
+            except (ValueError, TypeError):
+                pass
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def latest(self, request):
+        """
+        Retrieves top Latest pages with slicing limits.
+        """
+        limit = request.query_params.get('limit', None)
+        queryset = self.get_queryset().order_by('-created_at')
+        if limit is not None:
+            try:
+                queryset = queryset[:int(limit)]
+            except (ValueError, TypeError):
+                pass
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
+    @action(detail=False, methods=['get'])
+    def popular(self, request):
+        """
+        Retrieves top Popular pages with slicing limits.
+        """
+        limit = request.query_params.get('limit', None)
+        queryset = self.get_queryset().order_by('-view_count')
+        if limit is not None:
+            try:
+                queryset = queryset[:int(limit)]
+            except (ValueError, TypeError):
+                pass
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
     @action(detail=False, methods=['get'], url_path='by-category-slug')
     def by_category_slug(self, request):
         """

@@ -75,6 +75,8 @@ class Page(models.Model):
         default=0,
         help_text="Read-only counter increments tracked by view counts detail routing actions."
     )
+    is_featured = models.BooleanField(default=False, help_text="Explicit flag to feature this specific blog page.")
+    view_count = models.IntegerField(default=0, help_text="Counter tracks reader engagement detail view count.")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
