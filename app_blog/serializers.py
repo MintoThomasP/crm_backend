@@ -119,7 +119,8 @@ class PageSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'category', 'title', 'slug', 'json_data', 
             'compiled_html', 'user_view_count', 'is_featured',
-            'view_count', 'seo_meta', 'created_at', 'updated_at'
+            'view_count', 'thumb_image', 'short_description',
+            'seo_meta', 'created_at', 'updated_at'
         ]
 
     @transaction.atomic

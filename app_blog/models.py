@@ -77,6 +77,8 @@ class Page(models.Model):
     )
     is_featured = models.BooleanField(default=False, help_text="Explicit flag to feature this specific blog page.")
     view_count = models.IntegerField(default=0, help_text="Counter tracks reader engagement detail view count.")
+    thumb_image = models.URLField(max_length=500, blank=True, help_text="Thumbnail image URL for blog post list cards.")
+    short_description = models.TextField(blank=True, help_text="Short introductory snippet for preview cards.")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
