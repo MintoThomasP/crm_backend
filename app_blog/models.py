@@ -44,7 +44,7 @@ class Category(models.Model):
     short_description = models.TextField(blank=True)
     description = models.TextField(blank=True)
     image = models.URLField(max_length=500, blank=True)
-    icon = models.CharField(max_length=100, blank=True)
+    icon = models.CharField(max_length=500, blank=True, help_text="Category icon representation - can be emoji name or uploaded graphic URL.")
 
     class Meta:
         verbose_name_plural = "Categories"
