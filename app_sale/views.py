@@ -378,8 +378,8 @@ def InvoiceApi(request):
         from app_client.serializers import ClientSerializer
         from app_staff.models import Staff
         from app_staff.serializers import StaffSerializer
-        from app_sale.models import InvoiceStatus
-        from app_sale.serializers import InvoiceStatusSerializer
+        from app_default.models import InvoiceStatus
+        from app_default.serializers import InvoiceStatusSerializer
 
         if request.method == 'GET':
             invoice = Invoice.objects.all().order_by('-SortId')
