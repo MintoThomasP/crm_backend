@@ -282,7 +282,7 @@ def get_invoice_info_for_journal_entry(entry):
 @api_view(['GET'])
 def JournalItemByAccountId(request, AccountId=""):
     # Fetch all items for this Account
-    items = JournalItem.objects.filter(AccountId=AccountId).order_by('-SortId')
+    items = JournalItem.objects.filter(AccountId=AccountId).order_by('SortId')
     
     # Enrich each JournalItem with JournalEntry information (Date, ReferenceNumber, Source, Narration, AttachmentUrl, InvoiceAttachmentUrl)
     enriched_items = []
@@ -451,7 +451,7 @@ def CashBookByCompanyId(request, CompanyId=""):
     account_ids = [acc.AccountId for acc in cash_bank_accounts]
     
     # Fetch all JournalItems for these Accounts
-    items = JournalItem.objects.filter(AccountId__in=account_ids).order_by('-SortId')
+    items = JournalItem.objects.filter(AccountId__in=account_ids).order_by('SortId')
     
     opening_balance = 0.0
     period_items = []

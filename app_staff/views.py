@@ -1724,7 +1724,8 @@ def StaffLedgerApi(request, StaffId=""):
             for entry in entries:
                 JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId).update(StaffId=StaffId)
 
-        items = JournalItem.objects.filter(StaffId=StaffId).order_by('-SortId')
+        # Fetch items chronologically (ASC: oldest to newest) to compute running balances from opening balance
+        items = JournalItem.objects.filter(StaffId=StaffId).order_by('SortId')
 
         ledger_items = []
         running_balance = 0.0
@@ -1781,6 +1782,9 @@ def StaffLedgerApi(request, StaffId=""):
                 "Credit": f"{credit:.2f}",
                 "RunningBalance": f"{running_balance:.2f}"
             })
+
+        # Reverse for DESC display order (newest at top, oldest at bottom)
+        ledger_items.reverse()
 
         opening_bal = 0.00
         try:

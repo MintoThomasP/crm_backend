@@ -1038,22 +1038,31 @@ def ClientLedgerApi(request, ClientId=""):
         except Client.DoesNotExist:
             return JsonResponse({"error": "Client not found"}, status=404)
 
+        # Calculate opening balance
+        opening_bal = 0.00
+        try:
+            other_details = ClientOtherDetails.objects.filter(ClientId=ClientId).first()
+            if other_details and other_details.OpeningBalance:
+                opening_bal = float(other_details.OpeningBalance)
+        except:
+            pass
+
         # Accounts Receivable code is '1200'
         accounts = Account.objects.filter(Code='1200')
         account_ids = [acc.AccountId for acc in accounts]
 
-        # Get all JournalItems for this Client under Accounts Receivable
+        # Fetch items chronologically (ASC: oldest to newest) to compute running balance
         items = JournalItem.objects.filter(ClientId=ClientId, AccountId__in=account_ids).order_by('SortId')
 
         ledger_items = []
-        running_balance = 0.0
+        running_balance = opening_bal
 
         from app_accounting.views import get_attachment_url_for_journal_entry, resolve_reference_number, get_invoice_info_for_journal_entry
 
         for item in items:
             try:
                 entry = JournalEntry.objects.get(JournalEntryId=item.JournalEntryId)
-                entry_date = entry.Date
+                entry_date = entry.Date or ""
                 ref_num = resolve_reference_number(entry)
                 source = entry.Source
                 narration = entry.Narration
@@ -1085,20 +1094,14 @@ def ClientLedgerApi(request, ClientId=""):
                 "RunningBalance": f"{running_balance:.2f}"
             })
 
-        # Calculate opening balance (for now, default to 0.00 or check other details)
-        opening_bal = 0.00
-        try:
-            other_details = ClientOtherDetails.objects.filter(ClientId=ClientId).first()
-            if other_details and other_details.OpeningBalance:
-                opening_bal = float(other_details.OpeningBalance)
-        except:
-            pass
+        # Reverse for DESC display order (newest at top, oldest at bottom)
+        ledger_items.reverse()
 
         return JsonResponse({
             "ClientId": ClientId,
             "CustomerDisplayName": client.CustomerDisplayName,
             "OpeningBalance": f"{opening_bal:.2f}",
-            "ClosingBalance": f"{(opening_bal + running_balance):.2f}",
+            "ClosingBalance": f"{running_balance:.2f}",
             "LedgerItems": ledger_items
         }, safe=False)
     except Exception as e:

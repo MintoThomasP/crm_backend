@@ -675,7 +675,8 @@ def VendorLedgerApi(request, VendorId=""):
         from app_accounting.models import JournalItem, JournalEntry
         from app_accounting.views import get_attachment_url_for_journal_entry, resolve_reference_number
 
-        items = JournalItem.objects.filter(VendorId=VendorId).order_by('-SortId')
+        # Fetch items chronologically (ASC: oldest to newest) to compute running balances from opening balance
+        items = JournalItem.objects.filter(VendorId=VendorId).order_by('SortId')
         ledger_items = []
         running_balance = 0.0
 
@@ -765,6 +766,9 @@ def VendorLedgerApi(request, VendorId=""):
                 "Credit": f"{credit:.2f}",
                 "RunningBalance": f"{running_balance:.2f}"
             })
+
+        # Reverse for DESC display order (newest at top, oldest at bottom)
+        ledger_items.reverse()
 
         opening_bal = 0.00
         try:
