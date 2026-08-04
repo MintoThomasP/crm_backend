@@ -1779,8 +1779,8 @@ def StaffLedgerApi(request, StaffId=""):
                 "SortId": sort_key
             })
 
-        # Sort strictly by SortId ascending
-        temp_items.sort(key=lambda x: str(x.get('SortId') or ''))
+        # Sort items by Date & SortId ascending to calculate chronological running balance
+        temp_items.sort(key=lambda x: (x.get('Date') or '', x.get('SortId') or ''))
 
         ledger_items = []
         running_balance = 0.0
@@ -1798,8 +1798,12 @@ def StaffLedgerApi(request, StaffId=""):
                 "AttachmentUrl": row['AttachmentUrl'],
                 "Debit": f"{debit:.2f}",
                 "Credit": f"{credit:.2f}",
-                "RunningBalance": f"{running_balance:.2f}"
+                "RunningBalance": f"{running_balance:.2f}",
+                "SortId": row['SortId']
             })
+
+        # Sort final ledger items by SortId DESC order
+        ledger_items.sort(key=lambda x: (x.get('SortId') or '', x.get('Date') or ''), reverse=True)
 
         opening_bal = 0.00
         try:
