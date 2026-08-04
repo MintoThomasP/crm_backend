@@ -334,9 +334,18 @@ def JournalItemByAccountId(request, AccountId=""):
         staff_id = getattr(item, 'StaffId', None)
         if not staff_id and entry and entry.Source == 'expense':
             from app_accounting.models import Expense
-            exp = Expense.objects.filter(Q(ExpenseNumber=entry.ReferenceNumber) | Q(ExpenseId=entry.ReferenceNumber)).first()
-            if exp:
-                staff_id = getattr(exp, 'StaffId', None)
+            exp = Expense.objects.filter(
+                Q(ExpenseNumber=entry.ReferenceNumber) |
+                Q(ExpenseId=entry.ReferenceNumber) |
+                Q(Narration=entry.Narration)
+            ).first()
+            if exp and exp.StaffId:
+                staff_id = exp.StaffId
+                try:
+                    JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId).update(StaffId=staff_id)
+                except:
+                    pass
+
         if not staff_id and entry and entry.Source in ['expense_claim', 'expense_claim_repay']:
             from app_accounting.models import ExpenseClaim
             claim = ExpenseClaim.objects.filter(
@@ -344,8 +353,12 @@ def JournalItemByAccountId(request, AccountId=""):
                 Q(ReimbursementJournalEntryId=entry.JournalEntryId) |
                 Q(ClaimNumber=entry.ReferenceNumber)
             ).first()
-            if claim:
+            if claim and claim.StaffId:
                 staff_id = claim.StaffId
+                try:
+                    JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId).update(StaffId=staff_id)
+                except:
+                    pass
 
         if staff_id:
             try:
@@ -360,6 +373,34 @@ def JournalItemByAccountId(request, AccountId=""):
             item_data['StaffId'] = ""
 
         vendor_id = getattr(item, 'VendorId', None)
+        if not vendor_id and entry and entry.Source == 'expense':
+            from app_accounting.models import Expense
+            exp = Expense.objects.filter(
+                Q(ExpenseNumber=entry.ReferenceNumber) |
+                Q(ExpenseId=entry.ReferenceNumber) |
+                Q(Narration=entry.Narration)
+            ).first()
+            if exp and exp.VendorId:
+                vendor_id = exp.VendorId
+                try:
+                    JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId).update(VendorId=vendor_id)
+                except:
+                    pass
+
+        if not vendor_id and entry and entry.Source in ['expense_claim', 'expense_claim_repay']:
+            from app_accounting.models import ExpenseClaim
+            claim = ExpenseClaim.objects.filter(
+                Q(ExpenseJournalEntryId=entry.JournalEntryId) |
+                Q(ReimbursementJournalEntryId=entry.JournalEntryId) |
+                Q(ClaimNumber=entry.ReferenceNumber)
+            ).first()
+            if claim and claim.VendorId:
+                vendor_id = claim.VendorId
+                try:
+                    JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId).update(VendorId=vendor_id)
+                except:
+                    pass
+
         if vendor_id:
             try:
                 from app_vendor.models import Vendor
@@ -645,7 +686,9 @@ def ExpenseApi(request):
             data['ExpenseNumber'] = get_next_expense_number(company_id)
         serializer = ExpenseSerializer(data=data)
         if serializer.is_valid():
-            serializer.save()
+            exp_obj = serializer.save()
+            from app_accounting.signals import create_expense_journal_entry
+            create_expense_journal_entry(sender=Expense, instance=exp_obj, created=True)
             return JsonResponse(serializer.data['ExpenseId'], safe=False)
         return JsonResponse("Failed to add Expense", safe=False, status=400)
 
@@ -663,14 +706,22 @@ def ExpenseApiById(request, ExpenseId=""):
     
     elif request.method == 'PUT':
         data = JSONParser().parse(request)
-        serializer = ExpenseSerializer(expense, data=data)
+        serializer = ExpenseSerializer(expense, data=data, partial=True)
         if serializer.is_valid():
-            serializer.save()
+            exp_obj = serializer.save()
+            from app_accounting.signals import create_expense_journal_entry
+            create_expense_journal_entry(sender=Expense, instance=exp_obj, created=False)
             return JsonResponse(serializer.data['ExpenseId'], safe=False)
         return JsonResponse("Failed to update Expense", safe=False, status=400)
     
     elif request.method == 'DELETE':
-        expense.delete()
+        with transaction.atomic():
+            ref_num = expense.ExpenseNumber if expense.ExpenseNumber else expense.ExpenseId
+            entries = JournalEntry.objects.filter(Source='expense', ReferenceNumber__in=[ref_num, expense.ExpenseId])
+            for entry in entries:
+                JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId).delete()
+                entry.delete()
+            expense.delete()
         return JsonResponse("Deleted successfully", safe=False)
 
 
