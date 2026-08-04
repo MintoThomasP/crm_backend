@@ -10,6 +10,15 @@ from app_client.serializers import ClientSerializer
 from app_staff.models import Staff
 
 
+def format_media_url(file_field):
+    if not file_field or not hasattr(file_field, 'name') or not file_field.name:
+        return ""
+    name = str(file_field.name).lstrip('/')
+    if name.startswith('media/'):
+        return name
+    return f"media/{name}"
+
+
 def get_attachment_url_for_journal_entry(entry):
     if not entry or not entry.Source:
         return ""
@@ -20,19 +29,27 @@ def get_attachment_url_for_journal_entry(entry):
         from app_sale.models import Invoice, InvoiceDocument
         inv = None
         if entry.ReferenceNumber:
-            inv = Invoice.objects.filter(CompanyId=entry.CompanyId).filter(
+            inv = Invoice.objects.filter(
                 Q(InvoiceNumber=entry.ReferenceNumber) | Q(InvoiceId=entry.ReferenceNumber)
             ).first()
-            if not inv:
-                inv = Invoice.objects.filter(InvoiceId=entry.ReferenceNumber).first()
+        
+        if not inv and entry.Narration:
+            import re
+            match = re.search(r'Invoice\s+#?([A-Za-z0-9\-]+)', entry.Narration, re.IGNORECASE)
+            if match:
+                inv_ref = match.group(1)
+                inv = Invoice.objects.filter(
+                    Q(InvoiceNumber=inv_ref) | Q(InvoiceId=inv_ref)
+                ).first()
+
         if inv:
             # 1. Check InvoiceFile in Invoice table
             if inv.InvoiceFile and hasattr(inv.InvoiceFile, 'name') and inv.InvoiceFile.name:
-                return f"media/{inv.InvoiceFile.name}"
+                return format_media_url(inv.InvoiceFile)
             # 2. Check Document in InvoiceDocument table
             inv_doc = InvoiceDocument.objects.filter(InvoiceId=inv.InvoiceId).first()
             if inv_doc and inv_doc.Document and hasattr(inv_doc.Document, 'name') and inv_doc.Document.name:
-                return f"media/{inv_doc.Document.name}"
+                return format_media_url(inv_doc.Document)
             # 3. Fallback to view generated PDF
             return f"api-sale/ViewPDF/{inv.InvoiceId}"
 
@@ -40,19 +57,27 @@ def get_attachment_url_for_journal_entry(entry):
         from app_sale.models import PaymentReceived, PaymentDocument
         pay = None
         if entry.ReferenceNumber:
-            pay = PaymentReceived.objects.filter(CompanyId=entry.CompanyId).filter(
+            pay = PaymentReceived.objects.filter(
                 Q(PaymentNumber=entry.ReferenceNumber) | Q(ReferenceNumber=entry.ReferenceNumber) | Q(PaymentReceivedId=entry.ReferenceNumber)
             ).first()
-            if not pay:
-                pay = PaymentReceived.objects.filter(PaymentReceivedId=entry.ReferenceNumber).first()
+
+        if not pay and entry.Narration:
+            import re
+            match = re.search(r'Payment Received\s+#?([A-Za-z0-9\-]+)', entry.Narration, re.IGNORECASE)
+            if match:
+                pay_ref = match.group(1)
+                pay = PaymentReceived.objects.filter(
+                    Q(PaymentNumber=pay_ref) | Q(ReferenceNumber=pay_ref) | Q(PaymentReceivedId=pay_ref)
+                ).first()
+
         if pay:
             # 1. Check Receipt in PaymentReceived table
             if pay.Receipt and hasattr(pay.Receipt, 'name') and pay.Receipt.name:
-                return f"media/{pay.Receipt.name}"
+                return format_media_url(pay.Receipt)
             # 2. Check Document in PaymentDocument table
             pay_doc = PaymentDocument.objects.filter(PaymentReceivedId=pay.PaymentReceivedId).first()
             if pay_doc and pay_doc.Document and hasattr(pay_doc.Document, 'name') and pay_doc.Document.name:
-                return f"media/{pay_doc.Document.name}"
+                return format_media_url(pay_doc.Document)
             # 3. Fallback to view generated Payment PDF
             return f"api-sale/ViewPaymentPDF/{pay.PaymentReceivedId}"
 
@@ -60,13 +85,12 @@ def get_attachment_url_for_journal_entry(entry):
         from app_accounting.models import Expense
         exp = None
         if entry.ReferenceNumber:
-            exp = Expense.objects.filter(CompanyId=entry.CompanyId).filter(
+            exp = Expense.objects.filter(
                 Q(ExpenseNumber=entry.ReferenceNumber) | Q(ExpenseId=entry.ReferenceNumber)
             ).first()
-            if not exp:
-                exp = Expense.objects.filter(ExpenseId=entry.ReferenceNumber).first()
+
         if exp and hasattr(exp, 'Receipt') and exp.Receipt and hasattr(exp.Receipt, 'name') and exp.Receipt.name:
-            return f"media/{exp.Receipt.name}"
+            return format_media_url(exp.Receipt)
 
     elif source in ['expense_claim', 'expense_claim_repay']:
         from app_accounting.models import ExpenseClaim
@@ -75,8 +99,9 @@ def get_attachment_url_for_journal_entry(entry):
             Q(ReimbursementJournalEntryId=entry.JournalEntryId) |
             Q(ClaimNumber=entry.ReferenceNumber)
         ).first()
+
         if claim and claim.Receipt and hasattr(claim.Receipt, 'name') and claim.Receipt.name:
-            return f"media/{claim.Receipt.name}"
+            return format_media_url(claim.Receipt)
 
     return ""
 
