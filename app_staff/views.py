@@ -1779,8 +1779,8 @@ def StaffLedgerApi(request, StaffId=""):
                 "SortId": sort_key
             })
 
-        # Sort strictly by Date ascending, then SortId ascending
-        temp_items.sort(key=lambda x: (x.get('Date') or '', x.get('SortId') or ''))
+        # Sort strictly by SortId ascending
+        temp_items.sort(key=lambda x: str(x.get('SortId') or ''))
 
         ledger_items = []
         running_balance = 0.0

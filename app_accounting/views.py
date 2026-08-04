@@ -440,9 +440,7 @@ def parse_date(date_str):
     return None
 
 def get_ledger_sort_key(item):
-    date_str = str(item.get('Date') or '')
-    sort_id_str = str(item.get('SortId') or '')
-    return (date_str, sort_id_str)
+    return str(item.get('SortId') or '')
 
 
 @api_view(['GET'])
