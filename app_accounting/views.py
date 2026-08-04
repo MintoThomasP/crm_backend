@@ -416,8 +416,6 @@ def JournalItemByAccountId(request, AccountId=""):
 
         enriched_items.append(item_data)
         
-    # Sort in ascending order of Date, then ReferenceNumber suffix, then SortId
-    enriched_items.sort(key=get_ledger_sort_key)
     return JsonResponse(enriched_items, safe=False)
 
 
@@ -438,22 +436,6 @@ def parse_date(date_str):
         except ValueError:
             pass
     return None
-
-def get_ledger_sort_key(item):
-    date_str = str(item.get('Date') or '')
-    ref_str = str(item.get('ReferenceNumber') or '')
-    sort_id_str = str(item.get('SortId') or '')
-
-    debit_val = safe_float(item.get('Debit'))
-    credit_val = safe_float(item.get('Credit'))
-
-    # Receipts (Debit > 0) come before Payments (Credit > 0) on the same date
-    is_payment = 1 if debit_val == 0 and credit_val > 0 else 0
-
-    match = re.search(r'(\d+)$', ref_str)
-    ref_num = int(match.group(1)) if match else 999999999
-
-    return (date_str, is_payment, sort_id_str, ref_num, ref_str)
 
 
 @api_view(['GET'])
@@ -625,9 +607,6 @@ def CashBookByCompanyId(request, CompanyId=""):
             
         period_items.append(item_data)
         
-    # Sort strictly by Date ascending, then ReferenceNumber suffix, then SortId
-    period_items.sort(key=get_ledger_sort_key)
-    
     closing_balance = opening_balance
     for item in period_items:
         closing_balance += (safe_float(item.get('Debit')) - safe_float(item.get('Credit')))
