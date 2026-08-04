@@ -785,7 +785,8 @@ def post_claim_journal_entries(claim):
             AccountId=claim.AccountId,
             Debit=f"{float(claim.Amount or 0.0):.2f}",
             Credit="0.00",
-            StaffId=claim.StaffId
+            StaffId=claim.StaffId,
+            VendorId=claim.VendorId
         )
 
         # Credit Liability clearing account
@@ -794,7 +795,8 @@ def post_claim_journal_entries(claim):
             AccountId=clearing_account.AccountId,
             Debit="0.00",
             Credit=f"{float(claim.Amount or 0.0):.2f}",
-            StaffId=claim.StaffId
+            StaffId=claim.StaffId,
+            VendorId=claim.VendorId
         )
 
 
@@ -849,7 +851,8 @@ def post_reimbursement_journal_entries(claim):
             AccountId=clearing_account.AccountId,
             Debit=f"{float(claim.Amount or 0.0):.2f}",
             Credit="0.00",
-            StaffId=claim.StaffId
+            StaffId=claim.StaffId,
+            VendorId=claim.VendorId
         )
 
         # Credit Selected Cash/Bank Account
@@ -858,7 +861,8 @@ def post_reimbursement_journal_entries(claim):
             AccountId=claim.ReimbursementAccountId,
             Debit="0.00",
             Credit=f"{float(claim.Amount or 0.0):.2f}",
-            StaffId=claim.StaffId
+            StaffId=claim.StaffId,
+            VendorId=claim.VendorId
         )
 
 
@@ -897,7 +901,7 @@ def ExpenseClaimApiById(request, ExpenseClaimId=""):
 
     elif request.method == 'PUT':
         data = JSONParser().parse(request)
-        serializer = ExpenseClaimSerializer(claim, data=data)
+        serializer = ExpenseClaimSerializer(claim, data=data, partial=True)
         if serializer.is_valid():
             claim = serializer.save()
             post_claim_journal_entries(claim)
@@ -958,6 +962,16 @@ def ExpenseClaimByCompanyId(request, CompanyId=""):
                 data['StaffName'] = ""
         except Staff.DoesNotExist:
             data['StaffName'] = ""
+
+        try:
+            if claim.VendorId:
+                from app_vendor.models import Vendor
+                v = Vendor.objects.get(VendorId=claim.VendorId)
+                data['VendorName'] = v.VendorDisplayName or v.CompanyName or ""
+            else:
+                data['VendorName'] = ""
+        except:
+            data['VendorName'] = ""
 
         enriched_claims.append(data)
 

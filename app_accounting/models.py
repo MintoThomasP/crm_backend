@@ -80,6 +80,7 @@ class ExpenseClaim(models.Model):
     ReimbursementDate = models.CharField(blank=True, null=True, max_length=50)
     ReimbursementAccountId = models.CharField(blank=True, null=True, max_length=50)  # Cash/Bank (Credit)
     CompanyId = models.CharField(blank=True, null=True, max_length=50)
+    VendorId = models.CharField(blank=True, null=True, max_length=50)
     ExpenseJournalEntryId = models.CharField(blank=True, null=True, max_length=50)  # Step 1 JE
     ReimbursementJournalEntryId = models.CharField(blank=True, null=True, max_length=50)  # Step 2 JE
 
