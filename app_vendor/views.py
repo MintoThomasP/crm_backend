@@ -694,6 +694,14 @@ def VendorLedgerApi(request, VendorId=""):
                 narration = ""
                 attachment_url = ""
 
+            # Exclude reimbursement payouts (internal company repayment to staff)
+            if source == 'expense_claim_repay' or (ref_num and ref_num.startswith('REIMB-')):
+                continue
+
+            # Exclude credit clearing line of expense claims so claim shows as a single expense purchase
+            if source == 'expense_claim' and float(item.Credit or "0.00") > 0:
+                continue
+
             debit = float(item.Debit or "0.00")
             credit = float(item.Credit or "0.00")
             running_balance += (credit - debit)

@@ -789,14 +789,13 @@ def post_claim_journal_entries(claim):
             VendorId=claim.VendorId
         )
 
-        # Credit Liability clearing account
+        # Credit Liability clearing account (Staff clearing account, no VendorId)
         JournalItem.objects.create(
             JournalEntryId=journal_entry.JournalEntryId,
             AccountId=clearing_account.AccountId,
             Debit="0.00",
             Credit=f"{float(claim.Amount or 0.0):.2f}",
-            StaffId=claim.StaffId,
-            VendorId=claim.VendorId
+            StaffId=claim.StaffId
         )
 
 
@@ -851,8 +850,7 @@ def post_reimbursement_journal_entries(claim):
             AccountId=clearing_account.AccountId,
             Debit=f"{float(claim.Amount or 0.0):.2f}",
             Credit="0.00",
-            StaffId=claim.StaffId,
-            VendorId=claim.VendorId
+            StaffId=claim.StaffId
         )
 
         # Credit Selected Cash/Bank Account
@@ -861,8 +859,7 @@ def post_reimbursement_journal_entries(claim):
             AccountId=claim.ReimbursementAccountId,
             Debit="0.00",
             Credit=f"{float(claim.Amount or 0.0):.2f}",
-            StaffId=claim.StaffId,
-            VendorId=claim.VendorId
+            StaffId=claim.StaffId
         )
 
 
