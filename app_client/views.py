@@ -1048,22 +1048,25 @@ def ClientLedgerApi(request, ClientId=""):
         ledger_items = []
         running_balance = 0.0
 
-        from app_accounting.views import get_attachment_url_for_journal_entry
+        from app_accounting.views import get_attachment_url_for_journal_entry, resolve_reference_number, get_invoice_info_for_journal_entry
 
         for item in items:
             try:
                 entry = JournalEntry.objects.get(JournalEntryId=item.JournalEntryId)
                 entry_date = entry.Date
-                ref_num = entry.ReferenceNumber
+                ref_num = resolve_reference_number(entry)
                 source = entry.Source
                 narration = entry.Narration
                 attachment_url = get_attachment_url_for_journal_entry(entry)
+                inv_num, inv_url = get_invoice_info_for_journal_entry(entry)
             except JournalEntry.DoesNotExist:
                 entry_date = ""
                 ref_num = ""
                 source = ""
                 narration = ""
                 attachment_url = ""
+                inv_num = ""
+                inv_url = ""
 
             debit = float(item.Debit or "0.00")
             credit = float(item.Credit or "0.00")
@@ -1075,6 +1078,8 @@ def ClientLedgerApi(request, ClientId=""):
                 "Source": source,
                 "Narration": narration,
                 "AttachmentUrl": attachment_url,
+                "InvoiceNumber": inv_num,
+                "InvoiceAttachmentUrl": inv_url,
                 "Debit": f"{debit:.2f}",
                 "Credit": f"{credit:.2f}",
                 "RunningBalance": f"{running_balance:.2f}"

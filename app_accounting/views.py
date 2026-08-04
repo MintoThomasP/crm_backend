@@ -156,34 +156,169 @@ def AccountByCompanyId(request, CompanyId=""):
 
 
 
+def resolve_reference_number(entry):
+    if not entry or not entry.ReferenceNumber:
+        return ""
+
+    ref_num = entry.ReferenceNumber
+    source = (entry.Source or "").lower()
+
+    if source == 'expense':
+        exp = Expense.objects.filter(
+            Q(ExpenseNumber=ref_num) | Q(ExpenseId=ref_num)
+        ).first()
+        if exp and exp.ExpenseNumber:
+            return exp.ExpenseNumber
+    elif source in ['expense_claim', 'expense_claim_repay']:
+        claim = ExpenseClaim.objects.filter(
+            Q(ExpenseJournalEntryId=entry.JournalEntryId) |
+            Q(ReimbursementJournalEntryId=entry.JournalEntryId) |
+            Q(ClaimNumber=ref_num) |
+            Q(ExpenseClaimId=ref_num)
+        ).first()
+        if claim and claim.ClaimNumber:
+            if source == 'expense_claim_repay':
+                return f"REIMB-{claim.ClaimNumber}" if not ref_num.startswith('REIMB-') else ref_num
+            return claim.ClaimNumber
+        elif ref_num.startswith('EXP-CLAIM-'):
+            return ref_num.replace('EXP-CLAIM-', '')
+    elif source == 'invoice':
+        from app_sale.models import Invoice
+        inv = Invoice.objects.filter(
+            Q(InvoiceNumber=ref_num) | Q(InvoiceId=ref_num)
+        ).first()
+        if inv and inv.InvoiceNumber:
+            return inv.InvoiceNumber
+    elif source == 'payment':
+        from app_sale.models import PaymentReceived
+        pay = PaymentReceived.objects.filter(
+            Q(PaymentNumber=ref_num) | Q(ReferenceNumber=ref_num) | Q(PaymentReceivedId=ref_num)
+        ).first()
+        if pay and pay.PaymentNumber:
+            return pay.PaymentNumber
+
+    return ref_num
+
+
+def get_invoice_info_for_journal_entry(entry):
+    if not entry or not entry.Source:
+        return "", ""
+
+    source = (entry.Source or "").lower()
+    from app_sale.models import Invoice, InvoiceDocument, PaymentReceived, PaymentReceivedDetail
+    import re
+
+    inv = None
+
+    if source == 'invoice':
+        if entry.ReferenceNumber:
+            inv = Invoice.objects.filter(
+                Q(InvoiceNumber=entry.ReferenceNumber) | Q(InvoiceId=entry.ReferenceNumber)
+            ).first()
+        if not inv and entry.Narration:
+            match = re.search(r'Invoice\s+#?([A-Za-z0-9\-]+)', entry.Narration, re.IGNORECASE)
+            if match:
+                inv_ref = match.group(1)
+                inv = Invoice.objects.filter(
+                    Q(InvoiceNumber=inv_ref) | Q(InvoiceId=inv_ref)
+                ).first()
+
+    elif source == 'payment':
+        pay = None
+        if entry.ReferenceNumber:
+            pay = PaymentReceived.objects.filter(
+                Q(PaymentNumber=entry.ReferenceNumber) | Q(ReferenceNumber=entry.ReferenceNumber) | Q(PaymentReceivedId=entry.ReferenceNumber)
+            ).first()
+        if not pay and entry.Narration:
+            match = re.search(r'Payment Received\s+#?([A-Za-z0-9\-]+)', entry.Narration, re.IGNORECASE)
+            if match:
+                pay_ref = match.group(1)
+                pay = PaymentReceived.objects.filter(
+                    Q(PaymentNumber=pay_ref) | Q(ReferenceNumber=pay_ref) | Q(PaymentReceivedId=pay_ref)
+                ).first()
+
+        if pay:
+            details = PaymentReceivedDetail.objects.filter(PaymentReceivedId=pay.PaymentReceivedId)
+            for detail in details:
+                if detail.RefId:
+                    inv = Invoice.objects.filter(Q(InvoiceId=detail.RefId) | Q(InvoiceNumber=detail.RefId)).first()
+                    if inv:
+                        break
+        
+        # If still not found, check if Narration references an Invoice number
+        if not inv and entry.Narration:
+            match = re.search(r'(INV-[0-9A-Za-z\-]+|Invoice\s+#?[0-9A-Za-z\-]+)', entry.Narration, re.IGNORECASE)
+            if match:
+                raw_ref = match.group(1).replace('Invoice', '').replace('#', '').strip()
+                inv = Invoice.objects.filter(Q(InvoiceNumber=raw_ref) | Q(InvoiceId=raw_ref)).first()
+
+    if inv:
+        inv_num = inv.InvoiceNumber or inv.InvoiceId
+        inv_url = ""
+        if inv.InvoiceFile and hasattr(inv.InvoiceFile, 'name') and inv.InvoiceFile.name:
+            inv_url = format_media_url(inv.InvoiceFile)
+        else:
+            inv_doc = InvoiceDocument.objects.filter(InvoiceId=inv.InvoiceId).first()
+            if inv_doc and inv_doc.Document and hasattr(inv_doc.Document, 'name') and inv_doc.Document.name:
+                inv_url = format_media_url(inv_doc.Document)
+            else:
+                inv_url = f"api-sale/ViewPDF/{inv.InvoiceId}"
+        return inv_num, inv_url
+
+    return "", ""
+
+
 @api_view(['GET'])
 def JournalItemByAccountId(request, AccountId=""):
     # Fetch all items for this Account
     items = JournalItem.objects.filter(AccountId=AccountId).order_by('SortId')
     
-    # Enrich each JournalItem with JournalEntry information (Date, ReferenceNumber, Source, Narration, AttachmentUrl)
+    # Enrich each JournalItem with JournalEntry information (Date, ReferenceNumber, Source, Narration, AttachmentUrl, InvoiceAttachmentUrl)
     enriched_items = []
     for item in items:
         item_data = JournalItemSerializer(item).data
         try:
             entry = JournalEntry.objects.get(JournalEntryId=item.JournalEntryId)
             item_data['Date'] = entry.Date
-            item_data['ReferenceNumber'] = entry.ReferenceNumber
+            item_data['ReferenceNumber'] = resolve_reference_number(entry)
             item_data['Source'] = entry.Source
             item_data['Narration'] = entry.Narration
             item_data['AttachmentUrl'] = get_attachment_url_for_journal_entry(entry)
+            inv_num, inv_url = get_invoice_info_for_journal_entry(entry)
+            item_data['InvoiceNumber'] = inv_num
+            item_data['InvoiceAttachmentUrl'] = inv_url
         except JournalEntry.DoesNotExist:
             item_data['Date'] = ""
             item_data['ReferenceNumber'] = ""
             item_data['Source'] = ""
             item_data['Narration'] = ""
             item_data['AttachmentUrl'] = ""
+            item_data['InvoiceNumber'] = ""
+            item_data['InvoiceAttachmentUrl'] = ""
             
-        try:
-            client = Client.objects.get(ClientId=item.ClientId)
-            item_data['ClientName'] = client.CustomerDisplayName
-        except:
+        client_id = item.ClientId
+        if not client_id and entry and entry.Source == 'payment':
+            from app_sale.models import PaymentReceived
+            pay = PaymentReceived.objects.filter(Q(PaymentNumber=entry.ReferenceNumber) | Q(PaymentReceivedId=entry.ReferenceNumber)).first()
+            if pay:
+                client_id = pay.ClientId
+        if not client_id and entry and entry.Source == 'invoice':
+            from app_sale.models import Invoice
+            inv = Invoice.objects.filter(Q(InvoiceNumber=entry.ReferenceNumber) | Q(InvoiceId=entry.ReferenceNumber)).first()
+            if inv:
+                client_id = inv.ClientId
+
+        if client_id:
+            try:
+                client = Client.objects.get(ClientId=client_id)
+                item_data['ClientName'] = client.CustomerDisplayName
+                item_data['ClientId'] = client_id
+            except:
+                item_data['ClientName'] = ""
+                item_data['ClientId'] = client_id
+        else:
             item_data['ClientName'] = ""
+            item_data['ClientId'] = ""
             
         enriched_items.append(item_data)
         
@@ -259,10 +394,13 @@ def CashBookByCompanyId(request, CompanyId=""):
             
         if entry_date:
             item_data['Date'] = entry.Date
-            item_data['ReferenceNumber'] = entry.ReferenceNumber
+            item_data['ReferenceNumber'] = resolve_reference_number(entry)
             item_data['Source'] = entry.Source
             item_data['Narration'] = entry.Narration
             item_data['AttachmentUrl'] = get_attachment_url_for_journal_entry(entry)
+            inv_num, inv_url = get_invoice_info_for_journal_entry(entry)
+            item_data['InvoiceNumber'] = inv_num
+            item_data['InvoiceAttachmentUrl'] = inv_url
             
             # Resolve Contra Account
             other_items = JournalItem.objects.filter(JournalEntryId=item.JournalEntryId).exclude(JournalItemId=item.JournalItemId)
@@ -319,12 +457,32 @@ def CashBookByCompanyId(request, CompanyId=""):
             item_data['ContraAccountName'] = ""
             item_data['ContraAccountCode'] = ""
             item_data['BankCharges'] = "0.00"
+            item_data['InvoiceNumber'] = ""
+            item_data['InvoiceAttachmentUrl'] = ""
             
-        try:
-            client = Client.objects.get(ClientId=item.ClientId)
-            item_data['ClientName'] = client.CustomerDisplayName
-        except:
+        client_id = item.ClientId
+        if not client_id and entry_date and entry.Source == 'payment':
+            from app_sale.models import PaymentReceived
+            pay = PaymentReceived.objects.filter(Q(PaymentNumber=entry.ReferenceNumber) | Q(PaymentReceivedId=entry.ReferenceNumber)).first()
+            if pay:
+                client_id = pay.ClientId
+        if not client_id and entry_date and entry.Source == 'invoice':
+            from app_sale.models import Invoice
+            inv = Invoice.objects.filter(Q(InvoiceNumber=entry.ReferenceNumber) | Q(InvoiceId=entry.ReferenceNumber)).first()
+            if inv:
+                client_id = inv.ClientId
+
+        if client_id:
+            try:
+                client = Client.objects.get(ClientId=client_id)
+                item_data['ClientName'] = client.CustomerDisplayName
+                item_data['ClientId'] = client_id
+            except:
+                item_data['ClientName'] = ""
+                item_data['ClientId'] = client_id
+        else:
             item_data['ClientName'] = ""
+            item_data['ClientId'] = ""
             
         period_items.append(item_data)
         

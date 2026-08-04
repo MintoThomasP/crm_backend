@@ -280,40 +280,50 @@ def create_expense_journal_entry(sender, instance, created, **kwargs):
             return 0.0
 
     amount = safe_float(instance.Amount)
-    ref_num = instance.ExpenseNumber or instance.ExpenseId
+    ref_num = instance.ExpenseNumber if instance.ExpenseNumber else instance.ExpenseId
 
-    # Create JournalEntry
-    journal_entry, entry_created = JournalEntry.objects.get_or_create(
-        ReferenceNumber=ref_num,
-        Source='expense',
-        CompanyId=company_id,
-        defaults={
-            'Date': instance.Date or datetime.now().strftime('%Y-%m-%d'),
-            'Narration': instance.Narration or f"Expense {ref_num}"
-        }
-    )
+    with transaction.atomic():
+        lookup_refs = [instance.ExpenseId]
+        if instance.ExpenseNumber:
+            lookup_refs.append(instance.ExpenseNumber)
 
-    if not entry_created:
-        JournalItem.objects.filter(JournalEntryId=journal_entry.JournalEntryId).delete()
-        journal_entry.Date = instance.Date or journal_entry.Date
-        journal_entry.Narration = instance.Narration or f"Expense {ref_num}"
-        journal_entry.save()
+        journal_entry = JournalEntry.objects.filter(
+            Source='expense',
+            CompanyId=company_id
+        ).filter(
+            Q(ReferenceNumber__in=lookup_refs)
+        ).first()
 
-    # Create JournalItems:
-    # 1. Debit chosen Expense account (instance.AccountId)
-    if instance.AccountId:
-        JournalItem.objects.create(
-            JournalEntryId=journal_entry.JournalEntryId,
-            AccountId=instance.AccountId,
-            Debit=f"{amount:.2f}",
-            Credit="0.00"
-        )
+        if not journal_entry:
+            journal_entry = JournalEntry.objects.create(
+                ReferenceNumber=ref_num,
+                Source='expense',
+                CompanyId=company_id,
+                Date=instance.Date or datetime.now().strftime('%Y-%m-%d'),
+                Narration=instance.Narration or f"Expense {ref_num}"
+            )
+        else:
+            JournalItem.objects.filter(JournalEntryId=journal_entry.JournalEntryId).delete()
+            journal_entry.ReferenceNumber = ref_num
+            journal_entry.Date = instance.Date or journal_entry.Date
+            journal_entry.Narration = instance.Narration or f"Expense {ref_num}"
+            journal_entry.save()
 
-    # 2. Credit chosen Bank/Cash payment account (instance.PaymentAccountId)
-    if instance.PaymentAccountId:
-        JournalItem.objects.create(
-            JournalEntryId=journal_entry.JournalEntryId,
-            AccountId=instance.PaymentAccountId,
-            Debit="0.00",
-            Credit=f"{amount:.2f}"
-        )
+        # Create JournalItems:
+        # 1. Debit chosen Expense account (instance.AccountId)
+        if instance.AccountId:
+            JournalItem.objects.create(
+                JournalEntryId=journal_entry.JournalEntryId,
+                AccountId=instance.AccountId,
+                Debit=f"{amount:.2f}",
+                Credit="0.00"
+            )
+
+        # 2. Credit chosen Bank/Cash payment account (instance.PaymentAccountId)
+        if instance.PaymentAccountId:
+            JournalItem.objects.create(
+                JournalEntryId=journal_entry.JournalEntryId,
+                AccountId=instance.PaymentAccountId,
+                Debit="0.00",
+                Credit=f"{amount:.2f}"
+            )
