@@ -698,12 +698,29 @@ def VendorLedgerApi(request, VendorId=""):
             if source == 'expense_claim_repay' or (ref_num and ref_num.startswith('REIMB-')):
                 continue
 
-            # Exclude credit clearing line of expense claims so claim shows as a single expense purchase
-            if source == 'expense_claim' and float(item.Credit or "0.00") > 0:
-                continue
+            raw_debit = float(item.Debit or "0.00")
+            raw_credit = float(item.Credit or "0.00")
 
-            debit = float(item.Debit or "0.00")
-            credit = float(item.Credit or "0.00")
+            if source == 'expense_claim':
+                # Skip the credit clearing line of expense claim (clearing account 2300)
+                if raw_credit > 0:
+                    continue
+                # For vendor ledger, an expense claim for a vendor is a Credit (Bill / Vendor Expense)
+                debit = 0.0
+                credit = raw_debit if raw_debit > 0 else raw_credit
+            elif source == 'expense':
+                # Direct expense: Expense account debit line = Vendor Bill (Credit column),
+                # Cash/Bank credit line = Vendor Payment (Debit column)
+                if raw_debit > 0:
+                    debit = 0.0
+                    credit = raw_debit
+                else:
+                    debit = raw_credit
+                    credit = 0.0
+            else:
+                debit = raw_debit
+                credit = raw_credit
+
             running_balance += (credit - debit)
 
             ledger_items.append({
