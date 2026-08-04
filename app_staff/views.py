@@ -1699,8 +1699,25 @@ def staffBankDetailsApiByStaffId(request, StaffId=""):
 @api_view(['GET'])
 def StaffLedgerApi(request, StaffId=""):
     try:
-        from app_accounting.models import JournalItem, JournalEntry
+        from app_accounting.models import JournalItem, JournalEntry, Expense, ExpenseClaim
         from app_accounting.views import get_attachment_url_for_journal_entry, resolve_reference_number
+
+        # 1. Sync StaffId on JournalItems for older Expense records where StaffId was recorded on Expense model
+        staff_expenses = Expense.objects.filter(StaffId=StaffId)
+        for exp in staff_expenses:
+            ref_num = exp.ExpenseNumber if exp.ExpenseNumber else exp.ExpenseId
+            entries = JournalEntry.objects.filter(Source='expense', ReferenceNumber__in=[ref_num, exp.ExpenseId])
+            for entry in entries:
+                JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId).update(StaffId=StaffId)
+
+        # 2. Sync StaffId on JournalItems for older ExpenseClaim records
+        staff_claims = ExpenseClaim.objects.filter(StaffId=StaffId)
+        for claim in staff_claims:
+            claim_ref = f"EXP-CLAIM-{claim.ClaimNumber}"
+            reimb_ref = f"REIMB-{claim.ClaimNumber}"
+            entries = JournalEntry.objects.filter(ReferenceNumber__in=[claim_ref, reimb_ref, claim.ClaimNumber])
+            for entry in entries:
+                JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId).update(StaffId=StaffId)
 
         items = JournalItem.objects.filter(StaffId=StaffId).order_by('SortId')
 
@@ -1722,9 +1739,32 @@ def StaffLedgerApi(request, StaffId=""):
                 narration = ""
                 attachment_url = ""
 
-            debit = float(item.Debit or "0.00")
-            credit = float(item.Credit or "0.00")
-            running_balance += (debit - credit)
+            raw_debit = float(item.Debit or "0.00")
+            raw_credit = float(item.Credit or "0.00")
+
+            if source == 'expense':
+                # Direct expense for staff (e.g. Salary, Welfare): keep only the Expense Account Debit line
+                if raw_credit > 0:
+                    continue
+                debit = raw_debit
+                credit = 0.0
+            elif source == 'expense_claim':
+                # Out-of-pocket expense claim: Company owes staff (Credit line)
+                if raw_debit > 0:
+                    continue
+                debit = 0.0
+                credit = raw_credit
+            elif source == 'expense_claim_repay':
+                # Reimbursement paid by company to staff: Clears staff claim (Debit line)
+                if raw_credit > 0:
+                    continue
+                debit = raw_debit
+                credit = 0.0
+            else:
+                debit = raw_debit
+                credit = raw_credit
+
+            running_balance += (credit - debit)
 
             ledger_items.append({
                 "Date": entry_date,
