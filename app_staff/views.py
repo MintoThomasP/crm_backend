@@ -1724,7 +1724,7 @@ def StaffLedgerApi(request, StaffId=""):
             for entry in entries:
                 JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId).update(StaffId=StaffId)
 
-        items = JournalItem.objects.filter(StaffId=StaffId).order_by('SortId')
+        items = JournalItem.objects.filter(StaffId=StaffId).order_by('-SortId')
 
         ledger_items = []
         running_balance = 0.0

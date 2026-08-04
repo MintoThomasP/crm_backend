@@ -675,7 +675,7 @@ def VendorLedgerApi(request, VendorId=""):
         from app_accounting.models import JournalItem, JournalEntry
         from app_accounting.views import get_attachment_url_for_journal_entry, resolve_reference_number
 
-        items = JournalItem.objects.filter(VendorId=VendorId).order_by('SortId')
+        items = JournalItem.objects.filter(VendorId=VendorId).order_by('-SortId')
         ledger_items = []
         running_balance = 0.0
 
