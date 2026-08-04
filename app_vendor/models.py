@@ -83,3 +83,26 @@ class VendorBankDetails(models.Model):
     AccountNumber=models.CharField(blank=True, null=True, max_length=50)
     IFSCCode=models.CharField(blank=True, null=True, max_length=50)
     PrimaryAccount=models.BooleanField(default=False)
+
+
+class VendorBill(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    BillId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    BillNumber = models.CharField(blank=True, null=True, max_length=50)
+    VendorId = models.CharField(blank=True, null=True, max_length=50)
+    Date = models.CharField(blank=True, null=True, max_length=50)
+    DueDate = models.CharField(blank=True, null=True, max_length=50)
+    AccountId = models.CharField(blank=True, null=True, max_length=50)
+    Amount = models.CharField(blank=True, null=True, max_length=15)
+    Description = models.TextField(blank=True, null=True)
+    BillFile = models.FileField(upload_to='vendor_bills/', null=True, blank=True)
+    CompanyId = models.CharField(blank=True, null=True, max_length=50)
+    IsPaid = models.BooleanField(default=False)
+    PaymentDate = models.CharField(blank=True, null=True, max_length=50)
+    PaymentAccountId = models.CharField(blank=True, null=True, max_length=50)
+    JournalEntryId = models.CharField(blank=True, null=True, max_length=50)
+    PaymentJournalEntryId = models.CharField(blank=True, null=True, max_length=50)
+
+    def __str__(self):
+        return f"Vendor Bill {self.BillNumber} - {self.Amount} - {self.Date}"

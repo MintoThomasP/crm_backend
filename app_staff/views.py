@@ -1693,3 +1693,65 @@ def staffBankDetailsApiByStaffId(request, StaffId=""):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
+
+
+@csrf_exempt
+@api_view(['GET'])
+def StaffLedgerApi(request, StaffId=""):
+    try:
+        from app_accounting.models import JournalItem, JournalEntry
+        from app_accounting.views import get_attachment_url_for_journal_entry, resolve_reference_number
+
+        items = JournalItem.objects.filter(StaffId=StaffId).order_by('SortId')
+
+        ledger_items = []
+        running_balance = 0.0
+
+        for item in items:
+            try:
+                entry = JournalEntry.objects.get(JournalEntryId=item.JournalEntryId)
+                entry_date = entry.Date
+                ref_num = resolve_reference_number(entry)
+                source = entry.Source
+                narration = entry.Narration
+                attachment_url = get_attachment_url_for_journal_entry(entry)
+            except JournalEntry.DoesNotExist:
+                entry_date = ""
+                ref_num = ""
+                source = ""
+                narration = ""
+                attachment_url = ""
+
+            debit = float(item.Debit or "0.00")
+            credit = float(item.Credit or "0.00")
+            running_balance += (debit - credit)
+
+            ledger_items.append({
+                "Date": entry_date,
+                "ReferenceNumber": ref_num,
+                "Source": source,
+                "Narration": narration,
+                "AttachmentUrl": attachment_url,
+                "Debit": f"{debit:.2f}",
+                "Credit": f"{credit:.2f}",
+                "RunningBalance": f"{running_balance:.2f}"
+            })
+
+        opening_bal = 0.00
+        try:
+            staff = Staff.objects.get(StaffId=StaffId)
+            staff_name = staff.StaffName or "Staff"
+        except Staff.DoesNotExist:
+            staff_name = "Staff"
+
+        closing_bal = running_balance
+
+        return JsonResponse({
+            "StaffId": StaffId,
+            "StaffName": staff_name,
+            "OpeningBalance": f"{opening_bal:.2f}",
+            "ClosingBalance": f"{closing_bal:.2f}",
+            "LedgerItems": ledger_items
+        }, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

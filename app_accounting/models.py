@@ -39,6 +39,8 @@ class JournalItem(models.Model):
     Debit = models.CharField(blank=True, null=True, max_length=15, default="0.00")
     Credit = models.CharField(blank=True, null=True, max_length=15, default="0.00")
     ClientId = models.CharField(blank=True, null=True, max_length=50)
+    StaffId = models.CharField(blank=True, null=True, max_length=50)
+    VendorId = models.CharField(blank=True, null=True, max_length=50)
 
     def __str__(self):
         return f"Item {self.JournalItemId} - Entry {self.JournalEntryId} - Account {self.AccountId}"
@@ -55,6 +57,8 @@ class Expense(models.Model):
     Amount = models.CharField(blank=True, null=True, max_length=15)
     Narration = models.TextField(blank=True, null=True)
     CompanyId = models.CharField(blank=True, null=True, max_length=50)
+    StaffId = models.CharField(blank=True, null=True, max_length=50)
+    VendorId = models.CharField(blank=True, null=True, max_length=50)
     Receipt = models.FileField(upload_to='receipts/', null=True, blank=True)
 
     def __str__(self):

@@ -27,4 +27,11 @@ urlpatterns = [
     path('VendorBankDetailsApi/', views.VendorBankDetailsApi),
     url(r'^VendorBankDetailsApiById/(?P<BankDetailId>[0-9a-zA-Z\-]+)$', views.VendorBankDetailsApiById),
     url(r'^VendorBankDetailsApiByVendorId/(?P<VendorId>[0-9a-zA-Z\-]+)$', views.VendorBankDetailsApiByVendorId),
+
+    path('VendorBill/', views.VendorBillApi),
+    url(r'^VendorBillById/(?P<BillId>[0-9a-zA-Z\-]+)$', views.VendorBillApiById),
+    url(r'^VendorBillByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.VendorBillByCompanyId),
+    url(r'^PayVendorBill/(?P<BillId>[0-9a-zA-Z\-]+)$', views.PayVendorBill),
+
+    url(r'^VendorLedgerApi/(?P<VendorId>[0-9a-zA-Z\-]+)$', views.VendorLedgerApi),
 ]

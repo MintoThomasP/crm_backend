@@ -316,7 +316,9 @@ def create_expense_journal_entry(sender, instance, created, **kwargs):
                 JournalEntryId=journal_entry.JournalEntryId,
                 AccountId=instance.AccountId,
                 Debit=f"{amount:.2f}",
-                Credit="0.00"
+                Credit="0.00",
+                StaffId=instance.StaffId,
+                VendorId=instance.VendorId
             )
 
         # 2. Credit chosen Bank/Cash payment account (instance.PaymentAccountId)
@@ -325,5 +327,7 @@ def create_expense_journal_entry(sender, instance, created, **kwargs):
                 JournalEntryId=journal_entry.JournalEntryId,
                 AccountId=instance.PaymentAccountId,
                 Debit="0.00",
-                Credit=f"{amount:.2f}"
+                Credit=f"{amount:.2f}",
+                StaffId=instance.StaffId,
+                VendorId=instance.VendorId
             )

@@ -6,8 +6,9 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.parsers import JSONParser
 from django.http.response import JsonResponse
-from app_vendor.models import Vendor, VendorAddress, VendorBankDetails, VendorContactPerson, VendorDocuments
-from app_vendor.serializers import VendorAddressSerializer, VendorBankDetailsSerializer, VendorContactPersonSerializer, VendorDocumentsSerializer, VendorSerializer
+from app_vendor.models import Vendor, VendorAddress, VendorBankDetails, VendorContactPerson, VendorDocuments, VendorBill
+from app_vendor.serializers import VendorAddressSerializer, VendorBankDetailsSerializer, VendorContactPersonSerializer, VendorDocumentsSerializer, VendorSerializer, VendorBillSerializer
+from datetime import datetime
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
 from rest_framework.views import APIView
@@ -426,3 +427,303 @@ def VendorBankDetailsApiByVendorId(request, VendorId=""):
             return JsonResponse("", safe=False)
     except:
         return JsonResponse("", safe=False)
+
+
+def get_next_bill_number(company_id):
+    from app_vendor.models import VendorBill
+    bills = VendorBill.objects.filter(CompanyId=company_id, BillNumber__startswith='BILL-')
+    max_num = 0
+    for b in bills:
+        try:
+            num_part = int(b.BillNumber.split('-')[-1])
+            if num_part > max_num:
+                max_num = num_part
+        except (ValueError, IndexError):
+            pass
+    next_num = max_num + 1
+    return f"BILL-{next_num:07d}"
+
+
+def post_vendor_bill_journal_entries(bill):
+    from app_accounting.signals import get_or_create_default_accounts
+    from app_accounting.models import Account, JournalEntry, JournalItem
+    from django.db import transaction
+
+    company_id = bill.CompanyId
+    if not company_id:
+        return
+
+    accounts = get_or_create_default_accounts(company_id)
+    ap_account = accounts.get('2100')
+    if not ap_account:
+        ap_account, _ = Account.objects.get_or_create(
+            Code='2100',
+            CompanyId=company_id,
+            defaults={'Name': 'Accounts Payable', 'Type': 'Liability', 'IsCashOrBank': False}
+        )
+
+    vendor_name = ""
+    if bill.VendorId:
+        try:
+            v = Vendor.objects.get(VendorId=bill.VendorId)
+            vendor_name = v.VendorDisplayName or v.CompanyName or ""
+        except Vendor.DoesNotExist:
+            pass
+
+    ref_num = bill.BillNumber
+    narration = f"Vendor Bill {bill.BillNumber} from {vendor_name} - {bill.Description or ''}"
+
+    with transaction.atomic():
+        journal_entry, entry_created = JournalEntry.objects.get_or_create(
+            ReferenceNumber=ref_num,
+            Source='vendor_bill',
+            CompanyId=company_id,
+            defaults={
+                'Date': bill.Date or datetime.now().strftime('%Y-%m-%d'),
+                'Narration': narration
+            }
+        )
+
+        if not entry_created:
+            JournalItem.objects.filter(JournalEntryId=journal_entry.JournalEntryId).delete()
+            journal_entry.Date = bill.Date or journal_entry.Date
+            journal_entry.Narration = narration
+            journal_entry.save()
+
+        bill.JournalEntryId = journal_entry.JournalEntryId
+
+        # Debit Expense / Purchase Account (bill.AccountId)
+        JournalItem.objects.create(
+            JournalEntryId=journal_entry.JournalEntryId,
+            AccountId=bill.AccountId,
+            Debit=f"{float(bill.Amount or 0.0):.2f}",
+            Credit="0.00",
+            VendorId=bill.VendorId
+        )
+
+        # Credit Accounts Payable (2100)
+        JournalItem.objects.create(
+            JournalEntryId=journal_entry.JournalEntryId,
+            AccountId=ap_account.AccountId,
+            Debit="0.00",
+            Credit=f"{float(bill.Amount or 0.0):.2f}",
+            VendorId=bill.VendorId
+        )
+
+
+def post_vendor_bill_payment_journal_entries(bill):
+    from app_accounting.signals import get_or_create_default_accounts
+    from app_accounting.models import Account, JournalEntry, JournalItem
+    from django.db import transaction
+
+    company_id = bill.CompanyId
+    if not company_id or not bill.IsPaid or not bill.PaymentAccountId:
+        return
+
+    accounts = get_or_create_default_accounts(company_id)
+    ap_account = accounts.get('2100')
+    if not ap_account:
+        ap_account, _ = Account.objects.get_or_create(
+            Code='2100',
+            CompanyId=company_id,
+            defaults={'Name': 'Accounts Payable', 'Type': 'Liability', 'IsCashOrBank': False}
+        )
+
+    vendor_name = ""
+    if bill.VendorId:
+        try:
+            v = Vendor.objects.get(VendorId=bill.VendorId)
+            vendor_name = v.VendorDisplayName or v.CompanyName or ""
+        except Vendor.DoesNotExist:
+            pass
+
+    ref_num = f"VPAY-{bill.BillNumber}"
+    narration = f"Payment for Vendor Bill {bill.BillNumber} to {vendor_name}"
+
+    with transaction.atomic():
+        journal_entry, entry_created = JournalEntry.objects.get_or_create(
+            ReferenceNumber=ref_num,
+            Source='vendor_payment',
+            CompanyId=company_id,
+            defaults={
+                'Date': bill.PaymentDate or datetime.now().strftime('%Y-%m-%d'),
+                'Narration': narration
+            }
+        )
+
+        if not entry_created:
+            JournalItem.objects.filter(JournalEntryId=journal_entry.JournalEntryId).delete()
+            journal_entry.Date = bill.PaymentDate or journal_entry.Date
+            journal_entry.Narration = narration
+            journal_entry.save()
+
+        bill.PaymentJournalEntryId = journal_entry.JournalEntryId
+
+        # Debit Accounts Payable (2100)
+        JournalItem.objects.create(
+            JournalEntryId=journal_entry.JournalEntryId,
+            AccountId=ap_account.AccountId,
+            Debit=f"{float(bill.Amount or 0.0):.2f}",
+            Credit="0.00",
+            VendorId=bill.VendorId
+        )
+
+        # Credit Cash/Bank Account (bill.PaymentAccountId)
+        JournalItem.objects.create(
+            JournalEntryId=journal_entry.JournalEntryId,
+            AccountId=bill.PaymentAccountId,
+            Debit="0.00",
+            Credit=f"{float(bill.Amount or 0.0):.2f}",
+            VendorId=bill.VendorId
+        )
+
+
+@csrf_exempt
+@api_view(['GET', 'POST'])
+def VendorBillApi(request):
+    if request.method == 'GET':
+        bills = VendorBill.objects.all().order_by('-SortId')
+        serializer = VendorBillSerializer(bills, many=True)
+        return JsonResponse(serializer.data, safe=False)
+
+    elif request.method == 'POST':
+        data = request.POST.dict() if request.POST else (JSONParser().parse(request) if request.body else {})
+        company_id = data.get('CompanyId')
+        if company_id:
+            data['BillNumber'] = get_next_bill_number(company_id)
+
+        serializer = VendorBillSerializer(data=data)
+        if serializer.is_valid():
+            bill = serializer.save()
+            if 'BillFile' in request.FILES:
+                bill.BillFile = request.FILES['BillFile']
+                bill.save()
+            post_vendor_bill_journal_entries(bill)
+            bill.save()
+            return JsonResponse(bill.BillId, safe=False)
+        return JsonResponse(serializer.errors, status=400)
+
+
+@csrf_exempt
+@api_view(['GET', 'PUT', 'DELETE'])
+def VendorBillApiById(request, BillId=""):
+    try:
+        bill = VendorBill.objects.get(BillId=BillId)
+    except VendorBill.DoesNotExist:
+        return JsonResponse("Vendor Bill not found", status=404)
+
+    if request.method == 'GET':
+        serializer = VendorBillSerializer(bill)
+        return JsonResponse(serializer.data, safe=False)
+
+    elif request.method == 'PUT':
+        data = request.POST.dict() if request.POST else (JSONParser().parse(request) if request.body else {})
+        serializer = VendorBillSerializer(bill, data=data, partial=True)
+        if serializer.is_valid():
+            bill = serializer.save()
+            if 'BillFile' in request.FILES:
+                bill.BillFile = request.FILES['BillFile']
+                bill.save()
+            post_vendor_bill_journal_entries(bill)
+            if bill.IsPaid:
+                post_vendor_bill_payment_journal_entries(bill)
+            bill.save()
+            return JsonResponse(bill.BillId, safe=False)
+        return JsonResponse(serializer.errors, status=400)
+
+    elif request.method == 'DELETE':
+        with transaction.atomic():
+            if bill.JournalEntryId:
+                JournalItem.objects.filter(JournalEntryId=bill.JournalEntryId).delete()
+                JournalEntry.objects.filter(JournalEntryId=bill.JournalEntryId).delete()
+            if bill.PaymentJournalEntryId:
+                JournalItem.objects.filter(JournalEntryId=bill.PaymentJournalEntryId).delete()
+                JournalEntry.objects.filter(JournalEntryId=bill.PaymentJournalEntryId).delete()
+            bill.delete()
+        return JsonResponse("Deleted successfully", safe=False)
+
+
+@csrf_exempt
+@api_view(['GET'])
+def VendorBillByCompanyId(request, CompanyId=""):
+    bills = VendorBill.objects.filter(CompanyId=CompanyId).order_by('-Date', '-BillNumber')
+    serializer = VendorBillSerializer(bills, many=True)
+    return JsonResponse(serializer.data, safe=False)
+
+
+@csrf_exempt
+@api_view(['POST'])
+def PayVendorBill(request, BillId=""):
+    try:
+        bill = VendorBill.objects.get(BillId=BillId)
+    except VendorBill.DoesNotExist:
+        return JsonResponse("Vendor Bill not found", status=404)
+
+    data = JSONParser().parse(request)
+    bill.IsPaid = True
+    bill.PaymentDate = data.get('PaymentDate', datetime.now().strftime('%Y-%m-%d'))
+    bill.PaymentAccountId = data.get('PaymentAccountId')
+    post_vendor_bill_payment_journal_entries(bill)
+    bill.save()
+    return JsonResponse(bill.BillId, safe=False)
+
+
+@csrf_exempt
+@api_view(['GET'])
+def VendorLedgerApi(request, VendorId=""):
+    try:
+        from app_accounting.models import JournalItem, JournalEntry
+        from app_accounting.views import get_attachment_url_for_journal_entry, resolve_reference_number
+
+        items = JournalItem.objects.filter(VendorId=VendorId).order_by('SortId')
+        ledger_items = []
+        running_balance = 0.0
+
+        for item in items:
+            try:
+                entry = JournalEntry.objects.get(JournalEntryId=item.JournalEntryId)
+                entry_date = entry.Date
+                ref_num = resolve_reference_number(entry)
+                source = entry.Source
+                narration = entry.Narration
+                attachment_url = get_attachment_url_for_journal_entry(entry)
+            except JournalEntry.DoesNotExist:
+                entry_date = ""
+                ref_num = ""
+                source = ""
+                narration = ""
+                attachment_url = ""
+
+            debit = float(item.Debit or "0.00")
+            credit = float(item.Credit or "0.00")
+            running_balance += (credit - debit)
+
+            ledger_items.append({
+                "Date": entry_date,
+                "ReferenceNumber": ref_num,
+                "Source": source,
+                "Narration": narration,
+                "AttachmentUrl": attachment_url,
+                "Debit": f"{debit:.2f}",
+                "Credit": f"{credit:.2f}",
+                "RunningBalance": f"{running_balance:.2f}"
+            })
+
+        opening_bal = 0.00
+        try:
+            v = Vendor.objects.get(VendorId=VendorId)
+            vendor_name = v.VendorDisplayName or v.CompanyName or "Vendor"
+        except Vendor.DoesNotExist:
+            vendor_name = "Vendor"
+
+        closing_bal = running_balance
+
+        return JsonResponse({
+            "VendorId": VendorId,
+            "VendorName": vendor_name,
+            "OpeningBalance": f"{opening_bal:.2f}",
+            "ClosingBalance": f"{closing_bal:.2f}",
+            "LedgerItems": ledger_items
+        }, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)

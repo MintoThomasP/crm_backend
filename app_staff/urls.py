@@ -84,6 +84,8 @@ urlpatterns = [
         views.staffBankDetailsApiById),
     url(r'^staffBankDetailsApiByStaffId/(?P<StaffId>[0-9a-zA-Z\-]+)$',
         views.staffBankDetailsApiByStaffId),
+    url(r'^StaffLedgerApi/(?P<StaffId>[0-9a-zA-Z\-]+)$',
+        views.StaffLedgerApi),
 
 ]
 if settings.DEBUG:

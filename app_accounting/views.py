@@ -103,6 +103,17 @@ def get_attachment_url_for_journal_entry(entry):
         if claim and claim.Receipt and hasattr(claim.Receipt, 'name') and claim.Receipt.name:
             return format_media_url(claim.Receipt)
 
+    elif source in ['vendor_bill', 'vendor_payment']:
+        from app_vendor.models import VendorBill
+        bill = VendorBill.objects.filter(
+            Q(JournalEntryId=entry.JournalEntryId) |
+            Q(PaymentJournalEntryId=entry.JournalEntryId) |
+            Q(BillNumber=entry.ReferenceNumber)
+        ).first()
+
+        if bill and bill.BillFile and hasattr(bill.BillFile, 'name') and bill.BillFile.name:
+            return format_media_url(bill.BillFile)
+
     return ""
 
 
@@ -319,7 +330,49 @@ def JournalItemByAccountId(request, AccountId=""):
         else:
             item_data['ClientName'] = ""
             item_data['ClientId'] = ""
-            
+
+        staff_id = getattr(item, 'StaffId', None)
+        if not staff_id and entry and entry.Source == 'expense':
+            from app_accounting.models import Expense
+            exp = Expense.objects.filter(Q(ExpenseNumber=entry.ReferenceNumber) | Q(ExpenseId=entry.ReferenceNumber)).first()
+            if exp:
+                staff_id = getattr(exp, 'StaffId', None)
+        if not staff_id and entry and entry.Source in ['expense_claim', 'expense_claim_repay']:
+            from app_accounting.models import ExpenseClaim
+            claim = ExpenseClaim.objects.filter(
+                Q(ExpenseJournalEntryId=entry.JournalEntryId) |
+                Q(ReimbursementJournalEntryId=entry.JournalEntryId) |
+                Q(ClaimNumber=entry.ReferenceNumber)
+            ).first()
+            if claim:
+                staff_id = claim.StaffId
+
+        if staff_id:
+            try:
+                staff = Staff.objects.get(StaffId=staff_id)
+                item_data['StaffName'] = staff.StaffName or ""
+                item_data['StaffId'] = staff_id
+            except:
+                item_data['StaffName'] = ""
+                item_data['StaffId'] = staff_id
+        else:
+            item_data['StaffName'] = ""
+            item_data['StaffId'] = ""
+
+        vendor_id = getattr(item, 'VendorId', None)
+        if vendor_id:
+            try:
+                from app_vendor.models import Vendor
+                v = Vendor.objects.get(VendorId=vendor_id)
+                item_data['VendorName'] = v.VendorDisplayName or v.CompanyName or ""
+                item_data['VendorId'] = vendor_id
+            except:
+                item_data['VendorName'] = ""
+                item_data['VendorId'] = vendor_id
+        else:
+            item_data['VendorName'] = ""
+            item_data['VendorId'] = ""
+
         enriched_items.append(item_data)
         
     # Sort in ascending order of Date, then SortId
@@ -483,6 +536,34 @@ def CashBookByCompanyId(request, CompanyId=""):
         else:
             item_data['ClientName'] = ""
             item_data['ClientId'] = ""
+
+        staff_id = getattr(item, 'StaffId', None)
+        if not staff_id and entry_date and entry.Source == 'expense':
+            from app_accounting.models import Expense
+            exp = Expense.objects.filter(Q(ExpenseNumber=entry.ReferenceNumber) | Q(ExpenseId=entry.ReferenceNumber)).first()
+            if exp:
+                staff_id = getattr(exp, 'StaffId', None)
+        if not staff_id and entry_date and entry.Source in ['expense_claim', 'expense_claim_repay']:
+            from app_accounting.models import ExpenseClaim
+            claim = ExpenseClaim.objects.filter(
+                Q(ExpenseJournalEntryId=entry.JournalEntryId) |
+                Q(ReimbursementJournalEntryId=entry.JournalEntryId) |
+                Q(ClaimNumber=entry.ReferenceNumber)
+            ).first()
+            if claim:
+                staff_id = claim.StaffId
+
+        if staff_id:
+            try:
+                staff = Staff.objects.get(StaffId=staff_id)
+                item_data['StaffName'] = staff.StaffName or ""
+                item_data['StaffId'] = staff_id
+            except:
+                item_data['StaffName'] = ""
+                item_data['StaffId'] = staff_id
+        else:
+            item_data['StaffName'] = ""
+            item_data['StaffId'] = ""
             
         period_items.append(item_data)
         
@@ -614,9 +695,29 @@ def ExpenseByCompanyId(request, CompanyId=""):
         except Account.DoesNotExist:
             data['PaymentAccountName'] = ""
             data['PaymentAccountCode'] = ""
-            
+
+        if exp.StaffId:
+            try:
+                from app_staff.models import Staff
+                staff = Staff.objects.get(StaffId=exp.StaffId)
+                data['StaffName'] = staff.StaffName or ""
+            except:
+                data['StaffName'] = ""
+        else:
+            data['StaffName'] = ""
+
+        if exp.VendorId:
+            try:
+                from app_vendor.models import Vendor
+                vendor = Vendor.objects.get(VendorId=exp.VendorId)
+                data['VendorName'] = vendor.VendorDisplayName or vendor.CompanyName or ""
+            except:
+                data['VendorName'] = ""
+        else:
+            data['VendorName'] = ""
+
         enriched_expenses.append(data)
-        
+
     return JsonResponse(enriched_expenses, safe=False)
 
 
@@ -683,7 +784,8 @@ def post_claim_journal_entries(claim):
             JournalEntryId=journal_entry.JournalEntryId,
             AccountId=claim.AccountId,
             Debit=f"{float(claim.Amount or 0.0):.2f}",
-            Credit="0.00"
+            Credit="0.00",
+            StaffId=claim.StaffId
         )
 
         # Credit Liability clearing account
@@ -691,7 +793,8 @@ def post_claim_journal_entries(claim):
             JournalEntryId=journal_entry.JournalEntryId,
             AccountId=clearing_account.AccountId,
             Debit="0.00",
-            Credit=f"{float(claim.Amount or 0.0):.2f}"
+            Credit=f"{float(claim.Amount or 0.0):.2f}",
+            StaffId=claim.StaffId
         )
 
 
@@ -745,7 +848,8 @@ def post_reimbursement_journal_entries(claim):
             JournalEntryId=journal_entry.JournalEntryId,
             AccountId=clearing_account.AccountId,
             Debit=f"{float(claim.Amount or 0.0):.2f}",
-            Credit="0.00"
+            Credit="0.00",
+            StaffId=claim.StaffId
         )
 
         # Credit Selected Cash/Bank Account
@@ -753,7 +857,8 @@ def post_reimbursement_journal_entries(claim):
             JournalEntryId=journal_entry.JournalEntryId,
             AccountId=claim.ReimbursementAccountId,
             Debit="0.00",
-            Credit=f"{float(claim.Amount or 0.0):.2f}"
+            Credit=f"{float(claim.Amount or 0.0):.2f}",
+            StaffId=claim.StaffId
         )
 
 

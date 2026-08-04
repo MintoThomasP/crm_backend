@@ -1,4 +1,4 @@
-from app_vendor.models import Vendor, VendorAddress, VendorBankDetails, VendorContactPerson, VendorDocuments
+from app_vendor.models import Vendor, VendorAddress, VendorBankDetails, VendorContactPerson, VendorDocuments, VendorBill
 from rest_framework import serializers
 
 
@@ -95,3 +95,8 @@ class VendorBankDetailsSerializer(serializers.ModelSerializer):
 'PrimaryAccount'
 )
   
+
+class VendorBillSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VendorBill
+        fields = '__all__'
