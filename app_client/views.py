@@ -1051,12 +1051,10 @@ def ClientLedgerApi(request, ClientId=""):
         accounts = Account.objects.filter(Code='1200')
         account_ids = [acc.AccountId for acc in accounts]
 
-        # Fetch items chronologically (ASC: oldest to newest) to compute running balance
-        items = JournalItem.objects.filter(ClientId=ClientId, AccountId__in=account_ids).order_by('SortId')
+        # Fetch items for this Client under Accounts Receivable
+        items = JournalItem.objects.filter(ClientId=ClientId, AccountId__in=account_ids)
 
-        ledger_items = []
-        running_balance = opening_bal
-
+        temp_items = []
         from app_accounting.views import get_attachment_url_for_journal_entry, resolve_reference_number, get_invoice_info_for_journal_entry
 
         for item in items:
@@ -1079,9 +1077,9 @@ def ClientLedgerApi(request, ClientId=""):
 
             debit = float(item.Debit or "0.00")
             credit = float(item.Credit or "0.00")
-            running_balance += (debit - credit)
+            sort_key = str(item.SortId) if item.SortId else ""
 
-            ledger_items.append({
+            temp_items.append({
                 "Date": entry_date,
                 "ReferenceNumber": ref_num,
                 "Source": source,
@@ -1089,13 +1087,38 @@ def ClientLedgerApi(request, ClientId=""):
                 "AttachmentUrl": attachment_url,
                 "InvoiceNumber": inv_num,
                 "InvoiceAttachmentUrl": inv_url,
-                "Debit": f"{debit:.2f}",
-                "Credit": f"{credit:.2f}",
-                "RunningBalance": f"{running_balance:.2f}"
+                "Debit": debit,
+                "Credit": credit,
+                "SortId": sort_key
             })
 
-        # Reverse for DESC display order (newest at top, oldest at bottom)
-        ledger_items.reverse()
+        # 1. Sort strictly by Date ASC, then SortId ASC to compute chronological running balance from opening balance
+        temp_items.sort(key=lambda x: (x.get('Date') or '', x.get('SortId') or ''))
+
+        ledger_items = []
+        running_balance = opening_bal
+
+        for row in temp_items:
+            debit = row['Debit']
+            credit = row['Credit']
+            running_balance += (debit - credit)
+
+            ledger_items.append({
+                "Date": row['Date'],
+                "ReferenceNumber": row['ReferenceNumber'],
+                "Source": row['Source'],
+                "Narration": row['Narration'],
+                "AttachmentUrl": row['AttachmentUrl'],
+                "InvoiceNumber": row['InvoiceNumber'],
+                "InvoiceAttachmentUrl": row['InvoiceAttachmentUrl'],
+                "Debit": f"{debit:.2f}",
+                "Credit": f"{credit:.2f}",
+                "RunningBalance": f"{running_balance:.2f}",
+                "SortId": row['SortId']
+            })
+
+        # 2. Sort by Date DESC, then SortId DESC for display order (newest Date at top, oldest Date at bottom)
+        ledger_items.sort(key=lambda x: (x.get('Date') or '', x.get('SortId') or ''), reverse=True)
 
         return JsonResponse({
             "ClientId": ClientId,

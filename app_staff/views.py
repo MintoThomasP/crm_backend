@@ -1724,12 +1724,9 @@ def StaffLedgerApi(request, StaffId=""):
             for entry in entries:
                 JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId).update(StaffId=StaffId)
 
-        # Fetch items chronologically (ASC: oldest to newest) to compute running balances from opening balance
-        items = JournalItem.objects.filter(StaffId=StaffId).order_by('SortId')
+        items = JournalItem.objects.filter(StaffId=StaffId)
 
-        ledger_items = []
-        running_balance = 0.0
-
+        temp_items = []
         for item in items:
             try:
                 entry = JournalEntry.objects.get(JournalEntryId=item.JournalEntryId)
@@ -1770,21 +1767,43 @@ def StaffLedgerApi(request, StaffId=""):
                 debit = raw_debit
                 credit = raw_credit
 
-            running_balance += (credit - debit)
-
-            ledger_items.append({
+            sort_key = str(item.SortId) if item.SortId else ""
+            temp_items.append({
                 "Date": entry_date,
                 "ReferenceNumber": ref_num,
                 "Source": source,
                 "Narration": narration,
                 "AttachmentUrl": attachment_url,
-                "Debit": f"{debit:.2f}",
-                "Credit": f"{credit:.2f}",
-                "RunningBalance": f"{running_balance:.2f}"
+                "Debit": debit,
+                "Credit": credit,
+                "SortId": sort_key
             })
 
-        # Reverse for DESC display order (newest at top, oldest at bottom)
-        ledger_items.reverse()
+        # 1. Sort strictly by Date ASC, then SortId ASC to compute chronological running balance
+        temp_items.sort(key=lambda x: (x.get('Date') or '', x.get('SortId') or ''))
+
+        ledger_items = []
+        running_balance = 0.0
+
+        for row in temp_items:
+            debit = row['Debit']
+            credit = row['Credit']
+            running_balance += (credit - debit)
+
+            ledger_items.append({
+                "Date": row['Date'],
+                "ReferenceNumber": row['ReferenceNumber'],
+                "Source": row['Source'],
+                "Narration": row['Narration'],
+                "AttachmentUrl": row['AttachmentUrl'],
+                "Debit": f"{debit:.2f}",
+                "Credit": f"{credit:.2f}",
+                "RunningBalance": f"{running_balance:.2f}",
+                "SortId": row['SortId']
+            })
+
+        # 2. Sort by Date DESC, then SortId DESC for display order (newest Date at top, oldest Date at bottom)
+        ledger_items.sort(key=lambda x: (x.get('Date') or '', x.get('SortId') or ''), reverse=True)
 
         opening_bal = 0.00
         try:
