@@ -713,31 +713,29 @@ def VendorLedgerApi(request, VendorId=""):
                 # 1. Vendor Expense / Bill (Credit column)
                 c1 = amount
                 d1 = 0.0
-                running_balance += (c1 - d1)
                 ledger_items.append({
                     "Date": entry_date,
                     "ReferenceNumber": ref_num,
                     "Source": source,
                     "Narration": narration,
                     "AttachmentUrl": attachment_url,
-                    "Debit": f"{d1:.2f}",
-                    "Credit": f"{c1:.2f}",
-                    "RunningBalance": f"{running_balance:.2f}"
+                    "Debit": d1,
+                    "Credit": c1,
+                    "SortKey": (entry_date or '', ref_num or '', 0)
                 })
 
                 # 2. Paid out-of-pocket by employee to Vendor (Debit column)
                 c2 = 0.0
                 d2 = amount
-                running_balance += (c2 - d2)
                 ledger_items.append({
                     "Date": entry_date,
                     "ReferenceNumber": ref_num,
                     "Source": source,
                     "Narration": f"{narration} (Paid Out-of-Pocket)",
                     "AttachmentUrl": attachment_url,
-                    "Debit": f"{d2:.2f}",
-                    "Credit": f"{c2:.2f}",
-                    "RunningBalance": f"{running_balance:.2f}"
+                    "Debit": d2,
+                    "Credit": c2,
+                    "SortKey": (entry_date or '', ref_num or '', 1)
                 })
                 continue
             elif source == 'expense':
@@ -753,18 +751,32 @@ def VendorLedgerApi(request, VendorId=""):
                 debit = raw_debit
                 credit = raw_credit
 
-            running_balance += (credit - debit)
-
             ledger_items.append({
                 "Date": entry_date,
                 "ReferenceNumber": ref_num,
                 "Source": source,
                 "Narration": narration,
                 "AttachmentUrl": attachment_url,
-                "Debit": f"{debit:.2f}",
-                "Credit": f"{credit:.2f}",
-                "RunningBalance": f"{running_balance:.2f}"
+                "Debit": debit,
+                "Credit": credit,
+                "SortKey": (entry_date or '', ref_num or '', 0)
             })
+
+        # Sort ledger items by Date ascending (oldest to newest)
+        ledger_items.sort(key=lambda x: x['SortKey'])
+
+        formatted_items = []
+        running_balance = 0.0
+        for item in ledger_items:
+            debit = item['Debit']
+            credit = item['Credit']
+            running_balance += (credit - debit)
+            item_copy = dict(item)
+            item_copy.pop('SortKey', None)
+            item_copy['Debit'] = f"{debit:.2f}"
+            item_copy['Credit'] = f"{credit:.2f}"
+            item_copy['RunningBalance'] = f"{running_balance:.2f}"
+            formatted_items.append(item_copy)
 
         opening_bal = 0.00
         try:
@@ -780,7 +792,7 @@ def VendorLedgerApi(request, VendorId=""):
             "VendorName": vendor_name,
             "OpeningBalance": f"{opening_bal:.2f}",
             "ClosingBalance": f"{closing_bal:.2f}",
-            "LedgerItems": ledger_items
+            "LedgerItems": formatted_items
         }, safe=False)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)

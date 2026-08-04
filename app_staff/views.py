@@ -1769,18 +1769,32 @@ def StaffLedgerApi(request, StaffId=""):
                 debit = raw_debit
                 credit = raw_credit
 
-            running_balance += (credit - debit)
-
             ledger_items.append({
                 "Date": entry_date,
                 "ReferenceNumber": ref_num,
                 "Source": source,
                 "Narration": narration,
                 "AttachmentUrl": attachment_url,
-                "Debit": f"{debit:.2f}",
-                "Credit": f"{credit:.2f}",
-                "RunningBalance": f"{running_balance:.2f}"
+                "Debit": debit,
+                "Credit": credit,
+                "SortKey": (entry_date or '', ref_num or '')
             })
+
+        # Sort ledger items by Date ascending (oldest to newest)
+        ledger_items.sort(key=lambda x: x['SortKey'])
+
+        formatted_items = []
+        running_balance = 0.0
+        for item in ledger_items:
+            debit = item['Debit']
+            credit = item['Credit']
+            running_balance += (credit - debit)
+            item_copy = dict(item)
+            item_copy.pop('SortKey', None)
+            item_copy['Debit'] = f"{debit:.2f}"
+            item_copy['Credit'] = f"{credit:.2f}"
+            item_copy['RunningBalance'] = f"{running_balance:.2f}"
+            formatted_items.append(item_copy)
 
         opening_bal = 0.00
         try:
@@ -1796,7 +1810,7 @@ def StaffLedgerApi(request, StaffId=""):
             "StaffName": staff_name,
             "OpeningBalance": f"{opening_bal:.2f}",
             "ClosingBalance": f"{closing_bal:.2f}",
-            "LedgerItems": ledger_items
+            "LedgerItems": formatted_items
         }, safe=False)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
