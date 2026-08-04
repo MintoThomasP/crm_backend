@@ -1706,7 +1706,9 @@ def StaffLedgerApi(request, StaffId=""):
         staff_expenses = Expense.objects.filter(StaffId=StaffId)
         for exp in staff_expenses:
             ref_num = exp.ExpenseNumber if exp.ExpenseNumber else exp.ExpenseId
-            entries = JournalEntry.objects.filter(Source='expense', ReferenceNumber__in=[ref_num, exp.ExpenseId])
+            entries = JournalEntry.objects.filter(Source='expense').filter(
+                Q(ReferenceNumber=ref_num) | Q(ReferenceNumber=exp.ExpenseId) | Q(Narration=exp.Narration)
+            )
             for entry in entries:
                 JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId).update(StaffId=StaffId)
 
@@ -1715,7 +1717,10 @@ def StaffLedgerApi(request, StaffId=""):
         for claim in staff_claims:
             claim_ref = f"EXP-CLAIM-{claim.ClaimNumber}"
             reimb_ref = f"REIMB-{claim.ClaimNumber}"
-            entries = JournalEntry.objects.filter(ReferenceNumber__in=[claim_ref, reimb_ref, claim.ClaimNumber])
+            entries = JournalEntry.objects.filter(
+                Q(ReferenceNumber__in=[claim_ref, reimb_ref, claim.ClaimNumber]) |
+                Q(JournalEntryId__in=[claim.ExpenseJournalEntryId, claim.ReimbursementJournalEntryId])
+            )
             for entry in entries:
                 JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId).update(StaffId=StaffId)
 
