@@ -55,6 +55,7 @@ class Expense(models.Model):
     Amount = models.CharField(blank=True, null=True, max_length=15)
     Narration = models.TextField(blank=True, null=True)
     CompanyId = models.CharField(blank=True, null=True, max_length=50)
+    Receipt = models.FileField(upload_to='receipts/', null=True, blank=True)
 
     def __str__(self):
         return f"Expense {self.ExpenseNumber} - {self.Amount} - {self.Date}"

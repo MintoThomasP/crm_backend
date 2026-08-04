@@ -342,8 +342,13 @@ def check_credit_limit(client_id, new_invoice_amount, current_invoice_id=None):
 
         if current_invoice_id:
             # Exclude journal items associated with the invoice being updated
+            from app_sale.models import Invoice
+            inv = Invoice.objects.filter(InvoiceId=current_invoice_id).first()
+            ref_nums = [current_invoice_id]
+            if inv and inv.InvoiceNumber:
+                ref_nums.append(inv.InvoiceNumber)
             exclude_entry_ids = list(JournalEntry.objects.filter(
-                ReferenceNumber=current_invoice_id,
+                ReferenceNumber__in=ref_nums,
                 Source='invoice'
             ).values_list('JournalEntryId', flat=True))
             if exclude_entry_ids:

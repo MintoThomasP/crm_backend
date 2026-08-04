@@ -1,3 +1,4 @@
+from django.db.models import Q
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from datetime import datetime
@@ -98,24 +99,34 @@ def create_invoice_journal_entry(sender, instance, created, **kwargs):
         except Client.DoesNotExist:
             pass
 
-    # Use InvoiceId as unique ReferenceNumber for idempotency
-    ref_id = instance.InvoiceId
+    # Use InvoiceNumber as human-readable ReferenceNumber (fallback to InvoiceId if blank)
+    ref_num = instance.InvoiceNumber if instance.InvoiceNumber else instance.InvoiceId
     inv_num_part = f" #{instance.InvoiceNumber}" if instance.InvoiceNumber else ""
     narration = f"Invoice{inv_num_part} for Client {client_name}"
 
     with transaction.atomic():
-        journal_entry, entry_created = JournalEntry.objects.get_or_create(
-            ReferenceNumber=ref_id,
-            Source='invoice',
-            CompanyId=company_id,
-            defaults={
-                'Date': instance.InvoiceDate or datetime.now().strftime('%Y-%m-%d'),
-                'Narration': narration
-            }
-        )
+        lookup_refs = [instance.InvoiceId]
+        if instance.InvoiceNumber:
+            lookup_refs.append(instance.InvoiceNumber)
 
-        if not entry_created:
+        journal_entry = JournalEntry.objects.filter(
+            Source='invoice',
+            CompanyId=company_id
+        ).filter(
+            Q(ReferenceNumber__in=lookup_refs)
+        ).first()
+
+        if not journal_entry:
+            journal_entry = JournalEntry.objects.create(
+                ReferenceNumber=ref_num,
+                Source='invoice',
+                CompanyId=company_id,
+                Date=instance.InvoiceDate or datetime.now().strftime('%Y-%m-%d'),
+                Narration=narration
+            )
+        else:
             JournalItem.objects.filter(JournalEntryId=journal_entry.JournalEntryId).delete()
+            journal_entry.ReferenceNumber = ref_num
             journal_entry.Date = instance.InvoiceDate or journal_entry.Date
             journal_entry.Narration = narration
             journal_entry.save()
@@ -191,24 +202,36 @@ def create_payment_journal_entry(sender, instance, created, **kwargs):
         except Client.DoesNotExist:
             pass
 
-    # Use PaymentReceivedId as unique ReferenceNumber for idempotency
-    ref_id = instance.PaymentReceivedId
+    # Use PaymentNumber as human-readable ReferenceNumber (fallback to ReferenceNumber or PaymentReceivedId if blank)
+    ref_num = instance.PaymentNumber if instance.PaymentNumber else (instance.ReferenceNumber or instance.PaymentReceivedId)
     pay_num_part = f" #{instance.PaymentNumber}" if instance.PaymentNumber else ""
     narration = f"Payment Received{pay_num_part} from Client {client_name}"
 
     with transaction.atomic():
-        journal_entry, entry_created = JournalEntry.objects.get_or_create(
-            ReferenceNumber=ref_id,
-            Source='payment',
-            CompanyId=company_id,
-            defaults={
-                'Date': instance.PaymentDate or datetime.now().strftime('%Y-%m-%d'),
-                'Narration': narration
-            }
-        )
+        lookup_refs = [instance.PaymentReceivedId]
+        if instance.PaymentNumber:
+            lookup_refs.append(instance.PaymentNumber)
+        if instance.ReferenceNumber:
+            lookup_refs.append(instance.ReferenceNumber)
 
-        if not entry_created:
+        journal_entry = JournalEntry.objects.filter(
+            Source='payment',
+            CompanyId=company_id
+        ).filter(
+            Q(ReferenceNumber__in=lookup_refs)
+        ).first()
+
+        if not journal_entry:
+            journal_entry = JournalEntry.objects.create(
+                ReferenceNumber=ref_num,
+                Source='payment',
+                CompanyId=company_id,
+                Date=instance.PaymentDate or datetime.now().strftime('%Y-%m-%d'),
+                Narration=narration
+            )
+        else:
             JournalItem.objects.filter(JournalEntryId=journal_entry.JournalEntryId).delete()
+            journal_entry.ReferenceNumber = ref_num
             journal_entry.Date = instance.PaymentDate or journal_entry.Date
             journal_entry.Narration = narration
             journal_entry.save()

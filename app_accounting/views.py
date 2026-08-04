@@ -2,11 +2,83 @@ from rest_framework.decorators import api_view, parser_classes
 from django.http.response import JsonResponse
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from django.db import transaction
+from django.db.models import Q
 from app_accounting.models import Account, JournalEntry, JournalItem, Expense, ExpenseClaim
 from app_accounting.serializers import AccountSerializer, JournalEntrySerializer, JournalItemSerializer, ExpenseSerializer, ExpenseClaimSerializer
 from app_client.models import Client
 from app_client.serializers import ClientSerializer
 from app_staff.models import Staff
+
+
+def get_attachment_url_for_journal_entry(entry):
+    if not entry or not entry.Source:
+        return ""
+
+    source = (entry.Source or "").lower()
+
+    if source == 'invoice':
+        from app_sale.models import Invoice, InvoiceDocument
+        inv = None
+        if entry.ReferenceNumber:
+            inv = Invoice.objects.filter(CompanyId=entry.CompanyId).filter(
+                Q(InvoiceNumber=entry.ReferenceNumber) | Q(InvoiceId=entry.ReferenceNumber)
+            ).first()
+            if not inv:
+                inv = Invoice.objects.filter(InvoiceId=entry.ReferenceNumber).first()
+        if inv:
+            # 1. Check InvoiceFile in Invoice table
+            if inv.InvoiceFile and hasattr(inv.InvoiceFile, 'name') and inv.InvoiceFile.name:
+                return f"media/{inv.InvoiceFile.name}"
+            # 2. Check Document in InvoiceDocument table
+            inv_doc = InvoiceDocument.objects.filter(InvoiceId=inv.InvoiceId).first()
+            if inv_doc and inv_doc.Document and hasattr(inv_doc.Document, 'name') and inv_doc.Document.name:
+                return f"media/{inv_doc.Document.name}"
+            # 3. Fallback to view generated PDF
+            return f"api-sale/ViewPDF/{inv.InvoiceId}"
+
+    elif source == 'payment':
+        from app_sale.models import PaymentReceived, PaymentDocument
+        pay = None
+        if entry.ReferenceNumber:
+            pay = PaymentReceived.objects.filter(CompanyId=entry.CompanyId).filter(
+                Q(PaymentNumber=entry.ReferenceNumber) | Q(ReferenceNumber=entry.ReferenceNumber) | Q(PaymentReceivedId=entry.ReferenceNumber)
+            ).first()
+            if not pay:
+                pay = PaymentReceived.objects.filter(PaymentReceivedId=entry.ReferenceNumber).first()
+        if pay:
+            # 1. Check Receipt in PaymentReceived table
+            if pay.Receipt and hasattr(pay.Receipt, 'name') and pay.Receipt.name:
+                return f"media/{pay.Receipt.name}"
+            # 2. Check Document in PaymentDocument table
+            pay_doc = PaymentDocument.objects.filter(PaymentReceivedId=pay.PaymentReceivedId).first()
+            if pay_doc and pay_doc.Document and hasattr(pay_doc.Document, 'name') and pay_doc.Document.name:
+                return f"media/{pay_doc.Document.name}"
+            # 3. Fallback to view generated Payment PDF
+            return f"api-sale/ViewPaymentPDF/{pay.PaymentReceivedId}"
+
+    elif source == 'expense':
+        from app_accounting.models import Expense
+        exp = None
+        if entry.ReferenceNumber:
+            exp = Expense.objects.filter(CompanyId=entry.CompanyId).filter(
+                Q(ExpenseNumber=entry.ReferenceNumber) | Q(ExpenseId=entry.ReferenceNumber)
+            ).first()
+            if not exp:
+                exp = Expense.objects.filter(ExpenseId=entry.ReferenceNumber).first()
+        if exp and hasattr(exp, 'Receipt') and exp.Receipt and hasattr(exp.Receipt, 'name') and exp.Receipt.name:
+            return f"media/{exp.Receipt.name}"
+
+    elif source in ['expense_claim', 'expense_claim_repay']:
+        from app_accounting.models import ExpenseClaim
+        claim = ExpenseClaim.objects.filter(
+            Q(ExpenseJournalEntryId=entry.JournalEntryId) |
+            Q(ReimbursementJournalEntryId=entry.JournalEntryId) |
+            Q(ClaimNumber=entry.ReferenceNumber)
+        ).first()
+        if claim and claim.Receipt and hasattr(claim.Receipt, 'name') and claim.Receipt.name:
+            return f"media/{claim.Receipt.name}"
+
+    return ""
 
 
 @api_view(['GET', 'POST'])
@@ -64,7 +136,7 @@ def JournalItemByAccountId(request, AccountId=""):
     # Fetch all items for this Account
     items = JournalItem.objects.filter(AccountId=AccountId).order_by('SortId')
     
-    # Enrich each JournalItem with JournalEntry information (Date, ReferenceNumber, Source, Narration)
+    # Enrich each JournalItem with JournalEntry information (Date, ReferenceNumber, Source, Narration, AttachmentUrl)
     enriched_items = []
     for item in items:
         item_data = JournalItemSerializer(item).data
@@ -74,11 +146,13 @@ def JournalItemByAccountId(request, AccountId=""):
             item_data['ReferenceNumber'] = entry.ReferenceNumber
             item_data['Source'] = entry.Source
             item_data['Narration'] = entry.Narration
+            item_data['AttachmentUrl'] = get_attachment_url_for_journal_entry(entry)
         except JournalEntry.DoesNotExist:
             item_data['Date'] = ""
             item_data['ReferenceNumber'] = ""
             item_data['Source'] = ""
             item_data['Narration'] = ""
+            item_data['AttachmentUrl'] = ""
             
         try:
             client = Client.objects.get(ClientId=item.ClientId)
@@ -163,6 +237,7 @@ def CashBookByCompanyId(request, CompanyId=""):
             item_data['ReferenceNumber'] = entry.ReferenceNumber
             item_data['Source'] = entry.Source
             item_data['Narration'] = entry.Narration
+            item_data['AttachmentUrl'] = get_attachment_url_for_journal_entry(entry)
             
             # Resolve Contra Account
             other_items = JournalItem.objects.filter(JournalEntryId=item.JournalEntryId).exclude(JournalItemId=item.JournalItemId)
