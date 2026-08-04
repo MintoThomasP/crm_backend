@@ -702,12 +702,44 @@ def VendorLedgerApi(request, VendorId=""):
             raw_credit = float(item.Credit or "0.00")
 
             if source == 'expense_claim':
-                # Skip the credit clearing line of expense claim (clearing account 2300)
+                # Skip credit clearing line from DB query to prevent duplicate processing
                 if raw_credit > 0:
                     continue
-                # For vendor ledger, an expense claim for a vendor is a Credit (Bill / Vendor Expense)
-                debit = 0.0
-                credit = raw_debit if raw_debit > 0 else raw_credit
+                
+                amount = raw_debit if raw_debit > 0 else raw_credit
+                if amount <= 0:
+                    continue
+
+                # 1. Vendor Expense / Bill (Credit column)
+                c1 = amount
+                d1 = 0.0
+                running_balance += (c1 - d1)
+                ledger_items.append({
+                    "Date": entry_date,
+                    "ReferenceNumber": ref_num,
+                    "Source": source,
+                    "Narration": narration,
+                    "AttachmentUrl": attachment_url,
+                    "Debit": f"{d1:.2f}",
+                    "Credit": f"{c1:.2f}",
+                    "RunningBalance": f"{running_balance:.2f}"
+                })
+
+                # 2. Paid out-of-pocket by employee to Vendor (Debit column)
+                c2 = 0.0
+                d2 = amount
+                running_balance += (c2 - d2)
+                ledger_items.append({
+                    "Date": entry_date,
+                    "ReferenceNumber": ref_num,
+                    "Source": source,
+                    "Narration": f"{narration} (Paid Out-of-Pocket)",
+                    "AttachmentUrl": attachment_url,
+                    "Debit": f"{d2:.2f}",
+                    "Credit": f"{c2:.2f}",
+                    "RunningBalance": f"{running_balance:.2f}"
+                })
+                continue
             elif source == 'expense':
                 # Direct expense: Expense account debit line = Vendor Bill (Credit column),
                 # Cash/Bank credit line = Vendor Payment (Debit column)
