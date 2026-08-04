@@ -416,8 +416,8 @@ def JournalItemByAccountId(request, AccountId=""):
 
         enriched_items.append(item_data)
         
-    # Sort in ascending order of Date, then SortId
-    enriched_items.sort(key=lambda x: (x.get('Date') or '', x.get('SortId') or ''))
+    # Sort in ascending order of Date, then ReferenceNumber suffix, then SortId
+    enriched_items.sort(key=get_ledger_sort_key)
     return JsonResponse(enriched_items, safe=False)
 
 
@@ -438,6 +438,15 @@ def parse_date(date_str):
         except ValueError:
             pass
     return None
+
+def get_ledger_sort_key(item):
+    date_str = str(item.get('Date') or '')
+    ref_str = str(item.get('ReferenceNumber') or '')
+    sort_id_str = str(item.get('SortId') or '')
+    match = re.search(r'(\d+)$', ref_str)
+    ref_num = int(match.group(1)) if match else 999999999
+    return (date_str, ref_num, ref_str, sort_id_str)
+
 
 @api_view(['GET'])
 def CashBookByCompanyId(request, CompanyId=""):
@@ -608,8 +617,8 @@ def CashBookByCompanyId(request, CompanyId=""):
             
         period_items.append(item_data)
         
-    # Sort in ascending order of Date, then SortId
-    period_items.sort(key=lambda x: (x.get('Date') or '', x.get('SortId') or ''))
+    # Sort strictly by Date ascending, then ReferenceNumber suffix, then SortId
+    period_items.sort(key=get_ledger_sort_key)
     
     closing_balance = opening_balance
     for item in period_items:

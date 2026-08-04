@@ -309,6 +309,8 @@ def create_expense_journal_entry(sender, instance, created, **kwargs):
             journal_entry.Narration = instance.Narration or f"Expense {ref_num}"
             journal_entry.save()
 
+        sort_time = journal_entry.SortId if journal_entry.SortId else datetime.now()
+
         # Create JournalItems:
         # 1. Debit chosen Expense account (instance.AccountId)
         if instance.AccountId:
@@ -318,7 +320,8 @@ def create_expense_journal_entry(sender, instance, created, **kwargs):
                 Debit=f"{amount:.2f}",
                 Credit="0.00",
                 StaffId=instance.StaffId,
-                VendorId=instance.VendorId
+                VendorId=instance.VendorId,
+                SortId=sort_time
             )
 
         # 2. Credit chosen Bank/Cash payment account (instance.PaymentAccountId)
@@ -329,5 +332,6 @@ def create_expense_journal_entry(sender, instance, created, **kwargs):
                 Debit="0.00",
                 Credit=f"{amount:.2f}",
                 StaffId=instance.StaffId,
-                VendorId=instance.VendorId
+                VendorId=instance.VendorId,
+                SortId=sort_time
             )
