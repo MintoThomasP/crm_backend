@@ -8,6 +8,7 @@ from .models import ClientPortalAccess, ClientDocumentUpload, ServiceExpiryAlert
 from .serializers import ClientPortalAccessSerializer, ClientDocumentUploadSerializer, ServiceExpiryAlertSerializer
 from app_project.serializers import ProjectSerializer
 from app_client.serializers import SupportTicketSerializer
+from app_client.models import Client
 from app_default.models import UserType
 import uuid
 
@@ -66,10 +67,16 @@ def client_portal_login(request):
     try:
         login_obj = Login.objects.get(EmailId=email, Password=password)
         access = ClientPortalAccess.objects.get(LoginId=login_obj.LoginId, IsActive=True)
+        
+        client_obj = Client.objects.filter(ClientId=access.ClientId).first()
+        client_name = client_obj.CustomerDisplayName if client_obj else "Client User"
+
         return Response({
             'token': 'client-token-' + str(uuid.uuid4()), 
             'ClientId': access.ClientId, 
-            'UserId': login_obj.UserId
+            'UserId': login_obj.UserId,
+            'ClientName': client_name,
+            'EmailId': email
         }, status=status.HTTP_200_OK)
     except Exception as e:
         return Response({'error': 'Invalid credentials or no portal access'}, status=status.HTTP_401_UNAUTHORIZED)
