@@ -66,8 +66,8 @@ INSTALLED_APPS = [
     'app_vendor',
     'app_firebase',
     'app_blog',
-    'app_accounting',
-    'app_client_portal'
+    'app_accounting'
+
 ]
 
 MIDDLEWARE = [

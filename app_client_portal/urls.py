@@ -1,10 +1,15 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from . import views
 
+router = DefaultRouter()
+router.register(r'documents', views.ClientDocumentUploadViewSet)
+router.register(r'alerts', views.ServiceExpiryAlertViewSet)
+
 urlpatterns = [
-    path('login', views.ClientLoginView.as_view()),
-    path('projects', views.ClientProjectListView.as_view()),
-    path('projects/<str:project_id>', views.ClientProjectDetailView.as_view()),
-    path('projects/<str:project_id>/documents', views.ProjectDocumentUploadView.as_view()),
-    path('tickets', views.ClientTicketCreateView.as_view()),
+    path('', include(router.urls)),
+    path('login/', views.client_portal_login, name='client_portal_login'),
+    path('dashboard-stats/<str:client_id>/', views.client_dashboard_stats, name='client_dashboard_stats'),
+    path('projects/<str:client_id>/', views.client_projects, name='client_projects'),
+    path('tickets/<str:client_id>/', views.client_tickets, name='client_tickets'),
 ]

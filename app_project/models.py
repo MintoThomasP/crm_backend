@@ -117,26 +117,3 @@ class CommentFile(models.Model):
         max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
     CommentId=models.CharField(blank=True, null=True, max_length=50)
     CommentFile=models.FileField(null=True,blank=True, upload_to='Commentfiles')
-
-class ProjectDocument(models.Model):
-    SortId = models.DateTimeField(editable=False, default=datetime.now)
-    ProjectDocumentId = models.CharField(
-        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
-    ProjectId = models.CharField(max_length=50, blank=True, null=True)
-    ClientId = models.CharField(max_length=50, blank=True, null=True)
-    DocumentName = models.CharField(max_length=300, blank=True, null=True)
-    Document = models.FileField(upload_to='ProjectDocuments/', null=True, blank=True)
-    UploadedBy = models.CharField(max_length=50, default='Client') # Client or Staff
-    UploadDate = models.DateTimeField(default=datetime.now)
-
-class ProjectService(models.Model):
-    SortId = models.DateTimeField(editable=False, default=datetime.now)
-    ProjectServiceId = models.CharField(
-        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
-    ProjectId = models.CharField(max_length=50, blank=True, null=True)
-    ServiceName = models.CharField(max_length=300, blank=True, null=True)
-    Provider = models.CharField(max_length=300, blank=True, null=True)
-    Cost = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    ExpiryDate = models.DateTimeField(blank=True, null=True)
-    IsActive = models.BooleanField(default=True)
-    NotifyClient = models.BooleanField(default=True)
