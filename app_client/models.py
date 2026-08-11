@@ -154,6 +154,7 @@ class SupportTicket(models.Model):
         max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
     CompanyId = models.CharField(max_length=50, blank=True, null=True)
     ClientId = models.CharField(max_length=50, blank=True, null=True)
+    ProjectId = models.CharField(max_length=50, blank=True, null=True)
     Subject = models.CharField(max_length=300, blank=True, null=True)
     Status = models.CharField(max_length=50, default='open')
     Priority = models.CharField(max_length=20, default='medium')
