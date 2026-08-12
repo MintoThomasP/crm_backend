@@ -58,7 +58,6 @@ INSTALLED_APPS = [
     'app_company',
     'app_category',
     'app_notes',
-    'app_client_portal',
     'app_enquiry',
     'app_basic',
     'app_todo',

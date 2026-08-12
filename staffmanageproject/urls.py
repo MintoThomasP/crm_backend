@@ -61,7 +61,6 @@ urlpatterns = [
     path('api-noti/', include('app_firebase.urls')),
     path('api-blog/', include('app_blog.urls')),
     path('api-accounting/', include('app_accounting.urls')),
-    path('api-client-portal/', include('app_client_portal.urls')),
     path('swagger-json/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger<str:format>', schema_view.without_ui(
         cache_timeout=0), name='schema-json'),
