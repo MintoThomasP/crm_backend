@@ -32,7 +32,9 @@ class QuotationSerializer(serializers.ModelSerializer):
                   'WorkBreakdownTitle',
                   'NotesTitle',
                   'PaymentTermsTitle',
-                  'TermsTitle')
+                  'TermsTitle',
+                  'AddBankAccount',
+                  'BankAccountTitle')
 
 
 class QuotationItemSerializer(serializers.ModelSerializer):

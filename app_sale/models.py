@@ -40,6 +40,9 @@ class Quotation(models.Model):
         blank=True, null=True, max_length=255, default='SUMMARY OF PAYMENT TERMS')
     TermsTitle = models.CharField(
         blank=True, null=True, max_length=255, default='TERMS AND CONDITIONS')
+    AddBankAccount = models.BooleanField(default=False)
+    BankAccountTitle = models.CharField(
+        blank=True, null=True, max_length=255, default='BANK ACCOUNT DETAILS')
 
 
 class QuotationItem(models.Model):

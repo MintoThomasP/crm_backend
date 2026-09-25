@@ -264,8 +264,8 @@
         {% endif %}
     </div>
 
-    <!-- Terms, Payment Terms & Notes on New Page (Order: 1. Notes, 2. Payment Terms, 3. Terms & Conditions) -->
-    {% if quote.CustomerNotes or quote.PaymentTerms or quote.TermsNConditions %}
+    <!-- Terms, Payment Terms, Bank Details & Notes on New Page (Order: 1. Notes, 2. Payment Terms, 3. Bank Account, 4. Terms & Conditions) -->
+    {% if quote.CustomerNotes or quote.PaymentTerms or bankAccount or quote.TermsNConditions %}
     <div style="page-break-before: always; padding-top: 10px;">
         {% if quote.CustomerNotes %}
         <div style="margin-bottom: 25px;">
@@ -288,6 +288,16 @@
             <div class="rich-content" style="font-size: 12px; color: #334155;">
                 {{quote.PaymentTerms|safe}}
             </div>
+        </div>
+        {% endif %}
+
+        {% if bankAccount %}
+        <div style="margin-bottom: 25px;">
+            <div
+                style="font-size: 14px; font-weight: bold; color: #1e293b; border-bottom: 2px solid #2e4157; padding-bottom: 6px; margin-bottom: 16px;">
+                {{ quote.BankAccountTitle|default:"BANK ACCOUNT DETAILS" }}
+            </div>
+            <div class="rich-content" style="font-size: 12px; color: #334155; white-space: pre-line;">{{bankAccount}}</div>
         </div>
         {% endif %}
 

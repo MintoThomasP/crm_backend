@@ -1642,8 +1642,10 @@ def ViewQuotationPDF(request, QuotationId=""):
             p = ""
 
         logo_url = request.build_absolute_uri(static('images/line.webp'))
-        other_image_url = request.build_absolute_uri(
-            static('images/round.webp'))
+        bankAccount = ""
+        if quote.AddBankAccount and siteSettings and siteSettings.BankAccount:
+            bankAccount = siteSettings.BankAccount
+
         context = {
             'quote': quote,
             'invoiceItems': invoiceItems,
@@ -1651,11 +1653,11 @@ def ViewQuotationPDF(request, QuotationId=""):
             'logo': logo,
             'amountinwords': amountinwords,
             'siteSettings': siteSettings,
+            'bankAccount': bankAccount,
             'logo_url': logo_url,
             'other_image_url': other_image_url,
             'client': client,
             'company': company,
-
         }
 
         template_src = 'quotation.html'
