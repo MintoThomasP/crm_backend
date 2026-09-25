@@ -269,7 +269,7 @@
         {% if bankAccount %}
         <div style="margin-bottom: 25px;">
             <div style="font-weight: bold; font-style: italic; font-size: 13px; padding-bottom: 6px; margin-bottom: 16px; border-bottom: 1px solid #000000;">{{ quote.BankAccountTitle|default:"BANK ACCOUNT DETAILS" }}</div>
-            <div class="rich-content" style="font-size: 11px; white-space: pre-line;">{{bankAccount}}</div>
+            <div class="rich-content" style="font-size: 11px;">{{bankAccount|linebreaksbr}}</div>
         </div>
         {% endif %}
 
