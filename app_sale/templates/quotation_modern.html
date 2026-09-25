@@ -170,7 +170,7 @@
     {% if quote.PaymentTerms %}
     <div style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
         <div style="font-weight: 700; text-transform: uppercase; font-size: 11px; color: #64748b; margin-bottom: 5px;">Payment Terms</div>
-        <div style="color: #475569; line-height: 1.5; white-space: pre-wrap;">{{quote.PaymentTerms|linebreaksbr}}</div>
+        <div style="color: #475569; line-height: 1.5;">{{quote.PaymentTerms|safe}}</div>
     </div>
     {% endif %}
 
