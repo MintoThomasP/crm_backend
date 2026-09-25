@@ -27,7 +27,12 @@ class QuotationSerializer(serializers.ModelSerializer):
                   'TemplateName',
                   'QuotationType',
                   'Summary',
-                  'PaymentTerms')
+                  'PaymentTerms',
+                  'SummaryTitle',
+                  'WorkBreakdownTitle',
+                  'NotesTitle',
+                  'PaymentTermsTitle',
+                  'TermsTitle')
 
 
 class QuotationItemSerializer(serializers.ModelSerializer):

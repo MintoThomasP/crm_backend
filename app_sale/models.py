@@ -30,6 +30,16 @@ class Quotation(models.Model):
     QuotationType = models.CharField(max_length=50, default='item')
     Summary = models.TextField(blank=True, null=True)
     PaymentTerms = models.TextField(blank=True, null=True)
+    SummaryTitle = models.CharField(
+        blank=True, null=True, max_length=255, default='SUMMARY / PROJECT OVERVIEW')
+    WorkBreakdownTitle = models.CharField(
+        blank=True, null=True, max_length=255, default='WORK BREAKDOWN & HOURLY ESTIMATION')
+    NotesTitle = models.CharField(
+        blank=True, null=True, max_length=255, default='NOTES')
+    PaymentTermsTitle = models.CharField(
+        blank=True, null=True, max_length=255, default='SUMMARY OF PAYMENT TERMS')
+    TermsTitle = models.CharField(
+        blank=True, null=True, max_length=255, default='TERMS AND CONDITIONS')
 
 
 class QuotationItem(models.Model):
