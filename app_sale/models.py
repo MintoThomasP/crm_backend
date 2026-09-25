@@ -46,6 +46,8 @@ class Quotation(models.Model):
     ParentQuotationId = models.CharField(blank=True, null=True, max_length=50)
     IsLatest = models.BooleanField(default=True)
     InvoiceId = models.CharField(blank=True, null=True, max_length=50)
+    Currency = models.CharField(blank=True, null=True, max_length=15)
+    HourlyRate = models.CharField(blank=True, null=True, max_length=15)
 
 
 class QuotationItem(models.Model):

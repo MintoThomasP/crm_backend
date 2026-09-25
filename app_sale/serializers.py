@@ -37,7 +37,9 @@ class QuotationSerializer(serializers.ModelSerializer):
                   'BankAccountTitle',
                   'ParentQuotationId',
                   'IsLatest',
-                  'InvoiceId')
+                  'InvoiceId',
+                  'Currency',
+                  'HourlyRate')
 
 
 class QuotationItemSerializer(serializers.ModelSerializer):

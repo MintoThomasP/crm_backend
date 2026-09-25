@@ -1641,7 +1641,9 @@ def ViewQuotationPDF(request, QuotationId=""):
                 'BankAccount': ''
             })()
 
-        currencyType = siteSettings.CurrencyType
+        quote_currency = quote.Currency if hasattr(quote, 'Currency') and quote.Currency else (siteSettings.CurrencyType if hasattr(siteSettings, 'CurrencyType') and siteSettings.CurrencyType else 'INR')
+        siteSettings.CurrencyType = quote_currency
+        currencyType = quote_currency
         amountinwords = decimal_number_to_words(totalAmount, currencyType)
 
         try:
@@ -1810,6 +1812,8 @@ def ReviseQuotation(request):
             TermsTitle=current_quote.TermsTitle,
             AddBankAccount=current_quote.AddBankAccount,
             BankAccountTitle=current_quote.BankAccountTitle,
+            Currency=current_quote.Currency,
+            HourlyRate=current_quote.HourlyRate,
             ParentQuotationId=root_quote_id,
             IsLatest=True
         )
