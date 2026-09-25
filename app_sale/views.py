@@ -1672,10 +1672,9 @@ def ViewQuotationPDF(request, QuotationId=""):
             quote.QuotationFile.delete(save=True)
             quote.QuotationFile.save(
                 invoice_file_name, ContentFile(pdf.content))
-        else:
-            quote.QuotationFile.save(
-                invoice_file_name, ContentFile(pdf.content))
-        return HttpResponse(pdf.content, content_type='application/pdf')
+        response = HttpResponse(pdf.content, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="{invoice_file_name}"'
+        return response
 
     else:
         return JsonResponse({"error": "Invalid method"}, status=405)
