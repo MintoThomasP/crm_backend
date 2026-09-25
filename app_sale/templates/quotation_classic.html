@@ -74,22 +74,26 @@
     <div style="margin-bottom: 30px;">
         <table style="width: 100%;">
             <tr>
-                <td style="width: 50%; vertical-align: top;">
-                    <div style="font-weight: bold; font-style: italic; border-bottom: 1px solid #000000; width: fit-content; margin-bottom: 5px;">Prepared For:</div>
-                    <strong>{{client.CustomerDisplayName}}</strong><br>
+                <td style="width: 60%; vertical-align: top; text-align: left;">
+                    <div style="margin-bottom: 15px; line-height: 1.5;">
+                        QUOTATION NUMBER: <b>{{quote.QuotationNumber}}</b><br>
+                        Date: <b>{{quote.QuoteDate}}</b><br>
+                        Expiry Date: <b>{{quote.ExpiryDate}}</b>
+                    </div>
+                    <i><b>Prepared For :</b></i><br/>
+                    <b>{{client.CustomerDisplayName}}</b><br/>
                     <span style="white-space: pre-line;">
                         {{clientaddress.Address1}}
                         {% if clientaddress.Address2 %}{{clientaddress.Address2}}{% endif %}
                         {{clientaddress.Country}}
                     </span>
                 </td>
-                <td style="width: 50%; vertical-align: top; text-align: right;">
-                    <div style="font-weight: bold; font-style: italic; border-bottom: 1px solid #000000; float: right; margin-bottom: 5px;">Details:</div>
+                <td style="width: 40%; vertical-align: top; text-align: right;">
+                    {% if quote.Subject %}
+                    <div style="font-weight: bold; font-style: italic; border-bottom: 1px solid #000000; float: right; margin-bottom: 5px;">Subject:</div>
                     <div style="clear: both; height: 5px;"></div>
-                    Quotation Number: <strong>{{quote.QuotationNumber}}</strong><br>
-                    Date: {{quote.QuoteDate}}<br>
-                    Valid Until: {{quote.ExpiryDate}}<br>
-                    Subject: {{quote.Subject}}
+                    <div style="font-size: 13px; font-weight: bold;">{{quote.Subject}}</div>
+                    {% endif %}
                 </td>
             </tr>
         </table>
