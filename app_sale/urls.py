@@ -71,10 +71,18 @@ urlpatterns = [
 
     url(r'^ViewQuotationPDF/(?P<QuotationId>[0-9a-zA-Z\-]+)$',
         views.ViewQuotationPDF),
-    url(r'^Quotation/create_version/(?P<QuotationId>[0-9a-zA-Z\-]+)$',
-        views.create_quotation_version_api),
-    url(r'^Quotation/approve/(?P<QuotationId>[0-9a-zA-Z\-]+)$',
-        views.approve_quotation_workflow_api),
+    path('ApproveQuotationAndCreateTasks/',
+        views.ApproveQuotationAndCreateTasks),
+    path('ReviseQuotation/',
+        views.ReviseQuotation),
+    url(r'^GetQuotationRevisions/(?P<QuotationId>[0-9a-zA-Z\-]+)$',
+        views.GetQuotationRevisions),
+    url(r'^CheckQuotationTasksStatus/(?P<QuotationId>[0-9a-zA-Z\-]+)$',
+        views.CheckQuotationTasksStatus),
+    path('ConvertQuotationToInvoice/',
+        views.ConvertQuotationToInvoice),
+    url(r'^CancelQuotation/(?P<QuotationId>[0-9a-zA-Z\-]+)$',
+        views.CancelQuotation),
 ]
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL,

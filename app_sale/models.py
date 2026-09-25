@@ -43,6 +43,9 @@ class Quotation(models.Model):
     AddBankAccount = models.BooleanField(default=False)
     BankAccountTitle = models.CharField(
         blank=True, null=True, max_length=255, default='BANK ACCOUNT DETAILS')
+    ParentQuotationId = models.CharField(blank=True, null=True, max_length=50)
+    IsLatest = models.BooleanField(default=True)
+    InvoiceId = models.CharField(blank=True, null=True, max_length=50)
 
 
 class QuotationItem(models.Model):

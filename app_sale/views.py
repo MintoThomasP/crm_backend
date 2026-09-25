@@ -16,6 +16,7 @@ from django.utils import timezone
 from django.db.models import Sum, Case, When, F, DecimalField
 from django.shortcuts import render
 import os
+import re
 from rest_framework import generics
 from django.db.models import Q
 import smtplib
@@ -188,20 +189,21 @@ def QuotationApiById(request, QuotationId=""):
 
 
 class QuotationApiByCompanyId(generics.ListAPIView):
-    queryset = Quotation.objects.all().order_by('-SortId')
+    queryset = Quotation.objects.filter(Q(IsLatest=True) | Q(IsLatest__isnull=True)).order_by('-SortId')
     pagination_class = CustomPagination
     serializer_class = QuotationSerializer
 
     def post(self, request, *args, **kwargs):
         try:
+            self.queryset = Quotation.objects.filter(Q(IsLatest=True) | Q(IsLatest__isnull=True)).order_by('-SortId')
             filterData = JSONParser().parse(request)
             Keyword = filterData.get('SearchKeyword', '')
-            if filterData['CompanyId']:
+            if filterData.get('CompanyId'):
                 self.queryset = self.queryset.filter(
                     CompanyId=filterData['CompanyId'])
             if Keyword:
                 self.queryset = self.queryset.filter(
-                    Subject__icontains=Keyword)
+                    Q(Subject__icontains=Keyword) | Q(QuotationNumber__icontains=Keyword))
             page = self.paginate_queryset(self.queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
@@ -1686,33 +1688,111 @@ def ViewQuotationPDF(request, QuotationId=""):
 
 @csrf_exempt
 @api_view(['POST'])
-def create_quotation_version_api(request, QuotationId=""):
+def ApproveQuotationAndCreateTasks(request):
     try:
-        quote = Quotation.objects.get(QuotationId=QuotationId)
-        items = QuotationItem.objects.filter(QuotationId=QuotationId).order_by('OrderNo', 'SortId')
+        data = JSONParser().parse(request)
+        quotation_id = data.get('QuotationId')
+        task_assigned_by = data.get('TaskAssignedBy', '')
+        tasks_data = data.get('tasks', [])
         
+        quote = Quotation.objects.get(QuotationId=quotation_id)
+        quote.ApprovalStatus = 'approved'
+        quote.save()
+
+        from app_project.models import ProjectTask
+        from app_default.models import TaskStatus
+        
+        default_status = TaskStatus.objects.first()
+        status_id = str(default_status.StatusId) if default_status else "1"
+
+        created_tasks = []
+        for item in tasks_data:
+            task_title = item.get('ItemName') or item.get('Title') or "Quotation Task"
+            task_duration = str(item.get('Duration') or '0:10')
+            assigned_to = str(item.get('TaskAssignedTo') or '')
+            deadline = item.get('ScheduledDeadline') or quote.ExpiryDate or datetime.now().strftime('%Y-%m-%dT%H:%M')
+            desc = item.get('Description') or f"Task created from Quotation {quote.QuotationNumber}"
+
+            new_task = ProjectTask.objects.create(
+                ProjectId=quote.ProjectId or "",
+                ClientId=quote.ClientId or "",
+                CompanyId=quote.CompanyId or "",
+                Title=task_title,
+                Description=desc,
+                Duration=task_duration,
+                Status=status_id,
+                TaskAssignedTo=assigned_to,
+                TaskAssignedBy=task_assigned_by or quote.SalesPerson or "",
+                ScheduledDeadline=deadline,
+                RefId=quote.QuotationId,
+                TaskType='Quotation',
+                CreatedDate=datetime.now().strftime('%Y-%m-%d')
+            )
+            created_tasks.append(new_task.ProjectTaskId)
+
+        return JsonResponse({
+            "message": "Quotation approved and tasks created successfully",
+            "quotation_id": quote.QuotationId,
+            "created_tasks_count": len(created_tasks),
+            "task_ids": created_tasks
+        }, status=200, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400, safe=False)
+
+
+@csrf_exempt
+@api_view(['POST'])
+def ReviseQuotation(request):
+    try:
+        data = JSONParser().parse(request)
+        quotation_id = data.get('QuotationId')
+        current_quote = Quotation.objects.get(QuotationId=quotation_id)
+        
+        root_quote_id = current_quote.ParentQuotationId or current_quote.QuotationId
+        
+        # Archive current quote
+        current_quote.IsLatest = False
+        current_quote.ApprovalStatus = 'revised'
+        current_quote.save()
+
+        # Next version number
+        new_version = current_quote.VersionNumber + 1
+        base_quote_num = re.sub(r'-V\d+$', '', current_quote.QuotationNumber or 'QUO')
+        new_quotation_number = f"{base_quote_num}-V{new_version}"
+
+        # Create new revision in draft state
         new_quote = Quotation.objects.create(
-            ClientId=quote.ClientId,
-            CompanyId=quote.CompanyId,
-            QuotationNumber=quote.QuotationNumber,
-            ReferenceNumber=quote.ReferenceNumber,
-            QuoteDate=quote.QuoteDate,
-            ExpiryDate=quote.ExpiryDate,
-            SalesPerson=quote.SalesPerson,
-            ProjectId=quote.ProjectId,
-            Subject=quote.Subject,
-            CustomerNotes=quote.CustomerNotes,
-            TermsNConditions=quote.TermsNConditions,
-            SubTotalAmount=quote.SubTotalAmount,
-            TotalAmount=quote.TotalAmount,
-            VersionNumber=quote.VersionNumber + 1,
+            ClientId=current_quote.ClientId,
+            CompanyId=current_quote.CompanyId,
+            QuotationNumber=new_quotation_number,
+            ReferenceNumber=current_quote.ReferenceNumber,
+            QuoteDate=datetime.now().strftime('%Y-%m-%d'),
+            ExpiryDate=current_quote.ExpiryDate,
+            SalesPerson=current_quote.SalesPerson,
+            ProjectId=current_quote.ProjectId,
+            Subject=current_quote.Subject,
+            CustomerNotes=current_quote.CustomerNotes,
+            TermsNConditions=current_quote.TermsNConditions,
+            SubTotalAmount=current_quote.SubTotalAmount,
+            TotalAmount=current_quote.TotalAmount,
+            VersionNumber=new_version,
             ApprovalStatus='draft',
-            TemplateName=quote.TemplateName,
-            QuotationType=quote.QuotationType,
-            Summary=quote.Summary,
-            PaymentTerms=quote.PaymentTerms
+            TemplateName=current_quote.TemplateName,
+            QuotationType=current_quote.QuotationType,
+            Summary=current_quote.Summary,
+            PaymentTerms=current_quote.PaymentTerms,
+            SummaryTitle=current_quote.SummaryTitle,
+            WorkBreakdownTitle=current_quote.WorkBreakdownTitle,
+            NotesTitle=current_quote.NotesTitle,
+            PaymentTermsTitle=current_quote.PaymentTermsTitle,
+            TermsTitle=current_quote.TermsTitle,
+            AddBankAccount=current_quote.AddBankAccount,
+            BankAccountTitle=current_quote.BankAccountTitle,
+            ParentQuotationId=root_quote_id,
+            IsLatest=True
         )
-        
+
+        items = QuotationItem.objects.filter(QuotationId=current_quote.QuotationId).order_by('OrderNo', 'SortId')
         for item in items:
             QuotationItem.objects.create(
                 QuotationId=new_quote.QuotationId,
@@ -1723,57 +1803,197 @@ def create_quotation_version_api(request, QuotationId=""):
                 Amount=item.Amount,
                 OrderNo=item.OrderNo
             )
-            
+
         return JsonResponse({
-            "message": "New quotation version created successfully",
+            "message": "Quotation revised successfully",
             "new_quotation_id": new_quote.QuotationId,
-            "version_number": new_quote.VersionNumber
-        }, status=201, safe=False)
+            "version_number": new_quote.VersionNumber,
+            "quotation_number": new_quote.QuotationNumber
+        }, status=200, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400, safe=False)
+
+
+@csrf_exempt
+@api_view(['GET'])
+def GetQuotationRevisions(request, QuotationId=""):
+    try:
+        quote = Quotation.objects.get(QuotationId=QuotationId)
+        root_id = quote.ParentQuotationId or quote.QuotationId
+        
+        revisions = Quotation.objects.filter(
+            Q(QuotationId=root_id) | Q(ParentQuotationId=root_id)
+        ).order_by('VersionNumber')
+
+        rev_data = []
+        for r in revisions:
+            rev_data.append({
+                "QuotationId": r.QuotationId,
+                "QuotationNumber": r.QuotationNumber,
+                "VersionNumber": r.VersionNumber,
+                "ApprovalStatus": r.ApprovalStatus,
+                "TotalAmount": r.TotalAmount,
+                "QuoteDate": r.QuoteDate,
+                "ExpiryDate": r.ExpiryDate,
+                "IsLatest": r.IsLatest,
+                "InvoiceId": r.InvoiceId,
+                "CreatedDate": r.SortId.strftime('%d %b %Y %H:%M') if r.SortId else ""
+            })
+        return JsonResponse(rev_data, status=200, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400, safe=False)
+
+
+@csrf_exempt
+@api_view(['GET'])
+def CheckQuotationTasksStatus(request, QuotationId=""):
+    try:
+        from app_project.models import ProjectTask
+        from app_default.models import TaskStatus
+
+        tasks = ProjectTask.objects.filter(RefId=QuotationId, TaskType='Quotation')
+        total_tasks = tasks.count()
+        completed_tasks = 0
+        task_list = []
+
+        for t in tasks:
+            status_name = ""
+            is_completed = False
+            try:
+                ts = TaskStatus.objects.get(StatusId=t.Status)
+                status_name = ts.Status
+                if "completed" in status_name.lower() or "done" in status_name.lower() or "verified" in status_name.lower() or str(ts.Point) == "100":
+                    is_completed = True
+            except:
+                status_name = str(t.Status)
+
+            if is_completed:
+                completed_tasks += 1
+
+            task_list.append({
+                "ProjectTaskId": t.ProjectTaskId,
+                "Title": t.Title,
+                "Duration": t.Duration,
+                "Status": t.Status,
+                "StatusName": status_name,
+                "TaskAssignedTo": t.TaskAssignedTo,
+                "ScheduledDeadline": t.ScheduledDeadline,
+                "IsCompleted": is_completed
+            })
+
+        all_completed = (total_tasks > 0 and completed_tasks == total_tasks)
+
+        return JsonResponse({
+            "QuotationId": QuotationId,
+            "total_tasks": total_tasks,
+            "completed_tasks": completed_tasks,
+            "all_completed": all_completed,
+            "tasks": task_list
+        }, status=200, safe=False)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400, safe=False)
 
 
 @csrf_exempt
 @api_view(['POST'])
-def approve_quotation_workflow_api(request, QuotationId=""):
+def ConvertQuotationToInvoice(request):
     try:
         data = JSONParser().parse(request)
-        action = data.get('action')
-        quote = Quotation.objects.get(QuotationId=QuotationId)
-        
-        current_status = quote.ApprovalStatus.lower()
-        new_status = current_status
-        
-        if action == 'submit_for_approval':
-            if current_status == 'draft':
-                new_status = 'pending_manager'
-            else:
-                return JsonResponse({"error": "Can only submit a draft quote"}, status=400, safe=False)
-        elif action == 'approve':
-            if current_status == 'pending_manager':
-                new_status = 'pending_finance'
-            elif current_status == 'pending_finance':
-                new_status = 'approved'
-            else:
-                return JsonResponse({"error": f"Cannot approve quote in status: {current_status}"}, status=400, safe=False)
-        elif action == 'reject':
-            if current_status in ['pending_manager', 'pending_finance']:
-                new_status = 'rejected'
-            else:
-                return JsonResponse({"error": "Can only reject pending quotes"}, status=400, safe=False)
+        quotation_id = data.get('QuotationId')
+        quote = Quotation.objects.get(QuotationId=quotation_id)
+
+        if quote.InvoiceId and Invoice.objects.filter(InvoiceId=quote.InvoiceId).exists():
+            inv = Invoice.objects.get(InvoiceId=quote.InvoiceId)
+            return JsonResponse({
+                "message": "Quotation already converted to Invoice",
+                "invoice_id": inv.InvoiceId,
+                "invoice_number": inv.InvoiceNumber
+            }, status=200, safe=False)
+
+        from app_site.models import SiteSettings
+        invoice_prefix = "INV-"
+        try:
+            settings = SiteSettings.objects.get(CompanyId=quote.CompanyId)
+            if settings.InvoicePrefix:
+                invoice_prefix = settings.InvoicePrefix
+        except:
+            pass
+
+        last_invoice = Invoice.objects.filter(CompanyId=quote.CompanyId).order_by('-SortId').first()
+        if last_invoice and last_invoice.InvoiceNumber:
+            try:
+                num_part = int(re.findall(r'\d+', last_invoice.InvoiceNumber)[-1])
+                next_num = num_part + 1
+            except:
+                next_num = Invoice.objects.filter(CompanyId=quote.CompanyId).count() + 1
         else:
-            return JsonResponse({"error": "Invalid action"}, status=400, safe=False)
-            
-        quote.ApprovalStatus = new_status
-        quote.save()
+            next_num = 1
         
+        invoice_number = f"{invoice_prefix}{str(next_num).zfill(4)}"
+
+        order_num = 1
+        if last_invoice and last_invoice.OrderNumber:
+            order_num = (last_invoice.OrderNumber or 0) + 1
+
+        new_invoice = Invoice.objects.create(
+            ClientId=quote.ClientId,
+            CompanyId=quote.CompanyId,
+            ProjectId=quote.ProjectId,
+            SalesPerson=quote.SalesPerson,
+            InvoiceNumber=invoice_number,
+            OrderNumber=order_num,
+            InvoiceDate=quote.QuoteDate or datetime.now().strftime('%d %b %Y'),
+            DueDate=quote.ExpiryDate or datetime.now().strftime('%d %b %Y'),
+            Subject=quote.Subject,
+            CustomerNotes=quote.CustomerNotes,
+            TermsNConditions=quote.TermsNConditions,
+            SubTotalAmount=quote.SubTotalAmount or "0.00",
+            TotalAmount=quote.TotalAmount or "0.00",
+            AmountDue=quote.TotalAmount or "0.00",
+            Status=1,
+            AddBankAccount=quote.AddBankAccount
+        )
+
+        items = QuotationItem.objects.filter(QuotationId=quote.QuotationId).order_by('OrderNo', 'SortId')
+        for item in items:
+            InvoiceItem.objects.create(
+                InvoiceId=new_invoice.InvoiceId,
+                ItemName=item.ItemName,
+                Quantity=item.Quantity or "1",
+                Rate=item.Rate or "0",
+                DiscountPercent=item.DiscountPercent or "0",
+                Amount=item.Amount or "0",
+                OrderNo=item.OrderNo
+            )
+
+        quote.ApprovalStatus = 'invoiced'
+        quote.InvoiceId = new_invoice.InvoiceId
+        quote.save()
+
         return JsonResponse({
-            "message": f"Quotation status updated to {new_status}",
+            "message": "Quotation converted to Invoice successfully",
+            "invoice_id": new_invoice.InvoiceId,
+            "invoice_number": new_invoice.InvoiceNumber
+        }, status=200, safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=400, safe=False)
+
+
+@csrf_exempt
+@api_view(['POST'])
+def CancelQuotation(request, QuotationId=""):
+    try:
+        quote = Quotation.objects.get(QuotationId=QuotationId)
+        quote.ApprovalStatus = 'cancelled'
+        quote.save()
+        return JsonResponse({
+            "message": "Quotation cancelled successfully",
             "quotation_id": quote.QuotationId,
             "status": quote.ApprovalStatus
         }, status=200, safe=False)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=400, safe=False)
+
 
     # except Exception as e:
     #     return JsonResponse({"error": str(e)}, status=500)

@@ -34,7 +34,10 @@ class QuotationSerializer(serializers.ModelSerializer):
                   'PaymentTermsTitle',
                   'TermsTitle',
                   'AddBankAccount',
-                  'BankAccountTitle')
+                  'BankAccountTitle',
+                  'ParentQuotationId',
+                  'IsLatest',
+                  'InvoiceId')
 
 
 class QuotationItemSerializer(serializers.ModelSerializer):
