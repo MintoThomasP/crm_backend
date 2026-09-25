@@ -143,6 +143,29 @@ def QuotationApiById(request, QuotationId=""):
             quotationSerializer = QuotationSerializer(
                 quotation)
             quoteData = quotationSerializer.data
+
+            if quoteData.get('QuoteDate'):
+                try:
+                    quoteData['QuoteDate'] = datetime.strptime(
+                        quoteData['QuoteDate'], '%d %b %Y').strftime('%Y-%m-%d')
+                except:
+                    try:
+                        quoteData['QuoteDate'] = datetime.strptime(
+                            quoteData['QuoteDate'], '%Y-%m-%d').strftime('%Y-%m-%d')
+                    except:
+                        pass
+
+            if quoteData.get('ExpiryDate'):
+                try:
+                    quoteData['ExpiryDate'] = datetime.strptime(
+                        quoteData['ExpiryDate'], '%d %b %Y').strftime('%Y-%m-%d')
+                except:
+                    try:
+                        quoteData['ExpiryDate'] = datetime.strptime(
+                            quoteData['ExpiryDate'], '%Y-%m-%d').strftime('%Y-%m-%d')
+                    except:
+                        pass
+
             quotationItem = QuotationItem.objects.filter(
                 QuotationId=QuotationId).order_by('OrderNo', 'SortId')
             quotationItemSerializer = QuotationItemSerializer(
