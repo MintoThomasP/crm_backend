@@ -167,11 +167,33 @@ def QuotationApiById(request, QuotationId=""):
                     except:
                         pass
 
+            try:
+                client = Client.objects.get(ClientId=quoteData['ClientId'])
+                clientSerializer = ClientSerializer(client)
+                quoteData['ClientName'] = clientSerializer.data['CustomerDisplayName']
+            except:
+                quoteData['ClientName'] = ""
+
+            try:
+                project = Project.objects.get(ProjectId=quoteData['ProjectId'])
+                projectSerializer = ProjectSerializer(project)
+                quoteData['ProjectName'] = projectSerializer.data['ProjectName']
+            except:
+                quoteData['ProjectName'] = ""
+
+            try:
+                staff = Staff.objects.get(StaffId=quoteData['SalesPerson'])
+                staffSerializer = StaffSerializer(staff)
+                quoteData['StaffName'] = staffSerializer.data['StaffName']
+            except:
+                quoteData['StaffName'] = ""
+
             quotationItem = QuotationItem.objects.filter(
                 QuotationId=QuotationId).order_by('OrderNo', 'SortId')
             quotationItemSerializer = QuotationItemSerializer(
                 quotationItem, many=True)
             quoteData['QuoteItems'] = quotationItemSerializer.data
+            quoteData['Items'] = quotationItemSerializer.data
             quotationFile = QuotationFile.objects.filter(
                 QuotationId=QuotationId)
             quotationFileSerializer = QuotationFileSerializer(
