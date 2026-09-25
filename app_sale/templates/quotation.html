@@ -48,51 +48,55 @@
             line-height: 1.45;
         }
 
-        ul, ol {
-            margin: 0 0 4px 0 !important;
-            padding-left: 20px !important;
+        ul,
+        ol,
+        .rich-content ul,
+        .rich-content ol,
+        table td ul,
+        table td ol {
+            margin-top: 0 !important;
+            margin-bottom: 4px !important;
+            margin-left: 18px !important;
+            padding-left: 0 !important;
             line-height: 1.45 !important;
         }
 
-        li {
-            margin: 0 0 2px 0 !important;
+        ul,
+        .rich-content ul,
+        table td ul {
+            list-style-type: disc !important;
+        }
+
+        ol,
+        .rich-content ol,
+        table td ol {
+            list-style-type: decimal !important;
+        }
+
+        li,
+        .rich-content li,
+        table td li {
+            margin-top: 0 !important;
+            margin-bottom: 2px !important;
             padding: 0 !important;
             line-height: 1.45 !important;
         }
 
-        li p, li div {
+        li p,
+        li div,
+        .rich-content li p,
+        .rich-content li div,
+        table td li p,
+        table td li div {
             margin: 0 !important;
             padding: 0 !important;
             line-height: 1.45 !important;
-            display: inline;
+            display: inline !important;
         }
 
         .rich-content,
         .rich-content p,
-        .rich-content div {
-            margin: 0 0 4px 0;
-            padding: 0;
-            line-height: 1.45;
-        }
-
-        .rich-content p:last-child,
-        .rich-content div:last-child {
-            margin-bottom: 0;
-        }
-
-        .rich-content ul,
-        .rich-content ol {
-            margin: 0 0 4px 0 !important;
-            padding-left: 20px !important;
-            line-height: 1.45 !important;
-        }
-
-        .rich-content li {
-            margin: 0 0 2px 0 !important;
-            padding: 0 !important;
-            line-height: 1.45 !important;
-        }
-
+        .rich-content div,
         table td p,
         table td div,
         table th p {
@@ -101,22 +105,11 @@
             line-height: 1.45 !important;
         }
 
+        .rich-content p:last-child,
+        .rich-content div:last-child,
         table td p:last-child,
         table td div:last-child {
             margin-bottom: 0 !important;
-        }
-
-        table td ul,
-        table td ol {
-            margin: 0 0 4px 0 !important;
-            padding-left: 18px !important;
-            line-height: 1.45 !important;
-        }
-
-        table td li {
-            margin: 0 0 2px 0 !important;
-            padding: 0 !important;
-            line-height: 1.45 !important;
         }
     </style>
 </head>
