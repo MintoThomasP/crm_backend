@@ -165,18 +165,19 @@
                 </td>
             </tr>
             <tr style="height:280px">
-                <td style="padding-top: 15px;">
-                    <p>QUOTATION NUMBER: <b>{{quote.QuotationNumber}}</b><br>
-                        Date: <b>{{quote.QuoteDate}}</b><br>
-                        Expiry Date: <b>{{quote.ExpiryDate}}</b></p>
+                <td style="width: 50%; vertical-align: bottom; text-align: left; padding-top: 15px;">
                     <i><b>Prepared For :</b></i><br />
-                    {{client.CustomerDisplayName}}<br />
+                    <b>{{client.CustomerDisplayName}}</b><br />
                     <span style='white-space:pre'>{{clientaddress.Address1}}</span><br />
                     {%if clientaddress.Address2%}{{clientaddress.Address2}}<br>{%endif%}
                     {{clientaddress.Country}}<br>
                 </td>
-                <td style="text-align:right;">
-                    <img src="{{other_image_url}}" alt="" style="width:auto;height:450px">
+                <td style="width: 50%; vertical-align: bottom; text-align: right; padding-top: 15px;">
+                    <p style="margin: 0; line-height: 1.6;">
+                        QUOTATION NUMBER: <b>{{quote.QuotationNumber}}</b><br>
+                        Date: <b>{{quote.QuoteDate}}</b><br>
+                        Expiry Date: <b>{{quote.ExpiryDate}}</b>
+                    </p>
                 </td>
             </tr>
         </table>
