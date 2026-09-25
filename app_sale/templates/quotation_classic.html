@@ -159,14 +159,21 @@
     {% if quote.PaymentTerms %}
     <div style="margin-top: 30px; border-top: 1px solid #000000; padding-top: 12px;">
         <div style="font-weight: bold; font-style: italic; margin-bottom: 5px;">Payment Terms:</div>
-        <div style="line-height: 1.4;">{{quote.PaymentTerms|safe}}</div>
+        <div style="line-height: 1.4; white-space: pre-wrap;">{{quote.PaymentTerms|linebreaksbr}}</div>
     </div>
     {% endif %}
 
     {% if quote.TermsNConditions %}
     <div style="margin-top: 20px; border-top: 1px solid #000000; padding-top: 12px;">
         <div style="font-weight: bold; font-style: italic; margin-bottom: 5px;">Terms & Conditions:</div>
-        <div style="line-height: 1.4;">{{quote.TermsNConditions|safe}}</div>
+        <div style="line-height: 1.4; white-space: pre-wrap;">{{quote.TermsNConditions|linebreaksbr}}</div>
+    </div>
+    {% endif %}
+
+    {% if quote.CustomerNotes %}
+    <div style="margin-top: 20px; border-top: 1px solid #000000; padding-top: 12px;">
+        <div style="font-weight: bold; font-style: italic; margin-bottom: 5px;">Notes:</div>
+        <div style="line-height: 1.4; white-space: pre-wrap;">{{quote.CustomerNotes|linebreaksbr}}</div>
     </div>
     {% endif %}
 </body>

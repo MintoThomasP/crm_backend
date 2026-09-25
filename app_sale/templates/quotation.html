@@ -143,21 +143,21 @@
         {% if quote.PaymentTerms %}
         <div style="margin-top: 20px;">
             <div style="font-size: 13px; font-weight: bold; color: #1e293b; margin-bottom: 4px;">SUMMARY OF PAYMENT TERMS</div>
-            <div style="font-size: 11px; line-height: 1.5; color: #475569;">{{quote.PaymentTerms|safe}}</div>
+            <div style="font-size: 11px; line-height: 1.5; color: #475569; white-space: pre-wrap;">{{quote.PaymentTerms|linebreaksbr}}</div>
         </div>
         {% endif %}
 
         {% if quote.TermsNConditions %}
         <div style="margin-top: 15px;">
             <div style="font-size: 13px; font-weight: bold; color: #1e293b; margin-bottom: 4px;">TERMS AND CONDITIONS</div>
-            <div style="font-size: 11px; line-height: 1.5; color: #475569;">{{quote.TermsNConditions|safe}}</div>
+            <div style="font-size: 11px; line-height: 1.5; color: #475569; white-space: pre-wrap;">{{quote.TermsNConditions|linebreaksbr}}</div>
         </div>
         {% endif %}
 
         {% if quote.CustomerNotes %}
         <div style="margin-top: 15px;">
             <div style="font-size: 13px; font-weight: bold; color: #1e293b; margin-bottom: 4px;">NOTES</div>
-            <div style="font-size: 11px; line-height: 1.5; color: #475569;">{{quote.CustomerNotes|safe}}</div>
+            <div style="font-size: 11px; line-height: 1.5; color: #475569; white-space: pre-wrap;">{{quote.CustomerNotes|linebreaksbr}}</div>
         </div>
         {% endif %}
 
@@ -195,10 +195,16 @@
         </table>
         
         {%if quote.CustomerNotes%}
-        <p style="margin-top: 50px; font-size: 13px;"><b>NOTE:</b> {{quote.CustomerNotes|safe}}</p>
+        <div style="margin-top: 40px; font-size: 13px;">
+            <b>NOTE:</b><br/>
+            <div style="font-size: 12px; line-height: 1.5; white-space: pre-wrap;">{{quote.CustomerNotes|linebreaksbr}}</div>
+        </div>
         {%endif%}
         {%if quote.TermsNConditions%}
-        <p style="margin-top: 10px; font-size: 13px;"><b>Terms and Conditions</b>: {{quote.TermsNConditions|safe}}</p>
+        <div style="margin-top: 15px; font-size: 13px;">
+            <b>Terms and Conditions:</b><br/>
+            <div style="font-size: 12px; line-height: 1.5; white-space: pre-wrap;">{{quote.TermsNConditions|linebreaksbr}}</div>
+        </div>
         {%endif%}
     {% endif %}
     </div>

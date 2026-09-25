@@ -145,7 +145,7 @@ def QuotationApiById(request, QuotationId=""):
                 quotation)
             quoteData = quotationSerializer.data
             quotationItem = QuotationItem.objects.filter(
-                QuotationId=QuotationId)
+                QuotationId=QuotationId).order_by('OrderNo', 'SortId')
             quotationItemSerializer = QuotationItemSerializer(
                 quotationItem, many=True)
             quoteData['QuoteItems'] = quotationItemSerializer.data
@@ -1554,7 +1554,8 @@ def ViewQuotationPDF(request, QuotationId=""):
     # try:
     if request.method == 'GET':
         quote = Quotation.objects.get(QuotationId=QuotationId)
-        invoiceItems = QuotationItem.objects.filter(QuotationId=QuotationId)
+        invoiceItems = QuotationItem.objects.filter(
+            QuotationId=QuotationId).order_by('OrderNo', 'SortId')
         try:
             company = Company.objects.get(CompanyId=quote.CompanyId)
         except:
@@ -1659,7 +1660,7 @@ def ViewQuotationPDF(request, QuotationId=""):
 def create_quotation_version_api(request, QuotationId=""):
     try:
         quote = Quotation.objects.get(QuotationId=QuotationId)
-        items = QuotationItem.objects.filter(QuotationId=QuotationId)
+        items = QuotationItem.objects.filter(QuotationId=QuotationId).order_by('OrderNo', 'SortId')
         
         new_quote = Quotation.objects.create(
             ClientId=quote.ClientId,
@@ -1690,7 +1691,8 @@ def create_quotation_version_api(request, QuotationId=""):
                 Quantity=item.Quantity,
                 Rate=item.Rate,
                 DiscountPercent=item.DiscountPercent,
-                Amount=item.Amount
+                Amount=item.Amount,
+                OrderNo=item.OrderNo
             )
             
         return JsonResponse({

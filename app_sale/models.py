@@ -42,6 +42,7 @@ class QuotationItem(models.Model):
     Rate = models.CharField(blank=True, null=True, max_length=15)
     DiscountPercent = models.CharField(blank=True, null=True, max_length=15)
     Amount = models.CharField(blank=True, null=True, max_length=15)
+    OrderNo = models.IntegerField(default=1)
 
 
 class QuotationFile(models.Model):

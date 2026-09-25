@@ -40,7 +40,8 @@ class QuotationItemSerializer(serializers.ModelSerializer):
                   'Quantity',
                   'Rate',
                   'DiscountPercent',
-                  'Amount')
+                  'Amount',
+                  'OrderNo')
 
 
 class QuotationFileSerializer(serializers.ModelSerializer):
