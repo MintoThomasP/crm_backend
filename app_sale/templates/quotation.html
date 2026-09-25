@@ -164,20 +164,16 @@
                     </h1>
                 </td>
             </tr>
-            <tr style="height:280px">
-                <td style="width: 50%; vertical-align: bottom; text-align: left; padding-top: 15px;">
+            <tr style="height:280px;">
+                <td style="width: 50%; vertical-align: bottom !important; text-align: left; padding-bottom: 0 !important; line-height: 1.5;">
                     <i><b>Prepared For :</b></i><br />
                     <b>{{client.CustomerDisplayName}}</b><br />
-                    <span style='white-space:pre'>{{clientaddress.Address1}}</span><br />
-                    {%if clientaddress.Address2%}{{clientaddress.Address2}}<br>{%endif%}
-                    {{clientaddress.Country}}<br>
+                    <span style="white-space: pre-line;">{{clientaddress.Address1}}</span>{% if clientaddress.Address2 %}<br />{{clientaddress.Address2}}{% endif %}{% if clientaddress.Country %}<br />{{clientaddress.Country}}{% endif %}
                 </td>
-                <td style="width: 50%; vertical-align: bottom; text-align: right; padding-top: 15px;">
-                    <p style="margin: 0; line-height: 1.6;">
-                        QUOTATION NUMBER: <b>{{quote.QuotationNumber}}</b><br>
-                        Date: <b>{{quote.QuoteDate}}</b><br>
-                        Expiry Date: <b>{{quote.ExpiryDate}}</b>
-                    </p>
+                <td style="width: 50%; vertical-align: bottom !important; text-align: right; padding-bottom: 0 !important; line-height: 1.5;">
+                    QUOTATION NUMBER: <b>{{quote.QuotationNumber}}</b><br />
+                    Date: <b>{{quote.QuoteDate}}</b><br />
+                    Expiry Date: <b>{{quote.ExpiryDate}}</b>
                 </td>
             </tr>
         </table>
