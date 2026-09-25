@@ -167,24 +167,28 @@
         </div>
     </div>
 
-    {% if quote.PaymentTerms %}
-    <div style="margin-top: 30px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
-        <div style="font-weight: 700; text-transform: uppercase; font-size: 11px; color: #64748b; margin-bottom: 5px;">Payment Terms</div>
-        <div style="color: #475569; line-height: 1.5;">{{quote.PaymentTerms|safe}}</div>
-    </div>
-    {% endif %}
+    {% if quote.PaymentTerms or quote.TermsNConditions or quote.CustomerNotes %}
+    <div style="page-break-before: always; padding-top: 15px;">
+        {% if quote.PaymentTerms %}
+        <div style="margin-bottom: 25px; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">
+            <div style="font-weight: 700; text-transform: uppercase; font-size: 13px; color: #4f46e5; margin-bottom: 8px;">Summary of Payment Terms</div>
+            <div style="color: #334155; line-height: 1.6; font-size: 12px;">{{quote.PaymentTerms|safe}}</div>
+        </div>
+        {% endif %}
 
-    {% if quote.TermsNConditions %}
-    <div style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
-        <div style="font-weight: 700; text-transform: uppercase; font-size: 11px; color: #64748b; margin-bottom: 5px;">Terms & Conditions</div>
-        <div style="color: #475569; line-height: 1.5; white-space: pre-wrap;">{{quote.TermsNConditions|linebreaksbr}}</div>
-    </div>
-    {% endif %}
+        {% if quote.TermsNConditions %}
+        <div style="margin-bottom: 25px; border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">
+            <div style="font-weight: 700; text-transform: uppercase; font-size: 13px; color: #4f46e5; margin-bottom: 8px;">Terms & Conditions</div>
+            <div style="color: #334155; line-height: 1.6; font-size: 12px;">{{quote.TermsNConditions|safe}}</div>
+        </div>
+        {% endif %}
 
-    {% if quote.CustomerNotes %}
-    <div style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 15px;">
-        <div style="font-weight: 700; text-transform: uppercase; font-size: 11px; color: #64748b; margin-bottom: 5px;">Notes</div>
-        <div style="color: #475569; line-height: 1.5; white-space: pre-wrap;">{{quote.CustomerNotes|linebreaksbr}}</div>
+        {% if quote.CustomerNotes %}
+        <div style="margin-bottom: 25px;">
+            <div style="font-weight: 700; text-transform: uppercase; font-size: 13px; color: #4f46e5; margin-bottom: 8px;">Notes</div>
+            <div style="color: #334155; line-height: 1.6; font-size: 12px;">{{quote.CustomerNotes|safe}}</div>
+        </div>
+        {% endif %}
     </div>
     {% endif %}
 </body>

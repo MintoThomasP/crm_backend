@@ -139,28 +139,6 @@
                 </tbody>
             </table>
         </div>
-
-        {% if quote.PaymentTerms %}
-        <div style="margin-top: 20px;">
-            <div style="font-size: 13px; font-weight: bold; color: #1e293b; margin-bottom: 4px;">SUMMARY OF PAYMENT TERMS</div>
-            <div style="font-size: 11px; line-height: 1.5; color: #475569;">{{quote.PaymentTerms|safe}}</div>
-        </div>
-        {% endif %}
-
-        {% if quote.TermsNConditions %}
-        <div style="margin-top: 15px;">
-            <div style="font-size: 13px; font-weight: bold; color: #1e293b; margin-bottom: 4px;">TERMS AND CONDITIONS</div>
-            <div style="font-size: 11px; line-height: 1.5; color: #475569; white-space: pre-wrap;">{{quote.TermsNConditions|linebreaksbr}}</div>
-        </div>
-        {% endif %}
-
-        {% if quote.CustomerNotes %}
-        <div style="margin-top: 15px;">
-            <div style="font-size: 13px; font-weight: bold; color: #1e293b; margin-bottom: 4px;">NOTES</div>
-            <div style="font-size: 11px; line-height: 1.5; color: #475569; white-space: pre-wrap;">{{quote.CustomerNotes|linebreaksbr}}</div>
-        </div>
-        {% endif %}
-
     {% else %}
         <!-- Standard Item Based Quotation -->
         <table style="width: 100%; padding:5px;">
@@ -193,20 +171,45 @@
                 <td style="text-align: right; white-space: nowrap;"><b>{{quote.TotalAmount | format_currency:siteSettings.CurrencyType}}</b></td>
             </tr>
         </table>
-        
-        {%if quote.CustomerNotes%}
-        <div style="margin-top: 40px; font-size: 13px;">
-            <b>NOTE:</b><br/>
-            <div style="font-size: 12px; line-height: 1.5; white-space: pre-wrap;">{{quote.CustomerNotes|linebreaksbr}}</div>
-        </div>
-        {%endif%}
-        {%if quote.TermsNConditions%}
-        <div style="margin-top: 15px; font-size: 13px;">
-            <b>Terms and Conditions:</b><br/>
-            <div style="font-size: 12px; line-height: 1.5; white-space: pre-wrap;">{{quote.TermsNConditions|linebreaksbr}}</div>
-        </div>
-        {%endif%}
     {% endif %}
     </div>
+
+    <!-- Terms, Payment Terms & Notes on New Page -->
+    {% if quote.PaymentTerms or quote.TermsNConditions or quote.CustomerNotes %}
+    <div style="page-break-before: always; padding-top: 10px;">
+        {% if quote.PaymentTerms %}
+        <div style="margin-bottom: 25px;">
+            <div style="font-size: 14px; font-weight: bold; color: #1e293b; border-bottom: 2px solid #2e4157; padding-bottom: 4px; margin-bottom: 8px;">
+                SUMMARY OF PAYMENT TERMS
+            </div>
+            <div style="font-size: 12px; line-height: 1.6; color: #334155;">
+                {{quote.PaymentTerms|safe}}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if quote.TermsNConditions %}
+        <div style="margin-bottom: 25px;">
+            <div style="font-size: 14px; font-weight: bold; color: #1e293b; border-bottom: 2px solid #2e4157; padding-bottom: 4px; margin-bottom: 8px;">
+                TERMS AND CONDITIONS
+            </div>
+            <div style="font-size: 12px; line-height: 1.6; color: #334155;">
+                {{quote.TermsNConditions|safe}}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if quote.CustomerNotes %}
+        <div style="margin-bottom: 25px;">
+            <div style="font-size: 14px; font-weight: bold; color: #1e293b; border-bottom: 2px solid #2e4157; padding-bottom: 4px; margin-bottom: 8px;">
+                NOTES
+            </div>
+            <div style="font-size: 12px; line-height: 1.6; color: #334155;">
+                {{quote.CustomerNotes|safe}}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endif %}
 </body>
 </html>
