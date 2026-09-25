@@ -88,10 +88,9 @@
             <thead>
                 <tr>
                     <th style="width: 6%; text-align: center;">#</th>
-                    <th style="width: 50%; text-align: left;">Task / Description</th>
-                    <th style="width: 14%; text-align: center;">Estimated Hours</th>
-                    <th style="width: 15%; text-align: right;">Rate/Hour</th>
-                    <th style="width: 15%; text-align: right;">Estimated Cost</th>
+                    <th style="width: 58%; text-align: left;">Task / Description</th>
+                    <th style="width: 18%; text-align: center;">Estimated Hours</th>
+                    <th style="width: 18%; text-align: right;">Estimated Cost</th>
                 </tr>
             </thead>
             <tbody>
@@ -100,12 +99,11 @@
                     <td style="text-align: center;">{{forloop.counter}}</td>
                     <td>{{item.ItemName|safe}}</td>
                     <td style="text-align: center;">{{item.Quantity}} hrs</td>
-                    <td style="text-align: right; white-space: nowrap;">{{item.Rate|format_currency:siteSettings.CurrencyType}}</td>
                     <td style="text-align: right; white-space: nowrap;">{{item.Amount|format_currency:siteSettings.CurrencyType}}</td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" style="text-align: center; font-style: italic;">No tasks included.</td>
+                    <td colspan="4" style="text-align: center; font-style: italic;">No tasks included.</td>
                 </tr>
                 {% endfor %}
             </tbody>

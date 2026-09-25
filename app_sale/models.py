@@ -37,8 +37,8 @@ class QuotationItem(models.Model):
     QuotationItemId = models.CharField(
         max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
     QuotationId = models.CharField(blank=True, null=True, max_length=50)
-    ItemName = models.CharField(blank=True, null=True, max_length=300)
-    Quantity = models.IntegerField(default=1)
+    ItemName = models.TextField(blank=True, null=True)
+    Quantity = models.CharField(blank=True, null=True, max_length=15, default='1')
     Rate = models.CharField(blank=True, null=True, max_length=15)
     DiscountPercent = models.CharField(blank=True, null=True, max_length=15)
     Amount = models.CharField(blank=True, null=True, max_length=15)

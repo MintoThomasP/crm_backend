@@ -112,9 +112,8 @@ def QuotationApi(request):
             data=quotationData)
         if quotationSerializer.is_valid():
             quotationSerializer.save()
-
             return JsonResponse(quotationSerializer.data['QuotationId'], safe=False)
-        return JsonResponse("Failed to add", safe=False)
+        return JsonResponse(quotationSerializer.errors, status=400, safe=False)
     elif request.method == 'PUT':
         quotationData = JSONParser().parse(request)
         quotation = Quotation.objects.get(
@@ -124,7 +123,7 @@ def QuotationApi(request):
         if quotationSerializer.is_valid():
             quotationSerializer.save()
             return JsonResponse(quotationSerializer.data['QuotationId'], safe=False)
-        return JsonResponse("Failed to Update", safe=False)
+        return JsonResponse(quotationSerializer.errors, status=400, safe=False)
     else:
         return JsonResponse("", safe=False)
     # except:
@@ -231,21 +230,25 @@ def QuotationItemApi(request):
             if quotationItemSerializer.is_valid():
                 quotationItemSerializer.save()
                 return JsonResponse(quotationItemSerializer.data['QuotationItemId'], safe=False)
-            return JsonResponse("Failed to add", safe=False)
+            return JsonResponse(quotationItemSerializer.errors, status=400, safe=False)
         elif request.method == 'PUT':
             quotationItemData = JSONParser().parse(request)
-            quotationItem = QuotationItem.objects.get(
-                QuotationItemId=quotationItemData['QuotationItemId'])
-            quotationItemSerializer = QuotationItemSerializer(
-                quotationItem, data=quotationItemData)
+            item_id = quotationItemData.get('QuotationItemId')
+            if item_id and QuotationItem.objects.filter(QuotationItemId=item_id).exists():
+                quotationItem = QuotationItem.objects.get(QuotationItemId=item_id)
+                quotationItemSerializer = QuotationItemSerializer(
+                    quotationItem, data=quotationItemData)
+            else:
+                quotationItemSerializer = QuotationItemSerializer(
+                    data=quotationItemData)
             if quotationItemSerializer.is_valid():
                 quotationItemSerializer.save()
                 return JsonResponse(quotationItemSerializer.data['QuotationItemId'], safe=False)
-            return JsonResponse("Failed to Update", safe=False)
+            return JsonResponse(quotationItemSerializer.errors, status=400, safe=False)
         else:
             return JsonResponse("", safe=False)
-    except:
-        return JsonResponse("", safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500, safe=False)
 
 
 @csrf_exempt
