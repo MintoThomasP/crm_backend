@@ -1677,7 +1677,10 @@ def create_quotation_version_api(request, QuotationId=""):
             TotalAmount=quote.TotalAmount,
             VersionNumber=quote.VersionNumber + 1,
             ApprovalStatus='draft',
-            TemplateName=quote.TemplateName
+            TemplateName=quote.TemplateName,
+            QuotationType=quote.QuotationType,
+            Summary=quote.Summary,
+            PaymentTerms=quote.PaymentTerms
         )
         
         for item in items:

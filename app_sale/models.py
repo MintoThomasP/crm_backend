@@ -27,6 +27,9 @@ class Quotation(models.Model):
     VersionNumber = models.IntegerField(default=1)
     ApprovalStatus = models.CharField(max_length=50, default='draft')
     TemplateName = models.CharField(max_length=50, default='default')
+    QuotationType = models.CharField(max_length=50, default='item')
+    Summary = models.TextField(blank=True, null=True)
+    PaymentTerms = models.TextField(blank=True, null=True)
 
 
 class QuotationItem(models.Model):

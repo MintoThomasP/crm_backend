@@ -24,7 +24,10 @@ class QuotationSerializer(serializers.ModelSerializer):
                   'QuotationFile',
                   'VersionNumber',
                   'ApprovalStatus',
-                  'TemplateName')
+                  'TemplateName',
+                  'QuotationType',
+                  'Summary',
+                  'PaymentTerms')
 
 
 class QuotationItemSerializer(serializers.ModelSerializer):
