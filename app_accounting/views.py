@@ -2545,15 +2545,18 @@ def SalaryOverview(request, CompanyId=""):
     year_val = request.GET.get('Year') or request.query_params.get('Year')
 
     now = datetime.now()
-    try:
-        month = int(month_val) if month_val else now.month
-    except:
-        month = now.month
+    default_month = 12 if now.month == 1 else now.month - 1
+    default_year = now.year - 1 if now.month == 1 else now.year
 
     try:
-        year = int(year_val) if year_val else now.year
+        month = int(month_val) if month_val else default_month
     except:
-        year = now.year
+        month = default_month
+
+    try:
+        year = int(year_val) if year_val else default_year
+    except:
+        year = default_year
 
     staff_query = Staff.objects.filter(Status=1)
     if company_id:
@@ -3003,15 +3006,18 @@ def PayrollByCompanyId(request, CompanyId=""):
     staff_id = request.GET.get('StaffId') or request.query_params.get('StaffId')
 
     now = datetime.now()
-    try:
-        year = int(year_val) if year_val else now.year
-    except:
-        year = now.year
+    default_month = 12 if now.month == 1 else now.month - 1
+    default_year = now.year - 1 if now.month == 1 else now.year
 
     try:
-        month = int(month_val) if month_val else now.month
+        year = int(year_val) if year_val else default_year
     except:
-        month = now.month
+        year = default_year
+
+    try:
+        month = int(month_val) if month_val else default_month
+    except:
+        month = default_month
 
     try:
         quarter = int(quarter_val) if quarter_val else ((month - 1) // 3 + 1)
