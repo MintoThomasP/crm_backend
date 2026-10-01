@@ -2573,44 +2573,6 @@ def SalaryOverview(request, CompanyId=""):
     legacy_slips = SalarySlip.objects.filter(Year=year, Month=month, StaffId__in=[st.StaffId for st in staff_list])
     legacy_slip_map = {s.StaffId: s for s in legacy_slips}
 
-    month_str = f"{year}-{month:02d}"
-    month_name = calendar.month_name[month].lower()
-
-    # Pre-fetch salary accounts to easily identify salary expenses
-    salary_accs = Account.objects.filter(
-        Q(Code='6010') | Q(Name__icontains='salary') | Q(Name__icontains='salaries')
-    )
-    if company_id:
-        salary_accs = salary_accs.filter(CompanyId=company_id)
-    salary_acc_ids = set(salary_accs.values_list('AccountId', flat=True))
-
-    expenses_query = Expense.objects.all()
-    if company_id:
-        expenses_query = expenses_query.filter(CompanyId=company_id)
-
-    period_expenses = expenses_query.filter(
-        Q(Date__startswith=month_str) |
-        Q(Narration__icontains=month_name) |
-        Q(AccountId__in=salary_acc_ids)
-    )
-
-    expense_map = {}
-    for exp in period_expenses:
-        exp_date = str(exp.Date or '')
-        date_matches = exp_date.startswith(month_str) or (month_name in (exp.Narration or '').lower() and str(year) in (exp.Narration or ''))
-        if exp.StaffId:
-            if date_matches or not expense_map.get(exp.StaffId):
-                expense_map[exp.StaffId] = exp
-        else:
-            narration_lower = (exp.Narration or '').lower()
-            for st in staff_list:
-                st_name = (st.StaffName or '').strip().lower()
-                st_code = (st.StaffCode or '').strip().lower()
-                if (st_name and len(st_name) > 2 and st_name in narration_lower) or (st_code and st_code in narration_lower):
-                    if date_matches or not expense_map.get(st.StaffId):
-                        expense_map[st.StaffId] = exp
-                        break
-
     from app_accounting.signals import get_or_create_default_accounts
     if company_id:
         get_or_create_default_accounts(company_id)
@@ -2627,12 +2589,10 @@ def SalaryOverview(request, CompanyId=""):
     pending_count = 0
 
     desig_map = get_designation_map()
-    is_historical_paid_period = (year < 2026 or (year == 2026 and month < 9))
 
     for staff in staff_list:
         p_entry = payroll_map.get(staff.StaffId)
         s_slip = legacy_slip_map.get(staff.StaffId)
-        m_exp = expense_map.get(staff.StaffId)
 
         active_loans = EmployeeLoan.objects.filter(
             StaffId=staff.StaffId,
@@ -2689,30 +2649,6 @@ def SalaryOverview(request, CompanyId=""):
             ref_num = f"SLIP-{year}{month:02d}-{staff.StaffCode}" if staff.StaffCode else f"SLIP-{year}{month:02d}"
             payroll_id = s_slip.SalarySlipId
             narration = f"Salary Slip for {calendar.month_name[month]} {year}"
-        elif m_exp:
-            processed_count += 1
-            gross = safe_float(m_exp.Amount) or base_salary
-            deduction = 0.0
-            net = safe_float(m_exp.Amount) or base_salary
-            status = 'Paid'
-            payment_date = m_exp.Date or f"{year}-{month:02d}-01"
-            payment_account_id = m_exp.PaymentAccountId or ''
-            payment_mode = 'Bank Transfer'
-            ref_num = m_exp.ExpenseNumber or f"EXP-{year}{month:02d}"
-            payroll_id = m_exp.ExpenseId
-            narration = m_exp.Narration or f"Salary for {calendar.month_name[month]} {year} (Expense Record)"
-        elif is_historical_paid_period:
-            processed_count += 1
-            gross = base_salary
-            deduction = 0.0
-            net = base_salary
-            status = 'Paid'
-            payment_date = f"{year}-{month:02d}-01"
-            payment_account_id = bank_accounts.first().AccountId if bank_accounts.exists() else ''
-            payment_mode = 'Bank Transfer'
-            ref_num = f"EXP-{year}{month:02d}-{staff.StaffCode}" if staff.StaffCode else f"EXP-{year}{month:02d}"
-            payroll_id = f"HIST-{staff.StaffId}-{year}-{month:02d}"
-            narration = f"Historical Salary for {calendar.month_name[month]} {year} (Paid as recorded)"
         else:
             pending_count += 1
             gross = base_salary
@@ -3106,29 +3042,24 @@ def PayrollByCompanyId(request, CompanyId=""):
         entries = entries.filter(PayrollYear=year, PayrollMonth=month)
         slips = slips.filter(Year=year, Month=month)
         period_label = f"{calendar.month_name[month]} {year}"
-        target_pairs = [(year, month)]
     elif period_type in ['quarter', 'quarterly']:
         q_map = {1: [1, 2, 3], 2: [4, 5, 6], 3: [7, 8, 9], 4: [10, 11, 12]}
         months = q_map.get(quarter, [1, 2, 3])
         entries = entries.filter(PayrollYear=year, PayrollMonth__in=months)
         slips = slips.filter(Year=year, Month__in=months)
         period_label = f"Quarter {quarter} ({calendar.month_abbr[months[0]]} - {calendar.month_abbr[months[-1]]}) {year}"
-        target_pairs = [(year, m) for m in months]
     elif period_type in ['half_year', 'half', 'half_yearly']:
         h_map = {1: [1, 2, 3, 4, 5, 6], 2: [7, 8, 9, 10, 11, 12]}
         months = h_map.get(half_year, [1, 2, 3, 4, 5, 6])
         entries = entries.filter(PayrollYear=year, PayrollMonth__in=months)
         slips = slips.filter(Year=year, Month__in=months)
         period_label = f"Half Year {half_year} ({calendar.month_abbr[months[0]]} - {calendar.month_abbr[months[-1]]}) {year}"
-        target_pairs = [(year, m) for m in months]
     elif period_type in ['full_year', 'year', 'yearly']:
         entries = entries.filter(PayrollYear=year)
         slips = slips.filter(Year=year)
         period_label = f"Full Year {year}"
-        target_pairs = [(year, m) for m in range(1, 13)]
     else:
         period_label = "All Processed Salaries"
-        target_pairs = [(year, m) for m in range(1, 13)]
 
     if staff_id:
         entries = entries.filter(StaffId=staff_id)
@@ -3222,143 +3153,6 @@ def PayrollByCompanyId(request, CompanyId=""):
             total_gross += gross_val
             total_ded += ded_val
             total_net += net_val
-            existing_keys.add((s_slip.StaffId, s_slip.Year, s_slip.Month))
-
-    # Also match Expense records for salaries
-    salary_accs = Account.objects.filter(
-        Q(Code='6010') | Q(Name__icontains='salary') | Q(Name__icontains='salaries')
-    )
-    if company_id:
-        salary_accs = salary_accs.filter(CompanyId=company_id)
-    salary_acc_ids = set(salary_accs.values_list('AccountId', flat=True))
-
-    exp_query = Expense.objects.all()
-    if company_id:
-        exp_query = exp_query.filter(CompanyId=company_id)
-
-    salary_expenses = exp_query.filter(
-        Q(AccountId__in=salary_acc_ids) |
-        Q(StaffId__in=company_staff_ids) |
-        Q(Narration__icontains='salary') |
-        Q(Narration__icontains='salaries')
-    )
-
-    for exp in salary_expenses:
-        try:
-            exp_date_str = str(exp.Date or '')
-            if len(exp_date_str) >= 7 and '-' in exp_date_str:
-                parts = exp_date_str.split('-')
-                exp_y = int(parts[0])
-                exp_m = int(parts[1])
-            else:
-                exp_y = exp.SortId.year if exp.SortId else year
-                exp_m = exp.SortId.month if exp.SortId else month
-        except:
-            exp_y = year
-            exp_m = month
-
-        if (exp_y, exp_m) in target_pairs or period_type == 'all':
-            matched_staff = None
-            if exp.StaffId:
-                matched_staff = staff_dict.get(exp.StaffId)
-            if not matched_staff:
-                narration_lower = (exp.Narration or '').lower()
-                for st in staff_query:
-                    st_name = (st.StaffName or '').strip().lower()
-                    st_code = (st.StaffCode or '').strip().lower()
-                    if (st_name and len(st_name) > 2 and st_name in narration_lower) or (st_code and st_code in narration_lower):
-                        matched_staff = st
-                        break
-
-            if matched_staff and (not staff_id or matched_staff.StaffId == staff_id):
-                if (matched_staff.StaffId, exp_y, exp_m) not in existing_keys:
-                    gross_val = safe_float(exp.Amount) or safe_float(matched_staff.Salary)
-                    m_name = calendar.month_name[exp_m] if 1 <= exp_m <= 12 else ''
-                    pay_acc = acc_dict.get(exp.PaymentAccountId)
-                    results.append({
-                        'PayrollId': exp.ExpenseId,
-                        'CompanyId': company_id,
-                        'StaffId': matched_staff.StaffId,
-                        'StaffName': matched_staff.StaffName or '',
-                        'StaffCode': matched_staff.StaffCode or '',
-                        'Designation': resolve_designation_name(matched_staff.Designation, desig_map),
-                        'ProfilePhoto': format_media_url(matched_staff.ProfilePhoto) if hasattr(matched_staff, 'ProfilePhoto') else '',
-                        'BankAccount': matched_staff.BankAccount or '',
-                        'PayrollMonth': exp_m,
-                        'PayrollYear': exp_y,
-                        'MonthName': m_name,
-                        'PeriodDisplay': f"{m_name} {exp_y}",
-                        'GrossSalary': f"{gross_val:.2f}",
-                        'AdvanceDeduction': '0.00',
-                        'NetSalary': f"{gross_val:.2f}",
-                        'PaymentDate': exp.Date or f"{exp_y}-{exp_m:02d}-01",
-                        'PaymentAccountId': exp.PaymentAccountId or '',
-                        'PaymentAccountName': pay_acc.Name if pay_acc else '',
-                        'PaymentAccountCode': pay_acc.Code if pay_acc else '',
-                        'PaymentMode': 'Bank Transfer',
-                        'ReferenceNumber': exp.ExpenseNumber or f"EXP-{exp_y}{exp_m:02d}",
-                        'Status': 'Paid',
-                        'Narration': exp.Narration or f"Salary for {m_name} {exp_y} (Expense Record)",
-                        'ReceiptUrl': format_media_url(exp.Receipt) if exp.Receipt else '',
-                        'IsLegacySlip': False,
-                        'IsExpenseRecord': True,
-                        'BasicPay': f"{gross_val:.2f}",
-                        'TotalWorkingDays': 30,
-                        'PaidDays': 30,
-                        'LOP': 0,
-                    })
-                    total_gross += gross_val
-                    total_net += gross_val
-                    existing_keys.add((matched_staff.StaffId, exp_y, exp_m))
-
-    # Pre-September 2026 historical paid period fallback
-    for (hist_y, hist_m) in target_pairs:
-        if hist_y < 2026 or (hist_y == 2026 and hist_m < 9):
-            for st in staff_query:
-                if staff_id and st.StaffId != staff_id:
-                    continue
-                if (st.StaffId, hist_y, hist_m) not in existing_keys:
-                    gross_val = safe_float(st.Salary)
-                    m_name = calendar.month_name[hist_m] if 1 <= hist_m <= 12 else ''
-                    results.append({
-                        'PayrollId': f"HIST-{st.StaffId}-{hist_y}-{hist_m:02d}",
-                        'CompanyId': company_id,
-                        'StaffId': st.StaffId,
-                        'StaffName': st.StaffName or '',
-                        'StaffCode': st.StaffCode or '',
-                        'Designation': resolve_designation_name(st.Designation, desig_map),
-                        'ProfilePhoto': format_media_url(st.ProfilePhoto) if hasattr(st, 'ProfilePhoto') else '',
-                        'BankAccount': st.BankAccount or '',
-                        'PayrollMonth': hist_m,
-                        'PayrollYear': hist_y,
-                        'MonthName': m_name,
-                        'PeriodDisplay': f"{m_name} {hist_y}",
-                        'GrossSalary': f"{gross_val:.2f}",
-                        'AdvanceDeduction': '0.00',
-                        'NetSalary': f"{gross_val:.2f}",
-                        'PaymentDate': f"{hist_y}-{hist_m:02d}-01",
-                        'PaymentAccountId': '',
-                        'PaymentAccountName': '',
-                        'PaymentAccountCode': '',
-                        'PaymentMode': 'Bank Transfer',
-                        'ReferenceNumber': f"EXP-{hist_y}{hist_m:02d}-{st.StaffCode}" if st.StaffCode else f"EXP-{hist_y}{hist_m:02d}",
-                        'Status': 'Paid',
-                        'Narration': f"Historical Salary for {m_name} {hist_y} (Paid as recorded)",
-                        'ReceiptUrl': '',
-                        'IsLegacySlip': False,
-                        'IsHistoricalExpense': True,
-                        'BasicPay': f"{gross_val:.2f}",
-                        'ConveyanceAllowance': '0.00',
-                        'MedicalAllowance': '0.00',
-                        'OtherAllowance': '0.00',
-                        'AppreciationBonus': '0.00',
-                        'TotalWorkingDays': 30,
-                        'PaidDays': 30,
-                        'LOP': 0,
-                    })
-                    total_gross += gross_val
-                    total_net += gross_val
-                    existing_keys.add((st.StaffId, hist_y, hist_m))
 
     results.sort(key=lambda x: (int(x.get('PayrollYear') or 0), int(x.get('PayrollMonth') or 0), str(x.get('PaymentDate') or '')), reverse=True)
 
@@ -3440,7 +3234,6 @@ def ExportPayrollSheet(request, CompanyId=""):
         slips = slips.filter(Year=year, Month=month)
         period_label = f"{calendar.month_name[month]} {year}"
         filename = f"Payroll_Sheet_{calendar.month_name[month]}_{year}"
-        target_pairs = [(year, month)]
     elif period_type in ['quarter', 'quarterly']:
         q_map = {1: [1, 2, 3], 2: [4, 5, 6], 3: [7, 8, 9], 4: [10, 11, 12]}
         months = q_map.get(quarter, [1, 2, 3])
@@ -3448,7 +3241,6 @@ def ExportPayrollSheet(request, CompanyId=""):
         slips = slips.filter(Year=year, Month__in=months)
         period_label = f"Quarter {quarter} ({calendar.month_abbr[months[0]]} - {calendar.month_abbr[months[-1]]}) {year}"
         filename = f"Payroll_Sheet_Q{quarter}_{year}"
-        target_pairs = [(year, m) for m in months]
     elif period_type in ['half_year', 'half', 'half_yearly']:
         h_map = {1: [1, 2, 3, 4, 5, 6], 2: [7, 8, 9, 10, 11, 12]}
         months = h_map.get(half_year, [1, 2, 3, 4, 5, 6])
@@ -3456,17 +3248,14 @@ def ExportPayrollSheet(request, CompanyId=""):
         slips = slips.filter(Year=year, Month__in=months)
         period_label = f"Half Year {half_year} ({calendar.month_abbr[months[0]]} - {calendar.month_abbr[months[-1]]}) {year}"
         filename = f"Payroll_Sheet_H{half_year}_{year}"
-        target_pairs = [(year, m) for m in months]
     elif period_type in ['full_year', 'year', 'yearly']:
         payroll_entries = payroll_entries.filter(PayrollYear=year)
         slips = slips.filter(Year=year)
         period_label = f"Full Year {year}"
         filename = f"Payroll_Sheet_FullYear_{year}"
-        target_pairs = [(year, m) for m in range(1, 13)]
     else:
         period_label = "All Processed Salaries"
         filename = f"Payroll_Sheet_All_{year}"
-        target_pairs = [(year, m) for m in range(1, 13)]
 
     if staff_id:
         payroll_entries = payroll_entries.filter(StaffId=staff_id)
@@ -3573,92 +3362,6 @@ def ExportPayrollSheet(request, CompanyId=""):
                 'Data': [p_str, st_code, st_name, st_desig, pay_date, g, d, n],
                 'g': g, 'd': d, 'n': n
             })
-            existing_keys.add((s_slip.StaffId, s_slip.Year, s_slip.Month))
-
-    # Match Expense records
-    salary_accs = Account.objects.filter(
-        Q(Code='6010') | Q(Name__icontains='salary') | Q(Name__icontains='salaries')
-    )
-    if CompanyId:
-        salary_accs = salary_accs.filter(CompanyId=CompanyId)
-    salary_acc_ids = set(salary_accs.values_list('AccountId', flat=True))
-
-    exp_query = Expense.objects.all()
-    if CompanyId:
-        exp_query = exp_query.filter(CompanyId=CompanyId)
-
-    salary_expenses = exp_query.filter(
-        Q(AccountId__in=salary_acc_ids) |
-        Q(StaffId__in=company_staff_ids) |
-        Q(Narration__icontains='salary') |
-        Q(Narration__icontains='salaries')
-    )
-
-    for exp in salary_expenses:
-        try:
-            exp_date_str = str(exp.Date or '')
-            if len(exp_date_str) >= 7 and '-' in exp_date_str:
-                parts = exp_date_str.split('-')
-                exp_y = int(parts[0])
-                exp_m = int(parts[1])
-            else:
-                exp_y = exp.SortId.year if exp.SortId else year
-                exp_m = exp.SortId.month if exp.SortId else month
-        except:
-            exp_y = year
-            exp_m = month
-
-        if (exp_y, exp_m) in target_pairs or period_type == 'all':
-            matched_staff = None
-            if exp.StaffId:
-                matched_staff = staff_dict.get(exp.StaffId)
-            if not matched_staff:
-                narration_lower = (exp.Narration or '').lower()
-                for st in staff_query:
-                    st_name = (st.StaffName or '').strip().lower()
-                    st_code = (st.StaffCode or '').strip().lower()
-                    if (st_name and len(st_name) > 2 and st_name in narration_lower) or (st_code and st_code in narration_lower):
-                        matched_staff = st
-                        break
-
-            if matched_staff and (not staff_id or matched_staff.StaffId == staff_id):
-                if (matched_staff.StaffId, exp_y, exp_m) not in existing_keys:
-                    g = safe_float(exp.Amount) or safe_float(matched_staff.Salary)
-                    d = 0.0
-                    n = g
-                    m_name = calendar.month_abbr[exp_m] if 1 <= exp_m <= 12 else ''
-                    p_str = f"{m_name} {exp_y}"
-                    pay_date = exp.Date or f"{exp_y}-{exp_m:02d}-01"
-                    export_rows.append({
-                        'Year': exp_y,
-                        'Month': exp_m,
-                        'Date': pay_date,
-                        'Data': [p_str, matched_staff.StaffCode or '', matched_staff.StaffName or '', resolve_designation_name(matched_staff.Designation, desig_map), pay_date, g, d, n],
-                        'g': g, 'd': d, 'n': n
-                    })
-                    existing_keys.add((matched_staff.StaffId, exp_y, exp_m))
-
-    # Pre-September 2026 historical records
-    for (hist_y, hist_m) in target_pairs:
-        if hist_y < 2026 or (hist_y == 2026 and hist_m < 9):
-            for st in staff_query:
-                if staff_id and st.StaffId != staff_id:
-                    continue
-                if (st.StaffId, hist_y, hist_m) not in existing_keys:
-                    g = safe_float(st.Salary)
-                    d = 0.0
-                    n = g
-                    m_name = calendar.month_abbr[hist_m] if 1 <= hist_m <= 12 else ''
-                    p_str = f"{m_name} {hist_y}"
-                    pay_date = f"{hist_y}-{hist_m:02d}-01"
-                    export_rows.append({
-                        'Year': hist_y,
-                        'Month': hist_m,
-                        'Date': pay_date,
-                        'Data': [p_str, st.StaffCode or '', st.StaffName or '', resolve_designation_name(st.Designation, desig_map), pay_date, g, d, n],
-                        'g': g, 'd': d, 'n': n
-                    })
-                    existing_keys.add((st.StaffId, hist_y, hist_m))
 
     export_rows.sort(key=lambda x: (int(x['Year'] or 0), int(x['Month'] or 0), str(x['Date'] or '')))
 
