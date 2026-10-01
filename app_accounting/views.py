@@ -15,7 +15,7 @@ from app_accounting.serializers import (
 )
 from app_client.models import Client
 from app_client.serializers import ClientSerializer
-from app_staff.models import Staff
+from app_staff.models import Staff, SalarySlip
 from app_basic.models import Designation
 
 
@@ -2566,7 +2566,8 @@ def SalaryOverview(request, CompanyId=""):
     )
     if company_id:
         payroll_entries = payroll_entries.filter(CompanyId=company_id)
-    payroll_map = {p.StaffId: p for p in payroll_entries}
+    legacy_slips = SalarySlip.objects.filter(Year=year, Month=month, StaffId__in=[st.StaffId for st in staff_list])
+    legacy_slip_map = {s.StaffId: s for s in legacy_slips}
 
     from app_accounting.signals import get_or_create_default_accounts
     if company_id:
@@ -2587,6 +2588,7 @@ def SalaryOverview(request, CompanyId=""):
 
     for staff in staff_list:
         p_entry = payroll_map.get(staff.StaffId)
+        s_slip = legacy_slip_map.get(staff.StaffId)
 
         active_loans = EmployeeLoan.objects.filter(
             StaffId=staff.StaffId,
@@ -2631,6 +2633,18 @@ def SalaryOverview(request, CompanyId=""):
             ref_num = p_entry.ReferenceNumber or ''
             payroll_id = p_entry.PayrollId
             narration = p_entry.Narration or ''
+        elif s_slip:
+            processed_count += 1
+            gross = safe_float(s_slip.GrossPay or s_slip.BasicPay)
+            deduction = 0.0
+            net = gross
+            status = 'Paid'
+            payment_date = s_slip.SortId.strftime('%Y-%m-%d') if s_slip.SortId else f"{year}-{month:02d}-01"
+            payment_account_id = ''
+            payment_mode = 'Bank Transfer'
+            ref_num = f"SLIP-{year}{month:02d}-{staff.StaffCode}" if staff.StaffCode else f"SLIP-{year}{month:02d}"
+            payroll_id = s_slip.SalarySlipId
+            narration = f"Salary Slip for {calendar.month_name[month]} {year}"
         else:
             pending_count += 1
             gross = base_salary
@@ -2903,24 +2917,77 @@ def PayrollApi(request):
 def PayrollApiById(request, PayrollId=""):
     try:
         entry = PayrollEntry.objects.get(PayrollId=PayrollId)
+        is_legacy = False
     except PayrollEntry.DoesNotExist:
-        return JsonResponse("Payroll entry not found", safe=False, status=404)
+        try:
+            entry = SalarySlip.objects.get(SalarySlipId=PayrollId)
+            is_legacy = True
+        except SalarySlip.DoesNotExist:
+            return JsonResponse("Payroll entry not found", safe=False, status=404)
 
     if request.method == 'GET':
-        serializer = PayrollEntrySerializer(entry)
-        data = serializer.data
-        if entry.StaffId:
+        if not is_legacy:
+            serializer = PayrollEntrySerializer(entry)
+            data = serializer.data
+            if entry.StaffId:
+                staff = Staff.objects.filter(StaffId=entry.StaffId).first()
+                if staff:
+                    data['StaffName'] = staff.StaffName or ''
+                    data['StaffCode'] = staff.StaffCode or ''
+                    data['Designation'] = resolve_designation_name(staff.Designation)
+                    data['ProfilePhoto'] = format_media_url(staff.ProfilePhoto) if hasattr(staff, 'ProfilePhoto') else ''
+                    data['BankAccount'] = staff.BankAccount or ''
+            data['MonthName'] = calendar.month_name[entry.PayrollMonth] if 1 <= entry.PayrollMonth <= 12 else ''
+            data['PeriodDisplay'] = f"{data['MonthName']} {entry.PayrollYear}"
+            return JsonResponse(data, safe=False)
+        else:
             staff = Staff.objects.filter(StaffId=entry.StaffId).first()
-            if staff:
-                data['StaffName'] = staff.StaffName or ''
-                data['StaffCode'] = staff.StaffCode or ''
-                data['Designation'] = resolve_designation_name(staff.Designation)
-        return JsonResponse(data, safe=False)
+            m_name = calendar.month_name[entry.Month] if 1 <= entry.Month <= 12 else ''
+            gross_val = safe_float(entry.GrossPay or entry.BasicPay)
+            pay_date = entry.SortId.strftime('%Y-%m-%d') if entry.SortId else f"{entry.Year}-{entry.Month:02d}-01"
+            data = {
+                'PayrollId': entry.SalarySlipId,
+                'StaffId': entry.StaffId,
+                'StaffName': staff.StaffName if staff else '',
+                'StaffCode': staff.StaffCode if staff else '',
+                'Designation': resolve_designation_name(staff.Designation) if staff else '',
+                'ProfilePhoto': format_media_url(staff.ProfilePhoto) if (staff and hasattr(staff, 'ProfilePhoto')) else '',
+                'BankAccount': entry.BankAccount or (staff.BankAccount if staff else ''),
+                'PayrollMonth': entry.Month,
+                'PayrollYear': entry.Year,
+                'MonthName': m_name,
+                'PeriodDisplay': f"{m_name} {entry.Year}",
+                'GrossSalary': f"{gross_val:.2f}",
+                'AdvanceDeduction': '0.00',
+                'NetSalary': f"{gross_val:.2f}",
+                'PaymentDate': pay_date,
+                'PaymentAccountId': '',
+                'PaymentAccountName': '',
+                'PaymentAccountCode': '',
+                'PaymentMode': 'Bank Transfer',
+                'ReferenceNumber': f"SLIP-{entry.Year}{entry.Month:02d}-{staff.StaffCode}" if (staff and staff.StaffCode) else f"SLIP-{entry.Year}{entry.Month:02d}",
+                'Status': 'Paid',
+                'Narration': f"Salary Slip for {m_name} {entry.Year}",
+                'ReceiptUrl': '',
+                'IsLegacySlip': True,
+                'BasicPay': f"{safe_float(entry.BasicPay):.2f}",
+                'ConveyanceAllowance': f"{safe_float(entry.ConveyanceAllowance):.2f}",
+                'MedicalAllowance': f"{safe_float(entry.MedicalAllowance):.2f}",
+                'OtherAllowance': f"{safe_float(entry.OtherAllowance):.2f}",
+                'AppreciationBonus': f"{safe_float(entry.AppreciationBonus):.2f}",
+                'TotalWorkingDays': entry.TotalWorkingDays or 0,
+                'PaidDays': safe_float(entry.PaidDays or 0),
+                'LOP': safe_float(entry.LOP or 0),
+            }
+            return JsonResponse(data, safe=False)
 
     elif request.method == 'DELETE':
         with transaction.atomic():
-            rollback_payroll_entry(entry)
-            entry.delete()
+            if not is_legacy:
+                rollback_payroll_entry(entry)
+                entry.delete()
+            else:
+                entry.delete()
         return JsonResponse("Payroll entry rolled back and deleted successfully", safe=False)
 
 
@@ -2957,27 +3024,39 @@ def PayrollByCompanyId(request, CompanyId=""):
 
     entries = PayrollEntry.objects.filter(CompanyId=company_id).order_by('-PayrollYear', '-PayrollMonth', '-SortId')
 
-    if period_type == 'month' or period_type == 'monthly':
+    staff_query = Staff.objects.all()
+    if company_id:
+        staff_query = staff_query.filter(CompanyId=company_id)
+    company_staff_ids = [s.StaffId for s in staff_query]
+
+    slips = SalarySlip.objects.filter(StaffId__in=company_staff_ids).order_by('-Year', '-Month', '-SortId')
+
+    if period_type in ['month', 'monthly']:
         entries = entries.filter(PayrollYear=year, PayrollMonth=month)
+        slips = slips.filter(Year=year, Month=month)
         period_label = f"{calendar.month_name[month]} {year}"
-    elif period_type == 'quarter' or period_type == 'quarterly':
+    elif period_type in ['quarter', 'quarterly']:
         q_map = {1: [1, 2, 3], 2: [4, 5, 6], 3: [7, 8, 9], 4: [10, 11, 12]}
         months = q_map.get(quarter, [1, 2, 3])
         entries = entries.filter(PayrollYear=year, PayrollMonth__in=months)
+        slips = slips.filter(Year=year, Month__in=months)
         period_label = f"Quarter {quarter} ({calendar.month_abbr[months[0]]} - {calendar.month_abbr[months[-1]]}) {year}"
-    elif period_type == 'half_year' or period_type == 'half' or period_type == 'half_yearly':
+    elif period_type in ['half_year', 'half', 'half_yearly']:
         h_map = {1: [1, 2, 3, 4, 5, 6], 2: [7, 8, 9, 10, 11, 12]}
         months = h_map.get(half_year, [1, 2, 3, 4, 5, 6])
         entries = entries.filter(PayrollYear=year, PayrollMonth__in=months)
+        slips = slips.filter(Year=year, Month__in=months)
         period_label = f"Half Year {half_year} ({calendar.month_abbr[months[0]]} - {calendar.month_abbr[months[-1]]}) {year}"
-    elif period_type == 'full_year' or period_type == 'year' or period_type == 'yearly':
+    elif period_type in ['full_year', 'year', 'yearly']:
         entries = entries.filter(PayrollYear=year)
+        slips = slips.filter(Year=year)
         period_label = f"Full Year {year}"
     else:
         period_label = "All Processed Salaries"
 
     if staff_id:
         entries = entries.filter(StaffId=staff_id)
+        slips = slips.filter(StaffId=staff_id)
 
     staff_dict = {s.StaffId: s for s in Staff.objects.all()}
     desig_map = get_designation_map()
@@ -2987,6 +3066,8 @@ def PayrollByCompanyId(request, CompanyId=""):
     total_gross = 0.0
     total_ded = 0.0
     total_net = 0.0
+
+    existing_keys = set((e.StaffId, e.PayrollYear, e.PayrollMonth) for e in entries)
 
     for entry in entries:
         d = PayrollEntrySerializer(entry).data
@@ -3006,6 +3087,7 @@ def PayrollByCompanyId(request, CompanyId=""):
         d['MonthName'] = calendar.month_name[entry.PayrollMonth] if 1 <= entry.PayrollMonth <= 12 else ''
         d['PeriodDisplay'] = f"{d['MonthName']} {entry.PayrollYear}"
         d['ReceiptUrl'] = format_media_url(entry.Receipt) if hasattr(entry, 'Receipt') else ''
+        d['IsLegacySlip'] = False
 
         gross_val = safe_float(entry.GrossSalary)
         ded_val = safe_float(entry.AdvanceDeduction)
@@ -3016,6 +3098,56 @@ def PayrollByCompanyId(request, CompanyId=""):
         total_net += net_val
 
         results.append(d)
+
+    for s_slip in slips:
+        if (s_slip.StaffId, s_slip.Year, s_slip.Month) not in existing_keys:
+            st = staff_dict.get(s_slip.StaffId)
+            gross_val = safe_float(s_slip.GrossPay or s_slip.BasicPay)
+            ded_val = 0.0
+            net_val = gross_val
+            m_name = calendar.month_name[s_slip.Month] if 1 <= s_slip.Month <= 12 else ''
+            pay_date = s_slip.SortId.strftime('%Y-%m-%d') if s_slip.SortId else f"{s_slip.Year}-{s_slip.Month:02d}-01"
+
+            results.append({
+                'PayrollId': s_slip.SalarySlipId,
+                'CompanyId': company_id,
+                'StaffId': s_slip.StaffId,
+                'StaffName': st.StaffName if st else '',
+                'StaffCode': st.StaffCode if st else '',
+                'Designation': resolve_designation_name(st.Designation, desig_map) if st else '',
+                'ProfilePhoto': format_media_url(st.ProfilePhoto) if (st and hasattr(st, 'ProfilePhoto')) else '',
+                'BankAccount': s_slip.BankAccount or (st.BankAccount if st else ''),
+                'PayrollMonth': s_slip.Month,
+                'PayrollYear': s_slip.Year,
+                'MonthName': m_name,
+                'PeriodDisplay': f"{m_name} {s_slip.Year}",
+                'GrossSalary': f"{gross_val:.2f}",
+                'AdvanceDeduction': '0.00',
+                'NetSalary': f"{net_val:.2f}",
+                'PaymentDate': pay_date,
+                'PaymentAccountId': '',
+                'PaymentAccountName': '',
+                'PaymentAccountCode': '',
+                'PaymentMode': 'Bank Transfer',
+                'ReferenceNumber': f"SLIP-{s_slip.Year}{s_slip.Month:02d}-{st.StaffCode}" if (st and st.StaffCode) else f"SLIP-{s_slip.Year}{s_slip.Month:02d}",
+                'Status': 'Paid',
+                'Narration': f"Salary Slip for {m_name} {s_slip.Year}",
+                'ReceiptUrl': '',
+                'IsLegacySlip': True,
+                'BasicPay': f"{safe_float(s_slip.BasicPay):.2f}",
+                'ConveyanceAllowance': f"{safe_float(s_slip.ConveyanceAllowance):.2f}",
+                'MedicalAllowance': f"{safe_float(s_slip.MedicalAllowance):.2f}",
+                'OtherAllowance': f"{safe_float(s_slip.OtherAllowance):.2f}",
+                'AppreciationBonus': f"{safe_float(s_slip.AppreciationBonus):.2f}",
+                'TotalWorkingDays': s_slip.TotalWorkingDays or 0,
+                'PaidDays': safe_float(s_slip.PaidDays or 0),
+                'LOP': safe_float(s_slip.LOP or 0),
+            })
+            total_gross += gross_val
+            total_ded += ded_val
+            total_net += net_val
+
+    results.sort(key=lambda x: (int(x.get('PayrollYear') or 0), int(x.get('PayrollMonth') or 0), str(x.get('PaymentDate') or '')), reverse=True)
 
     return JsonResponse({
         'PeriodType': period_type,
@@ -3083,24 +3215,35 @@ def ExportPayrollSheet(request, CompanyId=""):
 
     payroll_entries = PayrollEntry.objects.filter(CompanyId=CompanyId).order_by('PayrollYear', 'PayrollMonth', 'SortId')
 
+    staff_query = Staff.objects.all()
+    if CompanyId:
+        staff_query = staff_query.filter(CompanyId=CompanyId)
+    company_staff_ids = [s.StaffId for s in staff_query]
+
+    slips = SalarySlip.objects.filter(StaffId__in=company_staff_ids).order_by('Year', 'Month', 'SortId')
+
     if period_type in ['month', 'monthly']:
         payroll_entries = payroll_entries.filter(PayrollYear=year, PayrollMonth=month)
+        slips = slips.filter(Year=year, Month=month)
         period_label = f"{calendar.month_name[month]} {year}"
         filename = f"Payroll_Sheet_{calendar.month_name[month]}_{year}"
     elif period_type in ['quarter', 'quarterly']:
         q_map = {1: [1, 2, 3], 2: [4, 5, 6], 3: [7, 8, 9], 4: [10, 11, 12]}
         months = q_map.get(quarter, [1, 2, 3])
         payroll_entries = payroll_entries.filter(PayrollYear=year, PayrollMonth__in=months)
+        slips = slips.filter(Year=year, Month__in=months)
         period_label = f"Quarter {quarter} ({calendar.month_abbr[months[0]]} - {calendar.month_abbr[months[-1]]}) {year}"
         filename = f"Payroll_Sheet_Q{quarter}_{year}"
     elif period_type in ['half_year', 'half', 'half_yearly']:
         h_map = {1: [1, 2, 3, 4, 5, 6], 2: [7, 8, 9, 10, 11, 12]}
         months = h_map.get(half_year, [1, 2, 3, 4, 5, 6])
         payroll_entries = payroll_entries.filter(PayrollYear=year, PayrollMonth__in=months)
+        slips = slips.filter(Year=year, Month__in=months)
         period_label = f"Half Year {half_year} ({calendar.month_abbr[months[0]]} - {calendar.month_abbr[months[-1]]}) {year}"
         filename = f"Payroll_Sheet_H{half_year}_{year}"
     elif period_type in ['full_year', 'year', 'yearly']:
         payroll_entries = payroll_entries.filter(PayrollYear=year)
+        slips = slips.filter(Year=year)
         period_label = f"Full Year {year}"
         filename = f"Payroll_Sheet_FullYear_{year}"
     else:
@@ -3109,6 +3252,7 @@ def ExportPayrollSheet(request, CompanyId=""):
 
     if staff_id:
         payroll_entries = payroll_entries.filter(StaffId=staff_id)
+        slips = slips.filter(StaffId=staff_id)
 
     staff_dict = {s.StaffId: s for s in Staff.objects.all()}
     desig_map = get_designation_map()
@@ -3165,8 +3309,10 @@ def ExportPayrollSheet(request, CompanyId=""):
     tot_ded = 0.0
     tot_net = 0.0
 
-    current_row = 5
-    for idx, entry in enumerate(payroll_entries, 1):
+    existing_keys = set((e.StaffId, e.PayrollYear, e.PayrollMonth) for e in payroll_entries)
+
+    export_rows = []
+    for entry in payroll_entries:
         st = staff_dict.get(entry.StaffId)
         st_name = st.StaffName if st else "Staff"
         st_code = st.StaffCode if st else ""
@@ -3176,15 +3322,49 @@ def ExportPayrollSheet(request, CompanyId=""):
         d = safe_float(entry.AdvanceDeduction)
         n = safe_float(entry.NetSalary)
 
-        tot_gross += g
-        tot_ded += d
-        tot_net += n
-
         m_name = calendar.month_abbr[entry.PayrollMonth] if 1 <= entry.PayrollMonth <= 12 else ''
         p_str = f"{m_name} {entry.PayrollYear}"
 
-        row_data = [idx, p_str, st_code, st_name, st_desig, entry.PaymentDate, g, d, n]
-        ws.append(row_data)
+        export_rows.append({
+            'Year': entry.PayrollYear,
+            'Month': entry.PayrollMonth,
+            'Date': entry.PaymentDate,
+            'Data': [p_str, st_code, st_name, st_desig, entry.PaymentDate, g, d, n],
+            'g': g, 'd': d, 'n': n
+        })
+
+    for s_slip in slips:
+        if (s_slip.StaffId, s_slip.Year, s_slip.Month) not in existing_keys:
+            st = staff_dict.get(s_slip.StaffId)
+            st_name = st.StaffName if st else "Staff"
+            st_code = st.StaffCode if st else ""
+            st_desig = resolve_designation_name(st.Designation, desig_map) if st else ""
+
+            g = safe_float(s_slip.GrossPay or s_slip.BasicPay)
+            d = 0.0
+            n = g
+
+            m_name = calendar.month_abbr[s_slip.Month] if 1 <= s_slip.Month <= 12 else ''
+            p_str = f"{m_name} {s_slip.Year}"
+            pay_date = s_slip.SortId.strftime('%Y-%m-%d') if s_slip.SortId else f"{s_slip.Year}-{s_slip.Month:02d}-01"
+
+            export_rows.append({
+                'Year': s_slip.Year,
+                'Month': s_slip.Month,
+                'Date': pay_date,
+                'Data': [p_str, st_code, st_name, st_desig, pay_date, g, d, n],
+                'g': g, 'd': d, 'n': n
+            })
+
+    export_rows.sort(key=lambda x: (int(x['Year'] or 0), int(x['Month'] or 0), str(x['Date'] or '')))
+
+    current_row = 5
+    for idx, r_item in enumerate(export_rows, 1):
+        tot_gross += r_item['g']
+        tot_ded += r_item['d']
+        tot_net += r_item['n']
+
+        ws.append([idx] + r_item['Data'])
 
         for c_idx in range(1, 10):
             c = ws.cell(row=current_row, column=c_idx)
