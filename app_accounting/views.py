@@ -3,8 +3,12 @@ from django.http.response import JsonResponse
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from django.db import transaction
 from django.db.models import Q
-from app_accounting.models import Account, JournalEntry, JournalItem, Expense, ExpenseClaim
-from app_accounting.serializers import AccountSerializer, JournalEntrySerializer, JournalItemSerializer, ExpenseSerializer, ExpenseClaimSerializer
+from app_accounting.models import Account, JournalEntry, JournalItem, Expense, ExpenseClaim, EmployeeLoan, EmployeeLoanRepayment
+from app_accounting.serializers import (
+    AccountSerializer, JournalEntrySerializer, JournalItemSerializer,
+    ExpenseSerializer, ExpenseClaimSerializer, EmployeeLoanSerializer,
+    EmployeeLoanRepaymentSerializer
+)
 from app_client.models import Client
 from app_client.serializers import ClientSerializer
 from app_staff.models import Staff
@@ -114,6 +118,24 @@ def get_attachment_url_for_journal_entry(entry):
         if bill and bill.BillFile and hasattr(bill.BillFile, 'name') and bill.BillFile.name:
             return format_media_url(bill.BillFile)
 
+    elif source in ['employee_loan_disbursement', 'employee_loan']:
+        from app_accounting.models import EmployeeLoan
+        loan = EmployeeLoan.objects.filter(
+            Q(DisbursementJournalEntryId=entry.JournalEntryId) |
+            Q(LoanNumber=entry.ReferenceNumber)
+        ).first()
+        if loan and loan.Receipt and hasattr(loan.Receipt, 'name') and loan.Receipt.name:
+            return format_media_url(loan.Receipt)
+
+    elif source in ['employee_loan_repayment', 'employee_loan_repay']:
+        from app_accounting.models import EmployeeLoanRepayment
+        repay = EmployeeLoanRepayment.objects.filter(
+            Q(JournalEntryId=entry.JournalEntryId) |
+            Q(RepaymentNumber=entry.ReferenceNumber)
+        ).first()
+        if repay and repay.Receipt and hasattr(repay.Receipt, 'name') and repay.Receipt.name:
+            return format_media_url(repay.Receipt)
+
     return ""
 
 
@@ -207,6 +229,30 @@ def resolve_reference_number(entry):
         ).first()
         if pay and pay.PaymentNumber:
             return pay.PaymentNumber
+    elif source in ['employee_loan_disbursement', 'employee_loan']:
+        from app_accounting.models import EmployeeLoan
+        loan = EmployeeLoan.objects.filter(
+            Q(DisbursementJournalEntryId=entry.JournalEntryId) |
+            Q(LoanNumber=ref_num) |
+            Q(EmployeeLoanId=ref_num)
+        ).first()
+        if loan and loan.LoanNumber:
+            return loan.LoanNumber
+        elif ref_num.startswith('LOAN-'):
+            return ref_num.replace('LOAN-', '')
+    elif source in ['employee_loan_repayment', 'employee_loan_repay']:
+        from app_accounting.models import EmployeeLoanRepayment
+        repay = EmployeeLoanRepayment.objects.filter(
+            Q(JournalEntryId=entry.JournalEntryId) |
+            Q(RepaymentNumber=ref_num) |
+            Q(RepaymentId=ref_num)
+        ).first()
+        if repay and repay.RepaymentNumber:
+            return repay.RepaymentNumber
+        elif ref_num.startswith('REPAY-'):
+            return ref_num.replace('REPAY-', '')
+        elif ref_num.startswith('LRP-'):
+            return ref_num
 
     return ref_num
 
@@ -910,6 +956,215 @@ def post_reimbursement_journal_entries(claim):
         )
 
 
+def generate_next_loan_number(company_id):
+    loans = EmployeeLoan.objects.filter(CompanyId=company_id, LoanNumber__startswith='LN-')
+    max_num = 0
+    for l in loans:
+        match = re.match(r'^LN-(\d+)$', l.LoanNumber or '')
+        if match:
+            num = int(match.group(1))
+            if num > max_num:
+                max_num = num
+    next_num = max_num + 1
+    return f"LN-{next_num:07d}"
+
+
+def generate_next_repayment_number(company_id):
+    reps = EmployeeLoanRepayment.objects.filter(CompanyId=company_id, RepaymentNumber__startswith='LRP-')
+    max_num = 0
+    for r in reps:
+        match = re.match(r'^LRP-(\d+)$', r.RepaymentNumber or '')
+        if match:
+            num = int(match.group(1))
+            if num > max_num:
+                max_num = num
+    next_num = max_num + 1
+    return f"LRP-{next_num:07d}"
+
+
+def post_loan_disbursement_journal_entries(loan):
+    from app_accounting.signals import get_or_create_default_accounts
+    company_id = loan.CompanyId
+    if not company_id:
+        return
+
+    accounts = get_or_create_default_accounts(company_id)
+    loan_account = accounts.get('1300')
+    if not loan_account:
+        loan_account, _ = Account.objects.get_or_create(
+            Code='1300',
+            CompanyId=company_id,
+            defaults={'Name': 'Employee Loans & Advances', 'Type': 'Asset', 'IsCashOrBank': False}
+        )
+
+    loan.LoanAccountId = loan_account.AccountId
+
+    staff_name = ""
+    if loan.StaffId:
+        try:
+            staff = Staff.objects.get(StaffId=loan.StaffId)
+            staff_name = staff.StaffName or ""
+        except Staff.DoesNotExist:
+            pass
+
+    ref_num = f"LOAN-{loan.LoanNumber}" if loan.LoanNumber else f"LOAN-{loan.EmployeeLoanId}"
+    narration = f"Loan Disbursement {loan.LoanNumber or ''} to {staff_name}"
+    if loan.Narration:
+        narration += f" - {loan.Narration}"
+
+    with transaction.atomic():
+        journal_entry, entry_created = JournalEntry.objects.get_or_create(
+            ReferenceNumber=ref_num,
+            Source='employee_loan_disbursement',
+            CompanyId=company_id,
+            defaults={
+                'Date': loan.LoanDate or datetime.now().strftime('%Y-%m-%d'),
+                'Narration': narration
+            }
+        )
+
+        if not entry_created:
+            JournalItem.objects.filter(JournalEntryId=journal_entry.JournalEntryId).delete()
+            journal_entry.Date = loan.LoanDate or journal_entry.Date
+            journal_entry.Narration = narration
+            journal_entry.save()
+
+        loan.DisbursementJournalEntryId = journal_entry.JournalEntryId
+
+        principal_val = float(loan.PrincipalAmount or 0.0)
+
+        # Debit 1300 - Employee Loans & Advances (Asset)
+        JournalItem.objects.create(
+            JournalEntryId=journal_entry.JournalEntryId,
+            AccountId=loan_account.AccountId,
+            Debit=f"{principal_val:.2f}",
+            Credit="0.00",
+            StaffId=loan.StaffId
+        )
+
+        # Credit Selected Cash/Bank Disbursement Account
+        if loan.DisbursementAccountId:
+            JournalItem.objects.create(
+                JournalEntryId=journal_entry.JournalEntryId,
+                AccountId=loan.DisbursementAccountId,
+                Debit="0.00",
+                Credit=f"{principal_val:.2f}",
+                StaffId=loan.StaffId
+            )
+
+
+def post_loan_repayment_journal_entries(repayment, loan):
+    from app_accounting.signals import get_or_create_default_accounts
+    company_id = repayment.CompanyId or loan.CompanyId
+    if not company_id:
+        return
+
+    accounts = get_or_create_default_accounts(company_id)
+    loan_account = accounts.get('1300')
+    if not loan_account:
+        loan_account, _ = Account.objects.get_or_create(
+            Code='1300',
+            CompanyId=company_id,
+            defaults={'Name': 'Employee Loans & Advances', 'Type': 'Asset', 'IsCashOrBank': False}
+        )
+
+    interest_income_acc = accounts.get('4100')
+    if not interest_income_acc:
+        interest_income_acc, _ = Account.objects.get_or_create(
+            Code='4100',
+            CompanyId=company_id,
+            defaults={'Name': 'Interest Income from Staff Loans', 'Type': 'Revenue', 'IsCashOrBank': False}
+        )
+
+    staff_name = ""
+    if loan.StaffId:
+        try:
+            staff = Staff.objects.get(StaffId=loan.StaffId)
+            staff_name = staff.StaffName or ""
+        except Staff.DoesNotExist:
+            pass
+
+    ref_num = f"REPAY-{repayment.RepaymentNumber}" if repayment.RepaymentNumber else f"REPAY-{repayment.RepaymentId}"
+    narration = f"Loan Repayment {repayment.RepaymentNumber or ''} for Loan {loan.LoanNumber or ''} by {staff_name}"
+    if repayment.Narration:
+        narration += f" - {repayment.Narration}"
+
+    total_amount = float(repayment.Amount or 0.0)
+    principal_comp = float(repayment.PrincipalComponent or 0.0)
+    interest_comp = float(repayment.InterestComponent or 0.0)
+
+    if principal_comp == 0.0 and interest_comp == 0.0 and total_amount > 0.0:
+        principal_comp = total_amount
+
+    with transaction.atomic():
+        journal_entry, entry_created = JournalEntry.objects.get_or_create(
+            ReferenceNumber=ref_num,
+            Source='employee_loan_repayment',
+            CompanyId=company_id,
+            defaults={
+                'Date': repayment.RepaymentDate or datetime.now().strftime('%Y-%m-%d'),
+                'Narration': narration
+            }
+        )
+
+        if not entry_created:
+            JournalItem.objects.filter(JournalEntryId=journal_entry.JournalEntryId).delete()
+            journal_entry.Date = repayment.RepaymentDate or journal_entry.Date
+            journal_entry.Narration = narration
+            journal_entry.save()
+
+        repayment.JournalEntryId = journal_entry.JournalEntryId
+
+        # Debit Cash/Bank Payment Account
+        if repayment.PaymentAccountId:
+            JournalItem.objects.create(
+                JournalEntryId=journal_entry.JournalEntryId,
+                AccountId=repayment.PaymentAccountId,
+                Debit=f"{total_amount:.2f}",
+                Credit="0.00",
+                StaffId=loan.StaffId
+            )
+
+        # Credit 1300 - Employee Loans & Advances
+        if principal_comp > 0:
+            JournalItem.objects.create(
+                JournalEntryId=journal_entry.JournalEntryId,
+                AccountId=loan_account.AccountId,
+                Debit="0.00",
+                Credit=f"{principal_comp:.2f}",
+                StaffId=loan.StaffId
+            )
+
+        # Credit 4100 - Interest Income (if any)
+        if interest_comp > 0:
+            JournalItem.objects.create(
+                JournalEntryId=journal_entry.JournalEntryId,
+                AccountId=interest_income_acc.AccountId,
+                Debit="0.00",
+                Credit=f"{interest_comp:.2f}",
+                StaffId=loan.StaffId
+            )
+
+
+def recalculate_loan_balance(loan):
+    repayments = EmployeeLoanRepayment.objects.filter(EmployeeLoanId=loan.EmployeeLoanId)
+    total_repaid = sum(float(r.Amount or 0.0) for r in repayments)
+    principal_amount = float(loan.PrincipalAmount or 0.0)
+    total_payable = float(loan.TotalAmountPayable or principal_amount)
+    if total_payable <= 0:
+        total_payable = principal_amount
+    outstanding = max(0.0, total_payable - total_repaid)
+
+    loan.TotalRepaid = f"{total_repaid:.2f}"
+    loan.OutstandingBalance = f"{outstanding:.2f}"
+    if outstanding <= 0.01 and total_repaid > 0:
+        loan.Status = 'Closed'
+    elif loan.Status == 'Closed' and outstanding > 0.01:
+        loan.Status = 'Active'
+    loan.save()
+    return loan
+
+
 @api_view(['GET', 'POST'])
 def ExpenseClaimApi(request):
     if request.method == 'GET':
@@ -1061,6 +1316,385 @@ def ExpenseClaimUploadReceipt(request, ExpenseClaimId=""):
     claim.save()
 
     return JsonResponse("Uploaded successfully", safe=False)
+
+
+@api_view(['GET'])
+def NextLoanNumber(request, CompanyId=""):
+    return JsonResponse(generate_next_loan_number(CompanyId), safe=False)
+
+
+@api_view(['GET'])
+def NextRepaymentNumber(request, CompanyId=""):
+    return JsonResponse(generate_next_repayment_number(CompanyId), safe=False)
+
+
+@api_view(['GET', 'POST'])
+def EmployeeLoanApi(request):
+    if request.method == 'GET':
+        company_id = request.GET.get('CompanyId') or request.query_params.get('CompanyId')
+        if company_id:
+            loans = EmployeeLoan.objects.filter(CompanyId=company_id).order_by('-SortId')
+        else:
+            loans = EmployeeLoan.objects.all().order_by('-SortId')
+        serializer = EmployeeLoanSerializer(loans, many=True)
+        return JsonResponse(serializer.data, safe=False)
+
+    elif request.method == 'POST':
+        data = JSONParser().parse(request)
+        company_id = data.get('CompanyId', '')
+        if not data.get('LoanNumber') and company_id:
+            data['LoanNumber'] = generate_next_loan_number(company_id)
+
+        principal = float(data.get('PrincipalAmount') or 0.0)
+        repayment_type = data.get('RepaymentType', 'flexible')
+        interest_type = data.get('InterestType', 'zero_interest')
+        interest_rate = float(data.get('InterestRate') or 0.0)
+        installment_count = max(1, int(float(data.get('InstallmentCount') or 1)))
+
+        if interest_type == 'zero_interest':
+            total_interest = 0.0
+            data['InterestRate'] = '0.00'
+        else:
+            if repayment_type == 'installment':
+                total_interest = principal * (interest_rate / 100.0) * (installment_count / 12.0)
+            else:
+                total_interest = principal * (interest_rate / 100.0)
+
+        total_payable = principal + total_interest
+        installment_amount = total_payable / installment_count if repayment_type == 'installment' else 0.0
+
+        data['TotalInterest'] = f"{total_interest:.2f}"
+        data['TotalAmountPayable'] = f"{total_payable:.2f}"
+        data['InstallmentAmount'] = f"{installment_amount:.2f}"
+        data['TotalRepaid'] = "0.00"
+        data['OutstandingBalance'] = f"{total_payable:.2f}"
+        data['Status'] = 'Active'
+
+        serializer = EmployeeLoanSerializer(data=data)
+        if serializer.is_valid():
+            loan = serializer.save()
+            post_loan_disbursement_journal_entries(loan)
+            loan.save()
+            return JsonResponse(loan.EmployeeLoanId, safe=False)
+        return JsonResponse("Failed to create Employee Loan", safe=False, status=400)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+def EmployeeLoanApiById(request, EmployeeLoanId=""):
+    try:
+        loan = EmployeeLoan.objects.get(EmployeeLoanId=EmployeeLoanId)
+    except EmployeeLoan.DoesNotExist:
+        return JsonResponse("Employee Loan does not exist", safe=False, status=404)
+
+    if request.method == 'GET':
+        serializer = EmployeeLoanSerializer(loan)
+        return JsonResponse(serializer.data, safe=False)
+
+    elif request.method == 'PUT':
+        data = JSONParser().parse(request)
+        principal = float(data.get('PrincipalAmount') or loan.PrincipalAmount or 0.0)
+        repayment_type = data.get('RepaymentType') or loan.RepaymentType or 'flexible'
+        interest_type = data.get('InterestType') or loan.InterestType or 'zero_interest'
+        interest_rate = float(data.get('InterestRate') if data.get('InterestRate') is not None else (loan.InterestRate or 0.0))
+        installment_count = max(1, int(float(data.get('InstallmentCount') or loan.InstallmentCount or 1)))
+
+        if interest_type == 'zero_interest':
+            total_interest = 0.0
+            data['InterestRate'] = '0.00'
+        else:
+            if repayment_type == 'installment':
+                total_interest = principal * (interest_rate / 100.0) * (installment_count / 12.0)
+            else:
+                total_interest = principal * (interest_rate / 100.0)
+
+        total_payable = principal + total_interest
+        installment_amount = total_payable / installment_count if repayment_type == 'installment' else 0.0
+
+        data['TotalInterest'] = f"{total_interest:.2f}"
+        data['TotalAmountPayable'] = f"{total_payable:.2f}"
+        data['InstallmentAmount'] = f"{installment_amount:.2f}"
+
+        serializer = EmployeeLoanSerializer(loan, data=data, partial=True)
+        if serializer.is_valid():
+            loan = serializer.save()
+            post_loan_disbursement_journal_entries(loan)
+            recalculate_loan_balance(loan)
+            return JsonResponse(loan.EmployeeLoanId, safe=False)
+        return JsonResponse("Failed to update Employee Loan", safe=False, status=400)
+
+    elif request.method == 'DELETE':
+        with transaction.atomic():
+            # Delete loan repayments
+            repayments = EmployeeLoanRepayment.objects.filter(EmployeeLoanId=loan.EmployeeLoanId)
+            for rep in repayments:
+                if rep.JournalEntryId:
+                    JournalItem.objects.filter(JournalEntryId=rep.JournalEntryId).delete()
+                    JournalEntry.objects.filter(JournalEntryId=rep.JournalEntryId).delete()
+            repayments.delete()
+
+            # Delete disbursement journal entries
+            if loan.DisbursementJournalEntryId:
+                JournalItem.objects.filter(JournalEntryId=loan.DisbursementJournalEntryId).delete()
+                JournalEntry.objects.filter(JournalEntryId=loan.DisbursementJournalEntryId).delete()
+
+            loan.delete()
+        return JsonResponse("Employee Loan deleted successfully", safe=False)
+
+
+@api_view(['GET'])
+def EmployeeLoanByCompanyId(request, CompanyId=""):
+    loans = EmployeeLoan.objects.filter(CompanyId=CompanyId).order_by('-SortId')
+    enriched_loans = []
+
+    for loan in loans:
+        data = EmployeeLoanSerializer(loan).data
+        if loan.Receipt and hasattr(loan.Receipt, 'name') and loan.Receipt.name:
+            data['ReceiptUrl'] = format_media_url(loan.Receipt)
+        else:
+            data['ReceiptUrl'] = ""
+
+        try:
+            if loan.DisbursementAccountId:
+                account = Account.objects.get(AccountId=loan.DisbursementAccountId)
+                data['DisbursementAccountName'] = account.Name
+                data['DisbursementAccountCode'] = account.Code
+            else:
+                data['DisbursementAccountName'] = ""
+                data['DisbursementAccountCode'] = ""
+        except Account.DoesNotExist:
+            data['DisbursementAccountName'] = ""
+            data['DisbursementAccountCode'] = ""
+
+        try:
+            if loan.StaffId:
+                staff = Staff.objects.get(StaffId=loan.StaffId)
+                data['StaffName'] = staff.StaffName or ""
+                data['StaffDesignation'] = getattr(staff, 'DesignationName', None) or getattr(staff, 'Designation', None) or ""
+                data['StaffEmail'] = staff.EmailId or ""
+                data['StaffPhone'] = staff.PhoneNumber or ""
+                data['StaffPhoto'] = format_media_url(staff.ProfilePhoto) if (staff.ProfilePhoto and hasattr(staff.ProfilePhoto, 'name') and staff.ProfilePhoto.name) else ""
+            else:
+                data['StaffName'] = ""
+                data['StaffDesignation'] = ""
+                data['StaffEmail'] = ""
+                data['StaffPhone'] = ""
+                data['StaffPhoto'] = ""
+        except Staff.DoesNotExist:
+            data['StaffName'] = ""
+            data['StaffDesignation'] = ""
+            data['StaffEmail'] = ""
+            data['StaffPhone'] = ""
+            data['StaffPhoto'] = ""
+
+        repayments = EmployeeLoanRepayment.objects.filter(EmployeeLoanId=loan.EmployeeLoanId)
+        data['RepaymentsCount'] = repayments.count()
+
+        enriched_loans.append(data)
+
+    return JsonResponse(enriched_loans, safe=False)
+
+
+@api_view(['GET'])
+def EmployeeLoanByStaffId(request, StaffId=""):
+    loans = EmployeeLoan.objects.filter(StaffId=StaffId).order_by('-SortId')
+    enriched_loans = []
+
+    for loan in loans:
+        data = EmployeeLoanSerializer(loan).data
+        if loan.Receipt and hasattr(loan.Receipt, 'name') and loan.Receipt.name:
+            data['ReceiptUrl'] = format_media_url(loan.Receipt)
+        else:
+            data['ReceiptUrl'] = ""
+
+        try:
+            if loan.DisbursementAccountId:
+                account = Account.objects.get(AccountId=loan.DisbursementAccountId)
+                data['DisbursementAccountName'] = account.Name
+                data['DisbursementAccountCode'] = account.Code
+            else:
+                data['DisbursementAccountName'] = ""
+                data['DisbursementAccountCode'] = ""
+        except Account.DoesNotExist:
+            data['DisbursementAccountName'] = ""
+            data['DisbursementAccountCode'] = ""
+
+        repayments = EmployeeLoanRepayment.objects.filter(EmployeeLoanId=loan.EmployeeLoanId).order_by('-SortId')
+        repay_list = []
+        for r in repayments:
+            r_data = EmployeeLoanRepaymentSerializer(r).data
+            if r.Receipt and hasattr(r.Receipt, 'name') and r.Receipt.name:
+                r_data['ReceiptUrl'] = format_media_url(r.Receipt)
+            else:
+                r_data['ReceiptUrl'] = ""
+            try:
+                if r.PaymentAccountId:
+                    acc = Account.objects.get(AccountId=r.PaymentAccountId)
+                    r_data['PaymentAccountName'] = acc.Name
+                    r_data['PaymentAccountCode'] = acc.Code
+            except:
+                r_data['PaymentAccountName'] = ""
+                r_data['PaymentAccountCode'] = ""
+            repay_list.append(r_data)
+
+        data['Repayments'] = repay_list
+        data['RepaymentsCount'] = len(repay_list)
+        enriched_loans.append(data)
+
+    return JsonResponse(enriched_loans, safe=False)
+
+
+@api_view(['POST'])
+@parser_classes([MultiPartParser, FormParser])
+def EmployeeLoanUploadReceipt(request, EmployeeLoanId=""):
+    try:
+        loan = EmployeeLoan.objects.get(EmployeeLoanId=EmployeeLoanId)
+    except EmployeeLoan.DoesNotExist:
+        return JsonResponse("Employee Loan does not exist", safe=False, status=404)
+
+    file_obj = request.FILES.get('Receipt')
+    if not file_obj:
+        return JsonResponse("No receipt file provided", safe=False, status=400)
+
+    loan.Receipt = file_obj
+    loan.save()
+    return JsonResponse("Uploaded successfully", safe=False)
+
+
+@api_view(['POST'])
+def EmployeeLoanRepaymentApi(request):
+    data = JSONParser().parse(request)
+    loan_id = data.get('EmployeeLoanId')
+    try:
+        loan = EmployeeLoan.objects.get(EmployeeLoanId=loan_id)
+    except EmployeeLoan.DoesNotExist:
+        return JsonResponse("Employee Loan does not exist", safe=False, status=404)
+
+    company_id = data.get('CompanyId') or loan.CompanyId
+    data['CompanyId'] = company_id
+    data['StaffId'] = loan.StaffId
+
+    if not data.get('RepaymentNumber') and company_id:
+        data['RepaymentNumber'] = generate_next_repayment_number(company_id)
+
+    total_amount = float(data.get('Amount') or 0.0)
+    principal_comp = float(data.get('PrincipalComponent') or 0.0)
+    interest_comp = float(data.get('InterestComponent') or 0.0)
+
+    if principal_comp == 0.0 and interest_comp == 0.0 and total_amount > 0.0:
+        if loan.InterestType == 'interest_bearing' and float(loan.TotalInterest or 0) > 0:
+            tot_payable = float(loan.TotalAmountPayable or loan.PrincipalAmount or 1.0)
+            tot_int = float(loan.TotalInterest or 0.0)
+            int_ratio = tot_int / tot_payable if tot_payable > 0 else 0.0
+            interest_comp = total_amount * int_ratio
+            principal_comp = total_amount - interest_comp
+        else:
+            principal_comp = total_amount
+            interest_comp = 0.0
+
+    data['PrincipalComponent'] = f"{principal_comp:.2f}"
+    data['InterestComponent'] = f"{interest_comp:.2f}"
+
+    serializer = EmployeeLoanRepaymentSerializer(data=data)
+    if serializer.is_valid():
+        repayment = serializer.save()
+        post_loan_repayment_journal_entries(repayment, loan)
+        repayment.save()
+        recalculate_loan_balance(loan)
+        return JsonResponse(repayment.RepaymentId, safe=False)
+    return JsonResponse("Failed to record Repayment", safe=False, status=400)
+
+
+@api_view(['GET', 'PUT', 'DELETE'])
+def EmployeeLoanRepaymentApiById(request, RepaymentId=""):
+    try:
+        repayment = EmployeeLoanRepayment.objects.get(RepaymentId=RepaymentId)
+    except EmployeeLoanRepayment.DoesNotExist:
+        return JsonResponse("Repayment does not exist", safe=False, status=404)
+
+    try:
+        loan = EmployeeLoan.objects.get(EmployeeLoanId=repayment.EmployeeLoanId)
+    except EmployeeLoan.DoesNotExist:
+        loan = None
+
+    if request.method == 'GET':
+        serializer = EmployeeLoanRepaymentSerializer(repayment)
+        return JsonResponse(serializer.data, safe=False)
+
+    elif request.method == 'PUT':
+        data = JSONParser().parse(request)
+        serializer = EmployeeLoanRepaymentSerializer(repayment, data=data, partial=True)
+        if serializer.is_valid():
+            repayment = serializer.save()
+            if loan:
+                post_loan_repayment_journal_entries(repayment, loan)
+                recalculate_loan_balance(loan)
+            return JsonResponse(repayment.RepaymentId, safe=False)
+        return JsonResponse("Failed to update Repayment", safe=False, status=400)
+
+    elif request.method == 'DELETE':
+        with transaction.atomic():
+            if repayment.JournalEntryId:
+                JournalItem.objects.filter(JournalEntryId=repayment.JournalEntryId).delete()
+                JournalEntry.objects.filter(JournalEntryId=repayment.JournalEntryId).delete()
+            repayment.delete()
+            if loan:
+                recalculate_loan_balance(loan)
+        return JsonResponse("Repayment deleted successfully", safe=False)
+
+
+@api_view(['GET'])
+def EmployeeLoanRepaymentsByLoanId(request, EmployeeLoanId=""):
+    repayments = EmployeeLoanRepayment.objects.filter(EmployeeLoanId=EmployeeLoanId).order_by('-SortId')
+    enriched = []
+    for r in repayments:
+        data = EmployeeLoanRepaymentSerializer(r).data
+        if r.Receipt and hasattr(r.Receipt, 'name') and r.Receipt.name:
+            data['ReceiptUrl'] = format_media_url(r.Receipt)
+        else:
+            data['ReceiptUrl'] = ""
+
+        try:
+            if r.PaymentAccountId:
+                account = Account.objects.get(AccountId=r.PaymentAccountId)
+                data['PaymentAccountName'] = account.Name
+                data['PaymentAccountCode'] = account.Code
+            else:
+                data['PaymentAccountName'] = ""
+                data['PaymentAccountCode'] = ""
+        except Account.DoesNotExist:
+            data['PaymentAccountName'] = ""
+            data['PaymentAccountCode'] = ""
+
+        try:
+            if r.StaffId:
+                staff = Staff.objects.get(StaffId=r.StaffId)
+                data['StaffName'] = staff.StaffName or ""
+            else:
+                data['StaffName'] = ""
+        except Staff.DoesNotExist:
+            data['StaffName'] = ""
+
+        enriched.append(data)
+
+    return JsonResponse(enriched, safe=False)
+
+
+@api_view(['POST'])
+@parser_classes([MultiPartParser, FormParser])
+def EmployeeLoanRepaymentUploadReceipt(request, RepaymentId=""):
+    try:
+        repay = EmployeeLoanRepayment.objects.get(RepaymentId=RepaymentId)
+    except EmployeeLoanRepayment.DoesNotExist:
+        return JsonResponse("Repayment does not exist", safe=False, status=404)
+
+    file_obj = request.FILES.get('Receipt')
+    if not file_obj:
+        return JsonResponse("No receipt file provided", safe=False, status=400)
+
+    repay.Receipt = file_obj
+    repay.save()
+    return JsonResponse("Uploaded successfully", safe=False)
+
 
 
 @api_view(['GET', 'POST'])

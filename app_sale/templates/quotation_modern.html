@@ -121,6 +121,18 @@
             margin-top: 20px;
             border: 1px solid #e2e8f0;
         }
+
+        img {
+            max-width: 100% !important;
+            height: auto !important;
+        }
+
+        .rich-content img,
+        .table-modern td img {
+            max-width: 100% !important;
+            height: auto !important;
+            margin: 6px 0;
+        }
     </style>
 </head>
 <body>
@@ -287,11 +299,40 @@
         </div>
         {% endif %}
 
+        {% if quote_images %}
+        <div class="page-break"></div>
+        <div style="margin-bottom: 25px;">
+            <div style="font-weight: 700; text-transform: uppercase; font-size: 13px; color: #4f46e5; padding-bottom: 6px; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+                DIAGRAMS, FLOWCHARTS & ATTACHMENTS
+            </div>
+            {% for img in quote_images %}
+            <div style="margin-bottom: 20px; text-align: center;">
+                <img src="{{ img.path }}" style="max-width: 95%; height: auto; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px;" />
+                <div style="font-size: 11px; color: #64748b; margin-top: 4px;">{{ img.name }}</div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
         <div style="text-align: center; margin-top: 35px; padding-top: 15px; border-top: 1px dashed #cbd5e1; font-size: 10px; color: #64748b; font-style: italic;">
             *** End of Document ***
         </div>
     </div>
     {% else %}
+    {% if quote_images %}
+    <div class="page-break"></div>
+    <div style="margin: 20px 0;">
+        <div style="font-weight: 700; text-transform: uppercase; font-size: 13px; color: #4f46e5; padding-bottom: 6px; margin-bottom: 16px; border-bottom: 1px solid #e2e8f0;">
+            DIAGRAMS, FLOWCHARTS & ATTACHMENTS
+        </div>
+        {% for img in quote_images %}
+        <div style="margin-bottom: 20px; text-align: center;">
+            <img src="{{ img.path }}" style="max-width: 95%; height: auto; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px;" />
+            <div style="font-size: 11px; color: #64748b; margin-top: 4px;">{{ img.name }}</div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
     <div style="text-align: center; margin-top: 35px; padding-top: 15px; border-top: 1px dashed #cbd5e1; font-size: 10px; color: #64748b; font-style: italic;">
         *** End of Document ***
     </div>

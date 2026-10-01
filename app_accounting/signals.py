@@ -23,6 +23,7 @@ def get_or_create_default_accounts(company_id):
         # Assets & Liabilities
         '1200': ('Accounts Receivable', 'Asset', False),
         '1010': ('Cash/Bank', 'Asset', True),
+        '1300': ('Employee Loans & Advances', 'Asset', False),
         '2200': ('Tax Payable', 'Liability', False),
         '2300': ('Due to Directors / Expense Clearing', 'Liability', False),
         '2400': ('Loans Payable', 'Liability', False),
@@ -33,6 +34,7 @@ def get_or_create_default_accounts(company_id):
         
         # Revenue
         '4000': ('Revenue', 'Revenue', False),
+        '4100': ('Interest Income from Staff Loans', 'Revenue', False),
         
         # Expenses
         '6150': ('Bank Charges', 'Expense', False),

@@ -1674,6 +1674,19 @@ def ViewQuotationPDF(request, QuotationId=""):
         if quote.AddBankAccount and siteSettings and siteSettings.BankAccount:
             bankAccount = siteSettings.BankAccount
 
+        quoteFiles = QuotationFile.objects.filter(QuotationId=QuotationId)
+        quote_images = []
+        for qf in quoteFiles:
+            if qf.QuoteFile:
+                file_rel = str(qf.QuoteFile).lstrip('/')
+                file_path = os.path.join(settings.BASE_DIR, file_rel)
+                ext = file_rel.lower().split('.')[-1]
+                if ext in ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg']:
+                    quote_images.append({
+                        'path': file_path,
+                        'name': os.path.basename(file_rel)
+                    })
+
         context = {
             'quote': quote,
             'invoiceItems': invoiceItems,
@@ -1686,6 +1699,8 @@ def ViewQuotationPDF(request, QuotationId=""):
             'other_image_url': other_image_url,
             'client': client,
             'company': company,
+            'quote_images': quote_images,
+            'quoteFiles': quoteFiles
         }
 
         template_src = 'quotation.html'
