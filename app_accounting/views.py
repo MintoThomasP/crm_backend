@@ -16,6 +16,7 @@ from app_accounting.serializers import (
 from app_client.models import Client
 from app_client.serializers import ClientSerializer
 from app_staff.models import Staff
+from app_basic.models import Designation
 
 
 def format_media_url(file_field):
@@ -25,6 +26,27 @@ def format_media_url(file_field):
     if name.startswith('media/'):
         return name
     return f"media/{name}"
+
+
+def get_designation_map():
+    try:
+        return {d.DesignationId: d.Designation for d in Designation.objects.all() if d.Designation}
+    except Exception:
+        return {}
+
+
+def resolve_designation_name(designation_val, desig_map=None):
+    if not designation_val:
+        return ""
+    if desig_map is None:
+        desig_map = get_designation_map()
+    if designation_val in desig_map:
+        return desig_map[designation_val]
+    val_str = str(designation_val).strip()
+    import re
+    if re.match(r'^[0-9a-fA-F\-]{32,36}$', val_str):
+        return ""
+    return val_str
 
 
 def get_attachment_url_for_journal_entry(entry):
@@ -1544,7 +1566,7 @@ def EmployeeLoanByCompanyId(request, CompanyId=""):
             if loan.StaffId:
                 staff = Staff.objects.get(StaffId=loan.StaffId)
                 data['StaffName'] = staff.StaffName or ""
-                data['StaffDesignation'] = getattr(staff, 'DesignationName', None) or getattr(staff, 'Designation', None) or ""
+                data['StaffDesignation'] = resolve_designation_name(staff.Designation)
                 data['StaffEmail'] = staff.EmailId or ""
                 data['StaffPhone'] = staff.PhoneNumber or ""
                 data['StaffPhoto'] = format_media_url(staff.ProfilePhoto) if (staff.ProfilePhoto and hasattr(staff.ProfilePhoto, 'name') and staff.ProfilePhoto.name) else ""
@@ -2561,6 +2583,8 @@ def SalaryOverview(request, CompanyId=""):
     processed_count = 0
     pending_count = 0
 
+    desig_map = get_designation_map()
+
     for staff in staff_list:
         p_entry = payroll_map.get(staff.StaffId)
 
@@ -2630,7 +2654,7 @@ def SalaryOverview(request, CompanyId=""):
             'StaffId': staff.StaffId,
             'StaffCode': staff.StaffCode or '',
             'StaffName': staff.StaffName or '',
-            'Designation': staff.Designation or '',
+            'Designation': resolve_designation_name(staff.Designation, desig_map),
             'ProfilePhoto': photo_url,
             'BankAccount': staff.BankAccount or '',
             'BaseSalary': f"{base_salary:.2f}",
@@ -2890,7 +2914,7 @@ def PayrollApiById(request, PayrollId=""):
             if staff:
                 data['StaffName'] = staff.StaffName or ''
                 data['StaffCode'] = staff.StaffCode or ''
-                data['Designation'] = staff.Designation or ''
+                data['Designation'] = resolve_designation_name(staff.Designation)
         return JsonResponse(data, safe=False)
 
     elif request.method == 'DELETE':
@@ -2956,6 +2980,7 @@ def PayrollByCompanyId(request, CompanyId=""):
         entries = entries.filter(StaffId=staff_id)
 
     staff_dict = {s.StaffId: s for s in Staff.objects.all()}
+    desig_map = get_designation_map()
     acc_dict = {a.AccountId: a for a in Account.objects.filter(CompanyId=company_id)}
 
     results = []
@@ -2969,7 +2994,7 @@ def PayrollByCompanyId(request, CompanyId=""):
         if st:
             d['StaffName'] = st.StaffName or ''
             d['StaffCode'] = st.StaffCode or ''
-            d['Designation'] = st.Designation or ''
+            d['Designation'] = resolve_designation_name(st.Designation, desig_map)
             d['ProfilePhoto'] = format_media_url(st.ProfilePhoto) if hasattr(st, 'ProfilePhoto') else ''
             d['BankAccount'] = st.BankAccount or ''
 
@@ -3086,6 +3111,7 @@ def ExportPayrollSheet(request, CompanyId=""):
         payroll_entries = payroll_entries.filter(StaffId=staff_id)
 
     staff_dict = {s.StaffId: s for s in Staff.objects.all()}
+    desig_map = get_designation_map()
     acc_dict = {a.AccountId: a for a in Account.objects.filter(CompanyId=CompanyId)}
 
     company_name = "Company Payroll"
@@ -3144,7 +3170,7 @@ def ExportPayrollSheet(request, CompanyId=""):
         st = staff_dict.get(entry.StaffId)
         st_name = st.StaffName if st else "Staff"
         st_code = st.StaffCode if st else ""
-        st_desig = st.Designation if st else ""
+        st_desig = resolve_designation_name(st.Designation, desig_map) if st else ""
 
         g = safe_float(entry.GrossSalary)
         d = safe_float(entry.AdvanceDeduction)
