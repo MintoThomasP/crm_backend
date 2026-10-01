@@ -42,6 +42,11 @@ urlpatterns = [
     url(r'^PayrollByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.PayrollByCompanyId),
     url(r'^PayrollUploadReceipt/(?P<PayrollId>[0-9a-zA-Z\-]+)$', views.PayrollUploadReceipt),
     url(r'^ExportPayrollSheet/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.ExportPayrollSheet),
+
+    path('StaffExpenseCandidates/', views.StaffExpenseCandidates),
+    url(r'^StaffExpenseCandidatesByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.StaffExpenseCandidates),
+    path('ReconcileStaffExpense/', views.ReconcileStaffExpense),
+    path('BatchReconcileStaffExpenses/', views.BatchReconcileStaffExpenses),
 ]
 
 

@@ -3403,4 +3403,329 @@ def ExportPayrollSheet(request, CompanyId=""):
     return response
 
 
+@api_view(['GET'])
+def StaffExpenseCandidates(request, CompanyId=""):
+    company_id = CompanyId or request.GET.get('CompanyId') or request.query_params.get('CompanyId', '')
+    staff_id = request.GET.get('StaffId') or request.query_params.get('StaffId')
+    search_q = (request.GET.get('Search') or request.query_params.get('Search') or '').strip().lower()
+    from_date = request.GET.get('FromDate') or request.query_params.get('FromDate')
+    to_date = request.GET.get('ToDate') or request.query_params.get('ToDate')
+
+    # Get all staff
+    staff_query = Staff.objects.all()
+    if company_id:
+        staff_query = staff_query.filter(CompanyId=company_id)
+    staff_dict = {s.StaffId: s for s in staff_query}
+    staff_name_map = {s.StaffName.lower(): s.StaffId for s in staff_query if s.StaffName}
+
+    # Fetch candidate expenses
+    exp_query = Expense.objects.all()
+    if company_id:
+        exp_query = exp_query.filter(CompanyId=company_id)
+
+    if from_date:
+        exp_query = exp_query.filter(Date__gte=from_date)
+    if to_date:
+        exp_query = exp_query.filter(Date__lte=to_date)
+
+    exp_list = exp_query.order_by('-Date', '-ExpenseNumber')
+
+    # Preload existing loans to check conversion status
+    loans = EmployeeLoan.objects.all()
+    if company_id:
+        loans = loans.filter(CompanyId=company_id)
+
+    converted_exp_ids = set()
+    loan_by_exp_id = {}
+    for l in loans:
+        nar = l.Narration or ''
+        for exp in exp_list:
+            if (exp.ExpenseId and exp.ExpenseId in nar) or (exp.ExpenseNumber and exp.ExpenseNumber in nar):
+                converted_exp_ids.add(exp.ExpenseId)
+                loan_by_exp_id[exp.ExpenseId] = l
+
+    accounts_dict = {a.AccountId: a for a in Account.objects.all()}
+    desig_map = get_designation_map()
+
+    candidates = []
+    for exp in exp_list:
+        is_staff_expense = False
+        target_staff_id = exp.StaffId
+
+        if target_staff_id and target_staff_id in staff_dict:
+            is_staff_expense = True
+        else:
+            nar_lower = (exp.Narration or '').lower()
+            acc = accounts_dict.get(exp.AccountId)
+            acc_name_lower = (acc.Name.lower() if acc and acc.Name else '')
+
+            if any(k in nar_lower for k in ['adv', 'advance', 'salary', 'sal', 'loan']) or \
+               any(k in acc_name_lower for k in ['salary', 'salaries', 'advance', 'loan', 'staff']):
+                is_staff_expense = True
+                for s_name, s_id in staff_name_map.items():
+                    if s_name in nar_lower and len(s_name) >= 3:
+                        target_staff_id = s_id
+                        break
+
+        if not is_staff_expense:
+            continue
+
+        if staff_id and target_staff_id != staff_id:
+            continue
+
+        if search_q:
+            nar_val = (exp.Narration or '').lower()
+            exp_num_val = (exp.ExpenseNumber or '').lower()
+            st_obj = staff_dict.get(target_staff_id)
+            st_name_val = (st_obj.StaffName.lower() if st_obj else '')
+            if search_q not in nar_val and search_q not in exp_num_val and search_q not in st_name_val:
+                continue
+
+        st = staff_dict.get(target_staff_id)
+        acc = accounts_dict.get(exp.AccountId)
+        pay_acc = accounts_dict.get(exp.PaymentAccountId)
+
+        is_converted = exp.ExpenseId in converted_exp_ids
+        linked_loan = loan_by_exp_id.get(exp.ExpenseId)
+
+        candidates.append({
+            'ExpenseId': exp.ExpenseId,
+            'ExpenseNumber': exp.ExpenseNumber or '',
+            'Date': exp.Date or '',
+            'Amount': f"{safe_float(exp.Amount):.2f}",
+            'Narration': exp.Narration or '',
+            'AccountId': exp.AccountId or '',
+            'AccountName': acc.Name if acc else '',
+            'AccountCode': acc.Code if acc else '',
+            'PaymentAccountId': exp.PaymentAccountId or '',
+            'PaymentAccountName': pay_acc.Name if pay_acc else '',
+            'PaymentAccountCode': pay_acc.Code if pay_acc else '',
+            'StaffId': target_staff_id or '',
+            'StaffName': st.StaffName if st else 'Unassigned Staff',
+            'StaffCode': st.StaffCode if st else '',
+            'Designation': resolve_designation_name(st.Designation, desig_map) if st else '',
+            'ProfilePhoto': format_media_url(st.ProfilePhoto) if (st and hasattr(st, 'ProfilePhoto')) else '',
+            'IsConverted': is_converted,
+            'LinkedLoanId': linked_loan.EmployeeLoanId if linked_loan else '',
+            'LinkedLoanNumber': linked_loan.LoanNumber if linked_loan else '',
+            'LinkedLoanStatus': linked_loan.Status if linked_loan else '',
+            'ReceiptUrl': format_media_url(exp.Receipt) if hasattr(exp, 'Receipt') else '',
+            'IsBeforeLockDate': (exp.Date or '') < '2026-04-01'
+        })
+
+    return JsonResponse({
+        'TotalCount': len(candidates),
+        'UnreconciledCount': sum(1 for c in candidates if not c['IsConverted']),
+        'ConvertedCount': sum(1 for c in candidates if c['IsConverted']),
+        'Candidates': candidates
+    }, safe=False)
+
+
+@api_view(['POST'])
+def ReconcileStaffExpense(request):
+    data = JSONParser().parse(request)
+    expense_id = data.get('ExpenseId')
+    staff_id = data.get('StaffId')
+    action = data.get('Action')  # 'convert_to_active_loan', 'convert_to_settled_loan', 'mark_as_regular_expense'
+    settlement_month = data.get('SettlementMonth')
+    settlement_year = data.get('SettlementYear')
+    settlement_date = data.get('SettlementDate') or datetime.now().strftime('%Y-%m-%d')
+    custom_narration = data.get('Narration')
+
+    if not expense_id:
+        return JsonResponse("ExpenseId is required", safe=False, status=400)
+
+    try:
+        exp = Expense.objects.get(ExpenseId=expense_id)
+    except Expense.DoesNotExist:
+        return JsonResponse("Expense not found", safe=False, status=404)
+
+    if not staff_id:
+        staff_id = exp.StaffId
+
+    if not staff_id:
+        return JsonResponse("StaffId must be provided to assign this advance", safe=False, status=400)
+
+    company_id = exp.CompanyId
+
+    from app_accounting.signals import get_or_create_default_accounts
+    if company_id:
+        accounts = get_or_create_default_accounts(company_id)
+    adv_account = Account.objects.filter(CompanyId=company_id, Code='1300').first()
+
+    if action == 'convert_to_active_loan':
+        with transaction.atomic():
+            loan_num = generate_next_loan_number(company_id)
+            amt_float = safe_float(exp.Amount)
+            nar_text = custom_narration or f"Advance from Expense {exp.ExpenseNumber or exp.ExpenseId}: {exp.Narration or ''}".strip()
+
+            loan = EmployeeLoan.objects.create(
+                LoanNumber=loan_num,
+                StaffId=staff_id,
+                CompanyId=company_id,
+                LoanDate=exp.Date or datetime.now().strftime('%Y-%m-%d'),
+                DisbursementAccountId=exp.PaymentAccountId or '',
+                LoanAccountId=adv_account.AccountId if adv_account else '',
+                PrincipalAmount=f"{amt_float:.2f}",
+                OutstandingBalance=f"{amt_float:.2f}",
+                TotalAmountPayable=f"{amt_float:.2f}",
+                TotalRepaid='0.00',
+                Status='Active',
+                RepaymentType='flexible',
+                InterestType='zero_interest',
+                Narration=nar_text
+            )
+
+            # If current financial year (>= 2026-04-01), update expense account to 1300 Asset
+            if (exp.Date or '') >= '2026-04-01' and adv_account:
+                exp.AccountId = adv_account.AccountId
+                exp.StaffId = staff_id
+                exp.save()
+                ref_num = exp.ExpenseNumber if exp.ExpenseNumber else exp.ExpenseId
+                entries = JournalEntry.objects.filter(Source='expense', ReferenceNumber__in=[ref_num, exp.ExpenseId])
+                for entry in entries:
+                    JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId, Credit='0.00').update(AccountId=adv_account.AccountId, StaffId=staff_id)
+            else:
+                exp.StaffId = staff_id
+                exp.save()
+
+            return JsonResponse({
+                'Status': 'Success',
+                'Message': f"Converted Expense {exp.ExpenseNumber or exp.ExpenseId} to Active Loan {loan.LoanNumber}",
+                'EmployeeLoanId': loan.EmployeeLoanId,
+                'LoanNumber': loan.LoanNumber
+            }, safe=False)
+
+    elif action == 'convert_to_settled_loan':
+        with transaction.atomic():
+            loan_num = generate_next_loan_number(company_id)
+            repay_num = generate_next_repayment_number(company_id)
+            amt_float = safe_float(exp.Amount)
+            nar_text = custom_narration or f"Advance from Expense {exp.ExpenseNumber or exp.ExpenseId}: {exp.Narration or ''}".strip()
+
+            loan = EmployeeLoan.objects.create(
+                LoanNumber=loan_num,
+                StaffId=staff_id,
+                CompanyId=company_id,
+                LoanDate=exp.Date or datetime.now().strftime('%Y-%m-%d'),
+                DisbursementAccountId=exp.PaymentAccountId or '',
+                LoanAccountId=adv_account.AccountId if adv_account else '',
+                PrincipalAmount=f"{amt_float:.2f}",
+                OutstandingBalance='0.00',
+                TotalAmountPayable=f"{amt_float:.2f}",
+                TotalRepaid=f"{amt_float:.2f}",
+                Status='Closed',
+                RepaymentType='flexible',
+                InterestType='zero_interest',
+                Narration=nar_text
+            )
+
+            settle_ref = f"SETTLED-{settlement_year}{int(settlement_month):02d}" if settlement_month and settlement_year else f"SETTLED-{loan_num}"
+            settle_nar = f"Settled in salary deduction for {settlement_month}/{settlement_year}" if settlement_month and settlement_year else "Settled in salary deduction"
+
+            EmployeeLoanRepayment.objects.create(
+                RepaymentNumber=repay_num,
+                EmployeeLoanId=loan.EmployeeLoanId,
+                StaffId=staff_id,
+                CompanyId=company_id,
+                RepaymentDate=settlement_date,
+                PaymentAccountId='',
+                Amount=f"{amt_float:.2f}",
+                PrincipalComponent=f"{amt_float:.2f}",
+                InterestComponent='0.00',
+                PaymentMode='Salary Deduction',
+                ReferenceNumber=settle_ref,
+                Narration=settle_nar
+            )
+
+            exp.StaffId = staff_id
+            exp.save()
+
+            return JsonResponse({
+                'Status': 'Success',
+                'Message': f"Converted Expense {exp.ExpenseNumber or exp.ExpenseId} as Settled Loan {loan.LoanNumber}",
+                'EmployeeLoanId': loan.EmployeeLoanId,
+                'LoanNumber': loan.LoanNumber
+            }, safe=False)
+
+    elif action == 'mark_as_regular_expense':
+        exp.StaffId = staff_id
+        exp.save()
+        return JsonResponse({
+            'Status': 'Success',
+            'Message': f"Marked Expense {exp.ExpenseNumber or exp.ExpenseId} as regular expense"
+        }, safe=False)
+
+    return JsonResponse("Invalid action", safe=False, status=400)
+
+
+@api_view(['POST'])
+def BatchReconcileStaffExpenses(request):
+    data = JSONParser().parse(request)
+    items = data.get('Items', [])
+    action = data.get('Action', 'convert_to_active_loan')
+
+    if not items:
+        return JsonResponse("No items provided", safe=False, status=400)
+
+    success_count = 0
+    results = []
+
+    for item in items:
+        exp_id = item.get('ExpenseId')
+        st_id = item.get('StaffId')
+        if not exp_id or not st_id:
+            continue
+        try:
+            exp = Expense.objects.get(ExpenseId=exp_id)
+        except Expense.DoesNotExist:
+            continue
+
+        company_id = exp.CompanyId
+        adv_account = Account.objects.filter(CompanyId=company_id, Code='1300').first()
+
+        with transaction.atomic():
+            loan_num = generate_next_loan_number(company_id)
+            amt_float = safe_float(exp.Amount)
+            nar_text = f"Advance from Expense {exp.ExpenseNumber or exp.ExpenseId}: {exp.Narration or ''}".strip()
+
+            loan = EmployeeLoan.objects.create(
+                LoanNumber=loan_num,
+                StaffId=st_id,
+                CompanyId=company_id,
+                LoanDate=exp.Date or datetime.now().strftime('%Y-%m-%d'),
+                DisbursementAccountId=exp.PaymentAccountId or '',
+                LoanAccountId=adv_account.AccountId if adv_account else '',
+                PrincipalAmount=f"{amt_float:.2f}",
+                OutstandingBalance=f"{amt_float:.2f}",
+                TotalAmountPayable=f"{amt_float:.2f}",
+                TotalRepaid='0.00',
+                Status='Active',
+                RepaymentType='flexible',
+                InterestType='zero_interest',
+                Narration=nar_text
+            )
+
+            if (exp.Date or '') >= '2026-04-01' and adv_account:
+                exp.AccountId = adv_account.AccountId
+                exp.StaffId = st_id
+                exp.save()
+                ref_num = exp.ExpenseNumber if exp.ExpenseNumber else exp.ExpenseId
+                entries = JournalEntry.objects.filter(Source='expense', ReferenceNumber__in=[ref_num, exp.ExpenseId])
+                for entry in entries:
+                    JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId, Credit='0.00').update(AccountId=adv_account.AccountId, StaffId=st_id)
+            else:
+                exp.StaffId = st_id
+                exp.save()
+
+            success_count += 1
+            results.append({'ExpenseId': exp_id, 'LoanNumber': loan_num})
+
+    return JsonResponse({
+        'Status': 'Success',
+        'SuccessCount': success_count,
+        'Results': results
+    }, safe=False)
+
+
 
