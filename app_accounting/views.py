@@ -2566,6 +2566,7 @@ def SalaryOverview(request, CompanyId=""):
     )
     if company_id:
         payroll_entries = payroll_entries.filter(CompanyId=company_id)
+    payroll_map = {p.StaffId: p for p in payroll_entries}
     legacy_slips = SalarySlip.objects.filter(Year=year, Month=month, StaffId__in=[st.StaffId for st in staff_list])
     legacy_slip_map = {s.StaffId: s for s in legacy_slips}
 
