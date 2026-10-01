@@ -2838,7 +2838,7 @@ def PayrollApi(request):
                             ReferenceNumber=ref_num,
                             Narration=f"Salary Deduction for {calendar.month_name[month]} {year}"
                         )
-                        repayment_ids.append(repayment.RepaymentId)
+                        repayment_ids.append(str(repayment.RepaymentId))
 
                         new_total_repaid = safe_float(loan.TotalRepaid) + deduct_for_this_loan
                         new_outstanding = max(0.0, loan_outstanding - deduct_for_this_loan)
@@ -2862,7 +2862,7 @@ def PayrollApi(request):
                 # Leg 1: Debit Salaries Expense (6010) with Gross Salary
                 if salary_expense_acc:
                     JournalItem.objects.create(
-                        JournalEntryId=journal_entry.JournalEntryId,
+                        JournalEntryId=str(journal_entry.JournalEntryId),
                         AccountId=salary_expense_acc.AccountId,
                         Debit=f"{gross_salary:.2f}",
                         Credit="0.00",
@@ -2872,7 +2872,7 @@ def PayrollApi(request):
                 # Leg 2: Credit Employee Loans & Advances (1300) with Advance Deduction
                 if advance_deduction > 0 and loan_asset_acc:
                     JournalItem.objects.create(
-                        JournalEntryId=journal_entry.JournalEntryId,
+                        JournalEntryId=str(journal_entry.JournalEntryId),
                         AccountId=loan_asset_acc.AccountId,
                         Debit="0.00",
                         Credit=f"{advance_deduction:.2f}",
@@ -2882,7 +2882,7 @@ def PayrollApi(request):
                 # Leg 3: Credit Bank/Cash Account with Net Salary
                 if net_salary > 0 and item_pay_acc:
                     JournalItem.objects.create(
-                        JournalEntryId=journal_entry.JournalEntryId,
+                        JournalEntryId=str(journal_entry.JournalEntryId),
                         AccountId=item_pay_acc,
                         Debit="0.00",
                         Credit=f"{net_salary:.2f}",
@@ -2902,13 +2902,13 @@ def PayrollApi(request):
                     PaymentAccountId=item_pay_acc,
                     PaymentMode=item_pay_mode,
                     ReferenceNumber=ref_num,
-                    JournalEntryId=journal_entry.JournalEntryId,
-                    RepaymentIds=",".join(repayment_ids),
+                    JournalEntryId=str(journal_entry.JournalEntryId),
+                    RepaymentIds=",".join([str(r) for r in repayment_ids]),
                     Status='Paid',
                     Narration=item_narration
                 )
 
-                processed_entries.append(payroll_entry.PayrollId)
+                processed_entries.append(str(payroll_entry.PayrollId))
 
         return JsonResponse({
             'Status': 'Success',
