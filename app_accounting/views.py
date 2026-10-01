@@ -3,11 +3,15 @@ from django.http.response import JsonResponse
 from rest_framework.parsers import JSONParser, MultiPartParser, FormParser
 from django.db import transaction
 from django.db.models import Q
-from app_accounting.models import Account, JournalEntry, JournalItem, Expense, ExpenseClaim, EmployeeLoan, EmployeeLoanRepayment
+import calendar
+from app_accounting.models import (
+    Account, JournalEntry, JournalItem, Expense, ExpenseClaim,
+    EmployeeLoan, EmployeeLoanRepayment, PayrollEntry
+)
 from app_accounting.serializers import (
     AccountSerializer, JournalEntrySerializer, JournalItemSerializer,
     ExpenseSerializer, ExpenseClaimSerializer, EmployeeLoanSerializer,
-    EmployeeLoanRepaymentSerializer
+    EmployeeLoanRepaymentSerializer, PayrollEntrySerializer
 )
 from app_client.models import Client
 from app_client.serializers import ClientSerializer
@@ -136,6 +140,15 @@ def get_attachment_url_for_journal_entry(entry):
         if repay and repay.Receipt and hasattr(repay.Receipt, 'name') and repay.Receipt.name:
             return format_media_url(repay.Receipt)
 
+    elif source in ['payroll_salary', 'payroll']:
+        from app_accounting.models import PayrollEntry
+        payroll = PayrollEntry.objects.filter(
+            Q(JournalEntryId=entry.JournalEntryId) |
+            Q(ReferenceNumber=entry.ReferenceNumber)
+        ).first()
+        if payroll and payroll.Receipt and hasattr(payroll.Receipt, 'name') and payroll.Receipt.name:
+            return format_media_url(payroll.Receipt)
+
     return ""
 
 
@@ -253,6 +266,16 @@ def resolve_reference_number(entry):
             return ref_num.replace('REPAY-', '')
         elif ref_num.startswith('LRP-'):
             return ref_num
+    elif source in ['payroll_salary', 'payroll']:
+        from app_accounting.models import PayrollEntry
+        payroll = PayrollEntry.objects.filter(
+            Q(JournalEntryId=entry.JournalEntryId) |
+            Q(ReferenceNumber=ref_num) |
+            Q(PayrollId=ref_num)
+        ).first()
+        if payroll and payroll.ReferenceNumber:
+            return payroll.ReferenceNumber
+        return ref_num
 
     return ref_num
 
@@ -405,6 +428,36 @@ def JournalItemByAccountId(request, AccountId=""):
                     JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId).update(StaffId=staff_id)
                 except:
                     pass
+
+        if not staff_id and entry and entry.Source in ['employee_loan_disbursement', 'employee_loan']:
+            from app_accounting.models import EmployeeLoan
+            loan = EmployeeLoan.objects.filter(
+                Q(DisbursementJournalEntryId=entry.JournalEntryId) |
+                Q(LoanNumber=entry.ReferenceNumber) |
+                Q(EmployeeLoanId=entry.ReferenceNumber)
+            ).first()
+            if loan and loan.StaffId:
+                staff_id = loan.StaffId
+                try:
+                    JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId).update(StaffId=staff_id)
+                except:
+                    pass
+
+        if not staff_id and entry and entry.Source in ['employee_loan_repayment', 'employee_loan_repay']:
+            from app_accounting.models import EmployeeLoanRepayment, EmployeeLoan
+            repay = EmployeeLoanRepayment.objects.filter(
+                Q(JournalEntryId=entry.JournalEntryId) |
+                Q(RepaymentNumber=entry.ReferenceNumber) |
+                Q(RepaymentId=entry.ReferenceNumber)
+            ).first()
+            if repay and repay.EmployeeLoanId:
+                loan = EmployeeLoan.objects.filter(EmployeeLoanId=repay.EmployeeLoanId).first()
+                if loan and loan.StaffId:
+                    staff_id = loan.StaffId
+                    try:
+                        JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId).update(StaffId=staff_id)
+                    except:
+                        pass
 
         if staff_id:
             try:
@@ -638,6 +691,28 @@ def CashBookByCompanyId(request, CompanyId=""):
             ).first()
             if claim:
                 staff_id = claim.StaffId
+
+        if not staff_id and entry_date and entry.Source in ['employee_loan_disbursement', 'employee_loan']:
+            from app_accounting.models import EmployeeLoan
+            loan = EmployeeLoan.objects.filter(
+                Q(DisbursementJournalEntryId=entry.JournalEntryId) |
+                Q(LoanNumber=entry.ReferenceNumber) |
+                Q(EmployeeLoanId=entry.ReferenceNumber)
+            ).first()
+            if loan:
+                staff_id = loan.StaffId
+
+        if not staff_id and entry_date and entry.Source in ['employee_loan_repayment', 'employee_loan_repay']:
+            from app_accounting.models import EmployeeLoanRepayment, EmployeeLoan
+            repay = EmployeeLoanRepayment.objects.filter(
+                Q(JournalEntryId=entry.JournalEntryId) |
+                Q(RepaymentNumber=entry.ReferenceNumber) |
+                Q(RepaymentId=entry.ReferenceNumber)
+            ).first()
+            if repay and repay.EmployeeLoanId:
+                loan = EmployeeLoan.objects.filter(EmployeeLoanId=repay.EmployeeLoanId).first()
+                if loan:
+                    staff_id = loan.StaffId
 
         if staff_id:
             try:
@@ -2397,4 +2472,729 @@ def ExportCashBook(request, CompanyId=""):
         
         doc.build(story)
         return response
+
+
+# ==========================================
+# SALARY / PAYROLL PROCESSING ENDPOINTS
+# ==========================================
+
+def rollback_payroll_entry(payroll_entry):
+    if not payroll_entry:
+        return
+    with transaction.atomic():
+        # 1. Rollback and delete loan repayments
+        if payroll_entry.RepaymentIds:
+            repay_ids = [r.strip() for r in payroll_entry.RepaymentIds.split(',') if r.strip()]
+            for r_id in repay_ids:
+                repay = EmployeeLoanRepayment.objects.filter(RepaymentId=r_id).first()
+                if repay:
+                    if repay.EmployeeLoanId:
+                        loan = EmployeeLoan.objects.filter(EmployeeLoanId=repay.EmployeeLoanId).first()
+                        if loan:
+                            repaid_amount = safe_float(repay.PrincipalComponent or repay.Amount)
+                            new_total_repaid = max(0.0, safe_float(loan.TotalRepaid) - repaid_amount)
+                            new_outstanding = safe_float(loan.OutstandingBalance) + repaid_amount
+                            loan.TotalRepaid = f"{new_total_repaid:.2f}"
+                            loan.OutstandingBalance = f"{new_outstanding:.2f}"
+                            loan.Status = 'Active'
+                            loan.save()
+                    repay.delete()
+
+        # 2. Rollback and delete journal entry and items
+        if payroll_entry.JournalEntryId:
+            JournalItem.objects.filter(JournalEntryId=payroll_entry.JournalEntryId).delete()
+            JournalEntry.objects.filter(JournalEntryId=payroll_entry.JournalEntryId).delete()
+
+        if payroll_entry.ReferenceNumber:
+            entries = JournalEntry.objects.filter(
+                ReferenceNumber=payroll_entry.ReferenceNumber,
+                Source='payroll_salary',
+                CompanyId=payroll_entry.CompanyId
+            )
+            for e in entries:
+                JournalItem.objects.filter(JournalEntryId=e.JournalEntryId).delete()
+                e.delete()
+
+
+@api_view(['GET'])
+def SalaryOverview(request, CompanyId=""):
+    company_id = CompanyId or request.GET.get('CompanyId') or request.query_params.get('CompanyId', '')
+    month_val = request.GET.get('Month') or request.query_params.get('Month')
+    year_val = request.GET.get('Year') or request.query_params.get('Year')
+
+    now = datetime.now()
+    try:
+        month = int(month_val) if month_val else now.month
+    except:
+        month = now.month
+
+    try:
+        year = int(year_val) if year_val else now.year
+    except:
+        year = now.year
+
+    staff_query = Staff.objects.filter(Status=1)
+    if company_id:
+        staff_query = staff_query.filter(CompanyId=company_id)
+    staff_list = staff_query.order_by('StaffName')
+
+    payroll_entries = PayrollEntry.objects.filter(
+        PayrollMonth=month,
+        PayrollYear=year
+    )
+    if company_id:
+        payroll_entries = payroll_entries.filter(CompanyId=company_id)
+    payroll_map = {p.StaffId: p for p in payroll_entries}
+
+    from app_accounting.signals import get_or_create_default_accounts
+    if company_id:
+        get_or_create_default_accounts(company_id)
+    bank_accounts = Account.objects.filter(IsCashOrBank=True)
+    if company_id:
+        bank_accounts = bank_accounts.filter(CompanyId=company_id)
+    bank_account_list = AccountSerializer(bank_accounts, many=True).data
+
+    overview_rows = []
+    total_gross = 0.0
+    total_deductions = 0.0
+    total_net = 0.0
+    processed_count = 0
+    pending_count = 0
+
+    for staff in staff_list:
+        p_entry = payroll_map.get(staff.StaffId)
+
+        active_loans = EmployeeLoan.objects.filter(
+            StaffId=staff.StaffId,
+            Status='Active'
+        )
+        if company_id:
+            active_loans = active_loans.filter(CompanyId=company_id)
+
+        loan_details = []
+        total_loan_outstanding = 0.0
+        suggested_loan_deduction = 0.0
+
+        for loan in active_loans:
+            out_bal = safe_float(loan.OutstandingBalance)
+            inst_amt = safe_float(loan.InstallmentAmount)
+            total_loan_outstanding += out_bal
+            if loan.RepaymentType == 'installment' and inst_amt > 0:
+                suggested_loan_deduction += min(inst_amt, out_bal)
+            else:
+                suggested_loan_deduction += out_bal
+
+            loan_details.append({
+                'EmployeeLoanId': loan.EmployeeLoanId,
+                'LoanNumber': loan.LoanNumber or '',
+                'PrincipalAmount': loan.PrincipalAmount or '0.00',
+                'OutstandingBalance': loan.OutstandingBalance or '0.00',
+                'InstallmentAmount': loan.InstallmentAmount or '0.00',
+                'RepaymentType': loan.RepaymentType or 'flexible'
+            })
+
+        base_salary = safe_float(staff.Salary)
+
+        if p_entry:
+            processed_count += 1
+            gross = safe_float(p_entry.GrossSalary)
+            deduction = safe_float(p_entry.AdvanceDeduction)
+            net = safe_float(p_entry.NetSalary)
+            status = p_entry.Status or 'Paid'
+            payment_date = p_entry.PaymentDate or ''
+            payment_account_id = p_entry.PaymentAccountId or ''
+            payment_mode = p_entry.PaymentMode or 'Bank Transfer'
+            ref_num = p_entry.ReferenceNumber or ''
+            payroll_id = p_entry.PayrollId
+            narration = p_entry.Narration or ''
+        else:
+            pending_count += 1
+            gross = base_salary
+            deduction = min(suggested_loan_deduction, gross)
+            net = max(0.0, gross - deduction)
+            status = 'Pending'
+            payment_date = now.strftime('%Y-%m-%d')
+            payment_account_id = bank_accounts.first().AccountId if bank_accounts.exists() else ''
+            payment_mode = 'Bank Transfer'
+            ref_num = f"SAL-{year}{month:02d}-{staff.StaffCode}" if staff.StaffCode else f"SAL-{year}{month:02d}"
+            payroll_id = ''
+            narration = f"Salary for {calendar.month_name[month]} {year}"
+
+        total_gross += gross
+        total_deductions += deduction
+        total_net += net
+
+        photo_url = format_media_url(staff.ProfilePhoto) if hasattr(staff, 'ProfilePhoto') else ''
+
+        overview_rows.append({
+            'StaffId': staff.StaffId,
+            'StaffCode': staff.StaffCode or '',
+            'StaffName': staff.StaffName or '',
+            'Designation': staff.Designation or '',
+            'ProfilePhoto': photo_url,
+            'BankAccount': staff.BankAccount or '',
+            'BaseSalary': f"{base_salary:.2f}",
+            'GrossSalary': f"{gross:.2f}",
+            'OutstandingLoanBalance': f"{total_loan_outstanding:.2f}",
+            'SuggestedDeduction': f"{suggested_loan_deduction:.2f}",
+            'AdvanceDeduction': f"{deduction:.2f}",
+            'NetSalary': f"{net:.2f}",
+            'ActiveLoans': loan_details,
+            'Status': status,
+            'PaymentDate': payment_date,
+            'PaymentAccountId': payment_account_id,
+            'PaymentMode': payment_mode,
+            'ReferenceNumber': ref_num,
+            'PayrollId': payroll_id,
+            'Narration': narration
+        })
+
+    return JsonResponse({
+        'Month': month,
+        'Year': year,
+        'MonthName': calendar.month_name[month],
+        'CompanyId': company_id,
+        'BankAccounts': bank_account_list,
+        'Summary': {
+            'TotalStaffCount': len(staff_list),
+            'ProcessedCount': processed_count,
+            'PendingCount': pending_count,
+            'TotalGross': f"{total_gross:.2f}",
+            'TotalAdvanceDeduction': f"{total_deductions:.2f}",
+            'TotalNetPayout': f"{total_net:.2f}"
+        },
+        'StaffList': overview_rows
+    }, safe=False)
+
+
+@api_view(['GET', 'POST'])
+def PayrollApi(request):
+    if request.method == 'GET':
+        company_id = request.GET.get('CompanyId') or request.query_params.get('CompanyId')
+        month = request.GET.get('Month') or request.query_params.get('Month')
+        year = request.GET.get('Year') or request.query_params.get('Year')
+
+        entries = PayrollEntry.objects.all().order_by('-SortId')
+        if company_id:
+            entries = entries.filter(CompanyId=company_id)
+        if month:
+            entries = entries.filter(PayrollMonth=int(month))
+        if year:
+            entries = entries.filter(PayrollYear=int(year))
+
+        serializer = PayrollEntrySerializer(entries, many=True)
+        return JsonResponse(serializer.data, safe=False)
+
+    elif request.method == 'POST':
+        data = JSONParser().parse(request)
+        company_id = data.get('CompanyId', '')
+        month = int(data.get('Month', datetime.now().month))
+        year = int(data.get('Year', datetime.now().year))
+        payment_date = data.get('PaymentDate') or datetime.now().strftime('%Y-%m-%d')
+        default_account_id = data.get('PaymentAccountId', '')
+        default_mode = data.get('PaymentMode', 'Bank Transfer')
+
+        # Check if batch items or single item
+        staff_items = data.get('StaffList')
+        if not staff_items:
+            # Single item POST
+            staff_items = [{
+                'StaffId': data.get('StaffId'),
+                'GrossSalary': data.get('GrossSalary'),
+                'AdvanceDeduction': data.get('AdvanceDeduction'),
+                'NetSalary': data.get('NetSalary'),
+                'PaymentAccountId': data.get('PaymentAccountId') or default_account_id,
+                'PaymentMode': data.get('PaymentMode') or default_mode,
+                'PaymentDate': data.get('PaymentDate') or payment_date,
+                'Narration': data.get('Narration', '')
+            }]
+
+        from app_accounting.signals import get_or_create_default_accounts
+        accounts = get_or_create_default_accounts(company_id) if company_id else {}
+        salary_expense_acc = accounts.get('6010')
+        if not salary_expense_acc and company_id:
+            salary_expense_acc, _ = Account.objects.get_or_create(
+                Code='6010',
+                CompanyId=company_id,
+                defaults={'Name': 'Salaries Expense', 'Type': 'Expense', 'IsCashOrBank': False}
+            )
+
+        loan_asset_acc = accounts.get('1300')
+        if not loan_asset_acc and company_id:
+            loan_asset_acc, _ = Account.objects.get_or_create(
+                Code='1300',
+                CompanyId=company_id,
+                defaults={'Name': 'Employee Loans & Advances', 'Type': 'Asset', 'IsCashOrBank': False}
+            )
+
+        processed_entries = []
+
+        with transaction.atomic():
+            for item in staff_items:
+                staff_id = item.get('StaffId')
+                if not staff_id:
+                    continue
+
+                staff = Staff.objects.filter(StaffId=staff_id).first()
+                if not staff:
+                    continue
+
+                staff_code = staff.StaffCode or staff.StaffId[:6]
+                gross_salary = safe_float(item.get('GrossSalary', staff.Salary))
+                advance_deduction = safe_float(item.get('AdvanceDeduction', 0.0))
+                net_salary = safe_float(item.get('NetSalary', gross_salary - advance_deduction))
+                item_pay_acc = item.get('PaymentAccountId') or default_account_id
+                item_pay_mode = item.get('PaymentMode') or default_mode
+                item_pay_date = item.get('PaymentDate') or payment_date
+                item_narration = item.get('Narration') or f"Salary for {calendar.month_name[month]} {year} - {staff.StaffName}"
+                ref_num = f"SAL-{year}{month:02d}-{staff_code}"
+
+                # 1. Rollback previous entry if exists
+                existing_entry = PayrollEntry.objects.filter(
+                    CompanyId=company_id,
+                    StaffId=staff_id,
+                    PayrollMonth=month,
+                    PayrollYear=year
+                ).first()
+                if existing_entry:
+                    rollback_payroll_entry(existing_entry)
+                    existing_entry.delete()
+
+                # 2. Process advance deduction against active loans
+                repayment_ids = []
+                if advance_deduction > 0:
+                    active_loans = EmployeeLoan.objects.filter(
+                        StaffId=staff_id,
+                        Status='Active'
+                    )
+                    if company_id:
+                        active_loans = active_loans.filter(CompanyId=company_id)
+                    active_loans = active_loans.order_by('SortId')
+
+                    remaining_deduction = advance_deduction
+                    for loan in active_loans:
+                        if remaining_deduction <= 0:
+                            break
+                        loan_outstanding = safe_float(loan.OutstandingBalance)
+                        if loan_outstanding <= 0:
+                            continue
+
+                        deduct_for_this_loan = min(remaining_deduction, loan_outstanding)
+                        repay_num = generate_next_repayment_number(company_id) if company_id else f"LRP-{datetime.now().strftime('%Y%m%d%H%M%S')}"
+
+                        repayment = EmployeeLoanRepayment.objects.create(
+                            RepaymentNumber=repay_num,
+                            EmployeeLoanId=loan.EmployeeLoanId,
+                            StaffId=staff_id,
+                            CompanyId=company_id,
+                            RepaymentDate=item_pay_date,
+                            PaymentAccountId=item_pay_acc,
+                            Amount=f"{deduct_for_this_loan:.2f}",
+                            PrincipalComponent=f"{deduct_for_this_loan:.2f}",
+                            InterestComponent="0.00",
+                            PaymentMode='Salary Deduction',
+                            ReferenceNumber=ref_num,
+                            Narration=f"Salary Deduction for {calendar.month_name[month]} {year}"
+                        )
+                        repayment_ids.append(repayment.RepaymentId)
+
+                        new_total_repaid = safe_float(loan.TotalRepaid) + deduct_for_this_loan
+                        new_outstanding = max(0.0, loan_outstanding - deduct_for_this_loan)
+                        loan.TotalRepaid = f"{new_total_repaid:.2f}"
+                        loan.OutstandingBalance = f"{new_outstanding:.2f}"
+                        if new_outstanding <= 0.001:
+                            loan.Status = 'Closed'
+                        loan.save()
+
+                        remaining_deduction -= deduct_for_this_loan
+
+                # 3. Create Double-Entry Journal Entry
+                journal_entry = JournalEntry.objects.create(
+                    Date=item_pay_date,
+                    ReferenceNumber=ref_num,
+                    Source='payroll_salary',
+                    Narration=item_narration,
+                    CompanyId=company_id
+                )
+
+                # Leg 1: Debit Salaries Expense (6010) with Gross Salary
+                if salary_expense_acc:
+                    JournalItem.objects.create(
+                        JournalEntryId=journal_entry.JournalEntryId,
+                        AccountId=salary_expense_acc.AccountId,
+                        Debit=f"{gross_salary:.2f}",
+                        Credit="0.00",
+                        StaffId=staff_id
+                    )
+
+                # Leg 2: Credit Employee Loans & Advances (1300) with Advance Deduction
+                if advance_deduction > 0 and loan_asset_acc:
+                    JournalItem.objects.create(
+                        JournalEntryId=journal_entry.JournalEntryId,
+                        AccountId=loan_asset_acc.AccountId,
+                        Debit="0.00",
+                        Credit=f"{advance_deduction:.2f}",
+                        StaffId=staff_id
+                    )
+
+                # Leg 3: Credit Bank/Cash Account with Net Salary
+                if net_salary > 0 and item_pay_acc:
+                    JournalItem.objects.create(
+                        JournalEntryId=journal_entry.JournalEntryId,
+                        AccountId=item_pay_acc,
+                        Debit="0.00",
+                        Credit=f"{net_salary:.2f}",
+                        StaffId=staff_id
+                    )
+
+                # 4. Create PayrollEntry Record
+                payroll_entry = PayrollEntry.objects.create(
+                    CompanyId=company_id,
+                    StaffId=staff_id,
+                    PayrollMonth=month,
+                    PayrollYear=year,
+                    PaymentDate=item_pay_date,
+                    GrossSalary=f"{gross_salary:.2f}",
+                    AdvanceDeduction=f"{advance_deduction:.2f}",
+                    NetSalary=f"{net_salary:.2f}",
+                    PaymentAccountId=item_pay_acc,
+                    PaymentMode=item_pay_mode,
+                    ReferenceNumber=ref_num,
+                    JournalEntryId=journal_entry.JournalEntryId,
+                    RepaymentIds=",".join(repayment_ids),
+                    Status='Paid',
+                    Narration=item_narration
+                )
+
+                processed_entries.append(payroll_entry.PayrollId)
+
+        return JsonResponse({
+            'Status': 'Success',
+            'Message': f"Processed salary for {len(processed_entries)} staff member(s)",
+            'PayrollIds': processed_entries
+        }, safe=False)
+
+
+@api_view(['GET', 'DELETE'])
+def PayrollApiById(request, PayrollId=""):
+    try:
+        entry = PayrollEntry.objects.get(PayrollId=PayrollId)
+    except PayrollEntry.DoesNotExist:
+        return JsonResponse("Payroll entry not found", safe=False, status=404)
+
+    if request.method == 'GET':
+        serializer = PayrollEntrySerializer(entry)
+        data = serializer.data
+        if entry.StaffId:
+            staff = Staff.objects.filter(StaffId=entry.StaffId).first()
+            if staff:
+                data['StaffName'] = staff.StaffName or ''
+                data['StaffCode'] = staff.StaffCode or ''
+                data['Designation'] = staff.Designation or ''
+        return JsonResponse(data, safe=False)
+
+    elif request.method == 'DELETE':
+        with transaction.atomic():
+            rollback_payroll_entry(entry)
+            entry.delete()
+        return JsonResponse("Payroll entry rolled back and deleted successfully", safe=False)
+
+
+@api_view(['GET'])
+def PayrollByCompanyId(request, CompanyId=""):
+    company_id = CompanyId or request.GET.get('CompanyId') or request.query_params.get('CompanyId', '')
+    period_type = (request.GET.get('PeriodType') or request.query_params.get('PeriodType') or 'month').lower()
+    month_val = request.GET.get('Month') or request.query_params.get('Month')
+    quarter_val = request.GET.get('Quarter') or request.query_params.get('Quarter')
+    half_val = request.GET.get('HalfYear') or request.query_params.get('HalfYear')
+    year_val = request.GET.get('Year') or request.query_params.get('Year')
+    staff_id = request.GET.get('StaffId') or request.query_params.get('StaffId')
+
+    now = datetime.now()
+    try:
+        year = int(year_val) if year_val else now.year
+    except:
+        year = now.year
+
+    try:
+        month = int(month_val) if month_val else now.month
+    except:
+        month = now.month
+
+    try:
+        quarter = int(quarter_val) if quarter_val else ((month - 1) // 3 + 1)
+    except:
+        quarter = 1
+
+    try:
+        half_year = int(half_val) if half_val else (1 if month <= 6 else 2)
+    except:
+        half_year = 1
+
+    entries = PayrollEntry.objects.filter(CompanyId=company_id).order_by('-PayrollYear', '-PayrollMonth', '-SortId')
+
+    if period_type == 'month' or period_type == 'monthly':
+        entries = entries.filter(PayrollYear=year, PayrollMonth=month)
+        period_label = f"{calendar.month_name[month]} {year}"
+    elif period_type == 'quarter' or period_type == 'quarterly':
+        q_map = {1: [1, 2, 3], 2: [4, 5, 6], 3: [7, 8, 9], 4: [10, 11, 12]}
+        months = q_map.get(quarter, [1, 2, 3])
+        entries = entries.filter(PayrollYear=year, PayrollMonth__in=months)
+        period_label = f"Quarter {quarter} ({calendar.month_abbr[months[0]]} - {calendar.month_abbr[months[-1]]}) {year}"
+    elif period_type == 'half_year' or period_type == 'half' or period_type == 'half_yearly':
+        h_map = {1: [1, 2, 3, 4, 5, 6], 2: [7, 8, 9, 10, 11, 12]}
+        months = h_map.get(half_year, [1, 2, 3, 4, 5, 6])
+        entries = entries.filter(PayrollYear=year, PayrollMonth__in=months)
+        period_label = f"Half Year {half_year} ({calendar.month_abbr[months[0]]} - {calendar.month_abbr[months[-1]]}) {year}"
+    elif period_type == 'full_year' or period_type == 'year' or period_type == 'yearly':
+        entries = entries.filter(PayrollYear=year)
+        period_label = f"Full Year {year}"
+    else:
+        period_label = "All Processed Salaries"
+
+    if staff_id:
+        entries = entries.filter(StaffId=staff_id)
+
+    staff_dict = {s.StaffId: s for s in Staff.objects.all()}
+    acc_dict = {a.AccountId: a for a in Account.objects.filter(CompanyId=company_id)}
+
+    results = []
+    total_gross = 0.0
+    total_ded = 0.0
+    total_net = 0.0
+
+    for entry in entries:
+        d = PayrollEntrySerializer(entry).data
+        st = staff_dict.get(entry.StaffId)
+        if st:
+            d['StaffName'] = st.StaffName or ''
+            d['StaffCode'] = st.StaffCode or ''
+            d['Designation'] = st.Designation or ''
+            d['ProfilePhoto'] = format_media_url(st.ProfilePhoto) if hasattr(st, 'ProfilePhoto') else ''
+            d['BankAccount'] = st.BankAccount or ''
+
+        acc = acc_dict.get(entry.PaymentAccountId)
+        if acc:
+            d['PaymentAccountName'] = acc.Name or ''
+            d['PaymentAccountCode'] = acc.Code or ''
+
+        d['MonthName'] = calendar.month_name[entry.PayrollMonth] if 1 <= entry.PayrollMonth <= 12 else ''
+        d['PeriodDisplay'] = f"{d['MonthName']} {entry.PayrollYear}"
+        d['ReceiptUrl'] = format_media_url(entry.Receipt) if hasattr(entry, 'Receipt') else ''
+
+        gross_val = safe_float(entry.GrossSalary)
+        ded_val = safe_float(entry.AdvanceDeduction)
+        net_val = safe_float(entry.NetSalary)
+
+        total_gross += gross_val
+        total_ded += ded_val
+        total_net += net_val
+
+        results.append(d)
+
+    return JsonResponse({
+        'PeriodType': period_type,
+        'PeriodLabel': period_label,
+        'Year': year,
+        'Month': month,
+        'Quarter': quarter,
+        'HalfYear': half_year,
+        'Summary': {
+            'TotalCount': len(results),
+            'TotalGross': f"{total_gross:.2f}",
+            'TotalAdvanceDeduction': f"{total_ded:.2f}",
+            'TotalNetPayout': f"{total_net:.2f}"
+        },
+        'Results': results
+    }, safe=False)
+
+
+@api_view(['POST'])
+@parser_classes([MultiPartParser, FormParser])
+def PayrollUploadReceipt(request, PayrollId=""):
+    try:
+        entry = PayrollEntry.objects.get(PayrollId=PayrollId)
+    except PayrollEntry.DoesNotExist:
+        return JsonResponse("Payroll entry not found", safe=False, status=404)
+
+    receipt_file = request.FILES.get('Receipt')
+    if not receipt_file:
+        return JsonResponse("No receipt file provided", safe=False, status=400)
+
+    entry.Receipt = receipt_file
+    entry.save()
+    return JsonResponse({'Status': 'Success', 'ReceiptUrl': format_media_url(entry.Receipt)}, safe=False)
+
+
+@api_view(['GET'])
+def ExportPayrollSheet(request, CompanyId=""):
+    period_type = (request.GET.get('PeriodType') or request.query_params.get('PeriodType') or 'month').lower()
+    month_val = request.GET.get('Month') or request.query_params.get('Month')
+    quarter_val = request.GET.get('Quarter') or request.query_params.get('Quarter')
+    half_val = request.GET.get('HalfYear') or request.query_params.get('HalfYear')
+    year_val = request.GET.get('Year') or request.query_params.get('Year')
+    staff_id = request.GET.get('StaffId') or request.query_params.get('StaffId')
+
+    now = datetime.now()
+    try:
+        year = int(year_val) if year_val else now.year
+    except:
+        year = now.year
+
+    try:
+        month = int(month_val) if month_val else now.month
+    except:
+        month = now.month
+
+    try:
+        quarter = int(quarter_val) if quarter_val else ((month - 1) // 3 + 1)
+    except:
+        quarter = 1
+
+    try:
+        half_year = int(half_val) if half_val else (1 if month <= 6 else 2)
+    except:
+        half_year = 1
+
+    payroll_entries = PayrollEntry.objects.filter(CompanyId=CompanyId).order_by('PayrollYear', 'PayrollMonth', 'SortId')
+
+    if period_type in ['month', 'monthly']:
+        payroll_entries = payroll_entries.filter(PayrollYear=year, PayrollMonth=month)
+        period_label = f"{calendar.month_name[month]} {year}"
+        filename = f"Payroll_Sheet_{calendar.month_name[month]}_{year}"
+    elif period_type in ['quarter', 'quarterly']:
+        q_map = {1: [1, 2, 3], 2: [4, 5, 6], 3: [7, 8, 9], 4: [10, 11, 12]}
+        months = q_map.get(quarter, [1, 2, 3])
+        payroll_entries = payroll_entries.filter(PayrollYear=year, PayrollMonth__in=months)
+        period_label = f"Quarter {quarter} ({calendar.month_abbr[months[0]]} - {calendar.month_abbr[months[-1]]}) {year}"
+        filename = f"Payroll_Sheet_Q{quarter}_{year}"
+    elif period_type in ['half_year', 'half', 'half_yearly']:
+        h_map = {1: [1, 2, 3, 4, 5, 6], 2: [7, 8, 9, 10, 11, 12]}
+        months = h_map.get(half_year, [1, 2, 3, 4, 5, 6])
+        payroll_entries = payroll_entries.filter(PayrollYear=year, PayrollMonth__in=months)
+        period_label = f"Half Year {half_year} ({calendar.month_abbr[months[0]]} - {calendar.month_abbr[months[-1]]}) {year}"
+        filename = f"Payroll_Sheet_H{half_year}_{year}"
+    elif period_type in ['full_year', 'year', 'yearly']:
+        payroll_entries = payroll_entries.filter(PayrollYear=year)
+        period_label = f"Full Year {year}"
+        filename = f"Payroll_Sheet_FullYear_{year}"
+    else:
+        period_label = "All Processed Salaries"
+        filename = f"Payroll_Sheet_All_{year}"
+
+    if staff_id:
+        payroll_entries = payroll_entries.filter(StaffId=staff_id)
+
+    staff_dict = {s.StaffId: s for s in Staff.objects.all()}
+    acc_dict = {a.AccountId: a for a in Account.objects.filter(CompanyId=CompanyId)}
+
+    company_name = "Company Payroll"
+    try:
+        from app_company.models import Company
+        comp = Company.objects.filter(CompanyId=CompanyId).first()
+        if comp and comp.CompanyName:
+            company_name = comp.CompanyName
+    except:
+        pass
+
+    import openpyxl
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    from django.http import HttpResponse
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Payroll Sheet"
+
+    title_font = Font(name="Arial", size=16, bold=True, color="1E3A8A")
+    subtitle_font = Font(name="Arial", size=11, italic=True, color="4B5563")
+    header_font = Font(name="Arial", size=11, bold=True, color="FFFFFF")
+    bold_font = Font(name="Arial", size=11, bold=True)
+    regular_font = Font(name="Arial", size=10)
+
+    header_fill = PatternFill(start_color="1E3A8A", end_color="1E3A8A", fill_type="solid")
+    summary_fill = PatternFill(start_color="F3F4F6", end_color="F3F4F6", fill_type="solid")
+
+    ws.merge_cells("A1:I1")
+    ws["A1"] = company_name
+    ws["A1"].font = title_font
+    ws["A1"].alignment = Alignment(horizontal="center")
+
+    ws.merge_cells("A2:I2")
+    ws["A2"] = f"Salary Sheet &mdash; {period_label}"
+    ws["A2"].font = subtitle_font
+    ws["A2"].alignment = Alignment(horizontal="center")
+
+    ws.append([])
+
+    headers = ["#", "Period", "Staff Code", "Staff Name", "Designation", "Payment Date", "Gross Salary (₹)", "Advance Deduction (₹)", "Net Payout (₹)"]
+    ws.append(headers)
+    header_row = 4
+    for col_idx, h in enumerate(headers, 1):
+        cell = ws.cell(row=header_row, column=col_idx)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="left" if col_idx <= 6 else "right")
+
+    tot_gross = 0.0
+    tot_ded = 0.0
+    tot_net = 0.0
+
+    current_row = 5
+    for idx, entry in enumerate(payroll_entries, 1):
+        st = staff_dict.get(entry.StaffId)
+        st_name = st.StaffName if st else "Staff"
+        st_code = st.StaffCode if st else ""
+        st_desig = st.Designation if st else ""
+
+        g = safe_float(entry.GrossSalary)
+        d = safe_float(entry.AdvanceDeduction)
+        n = safe_float(entry.NetSalary)
+
+        tot_gross += g
+        tot_ded += d
+        tot_net += n
+
+        m_name = calendar.month_abbr[entry.PayrollMonth] if 1 <= entry.PayrollMonth <= 12 else ''
+        p_str = f"{m_name} {entry.PayrollYear}"
+
+        row_data = [idx, p_str, st_code, st_name, st_desig, entry.PaymentDate, g, d, n]
+        ws.append(row_data)
+
+        for c_idx in range(1, 10):
+            c = ws.cell(row=current_row, column=c_idx)
+            c.font = regular_font
+            if c_idx >= 7:
+                c.alignment = Alignment(horizontal="right")
+                c.number_format = '#,##,##0.00'
+        current_row += 1
+
+    ws.append(["Total", "", "", "", "", "", tot_gross, tot_ded, tot_net])
+    ws.merge_cells(f"A{current_row}:F{current_row}")
+    for c_idx in range(1, 10):
+        c = ws.cell(row=current_row, column=c_idx)
+        c.font = bold_font
+        c.fill = summary_fill
+        if c_idx >= 7:
+            c.alignment = Alignment(horizontal="right")
+            c.number_format = '#,##,##0.00'
+
+    # Column widths
+    ws.column_dimensions['A'].width = 6
+    ws.column_dimensions['B'].width = 14
+    ws.column_dimensions['C'].width = 14
+    ws.column_dimensions['D'].width = 24
+    ws.column_dimensions['E'].width = 20
+    ws.column_dimensions['F'].width = 14
+    ws.column_dimensions['G'].width = 18
+    ws.column_dimensions['H'].width = 22
+    ws.column_dimensions['I'].width = 18
+
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename}.xlsx"'
+    wb.save(response)
+    return response
+
+
 

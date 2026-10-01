@@ -125,8 +125,8 @@ DATABASES = {
         'NAME': 'staffmanage_db',
         'USER': 'python_user',
         'PASSWORD': 'Kq#oCWJN0sAR',
-        'PORT': '3306',
-        'HOST': 'localhost',
+        'PORT': '3309',
+        'HOST': '127.0.0.1',
         'POOL_OPTIONS': {
             'POOL_SIZE': 40,
             'MAX_OVERFLOW': 60,

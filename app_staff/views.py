@@ -1724,6 +1724,32 @@ def StaffLedgerApi(request, StaffId=""):
             for entry in entries:
                 JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId).update(StaffId=StaffId)
 
+        # 3. Sync StaffId on JournalItems for EmployeeLoan and Repayment records
+        try:
+            from app_accounting.models import EmployeeLoan, EmployeeLoanRepayment
+            staff_loans = EmployeeLoan.objects.filter(StaffId=StaffId)
+            loan_ids = [l.EmployeeLoanId for l in staff_loans]
+            for loan in staff_loans:
+                loan_ref = f"LOAN-{loan.LoanNumber}"
+                entries = JournalEntry.objects.filter(
+                    Q(ReferenceNumber__in=[loan_ref, loan.LoanNumber, loan.EmployeeLoanId]) |
+                    Q(JournalEntryId=loan.DisbursementJournalEntryId)
+                )
+                for entry in entries:
+                    JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId).update(StaffId=StaffId)
+
+            staff_repayments = EmployeeLoanRepayment.objects.filter(EmployeeLoanId__in=loan_ids)
+            for rep in staff_repayments:
+                rep_ref = f"REPAY-{rep.RepaymentNumber}"
+                entries = JournalEntry.objects.filter(
+                    Q(ReferenceNumber__in=[rep_ref, rep.RepaymentNumber, rep.RepaymentId]) |
+                    Q(JournalEntryId=rep.JournalEntryId)
+                )
+                for entry in entries:
+                    JournalItem.objects.filter(JournalEntryId=entry.JournalEntryId).update(StaffId=StaffId)
+        except Exception:
+            pass
+
         items = JournalItem.objects.filter(StaffId=StaffId)
 
         temp_items = []
@@ -1763,6 +1789,18 @@ def StaffLedgerApi(request, StaffId=""):
                     continue
                 debit = raw_debit
                 credit = 0.0
+            elif source in ['employee_loan_disbursement', 'employee_loan']:
+                # Loan advance given to staff: Staff receives loan (Debit line)
+                if raw_credit > 0:
+                    continue
+                debit = raw_debit
+                credit = 0.0
+            elif source in ['employee_loan_repayment', 'employee_loan_repay']:
+                # Loan repayment received from staff: Clears staff loan (Credit line)
+                if raw_debit > 0:
+                    continue
+                debit = 0.0
+                credit = raw_credit
             else:
                 debit = raw_debit
                 credit = raw_credit

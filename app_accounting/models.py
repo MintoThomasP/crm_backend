@@ -140,3 +140,29 @@ class EmployeeLoanRepayment(models.Model):
         return f"Repayment {self.RepaymentNumber} - {self.Amount} - {self.RepaymentDate}"
 
 
+class PayrollEntry(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    PayrollId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    CompanyId = models.CharField(blank=True, null=True, max_length=50)
+    StaffId = models.CharField(blank=True, null=True, max_length=50)
+    PayrollMonth = models.IntegerField(default=1)  # 1-12
+    PayrollYear = models.IntegerField(default=2026)
+    PaymentDate = models.CharField(blank=True, null=True, max_length=50)
+    GrossSalary = models.CharField(blank=True, null=True, max_length=15, default="0.00")
+    AdvanceDeduction = models.CharField(blank=True, null=True, max_length=15, default="0.00")
+    NetSalary = models.CharField(blank=True, null=True, max_length=15, default="0.00")
+    PaymentAccountId = models.CharField(blank=True, null=True, max_length=50)  # Cash/Bank Account (Credit)
+    PaymentMode = models.CharField(blank=True, null=True, max_length=50, default="Bank Transfer")
+    ReferenceNumber = models.CharField(blank=True, null=True, max_length=100)
+    JournalEntryId = models.CharField(blank=True, null=True, max_length=50)
+    RepaymentIds = models.TextField(blank=True, null=True)  # JSON or comma-separated list of RepaymentIds
+    Status = models.CharField(blank=True, null=True, max_length=30, default="Paid")  # Paid, Draft, Cancelled
+    Narration = models.TextField(blank=True, null=True)
+    Receipt = models.FileField(upload_to='payroll_receipts/', null=True, blank=True)
+
+    def __str__(self):
+        return f"Payroll {self.StaffId} - {self.PayrollMonth}/{self.PayrollYear} - Net: {self.NetSalary}"
+
+
+

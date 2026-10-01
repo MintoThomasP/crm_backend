@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from app_accounting.models import Account, JournalEntry, JournalItem, Expense, ExpenseClaim, EmployeeLoan, EmployeeLoanRepayment
+from app_accounting.models import Account, JournalEntry, JournalItem, Expense, ExpenseClaim, EmployeeLoan, EmployeeLoanRepayment, PayrollEntry
 
 class AccountSerializer(serializers.ModelSerializer):
     class Meta:
@@ -41,5 +41,12 @@ class EmployeeLoanRepaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = EmployeeLoanRepayment
         fields = '__all__'
+
+
+class PayrollEntrySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = PayrollEntry
+        fields = '__all__'
+
 
 

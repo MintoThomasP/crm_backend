@@ -34,5 +34,14 @@ urlpatterns = [
     url(r'^EmployeeLoanRepaymentApiById/(?P<RepaymentId>[0-9a-zA-Z\-]+)$', views.EmployeeLoanRepaymentApiById),
     url(r'^EmployeeLoanRepaymentsByLoanId/(?P<EmployeeLoanId>[0-9a-zA-Z\-]+)$', views.EmployeeLoanRepaymentsByLoanId),
     url(r'^EmployeeLoanRepaymentUploadReceipt/(?P<RepaymentId>[0-9a-zA-Z\-]+)$', views.EmployeeLoanRepaymentUploadReceipt),
+
+    path('SalaryOverview/', views.SalaryOverview),
+    url(r'^SalaryOverviewByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.SalaryOverview),
+    path('Payroll/', views.PayrollApi),
+    url(r'^PayrollApiById/(?P<PayrollId>[0-9a-zA-Z\-]+)$', views.PayrollApiById),
+    url(r'^PayrollByCompanyId/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.PayrollByCompanyId),
+    url(r'^PayrollUploadReceipt/(?P<PayrollId>[0-9a-zA-Z\-]+)$', views.PayrollUploadReceipt),
+    url(r'^ExportPayrollSheet/(?P<CompanyId>[0-9a-zA-Z\-]+)$', views.ExportPayrollSheet),
 ]
+
 
