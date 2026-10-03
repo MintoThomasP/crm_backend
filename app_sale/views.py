@@ -1001,45 +1001,90 @@ def normalize_rich_text_html(html_str):
     if not html_str:
         return ""
 
-    def clean_table_tag(match):
-        attrs = match.group(1)
-        style_match = re.search(r'style="([^"]*)"', attrs, re.IGNORECASE)
-        style = style_match.group(1) if style_match else ""
+    def process_single_table(table_match):
+        table_html = table_match.group(0)
 
-        style_clean = re.sub(r'width\s*:\s*[^;]+;?', '', style, flags=re.IGNORECASE)
-        style_clean = re.sub(r'border-collapse\s*:\s*[^;]+;?', '', style_clean, flags=re.IGNORECASE).strip()
+        # 1. Extract col widths from colgroup if present
+        col_widths = []
+        colgroup_match = re.search(r'<colgroup>(.*?)</colgroup>', table_html, re.DOTALL | re.IGNORECASE)
+        if colgroup_match:
+            cols = re.findall(r'<col([^>]*)>', colgroup_match.group(1), re.IGNORECASE)
+            for c in cols:
+                w_match = re.search(r'width\s*[:=]\s*[\"\'\s]*([0-9.]+(?:%|px|pt)?)', c, re.IGNORECASE)
+                if w_match:
+                    col_widths.append(w_match.group(1).strip())
+                else:
+                    col_widths.append(None)
 
-        new_style = f"width: 100%; border-collapse: collapse; {style_clean}".strip()
-        attrs_clean = re.sub(r'\s*style="[^"]*"', '', attrs, flags=re.IGNORECASE)
-        attrs_clean = re.sub(r'\s*width="[^"]*"', '', attrs_clean, flags=re.IGNORECASE)
+        # If no colgroup widths, extract from the first <tr>
+        if not col_widths or all(w is None for w in col_widths):
+            first_row_match = re.search(r'<tr[^>]*>(.*?)</tr>', table_html, re.DOTALL | re.IGNORECASE)
+            if first_row_match:
+                cells = re.findall(r'<(?:td|th)([^>]*)>', first_row_match.group(1), re.IGNORECASE)
+                col_widths = []
+                for c in cells:
+                    w_match = re.search(r'width\s*[:=]\s*[\"\'\s]*([0-9.]+(?:%|px|pt)?)', c, re.IGNORECASE)
+                    if w_match:
+                        col_widths.append(w_match.group(1).strip())
+                    else:
+                        col_widths.append(None)
 
-        return f'<table class="rich-table" style="{new_style}" {attrs_clean}>'
+        # Convert pixel widths to percentages if total > 0
+        px_values = []
+        if col_widths and any(w and ('px' in w or w.replace('.', '', 1).isdigit()) for w in col_widths if w):
+            total_px = 0
+            for w in col_widths:
+                if w:
+                    num = float(re.sub(r'[^0-9.]', '', w) or 0)
+                    px_values.append(num)
+                    total_px += num
+                else:
+                    px_values.append(0)
+            if total_px > 0:
+                col_widths = [f'{round((v / total_px) * 100, 1)}%' if v > 0 else None for v in px_values]
 
-    html_str = re.sub(r'<table([^>]*)>', clean_table_tag, html_str, flags=re.IGNORECASE)
+        # 2. Inject width="..." into every <td> and <th> in all rows
+        if col_widths and any(w for w in col_widths):
+            def process_row(row_match):
+                row_content = row_match.group(1)
+                cell_idx = 0
+                def process_cell(cell_match):
+                    nonlocal cell_idx
+                    tag = cell_match.group(1)
+                    attrs = cell_match.group(2)
+                    inner = cell_match.group(3)
 
-    def clean_col_tag(match):
-        attrs = match.group(1)
-        style_match = re.search(r'width\s*:\s*([0-9.]+(?:%|px|pt|em|rem)?)', attrs, re.IGNORECASE)
-        if style_match:
-            width_val = style_match.group(1)
-            attrs_clean = re.sub(r'\s*width="[^"]*"', '', attrs, flags=re.IGNORECASE)
-            return f'<col width="{width_val}" {attrs_clean}>'
-        return match.group(0)
+                    w = col_widths[cell_idx] if cell_idx < len(col_widths) else None
+                    cell_idx += 1
 
-    html_str = re.sub(r'<col([^>]*)>', clean_col_tag, html_str, flags=re.IGNORECASE)
+                    attrs_clean = re.sub(r'\s*width=[\"\'\s]*[0-9.]+(?:%|px|pt)?[\"\'\s]*', '', attrs, flags=re.IGNORECASE)
+                    attrs_clean = re.sub(r'width\s*:\s*[^;]+;?', '', attrs_clean, flags=re.IGNORECASE).strip()
 
-    def clean_cell_tag(match):
-        tag_name = match.group(1)
-        attrs = match.group(2)
-        style_match = re.search(r'width\s*:\s*([0-9.]+(?:%|px|pt|em|rem)?)', attrs, re.IGNORECASE)
-        if style_match:
-            width_val = style_match.group(1)
-            if not re.search(r'\bwidth="', attrs, re.IGNORECASE):
-                return f'<{tag_name} width="{width_val}" {attrs}>'
-        return match.group(0)
+                    style_part = f'style="width: {w}; {attrs_clean}"' if w else (f'style="{attrs_clean}"' if attrs_clean else '')
+                    width_attr = f'width="{w}"' if w else ''
+                    
+                    final_attrs = f'{width_attr} {style_part}'.strip()
+                    if final_attrs:
+                        return f'<{tag} {final_attrs}>{inner}</{tag}>'
+                    return f'<{tag}>{inner}</{tag}>'
 
-    html_str = re.sub(r'<(td|th)([^>]*)>', clean_cell_tag, html_str, flags=re.IGNORECASE)
+                new_row_content = re.sub(r'<(td|th)([^>]*)>(.*?)</\1>', process_cell, row_content, flags=re.DOTALL | re.IGNORECASE)
+                return f'<tr>{new_row_content}</tr>'
 
+            table_html = re.sub(r'<tr[^>]*>(.*?)</tr>', process_row, table_html, flags=re.DOTALL | re.IGNORECASE)
+
+        # 3. Clean table tag: remove border="1", set class rich-table
+        def clean_main_table_tag(m):
+            attrs = m.group(1)
+            attrs = re.sub(r'\s*border=[\"\'\s]*\d+[\"\'\s]*', '', attrs, flags=re.IGNORECASE)
+            attrs = re.sub(r'\s*width=[\"\'\s]*[0-9.]+(?:%|px|pt)?[\"\'\s]*', '', attrs, flags=re.IGNORECASE)
+            attrs = re.sub(r'\s*style=[\"\'\s]*[^\"\']*[\"\'\s]*', '', attrs, flags=re.IGNORECASE)
+            return f'<table class="rich-table" border="0" cellpadding="0" cellspacing="0" style="width: 100%; border-collapse: collapse; margin: 8px 0 12px 0;" {attrs.strip()}>'
+
+        table_html = re.sub(r'<table([^>]*)>', clean_main_table_tag, table_html, count=1, flags=re.IGNORECASE)
+        return table_html
+
+    html_str = re.sub(r'<table[^>]*>.*?</table>', process_single_table, html_str, flags=re.DOTALL | re.IGNORECASE)
     return html_str
 
 
