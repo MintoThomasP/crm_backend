@@ -997,6 +997,52 @@ class DownloadPDF(View):
         return response
 
 
+def normalize_rich_text_html(html_str):
+    if not html_str:
+        return ""
+
+    def clean_table_tag(match):
+        attrs = match.group(1)
+        style_match = re.search(r'style="([^"]*)"', attrs, re.IGNORECASE)
+        style = style_match.group(1) if style_match else ""
+
+        style_clean = re.sub(r'width\s*:\s*[^;]+;?', '', style, flags=re.IGNORECASE)
+        style_clean = re.sub(r'border-collapse\s*:\s*[^;]+;?', '', style_clean, flags=re.IGNORECASE).strip()
+
+        new_style = f"width: 100%; border-collapse: collapse; {style_clean}".strip()
+        attrs_clean = re.sub(r'\s*style="[^"]*"', '', attrs, flags=re.IGNORECASE)
+        attrs_clean = re.sub(r'\s*width="[^"]*"', '', attrs_clean, flags=re.IGNORECASE)
+
+        return f'<table class="rich-table" style="{new_style}" {attrs_clean}>'
+
+    html_str = re.sub(r'<table([^>]*)>', clean_table_tag, html_str, flags=re.IGNORECASE)
+
+    def clean_col_tag(match):
+        attrs = match.group(1)
+        style_match = re.search(r'width\s*:\s*([0-9.]+(?:%|px|pt|em|rem)?)', attrs, re.IGNORECASE)
+        if style_match:
+            width_val = style_match.group(1)
+            attrs_clean = re.sub(r'\s*width="[^"]*"', '', attrs, flags=re.IGNORECASE)
+            return f'<col width="{width_val}" {attrs_clean}>'
+        return match.group(0)
+
+    html_str = re.sub(r'<col([^>]*)>', clean_col_tag, html_str, flags=re.IGNORECASE)
+
+    def clean_cell_tag(match):
+        tag_name = match.group(1)
+        attrs = match.group(2)
+        style_match = re.search(r'width\s*:\s*([0-9.]+(?:%|px|pt|em|rem)?)', attrs, re.IGNORECASE)
+        if style_match:
+            width_val = style_match.group(1)
+            if not re.search(r'\bwidth="', attrs, re.IGNORECASE):
+                return f'<{tag_name} width="{width_val}" {attrs}>'
+        return match.group(0)
+
+    html_str = re.sub(r'<(td|th)([^>]*)>', clean_cell_tag, html_str, flags=re.IGNORECASE)
+
+    return html_str
+
+
 def render_to_pdf(template_src, context_dict={}):
     template = get_template(template_src)
     html = template.render(context_dict)
@@ -1686,6 +1732,19 @@ def ViewQuotationPDF(request, QuotationId=""):
                         'path': file_path,
                         'name': os.path.basename(file_rel)
                     })
+
+        if hasattr(quote, 'Summary') and quote.Summary:
+            quote.Summary = normalize_rich_text_html(quote.Summary)
+        if hasattr(quote, 'CustomerNotes') and quote.CustomerNotes:
+            quote.CustomerNotes = normalize_rich_text_html(quote.CustomerNotes)
+        if hasattr(quote, 'PaymentTerms') and quote.PaymentTerms:
+            quote.PaymentTerms = normalize_rich_text_html(quote.PaymentTerms)
+        if hasattr(quote, 'TermsNConditions') and quote.TermsNConditions:
+            quote.TermsNConditions = normalize_rich_text_html(quote.TermsNConditions)
+
+        for item in invoiceItems:
+            if item.ItemName:
+                item.ItemName = normalize_rich_text_html(item.ItemName)
 
         context = {
             'quote': quote,
