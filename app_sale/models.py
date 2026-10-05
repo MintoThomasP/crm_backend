@@ -100,6 +100,9 @@ class Invoice(models.Model):
         null=True, blank=True, upload_to='Invoicefiles')
     Status = models.IntegerField(default=1)
     AddBankAccount = models.BooleanField(default=False)
+    Currency = models.CharField(blank=True, null=True, max_length=15, default='INR')
+    ExchangeRate = models.CharField(blank=True, null=True, max_length=15, default='1')
+    LinkedInvoiceId = models.CharField(blank=True, null=True, max_length=50)
 
 
 class InvoiceItem(models.Model):

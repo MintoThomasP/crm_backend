@@ -65,6 +65,10 @@ def get_or_create_default_accounts(company_id):
 
 @receiver(post_save, sender=Invoice)
 def create_invoice_journal_entry(sender, instance, created, **kwargs):
+    # Only INR invoices should create general ledger / accounting journal entries
+    if instance.Currency and instance.Currency != 'INR':
+        return
+
     company_id = instance.CompanyId
     if not company_id:
         return

@@ -960,7 +960,8 @@ class DownloadPDF(View):
         HalfTax = float(invoice.TaxPercentage) / 2
         HalfTaxAmount = float(invoice.TaxAmount) / 2
         siteSettings = SiteSettings.objects.get(CompanyId=invoice.CompanyId)
-        currencyType = siteSettings.CurrencyType
+        currencyType = invoice.Currency if getattr(invoice, 'Currency', None) else siteSettings.CurrencyType
+        siteSettings.CurrencyType = currencyType
 
         amountinwords = decimal_number_to_words(totalAmount, currencyType)
         # amountinwords=decimal_number_to_words(totalAmount)
@@ -968,6 +969,7 @@ class DownloadPDF(View):
         try:
             siteSettings = SiteSettings.objects.get(
                 CompanyId=invoice.CompanyId)
+            siteSettings.CurrencyType = currencyType
             siteSettingsSerializer = SiteSettingsSerializer(siteSettings)
             logo = os.path.join(settings.BASE_DIR) + \
                 siteSettingsSerializer.data['Logo']
@@ -1147,7 +1149,8 @@ def ViewPDF(request, InvoiceId=""):
             totalAmount = Decimal(invoice.TotalAmount)
             siteSettings = SiteSettings.objects.get(
                 CompanyId=invoice.CompanyId)
-            currencyType = siteSettings.CurrencyType
+            currencyType = invoice.Currency if getattr(invoice, 'Currency', None) else siteSettings.CurrencyType
+            siteSettings.CurrencyType = currencyType
 
             HalfTax = float(invoice.TaxPercentage) / 2
             HalfTaxAmount = float(invoice.TaxAmount) / 2
@@ -1156,6 +1159,7 @@ def ViewPDF(request, InvoiceId=""):
             try:
                 siteSettings = SiteSettings.objects.get(
                     CompanyId=invoice.CompanyId)
+                siteSettings.CurrencyType = currencyType
                 siteSettingsSerializer = SiteSettingsSerializer(siteSettings)
                 logo = os.path.join(settings.BASE_DIR) + \
                     siteSettingsSerializer.data['Logo']
@@ -1475,22 +1479,31 @@ def number_to_words(number):
 
 def decimal_number_to_words(number, currencyType):
     integer_part = int(number)
-    fractional_part = int((number - integer_part) * 100)
+    fractional_part = int(round((number - integer_part) * 100))
 
     words_integer_part = number_to_words(integer_part)
     words_fractional_part = number_to_words(fractional_part)
-    if currencyType == 'INR':
-        if fractional_part > 0:
-            Amount = words_integer_part + " Rupees and " + words_fractional_part + " Paisa."
-        else:
-            Amount = words_integer_part + " Rupees only."
-    elif currencyType == 'AED':
-        if fractional_part > 0:
-            Amount = words_integer_part + " Dirhams and " + words_fractional_part + " Fils."
-        else:
-            Amount = words_integer_part + " Dirhams only."
-
-    return Amount
+    currency_map = {
+        'INR': ('Rupees', 'Paisa'),
+        'AED': ('Dirhams', 'Fils'),
+        'USD': ('Dollars', 'Cents'),
+        'EUR': ('Euros', 'Cents'),
+        'GBP': ('Pounds', 'Pence'),
+        'SAR': ('Riyals', 'Halalas'),
+        'QAR': ('Riyals', 'Dirhams'),
+        'CAD': ('Dollars', 'Cents'),
+        'AUD': ('Dollars', 'Cents'),
+        'OMR': ('Rials', 'Baisa'),
+        'KWD': ('Dinars', 'Fils'),
+        'BHD': ('Dinars', 'Fils'),
+        'SGD': ('Dollars', 'Cents'),
+        'NZD': ('Dollars', 'Cents'),
+    }
+    main_unit, sub_unit = currency_map.get(currencyType, (currencyType or 'Rupees', 'Cents'))
+    if fractional_part > 0:
+        return f"{words_integer_part} {main_unit} and {words_fractional_part} {sub_unit}."
+    else:
+        return f"{words_integer_part} {main_unit} only."
 
 
 @csrf_exempt
@@ -1508,7 +1521,8 @@ def ViewPDFWoodsInteriors(request, InvoiceId=""):
             billingAddress = json.loads(invoice.BillingAddress)
             siteSettings = SiteSettings.objects.get(
                 CompanyId=invoice.CompanyId)
-            currencyType = siteSettings.CurrencyType
+            currencyType = invoice.Currency if getattr(invoice, 'Currency', None) else siteSettings.CurrencyType
+            siteSettings.CurrencyType = currencyType
 
             amountinwords = decimal_number_to_words(totalAmount, currencyType)
             context = {
