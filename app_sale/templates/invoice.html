@@ -273,7 +273,7 @@
         <div class="invoice_header">
             <table>
                 <tr style=" padding-bottom: 10px;">
-                    <td style="width: 80%;">
+                    <td style="width: 55%;">
                         <div>
                         <img src="{{logo}}" style="width: 200px;" /><br/>
                             <b>{{company.CompanyName}}</b>
@@ -281,17 +281,15 @@
                             <!-- <p><b>WEB BUREAU WEB-DESIGN CO LLC</b><br>Dubai<br>United Arab Emirates</p> -->
                         </div>
                     </td>
-                    <td style="width:30%; padding-left:5px; text-align: right;">
-
+                    <td style="width:45%; padding-left:5px; text-align: right; white-space: nowrap;">
+                        <div>
                             <span style="font-weight: 400;font-size:40px;line-height: 0;">INVOICE</span>
                             <br/>
-                            <b style="font-size:16px;"># {{invoice.InvoiceNumber}}</b>
+                            <b style="font-size:16px; white-space: nowrap;">#&nbsp;{{invoice.InvoiceNumber}}</b>
                             <br/>
                             <span>Balance Due<br>
-                                <b style="font-size:20px;">{{invoice.AmountDue | format_currency:siteSettings.CurrencyType}}</b></span>
+                                <b style="font-size:20px; white-space: nowrap;">{{invoice.AmountDue | format_currency:siteSettings.CurrencyType}}</b></span>
                         </div>
-
-
                     </td>
                 </tr>
             </table>
@@ -349,21 +347,21 @@
             <div class="product_table">
                 <table style="width: 100%;">
                     <tr>
-                        <th style="width: 5%;text-align: center;">#</th>
-                        <th style="width: 9%;text-align: center;">Code</th>
-                        <th style="width: 50%; text-align: left;">Item & Description </th>
-                        <th style="width: 5%;text-align: center;">Qty</th>
-                        <th style="width: 20%;text-align: right;">Rate</th>
-                        <th style="width: 20%;text-align: right;">Amount</th>
+                        <th style="width: 5%; text-align: center;">#</th>
+                        <th style="width: 9%; text-align: center;">Code</th>
+                        <th style="width: 44%; text-align: left;">Item & Description </th>
+                        <th style="width: 6%; text-align: center;">Qty</th>
+                        <th style="width: 18%; text-align: right; white-space: nowrap;">Rate</th>
+                        <th style="width: 18%; text-align: right; white-space: nowrap;">Amount</th>
                     </tr>
                     {%for row in invoiceItems%}
                     <tr style="border-top: 1px solid black; padding:5px;">
-                        <td style="width: 5%;text-align: center;">{{forloop.counter}}</td>
-                        <td style="width: 9%;text-align: center;">{{row.Code}}</td>
-                        <td style="width: 45%; text-align: left;">{{row.ItemDetails|safe}}</td>
-                        <td style="width: 5%;text-align: center;">{{row.Quantity}}</td>
-                        <td style="width: 18%; text-align: right;"> {{row.Rate | format_currency:siteSettings.CurrencyType}}</td>
-                        <td style="width: 18%; text-align: right;"> {{row.Amount | format_currency:siteSettings.CurrencyType}}</td>
+                        <td style="width: 5%; text-align: center;">{{forloop.counter}}</td>
+                        <td style="width: 9%; text-align: center;">{{row.Code}}</td>
+                        <td style="width: 44%; text-align: left;">{{row.ItemDetails|safe}}</td>
+                        <td style="width: 6%; text-align: center;">{{row.Quantity}}</td>
+                        <td style="width: 18%; text-align: right; white-space: nowrap;">{{row.Rate | format_currency:siteSettings.CurrencyType}}</td>
+                        <td style="width: 18%; text-align: right; white-space: nowrap;">{{row.Amount | format_currency:siteSettings.CurrencyType}}</td>
 
                     </tr>
                     {%endfor%}

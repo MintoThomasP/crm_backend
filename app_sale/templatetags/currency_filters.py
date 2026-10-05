@@ -20,6 +20,7 @@ def format_finance_currency(value, currency_code):
     
     code = (currency_code or '').strip().upper()
     
+    NBSP = '\u00A0'
     if code == 'INR':
         # lakhs/crores: 3:2:2 grouping
         if len(integer_part) <= 3:
@@ -32,7 +33,7 @@ def format_finance_currency(value, currency_code):
                 chunks.insert(0, remaining[-2:])
                 remaining = remaining[:-2]
             formatted_integer = ','.join(chunks) + ',' + last_three
-        symbol = f"{code} "
+        symbol = f"{code}{NBSP}"
         return f"{'-' if is_negative else ''}{symbol}{formatted_integer}.{decimal_part}"
         
     elif code == 'USD':
@@ -43,7 +44,7 @@ def format_finance_currency(value, currency_code):
             chunks.insert(0, remaining[-3:])
             remaining = remaining[:-3]
         formatted_integer = ','.join(chunks)
-        symbol = f"{code} "
+        symbol = f"{code}{NBSP}"
         return f"{'-' if is_negative else ''}{symbol}{formatted_integer}.{decimal_part}"
         
     elif code == 'AED':
@@ -54,7 +55,7 @@ def format_finance_currency(value, currency_code):
             chunks.insert(0, remaining[-3:])
             remaining = remaining[:-3]
         formatted_integer = ','.join(chunks)
-        symbol = f"{code} "
+        symbol = f"{code}{NBSP}"
         return f"{'-' if is_negative else ''}{symbol}{formatted_integer}.{decimal_part}"
         
     elif code == 'EUR':
@@ -65,7 +66,7 @@ def format_finance_currency(value, currency_code):
             chunks.insert(0, remaining[-3:])
             remaining = remaining[:-3]
         formatted_integer = '.'.join(chunks)
-        symbol = f"{code} "
+        symbol = f"{code}{NBSP}"
         return f"{'-' if is_negative else ''}{symbol}{formatted_integer},{decimal_part}"
         
     else:
@@ -76,7 +77,7 @@ def format_finance_currency(value, currency_code):
             chunks.insert(0, remaining[-3:])
             remaining = remaining[:-3]
         formatted_integer = ','.join(chunks)
-        prefix = f"{code} " if code else ''
+        prefix = f"{code}{NBSP}" if code else ''
         return f"{'-' if is_negative else ''}{prefix}{formatted_integer}.{decimal_part}"
 
 @register.filter(name='format_currency')

@@ -672,6 +672,13 @@ class InvoiceApiByCompanyId(generics.ListAPIView):
                         row['StaffName'] = staffSerializer.data['StaffName']
                     except:
                         row['StaffName'] = []
+                    if row.get('LinkedInvoiceId'):
+                        try:
+                            linked_inv = Invoice.objects.filter(InvoiceId=row['LinkedInvoiceId']).first()
+                            if linked_inv:
+                                row['LinkedCurrency'] = linked_inv.Currency or 'INR'
+                        except:
+                            row['LinkedCurrency'] = ''
                     data.append(row)
                 return self.get_paginated_response(data)
         except:
@@ -954,11 +961,14 @@ class DownloadPDF(View):
             InvoiceId=InvoiceId).order_by('OrderNo')
         client = Client.objects.get(ClientId=invoice.ClientId)
         company = Company.objects.get(CompanyId=invoice.CompanyId)
-        clientadrress = ClientAddress.objects.get(ClientId=invoice.ClientId)
-        billingAddress = json.loads(invoice.BillingAddress)
-        totalAmount = Decimal(invoice.TotalAmount)
-        HalfTax = float(invoice.TaxPercentage) / 2
-        HalfTaxAmount = float(invoice.TaxAmount) / 2
+        clientadrress = ClientAddress.objects.filter(ClientId=invoice.ClientId).first()
+        try:
+            billingAddress = json.loads(invoice.BillingAddress) if invoice.BillingAddress else {}
+        except:
+            billingAddress = invoice.BillingAddress or {}
+        totalAmount = Decimal(invoice.TotalAmount or 0)
+        HalfTax = float(invoice.TaxPercentage or 0) / 2
+        HalfTaxAmount = float(invoice.TaxAmount or 0) / 2
         siteSettings = SiteSettings.objects.get(CompanyId=invoice.CompanyId)
         currencyType = invoice.Currency if getattr(invoice, 'Currency', None) else siteSettings.CurrencyType
         siteSettings.CurrencyType = currencyType
@@ -1143,17 +1153,19 @@ def ViewPDF(request, InvoiceId=""):
                 InvoiceId=InvoiceId).order_by('OrderNo')
             company = Company.objects.get(CompanyId=invoice.CompanyId)
             client = Client.objects.get(ClientId=invoice.ClientId)
-            clientaddress = ClientAddress.objects.get(
-                ClientId=invoice.ClientId)
-            billingAddress = json.loads(invoice.BillingAddress)
-            totalAmount = Decimal(invoice.TotalAmount)
+            clientaddress = ClientAddress.objects.filter(ClientId=invoice.ClientId).first()
+            try:
+                billingAddress = json.loads(invoice.BillingAddress) if invoice.BillingAddress else {}
+            except:
+                billingAddress = invoice.BillingAddress or {}
+            totalAmount = Decimal(invoice.TotalAmount or 0)
             siteSettings = SiteSettings.objects.get(
                 CompanyId=invoice.CompanyId)
             currencyType = invoice.Currency if getattr(invoice, 'Currency', None) else siteSettings.CurrencyType
             siteSettings.CurrencyType = currencyType
 
-            HalfTax = float(invoice.TaxPercentage) / 2
-            HalfTaxAmount = float(invoice.TaxAmount) / 2
+            HalfTax = float(invoice.TaxPercentage or 0) / 2
+            HalfTaxAmount = float(invoice.TaxAmount or 0) / 2
             amountinwords = decimal_number_to_words(totalAmount, currencyType)
             # amountinwords=decimal_number_to_words(totalAmount)
             try:
@@ -1217,7 +1229,9 @@ def ViewPDF(request, InvoiceId=""):
                 invoice.InvoiceFile.save(filename, ContentFile(pdf.content))
             else:
                 invoice.InvoiceFile.save(filename, ContentFile(pdf.content))
-            return HttpResponse(pdf.content, content_type='application/pdf')
+            response = HttpResponse(pdf.content, content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="{filename}"'
+            return response
 
         else:
             return JsonResponse({"error": "Invalid method"}, status=405)
@@ -1542,7 +1556,9 @@ def ViewPDFWoodsInteriors(request, InvoiceId=""):
             else:
                 invoice.InvoiceFile.save(
                     invoice_file_name, ContentFile(pdf.content))
-            return HttpResponse(pdf.content, content_type='application/pdf')
+            response = HttpResponse(pdf.content, content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="{invoice_file_name}"'
+            return response
 
         else:
             return JsonResponse({"error": "Invalid method"}, status=405)
