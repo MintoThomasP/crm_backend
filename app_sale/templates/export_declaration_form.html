@@ -252,7 +252,7 @@
             <b>Invoice date.</b> {{ invoice_date_formatted }}<br>
             <b>Invoice Currency:</b> {{ currency }}<br>
             <b>Invoice Amount:</b> {{ currency }} {{ total_amount }}<br>
-            <b>Contract No. and Date:</b> {{ reference_number|default:"N/A" }}
+            <b>Contract No. and Date:</b> N/A
         </td>
         <td style="width: 33%;">
             <b>Nature of payment in terms of Contract:</b><br>
@@ -326,7 +326,7 @@
             Realisable export value
         </td>
         <td style="width: 62%; font-size: 7.5pt; font-weight: bold; vertical-align: middle;">
-            {{ currency }} {{ total_amount }} &nbsp;&nbsp;&nbsp;&nbsp; (INR {{ amount_in_inr|floatformat:2 }})
+            {{ currency }} {{ total_amount }}
         </td>
     </tr>
 </table>
@@ -362,7 +362,7 @@
             <td class="center">{{ invoice_date_formatted }}</td>
             <td class="right">{{ currency }}<br>{{ total_amount }}</td>
             <td class="right">{{ currency }}<br>{{ total_amount }}</td>
-            <td class="center">{{ reference_number|default:"N/A" }}</td>
+            <td class="center">N/A</td>
             <td>{{ description_of_services }}</td>
             <td class="center">998314</td>
             <td class="center">-</td>

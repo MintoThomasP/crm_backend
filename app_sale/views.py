@@ -1499,7 +1499,7 @@ def ExportDeclarationPDF(request, InvoiceId="", invoice_id=""):
         company_address = getattr(company, 'Address', '') or getattr(company, 'CompanyAddress', '') or "Thrikkakara P.O, Kochi - 682021, Kerala, India"
         company_address = strip_html(company_address)
 
-        reference_number = getattr(invoice, 'ReferenceNumber', None) or getattr(invoice, 'LinkedInvoiceId', None) or "N/A"
+        reference_number = "N/A"
         shipping_bill_no = getattr(invoice, 'ShippingBillNo', None) or ""
 
         # Seal and Signature image absolute file paths
@@ -1518,7 +1518,8 @@ def ExportDeclarationPDF(request, InvoiceId="", invoice_id=""):
             'client_name': client_name,
             'company_name': company_name,
             'company_address': company_address,
-            'reference_number': reference_number,
+            'reference_number': "N/A",
+            'contract_no_and_date': "N/A",
             'shipping_bill_no': shipping_bill_no,
             'type_of_export': 'Service',
             'port_of_loading': 'N/A (Electronic)',
