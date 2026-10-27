@@ -422,10 +422,10 @@
     </tbody>
 </table>
 
-<div class="section-heading" style="margin-top: 4px;">3. Applicable for Export under FPO/Couriers</div>
-<table class="form-table" style="margin-bottom: 4px;">
+<div class="section-heading" style="margin-top: 3px;">3. Applicable for Export under FPO/Couriers</div>
+<table class="form-table" style="margin-bottom: 3px;">
     <tr>
-        <td style="width: 50%; height: 32px;">
+        <td style="width: 50%; height: 28px;">
             <b>Name of the Foreign post Office/Courier:</b><br><br>
             <b>Number &amp; date of Parcel receipts:</b>
         </td>
@@ -435,35 +435,43 @@
     </tr>
 </table>
 
-<div class="section-heading" style="margin-top: 4px;">4. Declaration by the Exporters (All types of exports)</div>
+<div class="section-heading" style="margin-top: 3px;">4. Declaration by the Exporters (All types of exports)</div>
 <div class="legal-text">
     I / We hereby declare that I/we @am/are the seller/consignor of the goods/ provider of services in respect of which this declaration is made and that the particulars given above are true and that the value to be received from the buyer/third party represents the export value^ contracted and declared above.<br>
     I/We undertake that I/we have delivered/ will deliver to the authorised dealer named above the foreign exchange / Indian Rupees representing the full value of the goods/services exported as above on or before: ____________ (i.e. within the period of realisation stipulated by RBI from time to time) in the manner specified in the Regulations made under the Foreign Exchange Management Act, 1999.<br>
     I/We also undertake to submit the documents pertaining to exports declared in this form, to the Authorised Dealer named above, as may be required under the Act.
 </div>
 
-<table class="form-table" style="margin-bottom: 4px;">
+<table class="no-border-table" style="margin-top: 1px; margin-bottom: 2px;">
     <tr>
-        <td style="width: 50%; border: none; padding: 3px 0;">
-            <b>Date:</b> {{ invoice_date_formatted }}
+        <td style="width: 28%; vertical-align: bottom; padding-bottom: 4px;">
+            <b>Date:</b> {{ current_date }}
         </td>
-        <td style="width: 50%; border: none; padding: 3px 0; text-align: right;">
-            <b>(Signature of Exporter)</b>
+        <td style="width: 32%; text-align: center; vertical-align: middle;">
+            {% if company_seal_round %}
+            <img src="{{ company_seal_round }}" style="width: 68px; height: 68px;" alt="Company Seal" />
+            {% endif %}
+        </td>
+        <td style="width: 40%; text-align: right; vertical-align: bottom;">
+            {% if for_seal_signature %}
+            <img src="{{ for_seal_signature }}" style="width: 135px; height: 58px;" alt="Signature Seal" /><br>
+            {% endif %}
+            <div style="font-size: 6.8pt; font-weight: bold; margin-top: 1px;">(Signature of Exporter)</div>
         </td>
     </tr>
 </table>
 
-<div class="section-heading" style="margin-top: 3px;">5. Space for use of Specified Authority (Custom/SEZ/AD/STPI):</div>
+<div class="section-heading" style="margin-top: 2px;">5. Space for use of Specified Authority (Custom/SEZ/AD/STPI):</div>
 <div class="legal-text">
     Certified, on the basis of above declaration at 4, that the goods/services described above and the export value^ declared by the exporter in this form is as per the corresponding invoice/gist of invoices submitted and declared by the exporter.
 </div>
 
-<table class="form-table" style="margin-bottom: 3px;">
+<table class="no-border-table" style="margin-bottom: 2px;">
     <tr>
-        <td style="width: 50%; border: none; padding: 3px 0;">
+        <td style="width: 50%; vertical-align: bottom;">
             <b>Date:</b>
         </td>
-        <td style="width: 50%; border: none; padding: 3px 0; text-align: right;">
+        <td style="width: 50%; text-align: right; vertical-align: bottom;">
             <b>(Signature of Authorised Dealer)</b>
         </td>
     </tr>

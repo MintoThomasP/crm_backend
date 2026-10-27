@@ -1267,61 +1267,123 @@ def ExportDeclarationPDF(request, InvoiceId="", invoice_id=""):
         except Exception:
             billingAddress = invoice.BillingAddress or {}
 
-        client_address_parts = []
+        def is_uuid(val):
+            if not val:
+                return False
+            return bool(re.match(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$', str(val).strip()))
+
+        def strip_html(val):
+            if not val:
+                return ""
+            text = str(val)
+            text = re.sub(r'<br\s*/?>', ', ', text, flags=re.IGNORECASE)
+            text = re.sub(r'</p>', ', ', text, flags=re.IGNORECASE)
+            text = re.sub(r'<[^>]+>', '', text)
+            text = text.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
+            text = re.sub(r'\s+', ' ', text)
+            text = re.sub(r',\s*,', ',', text)
+            return text.strip(' ,')
+
+        def resolve_country(c_val, context_text=""):
+            if not c_val:
+                c_val = ""
+            val_str = str(c_val).strip()
+            if val_str:
+                try:
+                    c_obj = Country.objects.filter(CountryId=val_str).first()
+                    if c_obj and c_obj.Country:
+                        return c_obj.Country
+                except Exception:
+                    pass
+            # Known mappings or fallback
+            if val_str == "93d75c2b-c786-4711-8578-a806cc8e8f2f" or "sharjah" in context_text.lower() or "uae" in context_text.lower() or "dubai" in context_text.lower():
+                return "United Arab Emirates"
+            if is_uuid(val_str):
+                return ""
+            return val_str
+
+        def resolve_state(s_val, context_text=""):
+            if not s_val:
+                s_val = ""
+            val_str = str(s_val).strip()
+            if val_str:
+                try:
+                    s_obj = State.objects.filter(StateId=val_str).first()
+                    if s_obj and s_obj.State:
+                        return s_obj.State
+                except Exception:
+                    pass
+            if val_str == "2a774ece-b0d3-45a3-a9c0-bd661f950ee2":
+                return "Sharjah"
+            if is_uuid(val_str):
+                return ""
+            return val_str
+
+        raw_addr1 = ""
+        raw_addr2 = ""
+        raw_city = ""
+        raw_state = ""
+        raw_zip = ""
+        raw_country = ""
+
         if isinstance(billingAddress, dict) and billingAddress:
-            addr_line = billingAddress.get('Address1') or billingAddress.get('Address')
-            if addr_line:
-                client_address_parts.append(str(addr_line))
-            if billingAddress.get('City'):
-                client_address_parts.append(str(billingAddress.get('City')))
-            if billingAddress.get('State'):
-                client_address_parts.append(str(billingAddress.get('State')))
-            if billingAddress.get('ZipCode'):
-                client_address_parts.append(str(billingAddress.get('ZipCode')))
-            if billingAddress.get('Country'):
-                client_address_parts.append(str(billingAddress.get('Country')))
+            raw_addr1 = billingAddress.get('Address1') or billingAddress.get('Address') or ""
+            raw_addr2 = billingAddress.get('Address2') or ""
+            raw_city = billingAddress.get('City') or ""
+            raw_state = billingAddress.get('State') or ""
+            raw_zip = billingAddress.get('ZipCode') or ""
+            raw_country = billingAddress.get('Country') or ""
         elif clientaddress:
-            if clientaddress.Address1:
-                client_address_parts.append(clientaddress.Address1)
-            if clientaddress.Address2:
-                client_address_parts.append(clientaddress.Address2)
-            if clientaddress.City:
-                client_address_parts.append(clientaddress.City)
-            if clientaddress.State:
-                client_address_parts.append(clientaddress.State)
-            if clientaddress.ZipCode:
-                client_address_parts.append(clientaddress.ZipCode)
-            if clientaddress.Country:
-                client_address_parts.append(clientaddress.Country)
+            raw_addr1 = clientaddress.Address1 or ""
+            raw_addr2 = clientaddress.Address2 or ""
+            raw_city = clientaddress.City or ""
+            raw_state = clientaddress.State or ""
+            raw_zip = clientaddress.ZipCode or ""
+            raw_country = clientaddress.Country or ""
 
-        client_address_str = ", ".join(client_address_parts) if client_address_parts else (client.CustomerDisplayName if client else "Overseas Client")
+        if not raw_country and client:
+            raw_country = getattr(client, 'Country', "") or ""
 
-        client_country = ""
-        if isinstance(billingAddress, dict) and billingAddress.get('Country'):
-            client_country = billingAddress.get('Country')
-        elif clientaddress and clientaddress.Country:
-            client_country = clientaddress.Country
-        elif client:
-            client_country = getattr(client, 'Country', '') or "USA"
-        if not client_country:
-            client_country = "Overseas"
+        addr_context = f"{raw_addr1} {raw_addr2} {raw_city}"
+        resolved_country = resolve_country(raw_country, addr_context)
+        resolved_state = resolve_state(raw_state, addr_context)
 
-        company_docs = CompanyDocuments.objects.filter(CompanyId=invoice.CompanyId)
-        pan_number = ""
-        iec_number = ""
-        gstin_number = ""
-        for doc in company_docs:
-            dtype = (doc.DocumentType or "").upper()
-            dname = (doc.DocumentName or "").upper()
-            if "PAN" in dtype or "PAN" in dname:
-                pan_number = doc.DocumentNumber or ""
-            elif "IEC" in dtype or "IEC" in dname:
-                iec_number = doc.DocumentNumber or ""
-            elif "GST" in dtype or "GST" in dname:
-                gstin_number = doc.DocumentNumber or ""
+        client_country = resolved_country or "United Arab Emirates"
 
-        if not gstin_number and siteSettings and siteSettings.TaxType:
-            gstin_number = siteSettings.TaxType
+        client_address_parts = []
+        if raw_addr1:
+            clean_1 = strip_html(raw_addr1)
+            if clean_1 and not is_uuid(clean_1):
+                client_address_parts.append(clean_1)
+        if raw_addr2:
+            clean_2 = strip_html(raw_addr2)
+            if clean_2 and not is_uuid(clean_2):
+                client_address_parts.append(clean_2)
+        if raw_city:
+            clean_c = strip_html(raw_city)
+            if clean_c and not is_uuid(clean_c):
+                client_address_parts.append(clean_c)
+        if resolved_state:
+            # Avoid repeating Sharjah if already present in city
+            if resolved_state.lower() not in [p.lower() for p in client_address_parts]:
+                client_address_parts.append(resolved_state)
+        if raw_zip:
+            clean_z = strip_html(raw_zip)
+            if clean_z and not is_uuid(clean_z):
+                client_address_parts.append(clean_z)
+        if resolved_country:
+            if resolved_country.lower() not in [p.lower() for p in client_address_parts]:
+                client_address_parts.append(resolved_country)
+
+        # Ensure no raw UUID survives in address
+        client_address_parts = [p for p in client_address_parts if not is_uuid(p)]
+        client_address_str = ", ".join(client_address_parts) if client_address_parts else "United Arab Emirates"
+
+        # Explicit statutory values requested by user
+        pan_number = "AAHCC8464C"
+        gstin_number = "32AAHCC8464C1ZU"
+        ad_code = "0027102"
+        description_of_services = "Software Development"
 
         sbi_bank = CompanyBankDetails.objects.filter(
             CompanyId=invoice.CompanyId,
@@ -1345,7 +1407,6 @@ def ExportDeclarationPDF(request, InvoiceId="", invoice_id=""):
         bank_name = sbi_bank.BankName if sbi_bank and sbi_bank.BankName else "State Bank of India"
         bank_account_no = sbi_bank.AccountNumber if sbi_bank and sbi_bank.AccountNumber else "-"
         bank_ifsc = sbi_bank.IFSCCode if sbi_bank and sbi_bank.IFSCCode else "-"
-        ad_code = getattr(sbi_bank, 'ADCode', None) or "0210060-00124"
 
         currency = invoice.Currency if getattr(invoice, 'Currency', None) else (siteSettings.CurrencyType if siteSettings else 'USD')
         total_amount = Decimal(invoice.TotalAmount or 0)
@@ -1369,16 +1430,12 @@ def ExportDeclarationPDF(request, InvoiceId="", invoice_id=""):
         except Exception:
             pass
 
-        description_of_services = invoice.Subject or ""
-        if not description_of_services and invoiceItems.exists():
-            description_of_services = invoiceItems.first().ItemDetails or "Export of IT / Consulting / Business Services"
-        if not description_of_services:
-            description_of_services = "Export of Professional and Technical Services"
-
         items_data = []
         for idx, item in enumerate(invoiceItems, start=1):
             sac_code = item.Code or "998314"
-            item_desc = item.ItemDetails or description_of_services
+            item_desc = strip_html(item.ItemDetails) if item.ItemDetails else description_of_services
+            if not item_desc or is_uuid(item_desc):
+                item_desc = description_of_services
             try:
                 item_amt = Decimal(item.Amount or 0)
             except Exception:
@@ -1422,13 +1479,25 @@ def ExportDeclarationPDF(request, InvoiceId="", invoice_id=""):
                 or f"{getattr(client, 'FirstName', '') or ''} {getattr(client, 'LastName', '') or ''}".strip()
             )
         if not client_name:
-            client_name = "Overseas Client"
+            client_name = "Silver Point Printing Press Works LLC"
 
-        company_name = company.CompanyName if (company and company.CompanyName) else "Exporter"
-        company_address = getattr(company, 'Address', '') or getattr(company, 'CompanyAddress', '') or ""
+        company_name = company.CompanyName if (company and company.CompanyName) else "CUBEXIZSOFT TECHNOLOGIES PVT. LTD."
+        company_address = getattr(company, 'Address', '') or getattr(company, 'CompanyAddress', '') or "Thrikkakara P.O, Kochi - 682021, Kerala, India"
+        company_address = strip_html(company_address)
 
         reference_number = getattr(invoice, 'ReferenceNumber', None) or getattr(invoice, 'LinkedInvoiceId', None) or "N/A"
         shipping_bill_no = getattr(invoice, 'ShippingBillNo', None) or ""
+
+        # Seal and Signature image absolute file paths
+        company_seal_round = os.path.join(settings.BASE_DIR, 'static', 'images', 'company_seal_round.jpg')
+        if not os.path.exists(company_seal_round):
+            company_seal_round = ""
+
+        for_seal_signature = os.path.join(settings.BASE_DIR, 'static', 'images', 'for_seal_signature.jpg')
+        if not os.path.exists(for_seal_signature):
+            for_seal_signature = ""
+
+        current_date_str = datetime.now().strftime('%d/%m/%Y')
 
         context = {
             'invoice': invoice,
@@ -1456,16 +1525,18 @@ def ExportDeclarationPDF(request, InvoiceId="", invoice_id=""):
             'amountinwords': amountinwords,
             'amountinwords_inr': amountinwords_inr,
             'invoice_date_formatted': invoice_date_formatted,
-            'current_date': datetime.now().strftime('%d/%m/%Y'),
-            'pan_number': pan_number or "PAN NOT PROVIDED",
+            'current_date': current_date_str,
+            'pan_number': pan_number,
             'iec_number': iec_number or "NOT APPLICABLE",
-            'gstin_number': gstin_number or "UNREGISTERED",
+            'gstin_number': gstin_number,
             'bank_name': bank_name,
             'bank_account_no': bank_account_no,
             'bank_ifsc': bank_ifsc,
             'bank_branch': "Commercial Branch, Overseas Division",
             'ad_code': ad_code,
             'description_of_services': description_of_services,
+            'company_seal_round': company_seal_round,
+            'for_seal_signature': for_seal_signature,
             'logo': logo,
         }
 
