@@ -2,11 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>State Bank of India - Export Declaration Form (EDF Form)</title>
+<title>SBI - EXP-D-2 Export Declaration Form</title>
 <style>
     @page {
         size: a4 portrait;
-        margin: 6mm 8mm 6mm 8mm;
+        margin: 7mm 9mm 7mm 9mm;
     }
     
     .page-break {
@@ -15,145 +15,107 @@
 
     body {
         font-family: Helvetica, Arial, sans-serif;
-        font-size: 7.2pt;
-        line-height: 1.15;
-        color: #111111;
+        font-size: 6.8pt;
+        line-height: 1.18;
+        color: #000000;
+        background-color: #ffffff;
         margin: 0;
         padding: 0;
     }
 
-    .header-table {
+    .doc-header {
+        text-align: center;
+        margin-bottom: 6px;
+    }
+
+    .doc-header .bank-title {
+        font-size: 15pt;
+        font-weight: bold;
+        line-height: 1.1;
+    }
+
+    .doc-header .form-code-title {
+        font-size: 11pt;
+        font-weight: bold;
+        line-height: 1.2;
+        margin-top: 1px;
+    }
+
+    .doc-header .form-main-title {
+        font-size: 10pt;
+        font-weight: bold;
+        line-height: 1.2;
+    }
+
+    .section-heading {
+        font-size: 8pt;
+        font-weight: bold;
+        color: #000000;
+        margin-top: 5px;
+        margin-bottom: 2px;
+    }
+
+    .form-table {
         width: 100%;
         border-collapse: collapse;
         margin-bottom: 3px;
-        border-bottom: 2px solid #003366;
-    }
-    
-    .bank-title {
-        color: #003366;
-        font-size: 13pt;
-        font-weight: bold;
-        letter-spacing: 0.5px;
-    }
-    
-    .bank-subtitle {
-        font-size: 7.5pt;
-        color: #003366;
-        font-weight: bold;
     }
 
-    .form-title {
-        color: #1a1a1a;
-        font-size: 9.5pt;
-        font-weight: bold;
-        margin-top: 1px;
-    }
-    
-    .form-subtitle {
-        color: #555555;
-        font-size: 6.5pt;
-        font-style: italic;
+    .form-table th, .form-table td {
+        border: 0.8px solid #000000;
+        padding: 2.5px 4px;
+        font-size: 6.6pt;
+        color: #000000;
+        vertical-align: top;
     }
 
-    .badge-orig {
-        border: 1px solid #003366;
-        padding: 3px 6px;
-        font-size: 7pt;
+    .form-table th {
         font-weight: bold;
-        color: #003366;
-        background-color: #f0f4f8;
-        text-align: center;
+        background-color: #ffffff;
     }
 
-    .section-title {
-        background-color: #003366;
-        color: #ffffff;
-        font-size: 7.5pt;
-        font-weight: bold;
-        padding: 2.5px 5px;
-        margin-top: 4px;
-        margin-bottom: 2px;
-        border: 0.5px solid #003366;
-        letter-spacing: 0.3px;
-    }
-
-    .data-table {
+    .no-border-table {
         width: 100%;
         border-collapse: collapse;
-        margin-bottom: 2px;
     }
 
-    .data-table th, .data-table td {
-        border: 0.5px solid #666666;
-        padding: 2px 4px;
+    .no-border-table td {
+        border: none;
+        padding: 2px 0;
         font-size: 6.8pt;
         vertical-align: top;
     }
 
-    .data-table th {
-        background-color: #eaeff5;
-        color: #003366;
-        font-weight: bold;
-        text-align: left;
-    }
-
-    .label-col {
-        background-color: #f6f8fb;
-        font-weight: bold;
-        color: #2c3e50;
-        width: 25%;
-    }
-
-    .val-col {
-        color: #111111;
-    }
-
-    .cb {
-        display: inline-block;
-        width: 9px;
-        height: 9px;
-        border: 0.8px solid #222222;
-        text-align: center;
-        line-height: 8px;
-        font-size: 7pt;
-        font-weight: bold;
-        margin-right: 2px;
-        vertical-align: middle;
-    }
-
-    .cb-checked {
-        background-color: #003366;
-        color: #ffffff;
-    }
-
-    .note-text {
+    .legal-text {
         font-size: 6.2pt;
-        color: #555555;
-        font-style: italic;
-    }
-    
-    .decl-text {
-        font-size: 6.7pt;
         text-align: justify;
-        line-height: 1.25;
+        line-height: 1.2;
+        margin-top: 2px;
         margin-bottom: 3px;
-    }
-    
-    .sig-box {
-        border: 0.5px dashed #777777;
-        height: 38px;
-        margin-top: 3px;
-        text-align: center;
-        padding-top: 24px;
-        font-size: 6.5pt;
-        color: #777777;
+        color: #000000;
     }
 
-    .footer-line {
-        font-size: 6.2pt;
-        color: #777777;
-        text-align: right;
+    .footnote-text {
+        font-size: 5.6pt;
+        line-height: 1.18;
+        color: #000000;
         margin-top: 3px;
+    }
+
+    .sig-area {
+        height: 30px;
+    }
+
+    .center {
+        text-align: center;
+    }
+
+    .right {
+        text-align: right;
+    }
+
+    .bold {
+        font-weight: bold;
     }
 </style>
 </head>
@@ -162,285 +124,355 @@
 <!-- ============================================================== -->
 <!-- PAGE 1: HEADER, SECTION 1, AND SECTION 2A                       -->
 <!-- ============================================================== -->
-<table class="header-table">
-    <tr>
-        <td style="width: 74%;">
-            <div class="bank-title">STATE BANK OF INDIA</div>
-            <div class="bank-subtitle">INTERNATIONAL BANKING DIVISION / AUTHORISED DEALER CATEGORY - I</div>
-            <div class="form-title">EXPORT DECLARATION FORM (EDF)</div>
-            <div class="form-subtitle">[Prescribed under Foreign Exchange Management (Export and Import of Goods and Services) Regulations]</div>
-        </td>
-        <td style="width: 26%; text-align: right; vertical-align: top;">
-            <div class="badge-orig">FORM: EDF<br>ORIGINAL (DUPLICATE)</div>
-            <div style="font-size: 6.2pt; color: #555555; margin-top: 2px;">Submit to Authorised Dealer</div>
-        </td>
-    </tr>
-</table>
+<div class="doc-header">
+    <div class="bank-title">SBI</div>
+    <div class="form-code-title">EXP-D-2 Export Declaration Form</div>
+    <div class="form-main-title">Export Declaration Form</div>
+</div>
 
-<div class="section-title">SECTION 1: GENERAL INFORMATION (EXPORTER &amp; TRANSACTION PARTICULARS)</div>
-<table class="data-table">
+<div class="section-heading">1. General Information:</div>
+
+<table class="form-table">
     <tr>
-        <td class="label-col">1.1 Type of Export</td>
-        <td class="val-col" style="width: 25%;">
-            <span class="cb">&nbsp;</span> Goods &nbsp;&nbsp;
-            <span class="cb cb-checked">X</span> Services &nbsp;&nbsp;
-            <span class="cb">&nbsp;</span> Software
+        <td style="width: 50%;">
+            <b>Type of export :</b> {{ type_of_export|default:"Service" }}
+            <div style="margin-top: 14px;">
+                <b>Shipping Bill No. &amp; Date:</b> {{ invoice.ShippingBillNo|default:"" }}
+            </div>
         </td>
-        <td class="label-col">1.2 Form Reference No.</td>
-        <td class="val-col" style="width: 25%; font-weight: bold; color: #003366;">
-            EDF / {{ invoice.InvoiceNumber }}
-        </td>
-    </tr>
-    <tr>
-        <td class="label-col">1.3 Shipping Bill No. &amp; Date</td>
-        <td class="val-col">Not Applicable (Export of Services)</td>
-        <td class="label-col">1.4 Mode of Transport / Delivery</td>
-        <td class="val-col">Electronic Transmission / Internet</td>
-    </tr>
-    <tr>
-        <td class="label-col">1.5 Category of Exporter</td>
-        <td class="val-col">
-            <span class="cb cb-checked">X</span> DTA Unit &nbsp;&nbsp;
-            <span class="cb">&nbsp;</span> SEZ &nbsp;&nbsp;
-            <span class="cb">&nbsp;</span> 100% EOU
-        </td>
-        <td class="label-col">1.6 AD Code (14 Digits)</td>
-        <td class="val-col" style="font-weight: bold;">
-            {{ ad_code|default:"0210060-00124" }} (State Bank of India)
+        <td style="width: 50%;">
+            <b>Form No:</b> {{ invoice.InvoiceNumber }}
+            <div style="margin-top: 3px;">
+                <b>Mode of Transport/Delivery:</b><br>
+                [ ] Air &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ ] Land<br>
+                [ ] Sea &nbsp;&nbsp;&nbsp;&nbsp; [ ] Post/Couriers<br>
+                [X] Internet &nbsp; [ ] others
+            </div>
         </td>
     </tr>
     <tr>
-        <td class="label-col">1.7 Importer-Exporter Code (IEC)</td>
-        <td class="val-col">{{ iec_number|default:"NOT APPLICABLE" }}</td>
-        <td class="label-col">1.8 GSTIN / Tax ID</td>
-        <td class="val-col">{{ gstin_number|default:"UNREGISTERED / EXEMPT" }}</td>
-    </tr>
-    <tr>
-        <td class="label-col">1.9 Exporter PAN</td>
-        <td class="val-col" style="font-weight: bold;">{{ pan_number|default:"-" }}</td>
-        <td class="label-col">1.10 AD Bank Name &amp; Branch</td>
-        <td class="val-col">{{ bank_name }}, {{ bank_branch }}</td>
-    </tr>
-    <tr>
-        <td class="label-col">1.11 Exporter's Full Name &amp; Registered Address</td>
-        <td class="val-col" colspan="3">
-            <strong>{{ company.CompanyName|default:"Export Entity" }}</strong><br>
-            {{ company.Address|default:"" }}{% if company.State %}, {{ company.State }}{% endif %}{% if company.Country %}, {{ company.Country }}{% endif %}
-            {% if company.EmailId %}| Email: {{ company.EmailId }}{% endif %}
+        <td>
+            <b>Category of Export:</b><br>
+            [ ] Custom (DTA units) &nbsp;&nbsp; [ ] SEZ<br>
+            [ ] 100% EOU &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ ] Warehouse export<br>
+            [X] others (Specify) <u>Software / IT Services</u>
+        </td>
+        <td>
+            <b>AD code:</b> {{ ad_code|default:"0210060-00124" }}
         </td>
     </tr>
     <tr>
-        <td class="label-col">1.12 Mode of Realisation</td>
-        <td class="val-col" colspan="3">
-            <span class="cb">&nbsp;</span> Letter of Credit (L/C) &nbsp;&nbsp;&nbsp;
-            <span class="cb">&nbsp;</span> Bank Guarantee (BG) &nbsp;&nbsp;&nbsp;
-            <span class="cb cb-checked">X</span> Direct Remittance / Inward TT Wire Transfer (Others)
+        <td>
+            <b>IE Code:</b> {{ iec_number|default:"" }}<br>
+            <b>GSTIN:</b> {{ gstin_number|default:"" }}<br>
+            <b>PAN:</b> {{ pan_number|default:"" }}
+        </td>
+        <td>
+            <b>AD Name &amp; Address:</b><br>
+            {{ bank_name|default:"State Bank of India" }}<br>
+            {{ bank_branch|default:"Commercial Branch, Overseas Division" }}
         </td>
     </tr>
     <tr>
-        <td class="label-col">1.13 Overseas Client / Recipient</td>
-        <td class="val-col" colspan="3">
-            <strong>{{ client.CustomerDisplayName|default:client.CompanyName|default:"Overseas Client" }}</strong><br>
+        <td>
+            <b>Exporters Name &amp; Address:</b><br>
+            <b>{{ company.CompanyName }}</b><br>
+            {{ company.CompanyAddress|default:"" }}
+        </td>
+        <td>
+            <b>Mode of Realisation:</b><br>
+            [ ] L/C &nbsp;&nbsp; [ ] BG<br>
+            [X] Others (advance payment, etc.<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;including transfer/remittance to bank a/c<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;maintained overseas)
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <b>Consignee Name &amp; Address:</b><br>
+            <b>{{ client.CustomerDisplayName|default:client.ClientName }}</b><br>
             {{ client_address_str }}
         </td>
+        <td>
+            <b>Port of Loading / Source Port in case of SEZ:</b> {{ port_of_loading|default:"N/A" }}
+        </td>
     </tr>
     <tr>
-        <td class="label-col">1.14 Port of Loading</td>
-        <td class="val-col">Not Applicable (Electronic Transmission)</td>
-        <td class="label-col">1.15 Third Party Details (if any)</td>
-        <td class="val-col">Not Applicable (Direct Client Billing)</td>
+        <td>
+            <b>Third Party name &amp; Address (In case of third Party Payments for Exports)</b><br>
+            N/A
+        </td>
+        <td>
+            <b>Country of Final Destination:</b> {{ client_country|default:"Overseas" }}
+        </td>
     </tr>
     <tr>
-        <td class="label-col">1.16 Relationship with Third Party</td>
-        <td class="val-col">Not Applicable</td>
-        <td class="label-col">1.17 Country of Destination</td>
-        <td class="val-col" style="font-weight: bold;">{{ client_country|default:"Overseas" }}</td>
+        <td>
+            <b>Relationship between Exporter &amp; Third Party:</b> N/A
+        </td>
+        <td>
+            <b>Port of Discharge:</b> {{ port_of_discharge|default:"N/A" }}
+        </td>
     </tr>
     <tr>
-        <td class="label-col">1.18 Port of Discharge</td>
-        <td class="val-col">Not Applicable (Digital Delivery)</td>
-        <td class="label-col">1.19 AD / AD Code for L/C or BG</td>
-        <td class="val-col">Not Applicable</td>
+        <td>
+            <b>Name of the AD and AD code, in case of LC/BG:</b> N/A
+        </td>
+        <td>
+            <b>Date of Let Export order (LEO):</b>
+        </td>
     </tr>
     <tr>
-        <td class="label-col">1.20 Let-Export Order (LEO) Date</td>
-        <td class="val-col">Not Applicable</td>
-        <td class="label-col">1.21 Service Classification / SAC</td>
-        <td class="val-col">{{ items_data.0.code|default:"998314" }} - {{ description_of_services|truncatewords:6 }}</td>
+        <td colspan="2">
+            <b>Description of Goods/Services:</b><br>
+            {{ description_of_services }}
+        </td>
     </tr>
     <tr>
-        <td class="label-col">1.22 Total Invoice Value</td>
-        <td class="val-col" colspan="3" style="background-color: #f0f7ff;">
-            <strong>Foreign Currency:</strong> {{ currency }} {{ total_amount|floatformat:2 }} &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>Exchange Rate:</strong> {{ exchange_rate }} &nbsp;&nbsp;|&nbsp;&nbsp;
-            <strong>INR Equivalent:</strong> Rs. {{ amount_in_inr|floatformat:2 }}<br>
-            <strong>Amount in Words:</strong> {{ amountinwords }}
-            {% if currency != 'INR' %}<br><strong>INR Equivalent in Words:</strong> {{ amountinwords_inr }}{% endif %}
+        <td colspan="2">
+            <b>Total FOB/Services value in words (INR):</b><br>
+            {{ amountinwords_inr }}
         </td>
     </tr>
 </table>
 
-<div class="section-title">SECTION 2A: DETAILS OF EXPORT VALUE OF GOODS (Applicable for Physical Merchandise Exports)</div>
-<div class="note-text">*Note: To be completed when exporting physical goods under a Shipping Bill / Custom Bill of Export. Service exporters mark N/A.</div>
-<table class="data-table">
+<div class="section-heading" style="font-size: 7.2pt; margin-top: 4px;">
+    2A. Details of Export Value^ of Goods (This part shall be repeated for each invoice drawn under a shipping bill)
+</div>
+
+<table class="form-table" style="margin-bottom: 0;">
+    <tr>
+        <td style="width: 33%;">
+            <b>Client Name &amp; Address:</b><br><br>
+            <b>{{ client.CustomerDisplayName|default:client.ClientName }}</b><br>
+            {{ client_address_str }}
+        </td>
+        <td style="width: 34%;">
+            <b>Invoice No.</b> {{ invoice.InvoiceNumber }}<br>
+            <b>Invoice date.</b> {{ invoice_date_formatted }}<br>
+            <b>Invoice Currency:</b> {{ currency }}<br>
+            <b>Invoice Amount:</b> {{ currency }} {{ total_amount }}<br>
+            <b>Contract No. and Date:</b> {{ invoice.ReferenceNumber|default:"N/A" }}
+        </td>
+        <td style="width: 33%;">
+            <b>Nature of payment in terms of Contract:</b><br>
+            [ ] FOB &nbsp;&nbsp; [ ] CIF<br>
+            [ ] C&amp;F &nbsp;&nbsp; [ ] CI<br>
+            [ ] periodical<br>
+            [ ] milestone<br>
+            [X] advance &nbsp;&nbsp; [ ] others<br><br>
+            <b>HSN/Service Accounting Codes (SAC):</b> 998314
+        </td>
+    </tr>
+</table>
+
+<table class="form-table" style="margin-top: -0.8px;">
     <thead>
         <tr>
-            <th style="width: 5%; text-align: center;">Sl No</th>
-            <th style="width: 17%;">Invoice No. &amp; Date</th>
-            <th style="width: 14%;">Contract Terms</th>
-            <th style="width: 9%; text-align: center;">Currency</th>
-            <th style="width: 13%; text-align: right;">FOB Value</th>
-            <th style="width: 14%; text-align: right;">Freight / Insurance</th>
-            <th style="width: 14%; text-align: right;">Net Realisable Value</th>
-            <th style="width: 14%; text-align: center;">HSN Code</th>
+            <th style="width: 44%; text-align: center;">Particulars</th>
+            <th style="width: 26%; text-align: center;">Currency</th>
+            <th style="width: 30%; text-align: center;">Amount</th>
         </tr>
     </thead>
     <tbody>
         <tr>
-            <td style="text-align: center;">1</td>
-            <td>{{ invoice.InvoiceNumber }}<br>dt. {{ invoice_date_formatted }}</td>
-            <td>FOB / Milestone</td>
-            <td style="text-align: center;">{{ currency }}</td>
-            <td style="text-align: right;">{{ total_amount|floatformat:2 }}</td>
-            <td style="text-align: right;">0.00</td>
-            <td style="text-align: right; font-weight: bold;">{{ total_amount|floatformat:2 }}</td>
-            <td style="text-align: center;">N/A (Services)</td>
+            <td>FOB/Services Value</td>
+            <td class="center">{{ currency }}</td>
+            <td class="right">{{ total_amount }}</td>
         </tr>
         <tr>
-            <td colspan="8" style="text-align: center; color: #555555; background-color: #fcfcfc; font-style: italic;">
-                -- NOT APPLICABLE FOR PHYSICAL GOODS (TRANSACTION IS EXPORT OF SERVICES GOVERNED BY SECTION 2B OVERLEAF) --
-            </td>
+            <td>Freight/Transmission</td>
+            <td class="center">{{ currency }}</td>
+            <td class="right">0.00</td>
+        </tr>
+        <tr>
+            <td>Insurance</td>
+            <td class="center">{{ currency }}</td>
+            <td class="right">0.00</td>
+        </tr>
+        <tr>
+            <td>Commission</td>
+            <td class="center">{{ currency }}</td>
+            <td class="right">0.00</td>
+        </tr>
+        <tr>
+            <td>Discount</td>
+            <td class="center">{{ currency }}</td>
+            <td class="right">0.00</td>
+        </tr>
+        <tr>
+            <td>Other Deduction</td>
+            <td class="center">{{ currency }}</td>
+            <td class="right">0.00</td>
+        </tr>
+        <tr>
+            <td>Packing Charges</td>
+            <td class="center">{{ currency }}</td>
+            <td class="right">0.00</td>
         </tr>
     </tbody>
 </table>
-
-<div class="footer-line">
-    EDF Form &bull; Page 1 of 2 &bull; State Bank of India
-</div>
 
 <!-- ============================================================== -->
 <!-- PAGE 2: SECTION 2B, SECTION 3, SECTION 4, AND SECTION 5        -->
 <!-- ============================================================== -->
 <div class="page-break"></div>
 
-<table class="header-table">
+<div class="section-heading" style="margin-top: 0;">Full export value / Net Realisable export value</div>
+<table class="form-table" style="margin-bottom: 5px;">
     <tr>
-        <td style="width: 72%;">
-            <div class="bank-title" style="font-size: 11pt;">STATE BANK OF INDIA - EXPORT DECLARATION FORM (EDF)</div>
-            <div class="bank-subtitle">Page 2 of 2 &bull; Section 2B, Section 3, Section 4 &amp; Section 5</div>
+        <td style="width: 38%; font-weight: bold;">
+            Full export value / Net<br>
+            Realisable export value
         </td>
-        <td style="width: 28%; text-align: right; vertical-align: top;">
-            <div style="font-size: 7.2pt; font-weight: bold; color: #003366;">Invoice: {{ invoice.InvoiceNumber }}</div>
-            <div style="font-size: 6.5pt; color: #555555;">Date: {{ invoice_date_formatted }}</div>
+        <td style="width: 62%; font-size: 7.5pt; font-weight: bold; vertical-align: middle;">
+            {{ currency }} {{ total_amount }} &nbsp;&nbsp;&nbsp;&nbsp; (INR {{ amount_in_inr|floatformat:2 }})
         </td>
     </tr>
 </table>
 
-<div class="section-title">SECTION 2B: DETAILS OF EXPORT VALUE OF SERVICES (Service / Software Exports)</div>
-<div class="note-text">*Prescribed under FEMA regulations for reporting export realizations of IT, ITeS, professional, and consulting services.</div>
-<table class="data-table">
+<div class="section-heading" style="margin-top: 3px; margin-bottom: 0;">2B. Details of Export Value^ of Services</div>
+<div style="font-size: 6.6pt; margin-bottom: 2px;">Details of services provided to multiple recipients</div>
+
+<table class="form-table" style="margin-bottom: 4px;">
     <thead>
         <tr>
-            <th style="width: 5%; text-align: center;">Sl.</th>
-            <th style="width: 25%;">Recipient Name &amp; Destination</th>
-            <th style="width: 15%;">Invoice Ref. &amp; Date</th>
-            <th style="width: 7%; text-align: center;">Curr.</th>
-            <th style="width: 12%; text-align: right;">Invoice Amount</th>
-            <th style="width: 9%; text-align: right;">Discount</th>
-            <th style="width: 13%; text-align: right;">Net Realisable</th>
-            <th style="width: 14%; text-align: center;">SAC / Code</th>
+            <th rowspan="2" style="width: 4%; text-align: center;">S.<br>No.</th>
+            <th rowspan="2" style="width: 19%; text-align: center;">Service recipient<br>Name &amp; Address</th>
+            <th rowspan="2" style="width: 8%; text-align: center;">Country</th>
+            <th colspan="3" style="width: 25%; text-align: center;">Details of Invoice</th>
+            <th rowspan="2" style="width: 9%; text-align: center;">Net Realisable<br>value</th>
+            <th rowspan="2" style="width: 10%; text-align: center;">Contract No., if<br>any, &amp; Date</th>
+            <th rowspan="2" style="width: 13%; text-align: center;">Description of<br>services</th>
+            <th rowspan="2" style="width: 6%; text-align: center;">SAC<br>Code</th>
+            <th rowspan="2" style="width: 6%; text-align: center;">Remarks</th>
+        </tr>
+        <tr>
+            <th style="width: 8%; text-align: center;">No.</th>
+            <th style="width: 8%; text-align: center;">Date</th>
+            <th style="width: 9%; text-align: center;">Currency<br>Amount</th>
         </tr>
     </thead>
     <tbody>
-        {% for item in items_data %}
         <tr>
-            <td style="text-align: center;">{{ item.sl_no }}</td>
-            <td>
-                <strong>{{ client.CustomerDisplayName|default:client.CompanyName|default:"Overseas Client" }}</strong><br>
-                {{ client_country|default:"Overseas" }}
-            </td>
-            <td>
-                {{ invoice.InvoiceNumber }}<br>dt. {{ invoice_date_formatted }}
-            </td>
-            <td style="text-align: center;">{{ currency }}</td>
-            <td style="text-align: right;">{{ item.amount|floatformat:2 }}</td>
-            <td style="text-align: right;">{{ item.discount }}%</td>
-            <td style="text-align: right; font-weight: bold;">{{ item.net_amount|floatformat:2 }}</td>
-            <td style="text-align: center;">{{ item.code|default:"998314" }}</td>
+            <td class="center">1</td>
+            <td><b>{{ client.CustomerDisplayName|default:client.ClientName }}</b><br>{{ client_address_str|truncatechars:45 }}</td>
+            <td class="center">{{ client_country }}</td>
+            <td class="center">{{ invoice.InvoiceNumber }}</td>
+            <td class="center">{{ invoice_date_formatted }}</td>
+            <td class="right">{{ currency }}<br>{{ total_amount }}</td>
+            <td class="right">{{ currency }}<br>{{ total_amount }}</td>
+            <td class="center">{{ invoice.ReferenceNumber|default:"N/A" }}</td>
+            <td>{{ description_of_services|truncatechars:40 }}</td>
+            <td class="center">998314</td>
+            <td class="center">-</td>
         </tr>
-        {% endfor %}
-        <tr style="background-color: #eaeff5; font-weight: bold;">
-            <td colspan="4" style="text-align: right; color: #003366;">TOTAL NET REALISABLE EXPORT VALUE:</td>
-            <td style="text-align: center; color: #003366;">{{ currency }}</td>
-            <td style="text-align: right;">-</td>
-            <td style="text-align: right; color: #003366; font-size: 7.2pt;">{{ total_amount|floatformat:2 }}</td>
-            <td style="text-align: center;">-</td>
+        <tr>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
+            <td>&nbsp;</td>
         </tr>
     </tbody>
 </table>
 
-<div class="section-title">SECTION 3: APPLICABLE FOR EXPORTS UNDER FOREIGN POST OFFICES (FPO) / COURIERS</div>
-<table class="data-table">
+<div class="section-heading" style="margin-top: 4px;">3. Applicable for Export under FPO/Couriers</div>
+<table class="form-table" style="margin-bottom: 4px;">
     <tr>
-        <td class="label-col" style="width: 25%;">3.1 Name of Post Office / Courier Agency</td>
-        <td class="val-col" style="width: 25%;">Not Applicable (Electronic Transmission)</td>
-        <td class="label-col" style="width: 25%;">3.2 Postal Receipt / AWB No. &amp; Date</td>
-        <td class="val-col" style="width: 25%;">Not Applicable</td>
+        <td style="width: 50%; height: 32px;">
+            <b>Name of the Foreign post Office/Courier:</b><br><br>
+            <b>Number &amp; date of Parcel receipts:</b>
+        </td>
+        <td style="width: 50%; text-align: center; vertical-align: top;">
+            <b>Stamp &amp; Signature of Authorised Dealer</b>
+        </td>
     </tr>
 </table>
 
-<div class="section-title">SECTION 4: DECLARATION BY THE EXPORTER</div>
-<div class="decl-text">
-    1. I / We hereby declare that I / we am / are the Seller / Exporter / Service Provider of the goods / services in respect of which this declaration is made and that the particulars given in Sections 1, 2A, 2B and 3 above are true, complete and correct in all respects.<br>
-    2. I / We declare that the invoice value declared represents the full export value contracted with the overseas recipient / buyer.<br>
-    3. I / We undertake to deliver to State Bank of India (Authorised Dealer Category-I) the foreign exchange proceeds representing the full export value within the timeline and in the manner prescribed under Section 7 of the Foreign Exchange Management Act (FEMA), 1999 and the rules and regulations made thereunder.<br>
-    4. I / We further declare that our entity / firm is not on the Exporters Caution List / Caution List of the Reserve Bank of India, DGFT or any regulatory authority.
+<div class="section-heading" style="margin-top: 4px;">4. Declaration by the Exporters (All types of exports)</div>
+<div class="legal-text">
+    I / We hereby declare that I/we @am/are the seller/consignor of the goods/ provider of services in respect of which this declaration is made and that the particulars given above are true and that the value to be received from the buyer/third party represents the export value^ contracted and declared above.<br>
+    I/We undertake that I/we have delivered/ will deliver to the authorised dealer named above the foreign exchange / Indian Rupees representing the full value of the goods/services exported as above on or before: ____________ (i.e. within the period of realisation stipulated by RBI from time to time) in the manner specified in the Regulations made under the Foreign Exchange Management Act, 1999.<br>
+    I/We also undertake to submit the documents pertaining to exports declared in this form, to the Authorised Dealer named above, as may be required under the Act.
 </div>
 
-<table style="width: 100%; border-collapse: collapse; margin-top: 3px; margin-bottom: 3px;">
+<table class="form-table" style="margin-bottom: 4px;">
     <tr>
-        <td style="width: 48%; border: 0.5px solid #666666; padding: 4px; vertical-align: top; font-size: 6.8pt;">
-            <strong>Date:</strong> {{ current_date }}<br><br>
-            <strong>Place:</strong> {{ company.State|default:"India" }}<br><br>
-            <strong>Exporter:</strong> {{ company.CompanyName|default:"Export Entity" }}<br>
-            <strong>Bank A/C No:</strong> {{ bank_account_no }} (SBI)<br>
-            <strong>IFSC Code:</strong> {{ bank_ifsc }}
+        <td style="width: 50%; border: none; padding: 3px 0;">
+            <b>Date:</b> {{ invoice_date_formatted }}
         </td>
-        <td style="width: 52%; border: 0.5px solid #666666; padding: 4px; text-align: center; vertical-align: top;">
-            <div style="font-size: 6.3pt; color: #555555;">For and on behalf of Exporter</div>
-            <div class="sig-box">[ AUTHORISED SIGNATORY &amp; COMPANY SEAL ]</div>
-            <div style="font-weight: bold; margin-top: 3px; font-size: 6.8pt;">Authorised Signatory</div>
+        <td style="width: 50%; border: none; padding: 3px 0; text-align: right;">
+            <b>(Signature of Exporter)</b>
         </td>
     </tr>
 </table>
 
-<div class="section-title">SECTION 5: SPACE FOR USE OF SPECIFIED AUTHORITY / AUTHORISED DEALER (SBI)</div>
-<table class="data-table">
+<div class="section-heading" style="margin-top: 3px;">5. Space for use of Specified Authority (Custom/SEZ/AD/STPI):</div>
+<div class="legal-text">
+    Certified, on the basis of above declaration at 4, that the goods/services described above and the export value^ declared by the exporter in this form is as per the corresponding invoice/gist of invoices submitted and declared by the exporter.
+</div>
+
+<table class="form-table" style="margin-bottom: 3px;">
     <tr>
-        <td colspan="2" style="background-color: #fbfbfb;">
-            <strong>CERTIFICATE BY STATE BANK OF INDIA (AUTHORISED DEALER CATEGORY-I)</strong><br>
-            We hereby certify that the export declaration (EDF Form) submitted above by M/s <strong>{{ company.CompanyName|default:"Export Entity" }}</strong> against Invoice No. <strong>{{ invoice.InvoiceNumber }}</strong> dated <strong>{{ invoice_date_formatted }}</strong> for <strong>{{ currency }} {{ total_amount|floatformat:2 }}</strong> (INR Eqv: Rs. {{ amount_in_inr|floatformat:2 }}) has been registered and verified in bank records for EDPMS compliance and regulatory reporting under FEMA guidelines.
+        <td style="width: 50%; border: none; padding: 3px 0;">
+            <b>Date:</b>
         </td>
-    </tr>
-    <tr>
-        <td style="width: 50%; vertical-align: top;">
-            <strong>Bank Name:</strong> State Bank of India<br>
-            <strong>Branch Name:</strong> {{ bank_branch|default:"Commercial Branch, Overseas Division" }}<br>
-            <strong>AD Code (14 Digits):</strong> {{ ad_code|default:"0210060-00124" }}<br>
-            <strong>EDPMS Reference No:</strong> SBI/EDF/{{ invoice.InvoiceNumber }}<br>
-            <strong>Date of Registration:</strong> ________________________
-        </td>
-        <td style="width: 50%; text-align: center; vertical-align: middle;">
-            <div style="border: 0.5px dashed #777777; height: 34px; padding-top: 18px; font-size: 6.3pt; color: #777777;">
-                [ SIGNATURE OF AUTHORISED BANK OFFICIAL &amp; BRANCH STAMP ]
-            </div>
-            <div style="font-weight: bold; margin-top: 2px; font-size: 6.8pt;">State Bank of India (Authorised Signatory)</div>
+        <td style="width: 50%; border: none; padding: 3px 0; text-align: right;">
+            <b>(Signature of Authorised Dealer)</b>
         </td>
     </tr>
 </table>
 
-<div class="footer-line">
-    EDF Form &bull; Page 2 of 2 &bull; State Bank of India
+<div class="footnote-text" style="border-top: 0.6px solid #000000; padding-top: 3px;">
+    1. @ Strike out whichever is not applicable.<br>
+    2. ^ If the full export value is not ascertainable at the time of export, the value which the exporter, having regard to the prevailing market conditions expects to receive on the sale of the goods in overseas market.<br>
+    3. Export value may be indicated as nil in case the goods are sent without any consideration.
 </div>
 
 </body>
