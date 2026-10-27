@@ -137,7 +137,7 @@
         <td style="width: 50%;">
             <b>Type of export :</b> {{ type_of_export|default:"Service" }}
             <div style="margin-top: 14px;">
-                <b>Shipping Bill No. &amp; Date:</b> {{ invoice.ShippingBillNo|default:"" }}
+                <b>Shipping Bill No. &amp; Date:</b> {{ shipping_bill_no|default:"" }}
             </div>
         </td>
         <td style="width: 50%;">
@@ -176,8 +176,8 @@
     <tr>
         <td>
             <b>Exporters Name &amp; Address:</b><br>
-            <b>{{ company.CompanyName }}</b><br>
-            {{ company.CompanyAddress|default:"" }}
+            <b>{{ company_name }}</b><br>
+            {{ company_address }}
         </td>
         <td>
             <b>Mode of Realisation:</b><br>
@@ -190,7 +190,7 @@
     <tr>
         <td>
             <b>Consignee Name &amp; Address:</b><br>
-            <b>{{ client.CustomerDisplayName|default:client.ClientName }}</b><br>
+            <b>{{ client_name }}</b><br>
             {{ client_address_str }}
         </td>
         <td>
@@ -244,7 +244,7 @@
     <tr>
         <td style="width: 33%;">
             <b>Client Name &amp; Address:</b><br><br>
-            <b>{{ client.CustomerDisplayName|default:client.ClientName }}</b><br>
+            <b>{{ client_name }}</b><br>
             {{ client_address_str }}
         </td>
         <td style="width: 34%;">
@@ -252,7 +252,7 @@
             <b>Invoice date.</b> {{ invoice_date_formatted }}<br>
             <b>Invoice Currency:</b> {{ currency }}<br>
             <b>Invoice Amount:</b> {{ currency }} {{ total_amount }}<br>
-            <b>Contract No. and Date:</b> {{ invoice.ReferenceNumber|default:"N/A" }}
+            <b>Contract No. and Date:</b> {{ reference_number|default:"N/A" }}
         </td>
         <td style="width: 33%;">
             <b>Nature of payment in terms of Contract:</b><br>
@@ -356,13 +356,13 @@
     <tbody>
         <tr>
             <td class="center">1</td>
-            <td><b>{{ client.CustomerDisplayName|default:client.ClientName }}</b><br>{{ client_address_str|truncatechars:45 }}</td>
+            <td><b>{{ client_name }}</b><br>{{ client_address_str|truncatechars:45 }}</td>
             <td class="center">{{ client_country }}</td>
             <td class="center">{{ invoice.InvoiceNumber }}</td>
             <td class="center">{{ invoice_date_formatted }}</td>
             <td class="right">{{ currency }}<br>{{ total_amount }}</td>
             <td class="right">{{ currency }}<br>{{ total_amount }}</td>
-            <td class="center">{{ invoice.ReferenceNumber|default:"N/A" }}</td>
+            <td class="center">{{ reference_number|default:"N/A" }}</td>
             <td>{{ description_of_services|truncatechars:40 }}</td>
             <td class="center">998314</td>
             <td class="center">-</td>

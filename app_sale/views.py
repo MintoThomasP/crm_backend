@@ -1414,8 +1414,32 @@ def ExportDeclarationPDF(request, InvoiceId="", invoice_id=""):
         except Exception:
             logo = ""
 
+        client_name = ""
+        if client:
+            client_name = (
+                getattr(client, 'CustomerDisplayName', None)
+                or getattr(client, 'CompanyName', None)
+                or f"{getattr(client, 'FirstName', '') or ''} {getattr(client, 'LastName', '') or ''}".strip()
+            )
+        if not client_name:
+            client_name = "Overseas Client"
+
+        company_name = company.CompanyName if (company and company.CompanyName) else "Exporter"
+        company_address = getattr(company, 'Address', '') or getattr(company, 'CompanyAddress', '') or ""
+
+        reference_number = getattr(invoice, 'ReferenceNumber', None) or getattr(invoice, 'LinkedInvoiceId', None) or "N/A"
+        shipping_bill_no = getattr(invoice, 'ShippingBillNo', None) or ""
+
         context = {
             'invoice': invoice,
+            'client_name': client_name,
+            'company_name': company_name,
+            'company_address': company_address,
+            'reference_number': reference_number,
+            'shipping_bill_no': shipping_bill_no,
+            'type_of_export': 'Service',
+            'port_of_loading': 'N/A (Electronic)',
+            'port_of_discharge': 'N/A (Electronic)',
             'invoiceItems': invoiceItems,
             'items_data': items_data,
             'client': client,
