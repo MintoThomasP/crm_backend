@@ -1385,6 +1385,20 @@ def ExportDeclarationPDF(request, InvoiceId="", invoice_id=""):
         ad_code = "0027102"
         description_of_services = "Software Development"
 
+        iec_number = ""
+        try:
+            company_docs = CompanyDocuments.objects.filter(CompanyId=invoice.CompanyId)
+            for doc in company_docs:
+                dtype = (doc.DocumentType or "").upper()
+                dname = (doc.DocumentName or "").upper()
+                if "IEC" in dtype or "IEC" in dname:
+                    iec_number = doc.DocumentNumber or ""
+                    break
+        except Exception:
+            pass
+        if not iec_number:
+            iec_number = "NOT APPLICABLE"
+
         sbi_bank = CompanyBankDetails.objects.filter(
             CompanyId=invoice.CompanyId,
             BankName__icontains="State Bank of India"
