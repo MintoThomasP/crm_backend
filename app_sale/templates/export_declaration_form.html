@@ -141,7 +141,7 @@
             </div>
         </td>
         <td style="width: 50%;">
-            <b>Form No:</b> {{ invoice.InvoiceNumber }}
+            <b>Form No:</b> {{ display_invoice_number|default:invoice.InvoiceNumber }}
             <div style="margin-top: 3px;">
                 <b>Mode of Transport/Delivery:</b><br>
                 [ ] Air &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; [ ] Land<br>
@@ -248,7 +248,7 @@
             {{ client_address_str }}
         </td>
         <td style="width: 34%;">
-            <b>Invoice No.</b> {{ invoice.InvoiceNumber }}<br>
+            <b>Invoice No.</b> {{ display_invoice_number|default:invoice.InvoiceNumber }}<br>
             <b>Invoice date.</b> {{ invoice_date_formatted }}<br>
             <b>Invoice Currency:</b> {{ currency }}<br>
             <b>Invoice Amount:</b> {{ currency }} {{ total_amount }}<br>
@@ -358,7 +358,7 @@
             <td class="center">1</td>
             <td><b>{{ client_name }}</b><br>{{ client_address_str }}</td>
             <td class="center">{{ client_country }}</td>
-            <td class="center">{{ invoice.InvoiceNumber }}</td>
+            <td class="center">{{ display_invoice_number|default:invoice.InvoiceNumber }}</td>
             <td class="center">{{ invoice_date_formatted }}</td>
             <td class="right">{{ currency }}<br>{{ total_amount }}</td>
             <td class="right">{{ currency }}<br>{{ total_amount }}</td>

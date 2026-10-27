@@ -1256,16 +1256,61 @@ def ExportDeclarationPDF(request, InvoiceId="", invoice_id=""):
             return JsonResponse({"error": "InvoiceId is required"}, status=400)
 
         invoice = Invoice.objects.get(InvoiceId=inv_id)
-        invoiceItems = InvoiceItem.objects.filter(InvoiceId=inv_id).order_by('OrderNo')
-        client = Client.objects.filter(ClientId=invoice.ClientId).first()
-        clientaddress = ClientAddress.objects.filter(ClientId=invoice.ClientId).first()
-        company = Company.objects.filter(CompanyId=invoice.CompanyId).first()
-        siteSettings = SiteSettings.objects.filter(CompanyId=invoice.CompanyId).first()
 
+        # Dual-Currency Resolution:
+        # In this CRM, foreign currency export invoices (AED, USD, etc.) typically create two linked records:
+        # 1) A Foreign Currency record (Currency: AED/USD, TotalAmount: foreign value, ExchangeRate: rate)
+        # 2) An INR companion record (Currency: INR, TotalAmount: INR equivalent)
+        # For the Export Declaration Form (EDF), the document must display the transaction in the
+        # foreign currency, while the INR equivalent is used strictly for "value in words (INR)".
+        foreign_invoice = None
+        inr_invoice = None
+
+        inv_curr = (getattr(invoice, 'Currency', '') or '').strip().upper()
+        if inv_curr == 'INR' or not inv_curr:
+            if invoice.LinkedInvoiceId:
+                cand = Invoice.objects.filter(InvoiceId=invoice.LinkedInvoiceId).exclude(Currency='INR').first()
+                if cand and cand.Currency:
+                    foreign_invoice = cand
+            if not foreign_invoice:
+                cand = Invoice.objects.filter(LinkedInvoiceId=invoice.InvoiceId).exclude(Currency='INR').first()
+                if cand and cand.Currency:
+                    foreign_invoice = cand
+            if not foreign_invoice and invoice.InvoiceNumber:
+                base_num = re.sub(r'-[A-Z]{3,4}$', '', invoice.InvoiceNumber)
+                cand = Invoice.objects.filter(InvoiceNumber__startswith=f"{base_num}-").exclude(Currency='INR').first()
+                if cand and cand.Currency:
+                    foreign_invoice = cand
+
+            if foreign_invoice:
+                inr_invoice = invoice
+        else:
+            foreign_invoice = invoice
+            if invoice.LinkedInvoiceId:
+                cand = Invoice.objects.filter(InvoiceId=invoice.LinkedInvoiceId, Currency='INR').first()
+                if cand:
+                    inr_invoice = cand
+            if not inr_invoice:
+                cand = Invoice.objects.filter(LinkedInvoiceId=invoice.InvoiceId, Currency='INR').first()
+                if cand:
+                    inr_invoice = cand
+
+        export_invoice = foreign_invoice if foreign_invoice else invoice
+
+        invoiceItems = InvoiceItem.objects.filter(InvoiceId=export_invoice.InvoiceId).order_by('OrderNo')
+        if not invoiceItems.exists() and export_invoice != invoice:
+            invoiceItems = InvoiceItem.objects.filter(InvoiceId=invoice.InvoiceId).order_by('OrderNo')
+
+        client = Client.objects.filter(ClientId=export_invoice.ClientId or invoice.ClientId).first()
+        clientaddress = ClientAddress.objects.filter(ClientId=export_invoice.ClientId or invoice.ClientId).first()
+        company = Company.objects.filter(CompanyId=export_invoice.CompanyId or invoice.CompanyId).first()
+        siteSettings = SiteSettings.objects.filter(CompanyId=export_invoice.CompanyId or invoice.CompanyId).first()
+
+        billing_src = export_invoice.BillingAddress or invoice.BillingAddress
         try:
-            billingAddress = json.loads(invoice.BillingAddress) if invoice.BillingAddress else {}
+            billingAddress = json.loads(billing_src) if billing_src else {}
         except Exception:
-            billingAddress = invoice.BillingAddress or {}
+            billingAddress = billing_src or {}
 
         def is_uuid(val):
             if not val:
@@ -1422,34 +1467,51 @@ def ExportDeclarationPDF(request, InvoiceId="", invoice_id=""):
         bank_account_no = sbi_bank.AccountNumber if sbi_bank and sbi_bank.AccountNumber else "-"
         bank_ifsc = sbi_bank.IFSCCode if sbi_bank and sbi_bank.IFSCCode else "-"
 
-        currency = (getattr(invoice, 'Currency', None) or (siteSettings.CurrencyType if siteSettings else 'USD') or 'USD').strip().upper()
+        currency = (getattr(export_invoice, 'Currency', None) or (siteSettings.CurrencyType if siteSettings else 'USD') or 'USD').strip().upper()
         try:
-            total_amount_val = Decimal(str(invoice.TotalAmount or 0).strip())
+            total_amount_val = Decimal(str(export_invoice.TotalAmount or 0).strip())
         except Exception:
             total_amount_val = Decimal(0)
         total_amount = f"{total_amount_val:.2f}"
 
-        try:
-            exchange_rate = Decimal(str(invoice.ExchangeRate or 1).strip())
-            if exchange_rate <= 0:
+        # Determine INR amount
+        if inr_invoice and inr_invoice.TotalAmount:
+            try:
+                amount_in_inr = Decimal(str(inr_invoice.TotalAmount).strip())
+            except Exception:
+                amount_in_inr = total_amount_val
+            if total_amount_val > 0:
+                exchange_rate = amount_in_inr / total_amount_val
+            else:
                 exchange_rate = Decimal(1)
-        except Exception:
-            exchange_rate = Decimal(1)
-
-        if currency != 'INR' and exchange_rate > 0:
-            amount_in_inr = total_amount_val * exchange_rate
         else:
-            amount_in_inr = total_amount_val
+            try:
+                exchange_rate = Decimal(str(export_invoice.ExchangeRate or 1).strip())
+                if exchange_rate <= 0:
+                    exchange_rate = Decimal(1)
+            except Exception:
+                exchange_rate = Decimal(1)
+
+            if currency != 'INR' and exchange_rate > 0:
+                amount_in_inr = total_amount_val * exchange_rate
+            else:
+                amount_in_inr = total_amount_val
 
         amountinwords = decimal_number_to_words(total_amount_val, currency)
         amountinwords_inr = decimal_number_to_words(amount_in_inr, 'INR').upper()
 
-        invoice_date_formatted = invoice.InvoiceDate or ""
+        raw_inv_date = export_invoice.InvoiceDate or invoice.InvoiceDate or ""
+        invoice_date_formatted = raw_inv_date
         try:
-            parsed_dt = datetime.strptime(invoice.InvoiceDate, '%Y-%m-%d')
+            parsed_dt = datetime.strptime(raw_inv_date, '%Y-%m-%d')
             invoice_date_formatted = parsed_dt.strftime('%d/%m/%Y')
         except Exception:
             pass
+
+        raw_num = invoice.InvoiceNumber or export_invoice.InvoiceNumber or ""
+        display_invoice_number = re.sub(r'-[A-Z]{3,4}$', '', raw_num)
+        if not display_invoice_number:
+            display_invoice_number = raw_num
 
         items_data = []
         for idx, item in enumerate(invoiceItems, start=1):
@@ -1521,7 +1583,8 @@ def ExportDeclarationPDF(request, InvoiceId="", invoice_id=""):
         current_date_str = datetime.now().strftime('%d/%m/%Y')
 
         context = {
-            'invoice': invoice,
+            'invoice': export_invoice,
+            'display_invoice_number': display_invoice_number,
             'client_name': client_name,
             'company_name': company_name,
             'company_address': company_address,
@@ -1564,7 +1627,7 @@ def ExportDeclarationPDF(request, InvoiceId="", invoice_id=""):
 
         pdf = render_to_pdf('export_declaration_form.html', context)
         if pdf:
-            filename = f"EDF_{invoice.InvoiceNumber}.pdf"
+            filename = f"EDF_{display_invoice_number}.pdf"
             pdf_content = pdf.content if hasattr(pdf, 'content') else pdf
             response = HttpResponse(pdf_content, content_type='application/pdf')
             response['Content-Disposition'] = f'attachment; filename="{filename}"'
