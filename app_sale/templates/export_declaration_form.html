@@ -15,8 +15,8 @@
 
     body {
         font-family: Helvetica, Arial, sans-serif;
-        font-size: 6.8pt;
-        line-height: 1.18;
+        font-size: 6.1pt;
+        line-height: 1.15;
         color: #000000;
         background-color: #ffffff;
         margin: 0;
@@ -25,33 +25,33 @@
 
     .doc-header {
         text-align: center;
-        margin-bottom: 6px;
+        margin-bottom: 5px;
     }
 
     .doc-header .bank-title {
-        font-size: 15pt;
+        font-size: 14pt;
         font-weight: bold;
         line-height: 1.1;
     }
 
     .doc-header .form-code-title {
-        font-size: 11pt;
+        font-size: 10.5pt;
         font-weight: bold;
         line-height: 1.2;
         margin-top: 1px;
     }
 
     .doc-header .form-main-title {
-        font-size: 10pt;
+        font-size: 9.5pt;
         font-weight: bold;
         line-height: 1.2;
     }
 
     .section-heading {
-        font-size: 8pt;
+        font-size: 7.2pt;
         font-weight: bold;
         color: #000000;
-        margin-top: 5px;
+        margin-top: 4px;
         margin-bottom: 2px;
     }
 
@@ -63,8 +63,8 @@
 
     .form-table th, .form-table td {
         border: 0.8px solid #000000;
-        padding: 2.5px 4px;
-        font-size: 6.6pt;
+        padding: 2px 3.5px;
+        font-size: 6.1pt;
         color: #000000;
         vertical-align: top;
     }
@@ -81,23 +81,23 @@
 
     .no-border-table td {
         border: none;
-        padding: 2px 0;
-        font-size: 6.8pt;
+        padding: 1.5px 0;
+        font-size: 6.1pt;
         vertical-align: top;
     }
 
     .legal-text {
-        font-size: 6.2pt;
+        font-size: 6.1pt;
         text-align: justify;
-        line-height: 1.2;
+        line-height: 1.16;
         margin-top: 2px;
-        margin-bottom: 3px;
+        margin-bottom: 2px;
         color: #000000;
     }
 
     .footnote-text {
-        font-size: 5.6pt;
-        line-height: 1.18;
+        font-size: 5.4pt;
+        line-height: 1.14;
         color: #000000;
         margin-top: 3px;
     }
@@ -337,33 +337,33 @@
 <table class="form-table" style="margin-bottom: 4px;">
     <thead>
         <tr>
-            <th rowspan="2" style="width: 4%; text-align: center;">S.<br>No.</th>
-            <th rowspan="2" style="width: 19%; text-align: center;">Service recipient<br>Name &amp; Address</th>
-            <th rowspan="2" style="width: 8%; text-align: center;">Country</th>
-            <th colspan="3" style="width: 25%; text-align: center;">Details of Invoice</th>
-            <th rowspan="2" style="width: 9%; text-align: center;">Net Realisable<br>value</th>
-            <th rowspan="2" style="width: 10%; text-align: center;">Contract No., if<br>any, &amp; Date</th>
-            <th rowspan="2" style="width: 13%; text-align: center;">Description of<br>services</th>
-            <th rowspan="2" style="width: 6%; text-align: center;">SAC<br>Code</th>
-            <th rowspan="2" style="width: 6%; text-align: center;">Remarks</th>
+            <th rowspan="2" style="width: 3.5%; text-align: center;">S.<br>No.</th>
+            <th rowspan="2" style="width: 24.5%; text-align: center;">Service recipient<br>Name &amp; Address</th>
+            <th rowspan="2" style="width: 8.5%; text-align: center;">Country</th>
+            <th colspan="3" style="width: 24%; text-align: center;">Details of Invoice</th>
+            <th rowspan="2" style="width: 8.5%; text-align: center;">Net Realisable<br>value</th>
+            <th rowspan="2" style="width: 8.5%; text-align: center;">Contract No., if<br>any, &amp; Date</th>
+            <th rowspan="2" style="width: 12.5%; text-align: center;">Description of<br>services</th>
+            <th rowspan="2" style="width: 5.5%; text-align: center;">SAC<br>Code</th>
+            <th rowspan="2" style="width: 4.5%; text-align: center;">Remarks</th>
         </tr>
         <tr>
             <th style="width: 8%; text-align: center;">No.</th>
-            <th style="width: 8%; text-align: center;">Date</th>
-            <th style="width: 9%; text-align: center;">Currency<br>Amount</th>
+            <th style="width: 7.5%; text-align: center;">Date</th>
+            <th style="width: 8.5%; text-align: center;">Currency<br>Amount</th>
         </tr>
     </thead>
     <tbody>
         <tr>
             <td class="center">1</td>
-            <td><b>{{ client_name }}</b><br>{{ client_address_str|truncatechars:45 }}</td>
+            <td><b>{{ client_name }}</b><br>{{ client_address_str }}</td>
             <td class="center">{{ client_country }}</td>
             <td class="center">{{ invoice.InvoiceNumber }}</td>
             <td class="center">{{ invoice_date_formatted }}</td>
             <td class="right">{{ currency }}<br>{{ total_amount }}</td>
             <td class="right">{{ currency }}<br>{{ total_amount }}</td>
             <td class="center">{{ reference_number|default:"N/A" }}</td>
-            <td>{{ description_of_services|truncatechars:40 }}</td>
+            <td>{{ description_of_services }}</td>
             <td class="center">998314</td>
             <td class="center">-</td>
         </tr>
