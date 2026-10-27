@@ -1422,20 +1422,27 @@ def ExportDeclarationPDF(request, InvoiceId="", invoice_id=""):
         bank_account_no = sbi_bank.AccountNumber if sbi_bank and sbi_bank.AccountNumber else "-"
         bank_ifsc = sbi_bank.IFSCCode if sbi_bank and sbi_bank.IFSCCode else "-"
 
-        currency = invoice.Currency if getattr(invoice, 'Currency', None) else (siteSettings.CurrencyType if siteSettings else 'USD')
-        total_amount = Decimal(invoice.TotalAmount or 0)
+        currency = (getattr(invoice, 'Currency', None) or (siteSettings.CurrencyType if siteSettings else 'USD') or 'USD').strip().upper()
         try:
-            exchange_rate = Decimal(invoice.ExchangeRate or 1)
+            total_amount_val = Decimal(str(invoice.TotalAmount or 0).strip())
+        except Exception:
+            total_amount_val = Decimal(0)
+        total_amount = f"{total_amount_val:.2f}"
+
+        try:
+            exchange_rate = Decimal(str(invoice.ExchangeRate or 1).strip())
+            if exchange_rate <= 0:
+                exchange_rate = Decimal(1)
         except Exception:
             exchange_rate = Decimal(1)
 
-        if currency.upper() != 'INR' and exchange_rate > 0:
-            amount_in_inr = total_amount * exchange_rate
+        if currency != 'INR' and exchange_rate > 0:
+            amount_in_inr = total_amount_val * exchange_rate
         else:
-            amount_in_inr = total_amount
+            amount_in_inr = total_amount_val
 
-        amountinwords = decimal_number_to_words(total_amount, currency)
-        amountinwords_inr = decimal_number_to_words(amount_in_inr, 'INR')
+        amountinwords = decimal_number_to_words(total_amount_val, currency)
+        amountinwords_inr = decimal_number_to_words(amount_in_inr, 'INR').upper()
 
         invoice_date_formatted = invoice.InvoiceDate or ""
         try:
