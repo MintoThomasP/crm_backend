@@ -1572,7 +1572,9 @@ def ExportDeclarationPDF(request, InvoiceId="", invoice_id=""):
         shipping_bill_no = getattr(invoice, 'ShippingBillNo', None) or ""
 
         # Seal and Signature image absolute file paths
-        company_seal_round = os.path.join(settings.BASE_DIR, 'static', 'images', 'company_seal_round.jpg')
+        company_seal_round = os.path.join(settings.BASE_DIR, 'static', 'images', 'company_seal_round.png')
+        if not os.path.exists(company_seal_round):
+            company_seal_round = os.path.join(settings.BASE_DIR, 'static', 'images', 'company_seal_round.jpg')
         if not os.path.exists(company_seal_round):
             company_seal_round = ""
 
