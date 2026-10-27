@@ -57,3 +57,5 @@ Thumbs.db
 
 *.zip
 *.sqlite3
+PyWhatKit_DB.txt
+.env

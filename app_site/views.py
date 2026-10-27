@@ -1,3 +1,4 @@
+import os
 import json
 import requests
 import datetime
@@ -332,12 +333,12 @@ def CURDSiteContactApiById(request, SiteContactId=""):
 
 # Microsoft Graph Configuration
 MS_CONFIG = {
-    "tenant_id": "22ed5850-9cb2-404c-b644-a0f2987881fb",
-    "client_id": "ab3e8431-9019-4d60-ae79-9511ead4705d",
-    "client_secret": "REMOVED_AZURE_SECRET",
+    "tenant_id": os.getenv("MS_TENANT_ID", "22ed5850-9cb2-404c-b644-a0f2987881fb"),
+    "client_id": os.getenv("MS_CLIENT_ID", "ab3e8431-9019-4d60-ae79-9511ead4705d"),
+    "client_secret": os.getenv("MS_CLIENT_SECRET", ""),
     "scope": "https://graph.microsoft.com/.default",
-    "sender_email": "no-reply@mintothomas.com",
-    "recipient_email": "mintothomas.p@gmail.com",
+    "sender_email": os.getenv("MS_SENDER_EMAIL", "no-reply@mintothomas.com"),
+    "recipient_email": os.getenv("MS_RECIPIENT_EMAIL", "mintothomas.p@gmail.com"),
     # Update this path to where your logo is stored in your Django static files
     "logo_path": "assets/images/logo.png"
 }

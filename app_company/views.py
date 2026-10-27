@@ -682,8 +682,8 @@ def CompanyBankDetailsApiByCompanyId(request, CompanyId=""):
 # @swagger_auto_schema(method='GET',operation_description="API for get CompanyBankDetails by CompanyId",)
 # @api_view(['GET'])
 # def SendWhatsappmessage(request):
-#     account_sid = 'REMOVED_TWILIO_SID'
-#     auth_token = 'REMOVED_TWILIO_TOKEN'
+#     account_sid = os.getenv('TWILIO_ACCOUNT_SID', '')
+#     auth_token = os.getenv('TWILIO_AUTH_TOKEN', '')
 #     client = Client(account_sid, auth_token)
 
     

@@ -36,7 +36,7 @@ from rest_framework.parsers import MultiPartParser, FormParser
 
 from app_client.models import Client, ClientAddress
 from app_client.serializers import ClientAddressSerializer, ClientSerializer
-from app_company.models import Company
+from app_company.models import Company, CompanyDocuments, CompanyBankDetails
 from app_default.models import InvoiceStatus, PaymentMode
 from app_basic.models import Country, State
 from app_default.serializers import InvoiceStatusSerializer
@@ -546,6 +546,8 @@ def InvoiceApiById(request, InvoiceId=""):
         return JsonResponse(invoiceData, safe=False)
     elif request.method == 'DELETE':
         invoice = Invoice.objects.get(InvoiceId=InvoiceId)
+        if invoice.LinkedInvoiceId:
+            Invoice.objects.filter(InvoiceId=invoice.LinkedInvoiceId).delete()
         invoice.delete()
         return JsonResponse("Deleted successfully", safe=False)
     else:
@@ -578,9 +580,10 @@ def invoice_summary_view(request, CompanyId=""):
         past_30_days = current_date - timedelta(days=30)
         past_45_days = current_date - timedelta(days=45)
 
-        # Filter only Unpaid and Partially Paid invoices
+        # Filter only Unpaid and Partially Paid main INR invoices
         queryset = Invoice.objects.filter(
-            CompanyId=CompanyId, Status__in=[2, 3])
+            CompanyId=CompanyId, Status__in=[2, 3]
+        ).filter(Q(Currency='INR') | Q(Currency__isnull=True) | Q(Currency=''))
 
         for invoice in queryset:
             # Parse DueDate
@@ -646,6 +649,10 @@ class InvoiceApiByCompanyId(generics.ListAPIView):
             if filterData['CompanyId']:
                 self.queryset = self.queryset.filter(
                     CompanyId=filterData['CompanyId'])
+            # Only list main INR invoices in the invoice list
+            self.queryset = self.queryset.filter(
+                Q(Currency='INR') | Q(Currency__isnull=True) | Q(Currency='')
+            )
             page = self.paginate_queryset(self.queryset)
             if page is not None:
                 serializer = self.get_serializer(page, many=True)
@@ -1237,6 +1244,226 @@ def ViewPDF(request, InvoiceId=""):
             return JsonResponse({"error": "Invalid method"}, status=405)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500)
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for view/download SBI Export Declaration Form (EDF Form)")
+@api_view(['GET'])
+def ExportDeclarationPDF(request, InvoiceId="", invoice_id=""):
+    try:
+        inv_id = InvoiceId or invoice_id or request.GET.get('invoice_id') or request.GET.get('InvoiceId')
+        if not inv_id:
+            return JsonResponse({"error": "InvoiceId is required"}, status=400)
+
+        invoice = Invoice.objects.get(InvoiceId=inv_id)
+        invoiceItems = InvoiceItem.objects.filter(InvoiceId=inv_id).order_by('OrderNo')
+        client = Client.objects.filter(ClientId=invoice.ClientId).first()
+        clientaddress = ClientAddress.objects.filter(ClientId=invoice.ClientId).first()
+        company = Company.objects.filter(CompanyId=invoice.CompanyId).first()
+        siteSettings = SiteSettings.objects.filter(CompanyId=invoice.CompanyId).first()
+
+        try:
+            billingAddress = json.loads(invoice.BillingAddress) if invoice.BillingAddress else {}
+        except Exception:
+            billingAddress = invoice.BillingAddress or {}
+
+        client_address_parts = []
+        if isinstance(billingAddress, dict) and billingAddress:
+            addr_line = billingAddress.get('Address1') or billingAddress.get('Address')
+            if addr_line:
+                client_address_parts.append(str(addr_line))
+            if billingAddress.get('City'):
+                client_address_parts.append(str(billingAddress.get('City')))
+            if billingAddress.get('State'):
+                client_address_parts.append(str(billingAddress.get('State')))
+            if billingAddress.get('ZipCode'):
+                client_address_parts.append(str(billingAddress.get('ZipCode')))
+            if billingAddress.get('Country'):
+                client_address_parts.append(str(billingAddress.get('Country')))
+        elif clientaddress:
+            if clientaddress.Address1:
+                client_address_parts.append(clientaddress.Address1)
+            if clientaddress.Address2:
+                client_address_parts.append(clientaddress.Address2)
+            if clientaddress.City:
+                client_address_parts.append(clientaddress.City)
+            if clientaddress.State:
+                client_address_parts.append(clientaddress.State)
+            if clientaddress.ZipCode:
+                client_address_parts.append(clientaddress.ZipCode)
+            if clientaddress.Country:
+                client_address_parts.append(clientaddress.Country)
+
+        client_address_str = ", ".join(client_address_parts) if client_address_parts else (client.CustomerDisplayName if client else "Overseas Client")
+
+        client_country = ""
+        if isinstance(billingAddress, dict) and billingAddress.get('Country'):
+            client_country = billingAddress.get('Country')
+        elif clientaddress and clientaddress.Country:
+            client_country = clientaddress.Country
+        elif client:
+            client_country = getattr(client, 'Country', '') or "USA"
+        if not client_country:
+            client_country = "Overseas"
+
+        company_docs = CompanyDocuments.objects.filter(CompanyId=invoice.CompanyId)
+        pan_number = ""
+        iec_number = ""
+        gstin_number = ""
+        for doc in company_docs:
+            dtype = (doc.DocumentType or "").upper()
+            dname = (doc.DocumentName or "").upper()
+            if "PAN" in dtype or "PAN" in dname:
+                pan_number = doc.DocumentNumber or ""
+            elif "IEC" in dtype or "IEC" in dname:
+                iec_number = doc.DocumentNumber or ""
+            elif "GST" in dtype or "GST" in dname:
+                gstin_number = doc.DocumentNumber or ""
+
+        if not gstin_number and siteSettings and siteSettings.TaxType:
+            gstin_number = siteSettings.TaxType
+
+        sbi_bank = CompanyBankDetails.objects.filter(
+            CompanyId=invoice.CompanyId,
+            BankName__icontains="State Bank of India"
+        ).first()
+        if not sbi_bank:
+            sbi_bank = CompanyBankDetails.objects.filter(
+                CompanyId=invoice.CompanyId,
+                BankName__icontains="SBI"
+            ).first()
+        if not sbi_bank:
+            sbi_bank = CompanyBankDetails.objects.filter(
+                CompanyId=invoice.CompanyId,
+                PrimaryAccount=True
+            ).first()
+        if not sbi_bank:
+            sbi_bank = CompanyBankDetails.objects.filter(
+                CompanyId=invoice.CompanyId
+            ).first()
+
+        bank_name = sbi_bank.BankName if sbi_bank and sbi_bank.BankName else "State Bank of India"
+        bank_account_no = sbi_bank.AccountNumber if sbi_bank and sbi_bank.AccountNumber else "-"
+        bank_ifsc = sbi_bank.IFSCCode if sbi_bank and sbi_bank.IFSCCode else "-"
+        ad_code = getattr(sbi_bank, 'ADCode', None) or "0210060-00124"
+
+        currency = invoice.Currency if getattr(invoice, 'Currency', None) else (siteSettings.CurrencyType if siteSettings else 'USD')
+        total_amount = Decimal(invoice.TotalAmount or 0)
+        try:
+            exchange_rate = Decimal(invoice.ExchangeRate or 1)
+        except Exception:
+            exchange_rate = Decimal(1)
+
+        if currency.upper() != 'INR' and exchange_rate > 0:
+            amount_in_inr = total_amount * exchange_rate
+        else:
+            amount_in_inr = total_amount
+
+        amountinwords = decimal_number_to_words(total_amount, currency)
+        amountinwords_inr = decimal_number_to_words(amount_in_inr, 'INR')
+
+        invoice_date_formatted = invoice.InvoiceDate or ""
+        try:
+            parsed_dt = datetime.strptime(invoice.InvoiceDate, '%Y-%m-%d')
+            invoice_date_formatted = parsed_dt.strftime('%d/%m/%Y')
+        except Exception:
+            pass
+
+        description_of_services = invoice.Subject or ""
+        if not description_of_services and invoiceItems.exists():
+            description_of_services = invoiceItems.first().ItemDetails or "Export of IT / Consulting / Business Services"
+        if not description_of_services:
+            description_of_services = "Export of Professional and Technical Services"
+
+        items_data = []
+        for idx, item in enumerate(invoiceItems, start=1):
+            sac_code = item.Code or "998314"
+            item_desc = item.ItemDetails or description_of_services
+            try:
+                item_amt = Decimal(item.Amount or 0)
+            except Exception:
+                item_amt = Decimal(0)
+            items_data.append({
+                'sl_no': idx,
+                'code': sac_code,
+                'description': item_desc,
+                'quantity': item.Quantity,
+                'rate': item.Rate,
+                'amount': item_amt,
+                'discount': item.DiscountPercent or "0",
+                'net_amount': item_amt,
+            })
+
+        if not items_data:
+            items_data.append({
+                'sl_no': 1,
+                'code': '998314',
+                'description': description_of_services,
+                'quantity': 1,
+                'rate': total_amount,
+                'amount': total_amount,
+                'discount': '0',
+                'net_amount': total_amount,
+            })
+
+        logo = ""
+        try:
+            if siteSettings and siteSettings.Logo:
+                siteSettingsSerializer = SiteSettingsSerializer(siteSettings)
+                logo = os.path.join(settings.BASE_DIR) + siteSettingsSerializer.data['Logo']
+        except Exception:
+            logo = ""
+
+        context = {
+            'invoice': invoice,
+            'invoiceItems': invoiceItems,
+            'items_data': items_data,
+            'client': client,
+            'clientaddress': clientaddress,
+            'client_address_str': client_address_str,
+            'client_country': client_country,
+            'company': company,
+            'siteSettings': siteSettings,
+            'billingAddress': billingAddress,
+            'currency': currency,
+            'total_amount': total_amount,
+            'exchange_rate': exchange_rate,
+            'amount_in_inr': amount_in_inr,
+            'amountinwords': amountinwords,
+            'amountinwords_inr': amountinwords_inr,
+            'invoice_date_formatted': invoice_date_formatted,
+            'current_date': datetime.now().strftime('%d/%m/%Y'),
+            'pan_number': pan_number or "PAN NOT PROVIDED",
+            'iec_number': iec_number or "NOT APPLICABLE",
+            'gstin_number': gstin_number or "UNREGISTERED",
+            'bank_name': bank_name,
+            'bank_account_no': bank_account_no,
+            'bank_ifsc': bank_ifsc,
+            'bank_branch': "Commercial Branch, Overseas Division",
+            'ad_code': ad_code,
+            'description_of_services': description_of_services,
+            'logo': logo,
+        }
+
+        pdf = render_to_pdf('export_declaration_form.html', context)
+        if pdf:
+            filename = f"EDF_{invoice.InvoiceNumber}.pdf"
+            pdf_content = pdf.content if hasattr(pdf, 'content') else pdf
+            response = HttpResponse(pdf_content, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+        else:
+            return JsonResponse({"error": "Failed to generate Export Declaration PDF"}, status=500)
+
+    except Invoice.DoesNotExist:
+        return JsonResponse({"error": "Invoice not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+class DownloadExportDeclarationPDF(View):
+    def get(self, request, InvoiceId="", invoice_id="", *args, **kwargs):
+        return ExportDeclarationPDF(request, InvoiceId=InvoiceId, invoice_id=invoice_id)
 
 
 @csrf_exempt
