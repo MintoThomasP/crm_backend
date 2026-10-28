@@ -1620,6 +1620,10 @@ def build_fema_context(context, export_invoice, inr_invoice, invoice, display_in
     if "united arab emirates" in client_country.lower():
         client_country = "UAE"
 
+    applicant_signature = os.path.join(settings.BASE_DIR, 'static', 'images', 'applicant_signature.png')
+    if not os.path.exists(applicant_signature):
+        applicant_signature = ""
+
     return {
         'currency': context.get('currency', 'AED'),
         'client_country': client_country,
@@ -1633,6 +1637,7 @@ def build_fema_context(context, export_invoice, inr_invoice, invoice, display_in
         'company_name_formatted': "CUBEXIZSOFT TECHNOLOGIES PVT LTD.",
         'bank_account_no': context.get('bank_account_no') or "39069041224",
         'for_seal_signature': context.get('for_seal_signature', ''),
+        'applicant_signature': applicant_signature,
         'company_address_line1': "No. 6/858-M, 2nd FloorSuite No. 422",
         'company_address_line2': "Valamkottil Towers, Judgemukku, Kakkanad, Kochi - 682021",
         'company_mobile': "+91 8893350921",

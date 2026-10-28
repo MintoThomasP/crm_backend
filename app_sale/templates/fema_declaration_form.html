@@ -5,278 +5,201 @@
     <title>Inward Remittance - FEMA Declaration</title>
     <style>
         @page {
-            size: a4 portrait;
-            margin: 10mm 15mm 8mm 15mm;
+            size: letter;
+            margin-left: 54pt;
+            margin-right: 54pt;
+            margin-top: 48pt;
+            margin-bottom: 35pt;
         }
+
         body {
-            font-family: Helvetica, Arial, sans-serif;
-            font-size: 8.8pt;
-            line-height: 1.35;
-            color: #000;
+            font-family: 'Times-Roman', 'Times New Roman', Times, serif;
+            color: #000000;
             margin: 0;
             padding: 0;
         }
-        .header-section {
-            font-size: 9.8pt;
+
+        .bold {
+            font-family: 'Times-Bold', 'Times New Roman', Times, serif;
             font-weight: bold;
-            line-height: 1.3;
-            margin-bottom: 10px;
         }
-        .salutation {
-            font-size: 9.8pt;
-            font-weight: bold;
-            margin-bottom: 10px;
+
+        .header-title {
+            font-size: 12pt;
+            line-height: 1.15;
         }
-        .inward-title {
-            font-size: 11pt;
-            font-weight: bold;
-            letter-spacing: 0.5px;
-            margin-bottom: 10px;
+
+        .underlined-cell {
+            border-bottom: 0.75pt solid #000000;
         }
-        .remittance-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 4px;
-        }
-        .remittance-table td {
-            padding: 3px 0;
-            font-size: 8.8pt;
-            vertical-align: bottom;
-        }
-        .remittance-field {
-            border-bottom: 1px solid #111;
-            padding: 0 4px 1px 4px;
-            font-weight: normal;
-        }
-        .bold-label {
-            font-weight: bold;
-            white-space: nowrap;
-        }
-        .separator-line {
-            border-bottom: 1.2px solid #000;
-            margin: 12px 0 14px 0;
-            width: 100%;
-        }
-        .auth-block {
-            font-size: 9.5pt;
-            line-height: 1.5;
-            margin-bottom: 14px;
-        }
-        .auth-name {
-            font-weight: bold;
-            text-transform: uppercase;
-            border-bottom: 1px solid #111;
-            padding: 0 6px 1px 6px;
-        }
-        .auth-acc {
-            font-weight: bold;
-            border-bottom: 1px solid #111;
-            padding: 0 6px 1px 6px;
-        }
-        .fema-heading {
-            font-size: 7.8pt;
-            font-weight: bold;
-            text-align: center;
-            line-height: 1.3;
-            margin: 0 auto 10px auto;
-            width: 98%;
-        }
-        .fema-para {
-            font-size: 7.5pt;
-            line-height: 1.35;
+
+        .p-text {
+            font-size: 8pt;
+            line-height: 1.25;
             text-align: justify;
-            margin-bottom: 7px;
-        }
-        .sign-table {
-            width: 100%;
-            margin-top: 10px;
-            border-collapse: collapse;
-        }
-        .sign-table td {
-            vertical-align: bottom;
-        }
-        .stamp-box {
-            font-size: 7.8pt;
-            font-weight: bold;
-            text-transform: uppercase;
-            width: 48%;
-            padding-bottom: 4px;
-        }
-        .applicant-sign-box {
-            width: 52%;
-            text-align: right;
-        }
-        .sign-img {
-            max-height: 38px;
-            margin-bottom: 2px;
-        }
-        .sign-line {
-            border-top: 1px solid #333;
-            width: 160px;
-            display: inline-block;
-            margin-top: 2px;
-            padding-top: 2px;
-            text-align: center;
-            font-size: 7.5pt;
-        }
-        .meta-table {
-            width: 100%;
-            margin-top: 8px;
-            border-collapse: collapse;
-            font-size: 7.8pt;
-            line-height: 1.3;
-        }
-        .meta-table td {
-            vertical-align: top;
-        }
-        .meta-empty {
-            width: 48%;
-        }
-        .meta-details {
-            width: 52%;
-        }
-        .meta-row {
-            margin-bottom: 3px;
-        }
-        .meta-lbl {
-            font-weight: bold;
-            display: inline-block;
-            width: 70px;
-        }
-        .meta-val-underlined {
-            border-bottom: 1px solid #555;
-            padding-bottom: 1px;
-            display: inline-block;
-            min-width: 160px;
+            margin-top: 6pt;
+            margin-bottom: 0;
         }
     </style>
 </head>
 <body>
 
-    <div class="header-section">
-        The Branch Manager<br>
-        State Bank of India<br>
-        Kottayam Town Branch
-    </div>
+<div class="header-title bold">
+    The Branch Manager<br/>
+    State Bank of India<br/>
+    Kottayam Town Branch
+</div>
 
-    <div class="salutation">
-        Dear Sir.
-    </div>
+<div class="header-title bold" style="margin-top: 10pt;">
+    Dear Sir.
+</div>
 
-    <div class="inward-title">
-        INWARD REMITTANCE
-    </div>
+<div class="header-title bold" style="margin-top: 10pt;">
+    <u>INWARD REMITTANCE</u>
+</div>
 
-    <table class="remittance-table">
-        <tr>
-            <td width="12%" class="bold-label">Currency:</td>
-            <td width="18%"><span class="remittance-field">{{ currency }}</span></td>
-            <td width="27%" class="bold-label text-center">Country of Remittance:</td>
-            <td width="18%"><span class="remittance-field">{{ client_country }}</span></td>
-            <td width="10%" class="bold-label text-right">Amount:</td>
-            <td width="15%"><span class="remittance-field">{{ total_amount }} {{ currency }}</span></td>
-        </tr>
-    </table>
+<table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 12pt; font-size: 12pt;" class="bold">
+    <tr>
+        <td style="width: 65pt; white-space: nowrap;">Currency:</td>
+        <td class="underlined-cell" style="font-family: Times-Roman; font-weight: normal; font-size: 10pt; width: 60pt; padding-left: 3pt;">
+            {{ currency }}
+        </td>
+        <td style="width: 15pt;"></td>
+        <td style="width: 135pt; white-space: nowrap;">Country of Remittance:</td>
+        <td class="underlined-cell" style="font-family: Times-Roman; font-weight: normal; font-size: 10pt; width: 65pt; padding-left: 3pt;">
+            {{ client_country }}
+        </td>
+        <td style="width: 15pt;"></td>
+        <td style="width: 55pt; white-space: nowrap;">Amount:</td>
+        <td class="underlined-cell" style="font-family: Times-Roman; font-weight: normal; font-size: 10pt; padding-left: 3pt;">
+            {{ total_amount }} {{ currency }}
+        </td>
+    </tr>
+</table>
 
-    <table class="remittance-table">
-        <tr>
-            <td width="16%" class="bold-label">Sender Name:</td>
-            <td width="84%"><span class="remittance-field" style="display: block; width: 100%;">{{ client_name|upper }}</span></td>
-        </tr>
-    </table>
+<table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 7pt; font-size: 12pt;" class="bold">
+    <tr>
+        <td style="width: 85pt; white-space: nowrap;">Sender Name:</td>
+        <td class="underlined-cell" style="font-family: Times-Roman; font-weight: normal; font-size: 9.5pt; padding-left: 3pt;">
+            {{ client_name }}
+        </td>
+    </tr>
+</table>
 
-    <table class="remittance-table">
-        <tr>
-            <td width="18%" class="bold-label">Sender Address:</td>
-            <td width="82%"><span class="remittance-field" style="display: block; width: 100%;">{{ client_address_str }}</span></td>
-        </tr>
-    </table>
+<table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 7pt; font-size: 12pt;" class="bold">
+    <tr>
+        <td style="width: 100pt; white-space: nowrap;">Sender Address:</td>
+        <td class="underlined-cell" style="font-family: Times-Roman; font-weight: normal; font-size: 8.5pt; padding-left: 3pt;">
+            {{ client_address_str }}
+        </td>
+    </tr>
+</table>
 
-    <table class="remittance-table">
-        <tr>
-            <td width="25%" class="bold-label">Purpose of Remittance:</td>
-            <td width="75%"><span class="remittance-field" style="display: block; width: 100%;">{{ purpose_of_remittance|default:"The invoice amount" }}</span></td>
-        </tr>
-    </table>
+<table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 7pt; font-size: 12pt;" class="bold">
+    <tr>
+        <td style="width: 135pt; white-space: nowrap;">Purpose of Remittance:</td>
+        <td class="underlined-cell" style="font-family: Times-Roman; font-weight: normal; font-size: 9.5pt; padding-left: 3pt;">
+            {{ purpose_of_remittance }}
+        </td>
+    </tr>
+</table>
 
-    <div class="separator-line"></div>
+<table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 6pt;">
+    <tr><td class="underlined-cell" style="height: 12pt;">&nbsp;</td></tr>
+</table>
+<table width="88%" cellpadding="0" cellspacing="0" style="margin-top: 6pt;">
+    <tr><td class="underlined-cell" style="height: 12pt;">&nbsp;</td></tr>
+</table>
 
-    <div class="auth-block">
-        <span class="bold-label">I/We</span> <span class="auth-name">{{ applicant_name|default:"MINTO THOMAS" }}</span>
-        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-        <span class="bold-label">S/W/D/o</span> <span class="auth-name">{{ company_name|default:"CUBEXIZSOFT TECHNOLOGIES PVT LTD" }}</span>
-        &nbsp;<span class="bold-label">authorize you to credit the proceeds in Indian Rupees to my/our Account No.</span>
-        <span class="auth-acc">{{ bank_account_no|default:"39069041224" }}</span>
-    </div>
+<div class="bold" style="margin-top: 15pt; font-size: 11pt; line-height: 1.35; white-space: nowrap;">
+    I/We <u>&nbsp;{{ applicant_name }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u>
+    S/W/D/o <u>&nbsp;{{ company_name }}&nbsp;</u> authorize you to
+</div>
+<div class="bold" style="margin-top: 4pt; font-size: 11pt; line-height: 1.35;">
+    credit the proceeds in Indian Rupees to my/our Account No. <u>&nbsp;{{ bank_account_no }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</u>
+</div>
 
-    <div class="fema-heading">
-        DECLARATION CUM UNDERTAKING (UNDER SECTION 10 (5), CHAPTER III OF FOREIGN EXCHANGE MANAGEMENT ACT, 1999)
-    </div>
+<div class="bold" style="margin-top: 14pt; font-size: 7.5pt; text-align: center;">
+    DECLARATION CUM UNDERTAKING (UNDER SECTION 10 (5), CHAPTER III OF FOREIGN EXCHANGE MANAGEMENT ACT, 1999)
+</div>
 
-    <div class="fema-para">
-        I/We hereby declare that the transaction(s) the details of which are specifically mentioned in the Schedule hereunder does not involve and is not designed for the purpose of any contravention or evasion of the provisions of the aforesaid Act or of any rule, regulation, notification, direction or order made thereunder.
-    </div>
+<p class="p-text">
+    I/We hereby declare that the transaction(s) the details of which are specifically mentioned in the Schedule hereunder does not involve and is not designed for the purpose of any contravention or evasion of the provisions of the aforesaid Act or of any rule, regulation, notification, direction or order made thereunder.
+</p>
+<p class="p-text">
+    I/We also hereby agree and undertake to give such informations / documents, before the Bank undertakes the transaction(s) and as may be required from time to time as will reasonably satisfy you about the transaction(s) in terms of the above declaration.
+</p>
+<p class="p-text">
+    I/We also understand that if I/We refuse to comply with any such requirement or make unsatisfactory compliance therewith, the Bank shall refuse in writing to undertake the transaction and shall if it has reason to believe that any contravention/ evasion is contemplated by me/us report the matter to Reserve Bank of India.
+</p>
+<p class="p-text">
+    *I/We further declare that the undersigned has/have the authority to give this declaration and undertaking on behalf of the firm/company.
+</p>
 
-    <div class="fema-para">
-        I/We also hereby agree and undertake to give such informations / documents, before the Bank undertakes the transaction(s) and as may be required from time to time as will reasonably satisfy you about the transaction(s) in terms of the above declaration.
-    </div>
-
-    <div class="fema-para">
-        I/We also understand that if I/We refuse to comply with any such requirement or make unsatisfactory compliance therewith, the Bank shall refuse in writing to undertake the transaction and shall if it has reason to believe that any contravention/ evasion is contemplated by me/us report the matter to Reserve Bank of India.
-    </div>
-
-    <div class="fema-para">
-        *I/We further declare that the undersigned has/have the authority to give this declaration and undertaking on behalf of the firm/company.
-    </div>
-
-    <table class="sign-table">
-        <tr>
-            <td class="stamp-box">
+<table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 6pt;">
+    <tr>
+        <td style="width: 46%; vertical-align: bottom; padding-bottom: 22pt;">
+            <div style="font-size: 7pt; font-family: Times-Roman;">
                 BRANCH AUTHENTICATION WITH STAMP
-            </td>
-            <td class="applicant-sign-box">
-                {% if for_seal_signature %}
-                    <img src="{{ for_seal_signature }}" class="sign-img" alt="Signature"><br>
-                {% endif %}
-                <div class="sign-line">
+            </div>
+        </td>
+        <td style="width: 6%;"></td>
+        <td style="width: 48%; vertical-align: top;">
+            <div style="text-align: right; width: 100%;">
+                <div style="text-align: center; width: 130pt; margin-left: auto; height: 26pt; margin-bottom: -8pt;">
+                    {% if applicant_signature %}
+                        <img src="{{ applicant_signature }}" style="height: 28pt;" />
+                    {% elif for_seal_signature %}
+                        <img src="{{ for_seal_signature }}" style="height: 35pt;" />
+                    {% endif %}
+                </div>
+                <div style="border-bottom: 0.75pt solid black; width: 130pt; margin-left: auto;"></div>
+                <div style="font-size: 6pt; text-align: center; width: 130pt; margin-left: auto; margin-top: 2pt; font-family: Times-Roman;">
                     (Signature of the applicant)
                 </div>
-            </td>
-        </tr>
-    </table>
+            </div>
 
-    <table class="meta-table">
-        <tr>
-            <td class="meta-empty">
-                <!-- Authentication stamp area -->
-            </td>
-            <td class="meta-details">
-                <div class="meta-row">
-                    <span class="meta-lbl">NAME:</span> {{ applicant_name_title|default:"Minto Thomas" }}
-                </div>
-                <div class="meta-row">
-                    <span class="meta-lbl">ADDRESS:</span> {{ company_name_formatted|default:"CUBEXIZSOFT TECHNOLOGIES PVT LTD." }}<br>
-                    <span style="padding-left: 74px; display: inline-block;">{{ company_address_line1|default:"No. 6/858-M, 2nd FloorSuite No. 422" }}</span><br>
-                    <span style="padding-left: 74px; display: inline-block;">{{ company_address_line2|default:"Valamkottil Towers, Judgemukku, Kakkanad, Kochi - 682021" }}</span>
-                </div>
-                <div class="meta-row">
-                    <span class="meta-lbl">M:</span> {{ company_mobile|default:"+91 8893350921" }}
-                </div>
-                <div class="meta-row">
-                    <span class="meta-lbl">PAN NO. :</span> <span class="meta-val-underlined">{{ pan_number|default:"AAHCC8464C" }}</span>
-                </div>
-                <div class="meta-row">
-                    <span class="meta-lbl">UID NO. :</span> <span class="meta-val-underlined">{{ cin_number|default:"U72900KL2018PTC055399" }}</span>
-                </div>
-                <div class="meta-row">
-                    <span class="meta-lbl">Place :</span> <span class="meta-val-underlined">{{ place|default:"KOTTAYAM" }}</span>
-                </div>
-                <div class="meta-row">
-                    <span class="meta-lbl">Date :</span> <span class="meta-val-underlined">{{ current_date }}</span>
-                </div>
-            </td>
-        </tr>
-    </table>
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-top: 6pt; font-size: 7.2pt; font-family: Times-Roman;">
+                <tr>
+                    <td style="width: 48pt; vertical-align: bottom;">NAME:</td>
+                    <td class="underlined-cell" style="vertical-align: bottom; padding-left: 2pt;">{{ applicant_name_title }}</td>
+                </tr>
+                <tr>
+                    <td style="width: 48pt; vertical-align: bottom; padding-top: 3pt;">ADDRESS:</td>
+                    <td class="underlined-cell" style="vertical-align: bottom; padding-top: 3pt; padding-left: 2pt;">{{ company_name_formatted }}</td>
+                </tr>
+                <tr>
+                    <td style="width: 48pt;"></td>
+                    <td class="underlined-cell" style="vertical-align: bottom; padding-top: 3pt; padding-left: 2pt;">{{ company_address_line1 }}</td>
+                </tr>
+                <tr>
+                    <td style="width: 48pt;"></td>
+                    <td class="underlined-cell" style="vertical-align: bottom; padding-top: 3pt; padding-left: 2pt;">{{ company_address_line2 }}</td>
+                </tr>
+                <tr>
+                    <td style="width: 48pt; vertical-align: bottom; padding-top: 3pt;">M:</td>
+                    <td class="underlined-cell" style="vertical-align: bottom; padding-top: 3pt; padding-left: 2pt;">{{ company_mobile }}</td>
+                </tr>
+                <tr>
+                    <td style="width: 48pt; vertical-align: bottom; padding-top: 3pt;">PAN NO. :</td>
+                    <td class="underlined-cell" style="vertical-align: bottom; padding-top: 3pt; padding-left: 2pt;">{{ pan_number }}</td>
+                </tr>
+                <tr>
+                    <td style="width: 48pt; vertical-align: bottom; padding-top: 3pt;">UID NO. :</td>
+                    <td class="underlined-cell" style="vertical-align: bottom; padding-top: 3pt; padding-left: 2pt;">{{ cin_number }}</td>
+                </tr>
+                <tr>
+                    <td style="width: 48pt; vertical-align: bottom; padding-top: 3pt;">Place :</td>
+                    <td class="underlined-cell" style="vertical-align: bottom; padding-top: 3pt; padding-left: 2pt;">{{ place }}</td>
+                </tr>
+                <tr>
+                    <td style="width: 48pt; vertical-align: bottom; padding-top: 3pt;">Date :</td>
+                    <td class="underlined-cell" style="vertical-align: bottom; padding-top: 3pt; padding-left: 2pt;">{{ current_date }}</td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
 
 </body>
 </html>
