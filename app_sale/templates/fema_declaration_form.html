@@ -143,18 +143,18 @@
                 BRANCH AUTHENTICATION WITH STAMP
             </div>
         </td>
-        <td style="width: 6%;"></td>
-        <td style="width: 48%; vertical-align: top;">
+        <td style="width: 4%;"></td>
+        <td style="width: 52%; vertical-align: top;">
             <div style="text-align: right; width: 100%;">
-                <div style="text-align: center; width: 130pt; margin-left: auto; height: 26pt; margin-bottom: -8pt;">
-                    {% if applicant_signature %}
+                <div style="text-align: center; width: 160pt; margin-left: auto; height: 50pt; margin-bottom: -5pt;">
+                    {% if for_seal_signature %}
+                        <img src="{{ for_seal_signature }}" style="height: 48pt;" />
+                    {% elif applicant_signature %}
                         <img src="{{ applicant_signature }}" style="height: 28pt;" />
-                    {% elif for_seal_signature %}
-                        <img src="{{ for_seal_signature }}" style="height: 35pt;" />
                     {% endif %}
                 </div>
-                <div style="border-bottom: 0.75pt solid black; width: 130pt; margin-left: auto;"></div>
-                <div style="font-size: 6pt; text-align: center; width: 130pt; margin-left: auto; margin-top: 2pt; font-family: Times-Roman;">
+                <div style="border-bottom: 0.75pt solid black; width: 160pt; margin-left: auto;"></div>
+                <div style="font-size: 6.5pt; text-align: center; width: 160pt; margin-left: auto; margin-top: 2pt; font-family: Times-Roman;">
                     (Signature of the applicant)
                 </div>
             </div>

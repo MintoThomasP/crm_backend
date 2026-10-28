@@ -1318,9 +1318,12 @@ def build_export_declaration_context(inv_id):
             cand = Invoice.objects.filter(LinkedInvoiceId=invoice.InvoiceId).exclude(Currency='INR').first()
             if cand and cand.Currency:
                 foreign_invoice = cand
-        if not foreign_invoice and invoice.InvoiceNumber:
-            base_num = re.sub(r'-[A-Z]{3,4}$', '', invoice.InvoiceNumber)
-            cand = Invoice.objects.filter(InvoiceNumber__startswith=f"{base_num}-").exclude(Currency='INR').first()
+        if not foreign_invoice and getattr(invoice, 'ProjectId', None):
+            cand = Invoice.objects.filter(ProjectId=invoice.ProjectId).exclude(Currency='INR').first()
+            if cand and cand.Currency:
+                foreign_invoice = cand
+        if not foreign_invoice and invoice.ClientId and invoice.InvoiceDate:
+            cand = Invoice.objects.filter(ClientId=invoice.ClientId, InvoiceDate=invoice.InvoiceDate).exclude(Currency='INR').first()
             if cand and cand.Currency:
                 foreign_invoice = cand
 
@@ -1620,14 +1623,37 @@ def build_fema_context(context, export_invoice, inr_invoice, invoice, display_in
     if "united arab emirates" in client_country.lower():
         client_country = "UAE"
 
-    applicant_signature = os.path.join(settings.BASE_DIR, 'static', 'images', 'applicant_signature.png')
-    if not os.path.exists(applicant_signature):
-        applicant_signature = ""
+    for_seal_signature = os.path.join(settings.BASE_DIR, 'static', 'images', 'for_seal_signature.png')
+    if not os.path.exists(for_seal_signature):
+        for_seal_signature = os.path.join(settings.BASE_DIR, 'static', 'images', 'for_seal_signature.jpg')
+    if not os.path.exists(for_seal_signature):
+        for_seal_signature = context.get('for_seal_signature', '')
+
+    currency = context.get('currency', 'INR')
+    total_amount = context.get('total_amount', '0.00')
+
+    pan_number = "AAHCC8464C"
+    cin_number = "U72900KL2018PTC055399"
+    try:
+        company_id = getattr(export_invoice, 'CompanyId', None) or getattr(invoice, 'CompanyId', None)
+        if company_id:
+            docs = CompanyDocuments.objects.filter(CompanyId=company_id)
+            for d in docs:
+                dt = (d.DocumentType or "").upper()
+                dn = (d.DocumentName or "").upper()
+                num = (d.DocumentNumber or "").strip()
+                if num:
+                    if "PAN" in dt or "PAN" in dn:
+                        pan_number = num
+                    elif "CIN" in dt or "CIN" in dn or "UID" in dt or "UID" in dn:
+                        cin_number = num
+    except Exception:
+        pass
 
     return {
-        'currency': context.get('currency', 'AED'),
+        'currency': currency,
         'client_country': client_country,
-        'total_amount': context.get('total_amount', '0.00'),
+        'total_amount': total_amount,
         'client_name': client_name,
         'client_address_str': context.get('client_address_str', ''),
         'purpose_of_remittance': "The invoice amount",
@@ -1636,13 +1662,12 @@ def build_fema_context(context, export_invoice, inr_invoice, invoice, display_in
         'company_name': "CUBEXIZSOFT TECHNOLOGIES PVT LTD",
         'company_name_formatted': "CUBEXIZSOFT TECHNOLOGIES PVT LTD.",
         'bank_account_no': context.get('bank_account_no') or "39069041224",
-        'for_seal_signature': context.get('for_seal_signature', ''),
-        'applicant_signature': applicant_signature,
+        'for_seal_signature': for_seal_signature,
         'company_address_line1': "No. 6/858-M, 2nd FloorSuite No. 422",
         'company_address_line2': "Valamkottil Towers, Judgemukku, Kakkanad, Kochi - 682021",
         'company_mobile': "+91 8893350921",
-        'pan_number': context.get('pan_number') or "AAHCC8464C",
-        'cin_number': "U72900KL2018PTC055399",
+        'pan_number': pan_number,
+        'cin_number': cin_number,
         'place': "KOTTAYAM",
         'current_date': datetime.now().strftime('%d-%m-%Y'),
     }
