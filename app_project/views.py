@@ -3438,6 +3438,7 @@ def build_service_agreement_context(data):
         footer_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_footer.png')
 
     seal_image = data.get('seal_image') or os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_company_seal.png')
+    watermark_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_watermark.png')
     
     # Custom or uploaded signature support
     raw_sig = data.get('signature_image')
@@ -3462,6 +3463,7 @@ def build_service_agreement_context(data):
     return {
         'header_image': header_image if os.path.exists(header_image) else "",
         'footer_image': footer_image if os.path.exists(footer_image) else "",
+        'watermark_image': watermark_image if os.path.exists(watermark_image) else "",
         'seal_image': seal_image if (seal_image and os.path.exists(seal_image)) else "",
         'signature_image': signature_image if (signature_image and os.path.exists(signature_image)) else "",
         'domain_name': domain_name,

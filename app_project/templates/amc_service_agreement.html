@@ -9,6 +9,10 @@
     margin-bottom: 115pt;
     margin-left: 72pt;
     margin-right: 72pt;
+    @frame watermark_frame {
+        -pdf-frame-content: page_watermark;
+        left: 136pt; top: 260pt; width: 340pt; height: 290pt;
+    }
     @frame header_frame {
         -pdf-frame-content: page_header;
         left: 0pt; width: 612pt; top: 0pt; height: 150pt;
@@ -114,6 +118,12 @@ li {
 </style>
 </head>
 <body>
+
+<div id="page_watermark" style="margin: 0; padding: 0; line-height: 0;">
+    {% if watermark_image %}
+    <img src="{{ watermark_image }}" style="width: 340pt; height: 284pt;" />
+    {% endif %}
+</div>
 
 <div id="page_header" style="margin: 0; padding: 0; line-height: 0;">
     {% if header_image %}
