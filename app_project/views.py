@@ -15,7 +15,7 @@ from functools import reduce
 from django.dispatch import receiver
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
-from app_basic.models import TempleteType
+from app_basic.models import TempleteType, Country, State, Designation
 from app_basic.serializers import TempleteTypeSerializer
 from io import BytesIO
 from xhtml2pdf import pisa
@@ -3117,8 +3117,85 @@ def _format_clause_content(content):
     return '\n'.join(html_parts)
 
 
+def is_uuid_val(val):
+    if not val:
+        return False
+    return bool(re.match(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$', str(val).strip()))
+
+
+def strip_html_tags(val):
+    if not val:
+        return ""
+    text = str(val)
+    text = re.sub(r'<br\s*/?>', ', ', text, flags=re.IGNORECASE)
+    text = re.sub(r'</p>', ', ', text, flags=re.IGNORECASE)
+    text = re.sub(r'<[^>]+>', '', text)
+    text = text.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
+    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r',\s*,', ',', text)
+    return text.strip(' ,')
+
+
+def resolve_country_name(c_val, context_text=""):
+    if not c_val:
+        return ""
+    val_str = str(c_val).strip()
+    if val_str:
+        try:
+            c_obj = Country.objects.filter(CountryId__iexact=val_str).first()
+            if c_obj and c_obj.Country:
+                return c_obj.Country
+        except Exception:
+            pass
+    if val_str.lower() == "93d75c2b-c786-4711-8578-a806cc8e8f2f" or any(w in context_text.lower() for w in ["sharjah", "uae", "dubai", "emirates", "abu dhabi", "ajman"]):
+        return "United Arab Emirates"
+    if is_uuid_val(val_str):
+        return ""
+    return val_str
+
+
+def resolve_state_name(s_val, context_text=""):
+    if not s_val:
+        return ""
+    val_str = str(s_val).strip()
+    if val_str:
+        try:
+            s_obj = State.objects.filter(StateId__iexact=val_str).first()
+            if s_obj and s_obj.State:
+                return s_obj.State
+        except Exception:
+            pass
+    if val_str.lower() == "2a774ece-b0d3-45a3-a9c0-bd661f950ee2":
+        return "Sharjah"
+    if is_uuid_val(val_str):
+        return ""
+    return val_str
+
+
+def clean_and_resolve_address_string(addr_str):
+    if not addr_str:
+        return ""
+    clean_str = strip_html_tags(addr_str)
+    chunks = [c.strip() for c in clean_str.split(',') if c.strip()]
+    cleaned_chunks = []
+    for c in chunks:
+        if is_uuid_val(c):
+            resolved_s = resolve_state_name(c)
+            resolved_c = resolve_country_name(c)
+            if resolved_s:
+                if resolved_s.lower() not in [p.lower() for p in cleaned_chunks]:
+                    cleaned_chunks.append(resolved_s)
+            elif resolved_c:
+                if resolved_c.lower() not in [p.lower() for p in cleaned_chunks]:
+                    cleaned_chunks.append(resolved_c)
+        else:
+            cleaned_chunks.append(c)
+    return ", ".join(cleaned_chunks)
+
+
 def build_service_agreement_context(data):
     project_id = data.get('project_id') or data.get('ProjectId')
+    client_id = data.get('client_id') or data.get('ClientId')
     project = None
     client = None
     contact_person = None
@@ -3127,13 +3204,32 @@ def build_service_agreement_context(data):
     if project_id:
         try:
             project = Project.objects.filter(ProjectId=project_id).first()
-            if project and project.ClientId:
-                client = Client.objects.filter(ClientId=project.ClientId).first()
-                contact_person = ContactPerson.objects.filter(ClientId=project.ClientId).first()
-                client_address_obj = (
-                    ClientAddress.objects.filter(ClientId=project.ClientId, IsDefaultAddress=True).first()
-                    or ClientAddress.objects.filter(ClientId=project.ClientId).first()
-                )
+            if project and not client_id and project.ClientId:
+                client_id = project.ClientId
+        except Exception:
+            pass
+
+    if not client_id and project:
+        try:
+            from app_sale.models import Quotation, Invoice
+            q = Quotation.objects.filter(ProjectId=project.ProjectId).exclude(ClientId__isnull=True).exclude(ClientId='').first()
+            if q and q.ClientId:
+                client_id = q.ClientId
+            if not client_id:
+                inv = Invoice.objects.filter(ProjectId=project.ProjectId).exclude(ClientId__isnull=True).exclude(ClientId='').first()
+                if inv and inv.ClientId:
+                    client_id = inv.ClientId
+        except Exception:
+            pass
+
+    if client_id:
+        try:
+            client = Client.objects.filter(ClientId__iexact=str(client_id).strip()).first()
+            contact_person = ContactPerson.objects.filter(ClientId__iexact=str(client_id).strip()).first()
+            client_address_obj = (
+                ClientAddress.objects.filter(ClientId__iexact=str(client_id).strip(), IsDefaultAddress=True).first()
+                or ClientAddress.objects.filter(ClientId__iexact=str(client_id).strip()).first()
+            )
         except Exception:
             pass
 
@@ -3162,51 +3258,121 @@ def build_service_agreement_context(data):
 
     # Domain / Platform
     domain_name = data.get('domain_name')
+    if domain_name and is_uuid_val(domain_name):
+        domain_name = None
     if not domain_name and project:
         domain_name = project.ProjectName or ""
         domain_name = re.sub(r'^https?:\/\/', '', domain_name).rstrip('/')
-    if not domain_name:
+    if not domain_name or is_uuid_val(domain_name):
         domain_name = "spogprint.com"
 
-    # Client
+    # Client Name
     client_name = data.get('client_name')
+    if client_name and is_uuid_val(client_name):
+        c_by_id = Client.objects.filter(ClientId__iexact=str(client_name).strip()).first()
+        if c_by_id:
+            client = c_by_id
+            client_name = (
+                c_by_id.CompanyName
+                or c_by_id.CustomerDisplayName
+                or f"{c_by_id.FirstName or ''} {c_by_id.LastName or ''}".strip()
+            )
+        else:
+            client_name = None
+
     if not client_name and client:
         client_name = (
-            client.CustomerDisplayName
-            or client.CompanyName
+            client.CompanyName
+            or client.CustomerDisplayName
             or f"{client.FirstName or ''} {client.LastName or ''}".strip()
         )
-    if not client_name:
+    if not client_name or is_uuid_val(client_name):
         client_name = "SILVER POINT THE PRINT HOUSE"
 
-    client_address = data.get('client_address')
-    if not client_address:
-        if client_address_obj:
-            addr_parts = [
-                client_address_obj.Address1,
-                client_address_obj.Address2,
-                client_address_obj.City,
-                client_address_obj.State,
-                client_address_obj.Country,
-                client_address_obj.ZipCode
-            ]
-            client_address = ", ".join([p for p in addr_parts if p])
-        elif project and project.Address:
-            client_address = project.Address
-    if not client_address:
+    # Client Address
+    raw_client_addr = data.get('client_address')
+    client_address = ""
+    if raw_client_addr:
+        client_address = clean_and_resolve_address_string(raw_client_addr)
+
+    if not client_address and client_address_obj:
+        addr_parts = []
+        if client_address_obj.Address1:
+            a1 = strip_html_tags(client_address_obj.Address1)
+            if a1 and not is_uuid_val(a1):
+                addr_parts.append(a1)
+        if client_address_obj.Address2:
+            a2 = strip_html_tags(client_address_obj.Address2)
+            if a2 and not is_uuid_val(a2):
+                addr_parts.append(a2)
+        if client_address_obj.City:
+            city = strip_html_tags(client_address_obj.City)
+            if city and not is_uuid_val(city):
+                addr_parts.append(city)
+
+        # State
+        if client_address_obj.State:
+            s_name = resolve_state_name(client_address_obj.State, " ".join(addr_parts))
+            if s_name and s_name.lower() not in [p.lower() for p in addr_parts]:
+                addr_parts.append(s_name)
+
+        # ZipCode
+        if client_address_obj.ZipCode:
+            zc = strip_html_tags(client_address_obj.ZipCode)
+            if zc and not is_uuid_val(zc):
+                addr_parts.append(zc)
+
+        # Country
+        if client_address_obj.Country:
+            c_name = resolve_country_name(client_address_obj.Country, " ".join(addr_parts))
+            if c_name and c_name.lower() not in [p.lower() for p in addr_parts]:
+                addr_parts.append(c_name)
+
+        client_address = ", ".join(addr_parts)
+
+    if not client_address and project and project.Address:
+        client_address = clean_and_resolve_address_string(project.Address)
+
+    if not client_address or is_uuid_val(client_address):
         client_address = "Shed No:05 Caterpillar Building, Salah Al Din St, Al Khabaisi, Deira, United Arab Emirates"
 
     # Client Signatory
     client_signatory_name = data.get('client_signatory_name')
+    if client_signatory_name and is_uuid_val(client_signatory_name):
+        client_signatory_name = None
+
     if not client_signatory_name and contact_person:
-        client_signatory_name = f"{contact_person.FirstName or ''} {contact_person.LastName or ''}".strip()
-    if not client_signatory_name:
+        cp_name = f"{contact_person.FirstName or ''} {contact_person.LastName or ''}".strip()
+        if cp_name and not is_uuid_val(cp_name):
+            client_signatory_name = cp_name
+
+    if not client_signatory_name and client:
+        cl_name = f"{getattr(client, 'FirstName', '') or ''} {getattr(client, 'LastName', '') or ''}".strip()
+        if cl_name and not is_uuid_val(cl_name):
+            client_signatory_name = cl_name
+
+    if not client_signatory_name or is_uuid_val(client_signatory_name):
         client_signatory_name = "KRISHNADAS KAMALON"
 
     client_signatory_designation = data.get('client_signatory_designation')
+    if client_signatory_designation and is_uuid_val(client_signatory_designation):
+        d_obj = Designation.objects.filter(DesignationId__iexact=str(client_signatory_designation).strip()).first()
+        if d_obj and d_obj.Designation:
+            client_signatory_designation = d_obj.Designation
+        else:
+            client_signatory_designation = None
+
     if not client_signatory_designation and contact_person:
-        client_signatory_designation = contact_person.Designation or ""
-    if not client_signatory_designation:
+        desig = (contact_person.Designation or "").strip()
+        if is_uuid_val(desig):
+            d_obj = Designation.objects.filter(DesignationId__iexact=desig).first()
+            if d_obj and d_obj.Designation:
+                desig = d_obj.Designation
+            else:
+                desig = ""
+        client_signatory_designation = desig
+
+    if not client_signatory_designation or is_uuid_val(client_signatory_designation):
         client_signatory_designation = "Operations Manager"
 
     # Service Provider
@@ -3238,7 +3404,15 @@ def build_service_agreement_context(data):
         amount_formatted = raw_amount
 
     # Governing Law
-    governing_law_country = data.get('governing_law_country') or "the United Arab Emirates (UAE)"
+    governing_law_country = data.get('governing_law_country')
+    if governing_law_country and is_uuid_val(governing_law_country):
+        governing_law_country = resolve_country_name(governing_law_country)
+    if not governing_law_country and client_address_obj and client_address_obj.Country:
+        governing_law_country = resolve_country_name(client_address_obj.Country, client_address)
+    if not governing_law_country or is_uuid_val(governing_law_country):
+        governing_law_country = "the United Arab Emirates (UAE)"
+    elif "united arab emirates" in governing_law_country.lower() or governing_law_country.lower() == "uae":
+        governing_law_country = "the United Arab Emirates (UAE)"
 
     # Clauses (HTML or formatted text)
     scope_of_services_html = _format_clause_content(data.get('scope_of_services')) if data.get('scope_of_services') else None
@@ -3338,7 +3512,8 @@ def _render_amc_pdf(context):
 def GetServiceAgreementInitialData(request):
     try:
         project_id = request.GET.get('ProjectId') or request.GET.get('project_id') or ""
-        ctx = build_service_agreement_context({'project_id': project_id})
+        client_id = request.GET.get('ClientId') or request.GET.get('client_id') or ""
+        ctx = build_service_agreement_context({'project_id': project_id, 'client_id': client_id})
 
         default_scope = (
             f"The Service Provider agrees to provide monthly technical maintenance and support services for the Client's website/platform {ctx['domain_name']}. The services include:\n"
