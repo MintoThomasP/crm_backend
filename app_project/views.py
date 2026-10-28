@@ -3251,16 +3251,41 @@ def build_service_agreement_context(data):
     governing_law_p2_html = _format_clause_content(data.get('governing_law_p2')) if data.get('governing_law_p2') else None
 
     # Assets
-    header_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_header.png')
-    footer_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_footer.png')
-    seal_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_company_seal.png')
-    signature_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'applicant_signature.png')
+    header_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_header_ultra.png')
+    if not os.path.exists(header_image):
+        header_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_header.png')
+
+    footer_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_footer_ultra.png')
+    if not os.path.exists(footer_image):
+        footer_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_footer.png')
+
+    seal_image = data.get('seal_image') or os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_company_seal.png')
+    
+    # Custom or uploaded signature support
+    raw_sig = data.get('signature_image')
+    if raw_sig and str(raw_sig).startswith('data:image'):
+        try:
+            format_part, imgstr = raw_sig.split(';base64,')
+            ext = format_part.split('/')[-1] or 'png'
+            sig_filename = f"sig_{uuid.uuid4().hex[:8]}.{ext}"
+            sig_dir = os.path.join(settings.MEDIA_ROOT, 'signatures')
+            os.makedirs(sig_dir, exist_ok=True)
+            sig_path = os.path.join(sig_dir, sig_filename)
+            with open(sig_path, 'wb') as f:
+                f.write(base64.b64decode(imgstr))
+            signature_image = sig_path
+        except Exception:
+            signature_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'applicant_signature.png')
+    elif raw_sig and os.path.exists(str(raw_sig)):
+        signature_image = str(raw_sig)
+    else:
+        signature_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'applicant_signature.png')
 
     return {
         'header_image': header_image if os.path.exists(header_image) else "",
         'footer_image': footer_image if os.path.exists(footer_image) else "",
-        'seal_image': seal_image if os.path.exists(seal_image) else "",
-        'signature_image': signature_image if os.path.exists(signature_image) else "",
+        'seal_image': seal_image if (seal_image and os.path.exists(seal_image)) else "",
+        'signature_image': signature_image if (signature_image and os.path.exists(signature_image)) else "",
         'domain_name': domain_name,
         'effective_date_formatted': effective_date_formatted,
         'effective_date_obj': effective_date_obj,
