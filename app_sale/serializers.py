@@ -94,7 +94,8 @@ class InvoiceSerializer(serializers.ModelSerializer):
                   'AddBankAccount',
                   'Currency',
                   'ExchangeRate',
-                  'LinkedInvoiceId')
+                  'LinkedInvoiceId',
+                  'ProjectId')
 
 
 class InvoiceItemSerializer(serializers.ModelSerializer):

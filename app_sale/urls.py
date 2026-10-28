@@ -68,6 +68,18 @@ urlpatterns = [
         views.ExportDeclarationPDF),
     url(r'^DownloadExportDeclarationPDF/(?P<InvoiceId>[0-9a-zA-Z\-]+)$',
         views.DownloadExportDeclarationPDF.as_view()),
+    url(r'^FemaDeclarationPDF/(?P<InvoiceId>[0-9a-zA-Z\-]+)$',
+        views.FemaDeclarationPDF),
+    url(r'^FemaDeclarationPDF/(?P<InvoiceId>[0-9a-zA-Z\-]+)/$',
+        views.FemaDeclarationPDF),
+    url(r'^fema-declaration-pdf/(?P<InvoiceId>[0-9a-zA-Z\-]+)$',
+        views.FemaDeclarationPDF),
+    url(r'^BankSubmissionDocuments/(?P<InvoiceId>[0-9a-zA-Z\-]+)$',
+        views.BankSubmissionDocuments),
+    url(r'^BankSubmissionDocuments/(?P<InvoiceId>[0-9a-zA-Z\-]+)/$',
+        views.BankSubmissionDocuments),
+    url(r'^bank-submission-documents/(?P<InvoiceId>[0-9a-zA-Z\-]+)$',
+        views.BankSubmissionDocuments),
     path('SendInvoice/', views.SendInvoice),
 
 

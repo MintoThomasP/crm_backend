@@ -33,8 +33,8 @@ from app_staff.models import Staff
 from datetime import datetime, time, timedelta
 from app_staff.serializers import StaffSerializer
 from rest_framework.pagination import PageNumberPagination
-from app_project.models import CommentFile, Comments, Project, ProjectTask, ProjectTaskFile, ProjectTaskTiming, TaskReviews
-from app_project.serializers import CommentFileSerializer, CommentsSerializer, ProjectSerializer, ProjectTaskFileSerializer, ProjectTaskSerializer, ProjectTaskTimingSerializer,  SaveProjectTaskFileSerializer, TaskReviewsSerializer, UploadProjectTaskFileSerializer
+from app_project.models import CommentFile, Comments, Project, ProjectDocument, ProjectTask, ProjectTaskFile, ProjectTaskTiming, TaskReviews
+from app_project.serializers import CommentFileSerializer, CommentsSerializer, ProjectDocumentSerializer, ProjectSerializer, ProjectTaskFileSerializer, ProjectTaskSerializer, ProjectTaskTimingSerializer,  SaveProjectTaskFileSerializer, TaskReviewsSerializer, UploadProjectTaskFileSerializer
 from dateutil.relativedelta import relativedelta
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework.decorators import api_view
@@ -2965,3 +2965,102 @@ def ProjectTaskendatedurationCalculation(request):
         projectTask.TotalDuration = total_duration
         projectTask.save()
     return JsonResponse("updated", safe=False)
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', request_body=ProjectDocumentSerializer, operation_description="NOTE: API for save ProjectDocument")
+@swagger_auto_schema(method='PUT', request_body=ProjectDocumentSerializer, operation_description="NOTE: API for edit ProjectDocument")
+@api_view(['POST', 'PUT'])
+@retry(retries=3, delay=2)
+def ProjectDocumentApi(request):
+    try:
+        if request.method == 'POST':
+            projectDocumentsData = JSONParser().parse(request)
+            projectDocumentsSerializer = ProjectDocumentSerializer(
+                data=projectDocumentsData)
+            if projectDocumentsSerializer.is_valid():
+                projectDocumentsSerializer.save()
+                return JsonResponse(projectDocumentsSerializer.data['ProjectDocumentId'], safe=False)
+            return JsonResponse("Failed to add", safe=False)
+        elif request.method == 'PUT':
+            projectDocumentsData = JSONParser().parse(request)
+            projectDocuments = ProjectDocument.objects.get(
+                ProjectDocumentId=projectDocumentsData['ProjectDocumentId'])
+            projectDocumentsSerializer = ProjectDocumentSerializer(
+                projectDocuments, data=projectDocumentsData)
+            if projectDocumentsSerializer.is_valid():
+                projectDocumentsSerializer.save()
+                return JsonResponse(projectDocumentsSerializer.data['ProjectDocumentId'], safe=False)
+            return JsonResponse("Failed to Update", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except:
+        return JsonResponse("", safe=False)
+
+
+class UploadProjectDocument(APIView):
+    parser_classes = (MultiPartParser, FormParser)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            doc_id = request.data.get('ProjectDocumentId')
+            if doc_id:
+                try:
+                    existing_doc = ProjectDocument.objects.get(ProjectDocumentId=doc_id)
+                    serializer = ProjectDocumentSerializer(existing_doc, data=request.data, partial=True)
+                    if serializer.is_valid():
+                        serializer.save()
+                        return JsonResponse(serializer.data['ProjectDocumentId'], safe=False)
+                except ProjectDocument.DoesNotExist:
+                    pass
+
+            serializer = ProjectDocumentSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return JsonResponse(serializer.data['ProjectDocumentId'], safe=False)
+            else:
+                return JsonResponse(serializer.errors, status=400, safe=False)
+        except Exception as e:
+            return JsonResponse({"error": str(e)}, status=500, safe=False)
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get ProjectDocument by ProjectDocumentId")
+@swagger_auto_schema(method='DELETE', operation_description="NOTE: API for delete ProjectDocument by ProjectDocumentId")
+@api_view(['GET', 'DELETE'])
+@retry(retries=3, delay=2)
+def ProjectDocumentApiById(request, ProjectDocumentId=""):
+    try:
+        if request.method == 'GET':
+            projectDocument = ProjectDocument.objects.get(
+                ProjectDocumentId=ProjectDocumentId)
+            projectDocumentSerializer = ProjectDocumentSerializer(projectDocument)
+            return JsonResponse(projectDocumentSerializer.data, safe=False)
+        elif request.method == 'DELETE':
+            projectDocument = ProjectDocument.objects.get(
+                ProjectDocumentId=ProjectDocumentId)
+            if projectDocument.Document:
+                projectDocument.Document.delete(save=False)
+            projectDocument.delete()
+            return JsonResponse("Deleted successfully", safe=False)
+        else:
+            return JsonResponse("", safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500, safe=False)
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for get ProjectDocuments by ProjectId")
+@api_view(['GET'])
+@retry(retries=3, delay=2)
+def ProjectDocumentsByProjectId(request, ProjectId=""):
+    try:
+        if request.method == 'GET':
+            docs = ProjectDocument.objects.filter(ProjectId=ProjectId).order_by('-SortId')
+            serializer = ProjectDocumentSerializer(docs, many=True)
+            return JsonResponse(serializer.data, safe=False)
+        else:
+            return JsonResponse([], safe=False)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500, safe=False)
+

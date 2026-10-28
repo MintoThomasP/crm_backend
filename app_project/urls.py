@@ -101,4 +101,10 @@ urlpatterns = [
          views.ProjectTaskendatedurationCalculation),
     path('DeleteTaskByAdmin/', views.DeleteTaskByAdmin),
 
+    path('ProjectDocument/', views.ProjectDocumentApi),
+    path('UploadProjectDocument/', views.UploadProjectDocument.as_view()),
+    url(r'^ProjectDocumentApiById/(?P<ProjectDocumentId>[0-9a-zA-Z\-]+)$',
+        views.ProjectDocumentApiById),
+    url(r'^ProjectDocuments/(?P<ProjectId>[0-9a-zA-Z\-]+)$',
+        views.ProjectDocumentsByProjectId),
 ]

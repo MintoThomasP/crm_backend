@@ -117,3 +117,18 @@ class CommentFile(models.Model):
         max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
     CommentId=models.CharField(blank=True, null=True, max_length=50)
     CommentFile=models.FileField(null=True,blank=True, upload_to='Commentfiles')
+
+
+class ProjectDocument(models.Model):
+    SortId = models.DateTimeField(editable=False, default=datetime.now)
+    ProjectDocumentId = models.CharField(
+        max_length=50, primary_key=True, default=uuid.uuid4, editable=False)
+    ProjectId = models.CharField(blank=True, null=True, max_length=50)
+    Document = models.FileField(upload_to='projectdocuments/', null=True, blank=True)
+    DocumentName = models.CharField(blank=True, null=True, max_length=300)
+    DocumentType = models.CharField(blank=True, null=True, max_length=100, default="Service Agreement")
+    DocumentNumber = models.CharField(blank=True, null=True, max_length=300)
+    IssuedOn = models.CharField(blank=True, null=True, max_length=50)
+    ExpiryDate = models.CharField(blank=True, null=True, max_length=50)
+    Comment = models.TextField(blank=True, null=True)
+

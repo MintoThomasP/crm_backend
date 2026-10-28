@@ -103,6 +103,8 @@ class Invoice(models.Model):
     Currency = models.CharField(blank=True, null=True, max_length=15, default='INR')
     ExchangeRate = models.CharField(blank=True, null=True, max_length=15, default='1')
     LinkedInvoiceId = models.CharField(blank=True, null=True, max_length=50)
+    ProjectId = models.CharField(blank=True, null=True, max_length=50)
+
 
 
 class InvoiceItem(models.Model):

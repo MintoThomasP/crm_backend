@@ -1,5 +1,5 @@
 
-from app_project.models import CommentFile, Comments, Project, ProjectTask, ProjectTaskFile, ProjectTaskTiming, TaskReviews
+from app_project.models import CommentFile, Comments, Project, ProjectDocument, ProjectTask, ProjectTaskFile, ProjectTaskTiming, TaskReviews
 from rest_framework import serializers
 
 
@@ -133,6 +133,20 @@ class CommentFileSerializer(serializers.ModelSerializer):
                   'CommentFileId',
                   'CommentId',
                   'CommentFile')
-        
 
-        
+
+class ProjectDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ProjectDocument
+        fields = (
+            'SortId',
+            'ProjectDocumentId',
+            'ProjectId',
+            'Document',
+            'DocumentName',
+            'DocumentType',
+            'DocumentNumber',
+            'IssuedOn',
+            'ExpiryDate',
+            'Comment',
+        )

@@ -34,15 +34,16 @@ from django.http.response import JsonResponse
 from rest_framework.views import APIView
 from rest_framework.parsers import MultiPartParser, FormParser
 
-from app_client.models import Client, ClientAddress
+from app_client.models import Client, ClientAddress, ClientDocuments
 from app_client.serializers import ClientAddressSerializer, ClientSerializer
 from app_company.models import Company, CompanyDocuments, CompanyBankDetails
 from app_default.models import InvoiceStatus, PaymentMode
 from app_basic.models import Country, State
 from app_default.serializers import InvoiceStatusSerializer
 from app_basic.serializers import CountrySerializer, StateSerializer
+import zipfile
 from app_default.views import retry
-from app_project.models import Project
+from app_project.models import Project, ProjectDocument
 from app_project.serializers import ProjectSerializer
 
 from app_sale.models import Invoice, InvoiceDocument, InvoiceItem, PaymentReceived, Quotation, QuotationFile, QuotationItem
@@ -1246,6 +1247,463 @@ def ViewPDF(request, InvoiceId=""):
         return JsonResponse({"error": str(e)}, status=500)
 
 
+def is_uuid_val(val):
+    if not val:
+        return False
+    return bool(re.match(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$', str(val).strip()))
+
+
+def strip_html_tags(val):
+    if not val:
+        return ""
+    text = str(val)
+    text = re.sub(r'<br\s*/?>', ', ', text, flags=re.IGNORECASE)
+    text = re.sub(r'</p>', ', ', text, flags=re.IGNORECASE)
+    text = re.sub(r'<[^>]+>', '', text)
+    text = text.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
+    text = re.sub(r'\s+', ' ', text)
+    text = re.sub(r',\s*,', ',', text)
+    return text.strip(' ,')
+
+
+def resolve_country_name(c_val, context_text=""):
+    if not c_val:
+        c_val = ""
+    val_str = str(c_val).strip()
+    if val_str:
+        try:
+            c_obj = Country.objects.filter(CountryId=val_str).first()
+            if c_obj and c_obj.Country:
+                return c_obj.Country
+        except Exception:
+            pass
+    if val_str == "93d75c2b-c786-4711-8578-a806cc8e8f2f" or "sharjah" in context_text.lower() or "uae" in context_text.lower() or "dubai" in context_text.lower():
+        return "United Arab Emirates"
+    if is_uuid_val(val_str):
+        return ""
+    return val_str
+
+
+def resolve_state_name(s_val, context_text=""):
+    if not s_val:
+        s_val = ""
+    val_str = str(s_val).strip()
+    if val_str:
+        try:
+            s_obj = State.objects.filter(StateId=val_str).first()
+            if s_obj and s_obj.State:
+                return s_obj.State
+        except Exception:
+            pass
+    if val_str == "2a774ece-b0d3-45a3-a9c0-bd661f950ee2":
+        return "Sharjah"
+    if is_uuid_val(val_str):
+        return ""
+    return val_str
+
+
+def build_export_declaration_context(inv_id):
+    invoice = Invoice.objects.get(InvoiceId=inv_id)
+
+    foreign_invoice = None
+    inr_invoice = None
+
+    inv_curr = (getattr(invoice, 'Currency', '') or '').strip().upper()
+    if inv_curr == 'INR' or not inv_curr:
+        if invoice.LinkedInvoiceId:
+            cand = Invoice.objects.filter(InvoiceId=invoice.LinkedInvoiceId).exclude(Currency='INR').first()
+            if cand and cand.Currency:
+                foreign_invoice = cand
+        if not foreign_invoice:
+            cand = Invoice.objects.filter(LinkedInvoiceId=invoice.InvoiceId).exclude(Currency='INR').first()
+            if cand and cand.Currency:
+                foreign_invoice = cand
+        if not foreign_invoice and invoice.InvoiceNumber:
+            base_num = re.sub(r'-[A-Z]{3,4}$', '', invoice.InvoiceNumber)
+            cand = Invoice.objects.filter(InvoiceNumber__startswith=f"{base_num}-").exclude(Currency='INR').first()
+            if cand and cand.Currency:
+                foreign_invoice = cand
+
+        if foreign_invoice:
+            inr_invoice = invoice
+    else:
+        foreign_invoice = invoice
+        if invoice.LinkedInvoiceId:
+            cand = Invoice.objects.filter(InvoiceId=invoice.LinkedInvoiceId, Currency='INR').first()
+            if cand:
+                inr_invoice = cand
+        if not inr_invoice:
+            cand = Invoice.objects.filter(LinkedInvoiceId=invoice.InvoiceId, Currency='INR').first()
+            if cand:
+                inr_invoice = cand
+
+    export_invoice = foreign_invoice if foreign_invoice else invoice
+
+    invoiceItems = InvoiceItem.objects.filter(InvoiceId=export_invoice.InvoiceId).order_by('OrderNo')
+    if not invoiceItems.exists() and export_invoice != invoice:
+        invoiceItems = InvoiceItem.objects.filter(InvoiceId=invoice.InvoiceId).order_by('OrderNo')
+
+    client = Client.objects.filter(ClientId=export_invoice.ClientId or invoice.ClientId).first()
+    clientaddress = ClientAddress.objects.filter(ClientId=export_invoice.ClientId or invoice.ClientId).first()
+    company = Company.objects.filter(CompanyId=export_invoice.CompanyId or invoice.CompanyId).first()
+    siteSettings = SiteSettings.objects.filter(CompanyId=export_invoice.CompanyId or invoice.CompanyId).first()
+
+    billing_src = export_invoice.BillingAddress or invoice.BillingAddress
+    try:
+        billingAddress = json.loads(billing_src) if billing_src else {}
+    except Exception:
+        billingAddress = billing_src or {}
+
+    raw_addr1 = ""
+    raw_addr2 = ""
+    raw_city = ""
+    raw_state = ""
+    raw_zip = ""
+    raw_country = ""
+
+    if isinstance(billingAddress, dict) and billingAddress:
+        raw_addr1 = billingAddress.get('Address1') or billingAddress.get('Address') or ""
+        raw_addr2 = billingAddress.get('Address2') or ""
+        raw_city = billingAddress.get('City') or ""
+        raw_state = billingAddress.get('State') or ""
+        raw_zip = billingAddress.get('ZipCode') or ""
+        raw_country = billingAddress.get('Country') or ""
+    elif clientaddress:
+        raw_addr1 = clientaddress.Address1 or ""
+        raw_addr2 = clientaddress.Address2 or ""
+        raw_city = clientaddress.City or ""
+        raw_state = clientaddress.State or ""
+        raw_zip = clientaddress.ZipCode or ""
+        raw_country = clientaddress.Country or ""
+
+    if not raw_country and client:
+        raw_country = getattr(client, 'Country', "") or ""
+
+    addr_context = f"{raw_addr1} {raw_addr2} {raw_city}"
+    resolved_country = resolve_country_name(raw_country, addr_context)
+    resolved_state = resolve_state_name(raw_state, addr_context)
+
+    client_country = resolved_country or "United Arab Emirates"
+
+    client_address_parts = []
+    if raw_addr1:
+        clean_1 = strip_html_tags(raw_addr1)
+        if clean_1 and not is_uuid_val(clean_1):
+            client_address_parts.append(clean_1)
+    if raw_addr2:
+        clean_2 = strip_html_tags(raw_addr2)
+        if clean_2 and not is_uuid_val(clean_2):
+            client_address_parts.append(clean_2)
+    if raw_city:
+        clean_c = strip_html_tags(raw_city)
+        if clean_c and not is_uuid_val(clean_c):
+            client_address_parts.append(clean_c)
+    if resolved_state:
+        if resolved_state.lower() not in [p.lower() for p in client_address_parts]:
+            client_address_parts.append(resolved_state)
+    if raw_zip:
+        clean_z = strip_html_tags(raw_zip)
+        if clean_z and not is_uuid_val(clean_z):
+            client_address_parts.append(clean_z)
+    if resolved_country:
+        if resolved_country.lower() not in [p.lower() for p in client_address_parts]:
+            client_address_parts.append(resolved_country)
+
+    client_address_parts = [p for p in client_address_parts if not is_uuid_val(p)]
+    client_address_str = ", ".join(client_address_parts) if client_address_parts else "United Arab Emirates"
+
+    pan_number = "AAHCC8464C"
+    gstin_number = "32AAHCC8464C1ZU"
+    ad_code = "0027102"
+    description_of_services = "Software Development"
+
+    iec_number = ""
+    try:
+        company_docs = CompanyDocuments.objects.filter(CompanyId=invoice.CompanyId)
+        for doc in company_docs:
+            dtype = (doc.DocumentType or "").upper()
+            dname = (doc.DocumentName or "").upper()
+            if "IEC" in dtype or "IEC" in dname:
+                iec_number = doc.DocumentNumber or ""
+                break
+    except Exception:
+        pass
+    if not iec_number:
+        iec_number = "NOT APPLICABLE"
+
+    sbi_bank = CompanyBankDetails.objects.filter(
+        CompanyId=invoice.CompanyId,
+        BankName__icontains="State Bank of India"
+    ).first()
+    if not sbi_bank:
+        sbi_bank = CompanyBankDetails.objects.filter(
+            CompanyId=invoice.CompanyId,
+            BankName__icontains="SBI"
+        ).first()
+    if not sbi_bank:
+        sbi_bank = CompanyBankDetails.objects.filter(
+            CompanyId=invoice.CompanyId,
+            PrimaryAccount=True
+        ).first()
+    if not sbi_bank:
+        sbi_bank = CompanyBankDetails.objects.filter(
+            CompanyId=invoice.CompanyId
+        ).first()
+
+    bank_name = sbi_bank.BankName if sbi_bank and sbi_bank.BankName else "State Bank of India"
+    bank_account_no = sbi_bank.AccountNumber if sbi_bank and sbi_bank.AccountNumber else "39069041224"
+    bank_ifsc = sbi_bank.IFSCCode if sbi_bank and sbi_bank.IFSCCode else "-"
+
+    currency = (getattr(export_invoice, 'Currency', None) or (siteSettings.CurrencyType if siteSettings else 'USD') or 'USD').strip().upper()
+    try:
+        total_amount_val = Decimal(str(export_invoice.TotalAmount or 0).strip())
+    except Exception:
+        total_amount_val = Decimal(0)
+    total_amount = f"{total_amount_val:.2f}"
+
+    if inr_invoice and inr_invoice.TotalAmount:
+        try:
+            amount_in_inr = Decimal(str(inr_invoice.TotalAmount).strip())
+        except Exception:
+            amount_in_inr = total_amount_val
+        if total_amount_val > 0:
+            exchange_rate = amount_in_inr / total_amount_val
+        else:
+            exchange_rate = Decimal(1)
+    else:
+        try:
+            exchange_rate = Decimal(str(export_invoice.ExchangeRate or 1).strip())
+            if exchange_rate <= 0:
+                exchange_rate = Decimal(1)
+        except Exception:
+            exchange_rate = Decimal(1)
+
+        if currency != 'INR' and exchange_rate > 0:
+            amount_in_inr = total_amount_val * exchange_rate
+        else:
+            amount_in_inr = total_amount_val
+
+    amountinwords = decimal_number_to_words(total_amount_val, currency)
+    amountinwords_inr = decimal_number_to_words(amount_in_inr, 'INR').upper()
+
+    raw_inv_date = export_invoice.InvoiceDate or invoice.InvoiceDate or ""
+    invoice_date_formatted = raw_inv_date
+    try:
+        parsed_dt = datetime.strptime(raw_inv_date, '%Y-%m-%d')
+        invoice_date_formatted = parsed_dt.strftime('%d/%m/%Y')
+    except Exception:
+        pass
+
+    raw_num = invoice.InvoiceNumber or export_invoice.InvoiceNumber or ""
+    display_invoice_number = re.sub(r'-[A-Z]{3,4}$', '', raw_num)
+    if not display_invoice_number:
+        display_invoice_number = raw_num
+
+    items_data = []
+    for idx, item in enumerate(invoiceItems, start=1):
+        sac_code = item.Code or "998314"
+        item_desc = strip_html_tags(item.ItemDetails) if item.ItemDetails else description_of_services
+        if not item_desc or is_uuid_val(item_desc):
+            item_desc = description_of_services
+        try:
+            item_amt = Decimal(item.Amount or 0)
+        except Exception:
+            item_amt = Decimal(0)
+        items_data.append({
+            'sl_no': idx,
+            'code': sac_code,
+            'description': item_desc,
+            'quantity': item.Quantity,
+            'rate': item.Rate,
+            'amount': item_amt,
+            'discount': item.DiscountPercent or "0",
+            'net_amount': item_amt,
+        })
+
+    if not items_data:
+        items_data.append({
+            'sl_no': 1,
+            'code': '998314',
+            'description': description_of_services,
+            'quantity': 1,
+            'rate': total_amount,
+            'amount': total_amount,
+            'discount': '0',
+            'net_amount': total_amount,
+        })
+
+    logo = ""
+    try:
+        if siteSettings and siteSettings.Logo:
+            siteSettingsSerializer = SiteSettingsSerializer(siteSettings)
+            logo = os.path.join(settings.BASE_DIR) + siteSettingsSerializer.data['Logo']
+    except Exception:
+        logo = ""
+
+    client_name = ""
+    if client:
+        client_name = (
+            getattr(client, 'CustomerDisplayName', None)
+            or getattr(client, 'CompanyName', None)
+            or f"{getattr(client, 'FirstName', '') or ''} {getattr(client, 'LastName', '') or ''}".strip()
+        )
+    if not client_name:
+        client_name = "Silver Point Printing Press Works LLC"
+
+    company_name = company.CompanyName if (company and company.CompanyName) else "CUBEXIZSOFT TECHNOLOGIES PVT. LTD."
+    company_address = getattr(company, 'Address', '') or getattr(company, 'CompanyAddress', '') or "Thrikkakara P.O, Kochi - 682021, Kerala, India"
+    company_address = strip_html_tags(company_address)
+
+    shipping_bill_no = getattr(invoice, 'ShippingBillNo', None) or ""
+
+    company_seal_round = os.path.join(settings.BASE_DIR, 'static', 'images', 'company_seal_round.png')
+    if not os.path.exists(company_seal_round):
+        company_seal_round = os.path.join(settings.BASE_DIR, 'static', 'images', 'company_seal_round.jpg')
+    if not os.path.exists(company_seal_round):
+        company_seal_round = ""
+
+    for_seal_signature = os.path.join(settings.BASE_DIR, 'static', 'images', 'for_seal_signature.jpg')
+    if not os.path.exists(for_seal_signature):
+        for_seal_signature = ""
+
+    current_date_str = datetime.now().strftime('%d/%m/%Y')
+
+    context = {
+        'invoice': export_invoice,
+        'display_invoice_number': display_invoice_number,
+        'client_name': client_name,
+        'company_name': company_name,
+        'company_address': company_address,
+        'reference_number': "N/A",
+        'contract_no_and_date': "N/A",
+        'shipping_bill_no': shipping_bill_no,
+        'type_of_export': 'Service',
+        'port_of_loading': 'N/A (Electronic)',
+        'port_of_discharge': 'N/A (Electronic)',
+        'invoiceItems': invoiceItems,
+        'items_data': items_data,
+        'client': client,
+        'clientaddress': clientaddress,
+        'client_address_str': client_address_str,
+        'client_country': client_country,
+        'company': company,
+        'siteSettings': siteSettings,
+        'billingAddress': billingAddress,
+        'currency': currency,
+        'total_amount': total_amount,
+        'exchange_rate': exchange_rate,
+        'amount_in_inr': amount_in_inr,
+        'amountinwords': amountinwords,
+        'amountinwords_inr': amountinwords_inr,
+        'invoice_date_formatted': invoice_date_formatted,
+        'current_date': current_date_str,
+        'pan_number': pan_number,
+        'iec_number': iec_number or "NOT APPLICABLE",
+        'gstin_number': gstin_number,
+        'bank_name': bank_name,
+        'bank_account_no': bank_account_no,
+        'bank_ifsc': bank_ifsc,
+        'bank_branch': "Commercial Branch, Overseas Division",
+        'ad_code': ad_code,
+        'description_of_services': description_of_services,
+        'company_seal_round': company_seal_round,
+        'for_seal_signature': for_seal_signature,
+        'logo': logo,
+    }
+
+    return context, display_invoice_number, export_invoice, inr_invoice, invoice
+
+
+def build_fema_context(context, export_invoice, inr_invoice, invoice, display_invoice_number):
+    client_name = context.get('client_name') or "SILVER POINT PRINTING PRESS LLC"
+    client_country = context.get('client_country') or "UAE"
+    if "united arab emirates" in client_country.lower():
+        client_country = "UAE"
+
+    return {
+        'currency': context.get('currency', 'AED'),
+        'client_country': client_country,
+        'total_amount': context.get('total_amount', '0.00'),
+        'client_name': client_name,
+        'client_address_str': context.get('client_address_str', ''),
+        'purpose_of_remittance': "The invoice amount",
+        'applicant_name': "MINTO THOMAS",
+        'applicant_name_title': "Minto Thomas",
+        'company_name': "CUBEXIZSOFT TECHNOLOGIES PVT LTD",
+        'company_name_formatted': "CUBEXIZSOFT TECHNOLOGIES PVT LTD.",
+        'bank_account_no': context.get('bank_account_no') or "39069041224",
+        'for_seal_signature': context.get('for_seal_signature', ''),
+        'company_address_line1': "No. 6/858-M, 2nd FloorSuite No. 422",
+        'company_address_line2': "Valamkottil Towers, Judgemukku, Kakkanad, Kochi - 682021",
+        'company_mobile': "+91 8893350921",
+        'pan_number': context.get('pan_number') or "AAHCC8464C",
+        'cin_number': "U72900KL2018PTC055399",
+        'place': "KOTTAYAM",
+        'current_date': datetime.now().strftime('%d-%m-%Y'),
+    }
+
+
+def generate_invoice_pdf_buffer(inv_obj):
+    invoice_items = InvoiceItem.objects.filter(InvoiceId=inv_obj.InvoiceId).order_by('OrderNo')
+    company = Company.objects.filter(CompanyId=inv_obj.CompanyId).first()
+    client = Client.objects.filter(ClientId=inv_obj.ClientId).first()
+    clientaddress = ClientAddress.objects.filter(ClientId=inv_obj.ClientId).first()
+    try:
+        billingAddress = json.loads(inv_obj.BillingAddress) if inv_obj.BillingAddress else {}
+    except Exception:
+        billingAddress = inv_obj.BillingAddress or {}
+    totalAmount = Decimal(inv_obj.TotalAmount or 0)
+    siteSettings = SiteSettings.objects.filter(CompanyId=inv_obj.CompanyId).first()
+    currencyType = inv_obj.Currency if getattr(inv_obj, 'Currency', None) else (siteSettings.CurrencyType if siteSettings else 'INR')
+    if siteSettings:
+        siteSettings.CurrencyType = currencyType
+
+    HalfTax = float(inv_obj.TaxPercentage or 0) / 2
+    HalfTaxAmount = float(inv_obj.TaxAmount or 0) / 2
+    amountinwords = decimal_number_to_words(totalAmount, currencyType)
+    logo = ""
+    try:
+        if siteSettings and siteSettings.Logo:
+            siteSettingsSerializer = SiteSettingsSerializer(siteSettings)
+            logo = os.path.join(settings.BASE_DIR) + siteSettingsSerializer.data['Logo']
+    except Exception:
+        logo = ""
+
+    bankAccount = siteSettings.BankAccount if (siteSettings and inv_obj.AddBankAccount) else ""
+
+    display_invoice = Invoice.objects.get(InvoiceId=inv_obj.InvoiceId)
+    try:
+        InvoiceDate = datetime.strptime(display_invoice.InvoiceDate, '%Y-%m-%d')
+        display_invoice.InvoiceDate = InvoiceDate.strftime('%d %b %Y')
+    except Exception:
+        pass
+    try:
+        DueDate = datetime.strptime(display_invoice.DueDate, '%Y-%m-%d')
+        display_invoice.DueDate = DueDate.strftime('%d %b %Y')
+    except Exception:
+        pass
+
+    ctx = {
+        'invoice': display_invoice,
+        'invoiceItems': invoice_items,
+        'clientaddress': clientaddress,
+        'logo': logo,
+        'amountinwords': amountinwords,
+        'siteSettings': siteSettings,
+        'billingAddress': billingAddress,
+        'client': client,
+        'company': company,
+        'bankAccount': bankAccount,
+        'HalfTax': HalfTax,
+        'HalfTaxAmount': HalfTaxAmount
+    }
+    template_name = 'woodsInvoice.html' if (siteSettings and siteSettings.InvoiceTemplate == 'woodsInvoice.html') else 'invoice.html'
+    pdf = render_to_pdf(template_name, ctx)
+    if pdf:
+        return pdf.content if hasattr(pdf, 'content') else pdf
+    return None
+
+
 @csrf_exempt
 @swagger_auto_schema(method='GET', operation_description="NOTE: API for view/download SBI Export Declaration Form (EDF Form)")
 @api_view(['GET'])
@@ -1255,378 +1713,7 @@ def ExportDeclarationPDF(request, InvoiceId="", invoice_id=""):
         if not inv_id:
             return JsonResponse({"error": "InvoiceId is required"}, status=400)
 
-        invoice = Invoice.objects.get(InvoiceId=inv_id)
-
-        # Dual-Currency Resolution:
-        # In this CRM, foreign currency export invoices (AED, USD, etc.) typically create two linked records:
-        # 1) A Foreign Currency record (Currency: AED/USD, TotalAmount: foreign value, ExchangeRate: rate)
-        # 2) An INR companion record (Currency: INR, TotalAmount: INR equivalent)
-        # For the Export Declaration Form (EDF), the document must display the transaction in the
-        # foreign currency, while the INR equivalent is used strictly for "value in words (INR)".
-        foreign_invoice = None
-        inr_invoice = None
-
-        inv_curr = (getattr(invoice, 'Currency', '') or '').strip().upper()
-        if inv_curr == 'INR' or not inv_curr:
-            if invoice.LinkedInvoiceId:
-                cand = Invoice.objects.filter(InvoiceId=invoice.LinkedInvoiceId).exclude(Currency='INR').first()
-                if cand and cand.Currency:
-                    foreign_invoice = cand
-            if not foreign_invoice:
-                cand = Invoice.objects.filter(LinkedInvoiceId=invoice.InvoiceId).exclude(Currency='INR').first()
-                if cand and cand.Currency:
-                    foreign_invoice = cand
-            if not foreign_invoice and invoice.InvoiceNumber:
-                base_num = re.sub(r'-[A-Z]{3,4}$', '', invoice.InvoiceNumber)
-                cand = Invoice.objects.filter(InvoiceNumber__startswith=f"{base_num}-").exclude(Currency='INR').first()
-                if cand and cand.Currency:
-                    foreign_invoice = cand
-
-            if foreign_invoice:
-                inr_invoice = invoice
-        else:
-            foreign_invoice = invoice
-            if invoice.LinkedInvoiceId:
-                cand = Invoice.objects.filter(InvoiceId=invoice.LinkedInvoiceId, Currency='INR').first()
-                if cand:
-                    inr_invoice = cand
-            if not inr_invoice:
-                cand = Invoice.objects.filter(LinkedInvoiceId=invoice.InvoiceId, Currency='INR').first()
-                if cand:
-                    inr_invoice = cand
-
-        export_invoice = foreign_invoice if foreign_invoice else invoice
-
-        invoiceItems = InvoiceItem.objects.filter(InvoiceId=export_invoice.InvoiceId).order_by('OrderNo')
-        if not invoiceItems.exists() and export_invoice != invoice:
-            invoiceItems = InvoiceItem.objects.filter(InvoiceId=invoice.InvoiceId).order_by('OrderNo')
-
-        client = Client.objects.filter(ClientId=export_invoice.ClientId or invoice.ClientId).first()
-        clientaddress = ClientAddress.objects.filter(ClientId=export_invoice.ClientId or invoice.ClientId).first()
-        company = Company.objects.filter(CompanyId=export_invoice.CompanyId or invoice.CompanyId).first()
-        siteSettings = SiteSettings.objects.filter(CompanyId=export_invoice.CompanyId or invoice.CompanyId).first()
-
-        billing_src = export_invoice.BillingAddress or invoice.BillingAddress
-        try:
-            billingAddress = json.loads(billing_src) if billing_src else {}
-        except Exception:
-            billingAddress = billing_src or {}
-
-        def is_uuid(val):
-            if not val:
-                return False
-            return bool(re.match(r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$', str(val).strip()))
-
-        def strip_html(val):
-            if not val:
-                return ""
-            text = str(val)
-            text = re.sub(r'<br\s*/?>', ', ', text, flags=re.IGNORECASE)
-            text = re.sub(r'</p>', ', ', text, flags=re.IGNORECASE)
-            text = re.sub(r'<[^>]+>', '', text)
-            text = text.replace('&nbsp;', ' ').replace('&amp;', '&').replace('&lt;', '<').replace('&gt;', '>')
-            text = re.sub(r'\s+', ' ', text)
-            text = re.sub(r',\s*,', ',', text)
-            return text.strip(' ,')
-
-        def resolve_country(c_val, context_text=""):
-            if not c_val:
-                c_val = ""
-            val_str = str(c_val).strip()
-            if val_str:
-                try:
-                    c_obj = Country.objects.filter(CountryId=val_str).first()
-                    if c_obj and c_obj.Country:
-                        return c_obj.Country
-                except Exception:
-                    pass
-            # Known mappings or fallback
-            if val_str == "93d75c2b-c786-4711-8578-a806cc8e8f2f" or "sharjah" in context_text.lower() or "uae" in context_text.lower() or "dubai" in context_text.lower():
-                return "United Arab Emirates"
-            if is_uuid(val_str):
-                return ""
-            return val_str
-
-        def resolve_state(s_val, context_text=""):
-            if not s_val:
-                s_val = ""
-            val_str = str(s_val).strip()
-            if val_str:
-                try:
-                    s_obj = State.objects.filter(StateId=val_str).first()
-                    if s_obj and s_obj.State:
-                        return s_obj.State
-                except Exception:
-                    pass
-            if val_str == "2a774ece-b0d3-45a3-a9c0-bd661f950ee2":
-                return "Sharjah"
-            if is_uuid(val_str):
-                return ""
-            return val_str
-
-        raw_addr1 = ""
-        raw_addr2 = ""
-        raw_city = ""
-        raw_state = ""
-        raw_zip = ""
-        raw_country = ""
-
-        if isinstance(billingAddress, dict) and billingAddress:
-            raw_addr1 = billingAddress.get('Address1') or billingAddress.get('Address') or ""
-            raw_addr2 = billingAddress.get('Address2') or ""
-            raw_city = billingAddress.get('City') or ""
-            raw_state = billingAddress.get('State') or ""
-            raw_zip = billingAddress.get('ZipCode') or ""
-            raw_country = billingAddress.get('Country') or ""
-        elif clientaddress:
-            raw_addr1 = clientaddress.Address1 or ""
-            raw_addr2 = clientaddress.Address2 or ""
-            raw_city = clientaddress.City or ""
-            raw_state = clientaddress.State or ""
-            raw_zip = clientaddress.ZipCode or ""
-            raw_country = clientaddress.Country or ""
-
-        if not raw_country and client:
-            raw_country = getattr(client, 'Country', "") or ""
-
-        addr_context = f"{raw_addr1} {raw_addr2} {raw_city}"
-        resolved_country = resolve_country(raw_country, addr_context)
-        resolved_state = resolve_state(raw_state, addr_context)
-
-        client_country = resolved_country or "United Arab Emirates"
-
-        client_address_parts = []
-        if raw_addr1:
-            clean_1 = strip_html(raw_addr1)
-            if clean_1 and not is_uuid(clean_1):
-                client_address_parts.append(clean_1)
-        if raw_addr2:
-            clean_2 = strip_html(raw_addr2)
-            if clean_2 and not is_uuid(clean_2):
-                client_address_parts.append(clean_2)
-        if raw_city:
-            clean_c = strip_html(raw_city)
-            if clean_c and not is_uuid(clean_c):
-                client_address_parts.append(clean_c)
-        if resolved_state:
-            # Avoid repeating Sharjah if already present in city
-            if resolved_state.lower() not in [p.lower() for p in client_address_parts]:
-                client_address_parts.append(resolved_state)
-        if raw_zip:
-            clean_z = strip_html(raw_zip)
-            if clean_z and not is_uuid(clean_z):
-                client_address_parts.append(clean_z)
-        if resolved_country:
-            if resolved_country.lower() not in [p.lower() for p in client_address_parts]:
-                client_address_parts.append(resolved_country)
-
-        # Ensure no raw UUID survives in address
-        client_address_parts = [p for p in client_address_parts if not is_uuid(p)]
-        client_address_str = ", ".join(client_address_parts) if client_address_parts else "United Arab Emirates"
-
-        # Explicit statutory values requested by user
-        pan_number = "AAHCC8464C"
-        gstin_number = "32AAHCC8464C1ZU"
-        ad_code = "0027102"
-        description_of_services = "Software Development"
-
-        iec_number = ""
-        try:
-            company_docs = CompanyDocuments.objects.filter(CompanyId=invoice.CompanyId)
-            for doc in company_docs:
-                dtype = (doc.DocumentType or "").upper()
-                dname = (doc.DocumentName or "").upper()
-                if "IEC" in dtype or "IEC" in dname:
-                    iec_number = doc.DocumentNumber or ""
-                    break
-        except Exception:
-            pass
-        if not iec_number:
-            iec_number = "NOT APPLICABLE"
-
-        sbi_bank = CompanyBankDetails.objects.filter(
-            CompanyId=invoice.CompanyId,
-            BankName__icontains="State Bank of India"
-        ).first()
-        if not sbi_bank:
-            sbi_bank = CompanyBankDetails.objects.filter(
-                CompanyId=invoice.CompanyId,
-                BankName__icontains="SBI"
-            ).first()
-        if not sbi_bank:
-            sbi_bank = CompanyBankDetails.objects.filter(
-                CompanyId=invoice.CompanyId,
-                PrimaryAccount=True
-            ).first()
-        if not sbi_bank:
-            sbi_bank = CompanyBankDetails.objects.filter(
-                CompanyId=invoice.CompanyId
-            ).first()
-
-        bank_name = sbi_bank.BankName if sbi_bank and sbi_bank.BankName else "State Bank of India"
-        bank_account_no = sbi_bank.AccountNumber if sbi_bank and sbi_bank.AccountNumber else "-"
-        bank_ifsc = sbi_bank.IFSCCode if sbi_bank and sbi_bank.IFSCCode else "-"
-
-        currency = (getattr(export_invoice, 'Currency', None) or (siteSettings.CurrencyType if siteSettings else 'USD') or 'USD').strip().upper()
-        try:
-            total_amount_val = Decimal(str(export_invoice.TotalAmount or 0).strip())
-        except Exception:
-            total_amount_val = Decimal(0)
-        total_amount = f"{total_amount_val:.2f}"
-
-        # Determine INR amount
-        if inr_invoice and inr_invoice.TotalAmount:
-            try:
-                amount_in_inr = Decimal(str(inr_invoice.TotalAmount).strip())
-            except Exception:
-                amount_in_inr = total_amount_val
-            if total_amount_val > 0:
-                exchange_rate = amount_in_inr / total_amount_val
-            else:
-                exchange_rate = Decimal(1)
-        else:
-            try:
-                exchange_rate = Decimal(str(export_invoice.ExchangeRate or 1).strip())
-                if exchange_rate <= 0:
-                    exchange_rate = Decimal(1)
-            except Exception:
-                exchange_rate = Decimal(1)
-
-            if currency != 'INR' and exchange_rate > 0:
-                amount_in_inr = total_amount_val * exchange_rate
-            else:
-                amount_in_inr = total_amount_val
-
-        amountinwords = decimal_number_to_words(total_amount_val, currency)
-        amountinwords_inr = decimal_number_to_words(amount_in_inr, 'INR').upper()
-
-        raw_inv_date = export_invoice.InvoiceDate or invoice.InvoiceDate or ""
-        invoice_date_formatted = raw_inv_date
-        try:
-            parsed_dt = datetime.strptime(raw_inv_date, '%Y-%m-%d')
-            invoice_date_formatted = parsed_dt.strftime('%d/%m/%Y')
-        except Exception:
-            pass
-
-        raw_num = invoice.InvoiceNumber or export_invoice.InvoiceNumber or ""
-        display_invoice_number = re.sub(r'-[A-Z]{3,4}$', '', raw_num)
-        if not display_invoice_number:
-            display_invoice_number = raw_num
-
-        items_data = []
-        for idx, item in enumerate(invoiceItems, start=1):
-            sac_code = item.Code or "998314"
-            item_desc = strip_html(item.ItemDetails) if item.ItemDetails else description_of_services
-            if not item_desc or is_uuid(item_desc):
-                item_desc = description_of_services
-            try:
-                item_amt = Decimal(item.Amount or 0)
-            except Exception:
-                item_amt = Decimal(0)
-            items_data.append({
-                'sl_no': idx,
-                'code': sac_code,
-                'description': item_desc,
-                'quantity': item.Quantity,
-                'rate': item.Rate,
-                'amount': item_amt,
-                'discount': item.DiscountPercent or "0",
-                'net_amount': item_amt,
-            })
-
-        if not items_data:
-            items_data.append({
-                'sl_no': 1,
-                'code': '998314',
-                'description': description_of_services,
-                'quantity': 1,
-                'rate': total_amount,
-                'amount': total_amount,
-                'discount': '0',
-                'net_amount': total_amount,
-            })
-
-        logo = ""
-        try:
-            if siteSettings and siteSettings.Logo:
-                siteSettingsSerializer = SiteSettingsSerializer(siteSettings)
-                logo = os.path.join(settings.BASE_DIR) + siteSettingsSerializer.data['Logo']
-        except Exception:
-            logo = ""
-
-        client_name = ""
-        if client:
-            client_name = (
-                getattr(client, 'CustomerDisplayName', None)
-                or getattr(client, 'CompanyName', None)
-                or f"{getattr(client, 'FirstName', '') or ''} {getattr(client, 'LastName', '') or ''}".strip()
-            )
-        if not client_name:
-            client_name = "Silver Point Printing Press Works LLC"
-
-        company_name = company.CompanyName if (company and company.CompanyName) else "CUBEXIZSOFT TECHNOLOGIES PVT. LTD."
-        company_address = getattr(company, 'Address', '') or getattr(company, 'CompanyAddress', '') or "Thrikkakara P.O, Kochi - 682021, Kerala, India"
-        company_address = strip_html(company_address)
-
-        reference_number = "N/A"
-        shipping_bill_no = getattr(invoice, 'ShippingBillNo', None) or ""
-
-        # Seal and Signature image absolute file paths
-        company_seal_round = os.path.join(settings.BASE_DIR, 'static', 'images', 'company_seal_round.png')
-        if not os.path.exists(company_seal_round):
-            company_seal_round = os.path.join(settings.BASE_DIR, 'static', 'images', 'company_seal_round.jpg')
-        if not os.path.exists(company_seal_round):
-            company_seal_round = ""
-
-        for_seal_signature = os.path.join(settings.BASE_DIR, 'static', 'images', 'for_seal_signature.jpg')
-        if not os.path.exists(for_seal_signature):
-            for_seal_signature = ""
-
-        current_date_str = datetime.now().strftime('%d/%m/%Y')
-
-        context = {
-            'invoice': export_invoice,
-            'display_invoice_number': display_invoice_number,
-            'client_name': client_name,
-            'company_name': company_name,
-            'company_address': company_address,
-            'reference_number': "N/A",
-            'contract_no_and_date': "N/A",
-            'shipping_bill_no': shipping_bill_no,
-            'type_of_export': 'Service',
-            'port_of_loading': 'N/A (Electronic)',
-            'port_of_discharge': 'N/A (Electronic)',
-            'invoiceItems': invoiceItems,
-            'items_data': items_data,
-            'client': client,
-            'clientaddress': clientaddress,
-            'client_address_str': client_address_str,
-            'client_country': client_country,
-            'company': company,
-            'siteSettings': siteSettings,
-            'billingAddress': billingAddress,
-            'currency': currency,
-            'total_amount': total_amount,
-            'exchange_rate': exchange_rate,
-            'amount_in_inr': amount_in_inr,
-            'amountinwords': amountinwords,
-            'amountinwords_inr': amountinwords_inr,
-            'invoice_date_formatted': invoice_date_formatted,
-            'current_date': current_date_str,
-            'pan_number': pan_number,
-            'iec_number': iec_number or "NOT APPLICABLE",
-            'gstin_number': gstin_number,
-            'bank_name': bank_name,
-            'bank_account_no': bank_account_no,
-            'bank_ifsc': bank_ifsc,
-            'bank_branch': "Commercial Branch, Overseas Division",
-            'ad_code': ad_code,
-            'description_of_services': description_of_services,
-            'company_seal_round': company_seal_round,
-            'for_seal_signature': for_seal_signature,
-            'logo': logo,
-        }
-
+        context, display_invoice_number, _, _, _ = build_export_declaration_context(inv_id)
         pdf = render_to_pdf('export_declaration_form.html', context)
         if pdf:
             filename = f"EDF_{display_invoice_number}.pdf"
@@ -1643,9 +1730,135 @@ def ExportDeclarationPDF(request, InvoiceId="", invoice_id=""):
         return JsonResponse({"error": str(e)}, status=500)
 
 
+@csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for view/download FEMA Inward Remittance Declaration Form")
+@api_view(['GET'])
+def FemaDeclarationPDF(request, InvoiceId="", invoice_id=""):
+    try:
+        inv_id = InvoiceId or invoice_id or request.GET.get('invoice_id') or request.GET.get('InvoiceId')
+        if not inv_id:
+            return JsonResponse({"error": "InvoiceId is required"}, status=400)
+
+        context, display_invoice_number, export_invoice, inr_invoice, invoice = build_export_declaration_context(inv_id)
+        fema_context = build_fema_context(context, export_invoice, inr_invoice, invoice, display_invoice_number)
+
+        pdf = render_to_pdf('fema_declaration_form.html', fema_context)
+        if pdf:
+            filename = f"FEMA_Declaration_{display_invoice_number}.pdf"
+            pdf_content = pdf.content if hasattr(pdf, 'content') else pdf
+            response = HttpResponse(pdf_content, content_type='application/pdf')
+            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            return response
+        else:
+            return JsonResponse({"error": "Failed to generate FEMA Declaration PDF"}, status=500)
+
+    except Invoice.DoesNotExist:
+        return JsonResponse({"error": "Invoice not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API for download Bank Submission Documents ZIP")
+@api_view(['GET'])
+def BankSubmissionDocuments(request, InvoiceId="", invoice_id=""):
+    try:
+        inv_id = InvoiceId or invoice_id or request.GET.get('invoice_id') or request.GET.get('InvoiceId')
+        if not inv_id:
+            return JsonResponse({"error": "InvoiceId is required"}, status=400)
+
+        context, display_invoice_number, export_invoice, inr_invoice, invoice = build_export_declaration_context(inv_id)
+        fema_context = build_fema_context(context, export_invoice, inr_invoice, invoice, display_invoice_number)
+
+        # 1. Generate EDF Form PDF
+        edf_pdf = render_to_pdf('export_declaration_form.html', context)
+        edf_bytes = edf_pdf.content if (edf_pdf and hasattr(edf_pdf, 'content')) else edf_pdf
+
+        # 2. Generate FEMA Form PDF
+        fema_pdf = render_to_pdf('fema_declaration_form.html', fema_context)
+        fema_bytes = fema_pdf.content if (fema_pdf and hasattr(fema_pdf, 'content')) else fema_pdf
+
+        # 3. Generate Invoice PDF (in export currency e.g. AED/USD if exists, else standard invoice)
+        inv_bytes = generate_invoice_pdf_buffer(export_invoice)
+
+        # 4. Locate Service Agreement / Project Document
+        service_agreement_bytes = None
+        service_agreement_filename = None
+
+        project_id = getattr(export_invoice, 'ProjectId', None) or getattr(invoice, 'ProjectId', None)
+        project = None
+        if project_id:
+            project = Project.objects.filter(ProjectId=project_id).first()
+        if not project and invoice.ClientId:
+            project = Project.objects.filter(ClientId=invoice.ClientId).first()
+
+        if project:
+            proj_docs = ProjectDocument.objects.filter(ProjectId=project.ProjectId).order_by('-SortId')
+            service_doc = None
+            for pdoc in proj_docs:
+                dtype = (pdoc.DocumentType or '').lower()
+                dname = (pdoc.DocumentName or '').lower()
+                if 'service' in dtype or 'service' in dname or 'agreement' in dtype or 'agreement' in dname or 'contract' in dtype:
+                    service_doc = pdoc
+                    break
+            if not service_doc and proj_docs.exists():
+                service_doc = proj_docs.first()
+
+            if service_doc and service_doc.Document:
+                doc_path = os.path.join(settings.MEDIA_ROOT, str(service_doc.Document))
+                if not os.path.exists(doc_path):
+                    doc_path = os.path.join(settings.BASE_DIR, str(service_doc.Document))
+                if os.path.exists(doc_path):
+                    _, ext = os.path.splitext(doc_path)
+                    clean_proj = re.sub(r'[^a-zA-Z0-9_\-]', '_', project.ProjectName or 'Project')
+                    service_agreement_filename = f"Service_Agreement_{clean_proj}{ext}"
+                    with open(doc_path, 'rb') as f:
+                        service_agreement_bytes = f.read()
+
+        # Fallback to ClientDocuments if not found under project
+        if not service_agreement_bytes and invoice.ClientId:
+            c_docs = ClientDocuments.objects.filter(ClientId=invoice.ClientId).order_by('-SortId')
+            for cdoc in c_docs:
+                dtype = (cdoc.DocumentType or '').lower()
+                dname = (cdoc.DocumentName or '').lower()
+                if 'service' in dtype or 'service' in dname or 'agreement' in dtype or 'agreement' in dname or 'contract' in dtype:
+                    doc_path = os.path.join(settings.MEDIA_ROOT, str(cdoc.Document))
+                    if not os.path.exists(doc_path):
+                        doc_path = os.path.join(settings.BASE_DIR, str(cdoc.Document))
+                    if os.path.exists(doc_path):
+                        _, ext = os.path.splitext(doc_path)
+                        service_agreement_filename = f"Service_Agreement_{display_invoice_number}{ext}"
+                        with open(doc_path, 'rb') as f:
+                            service_agreement_bytes = f.read()
+                        break
+
+        # 5. Assemble ZIP Archive
+        zip_buffer = BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+            if edf_bytes:
+                zf.writestr(f"EDF_{display_invoice_number}.pdf", edf_bytes)
+            if fema_bytes:
+                zf.writestr(f"FEMA_Declaration_{display_invoice_number}.pdf", fema_bytes)
+            if inv_bytes:
+                curr_label = context.get('currency', 'INV')
+                zf.writestr(f"Invoice_{display_invoice_number}_{curr_label}.pdf", inv_bytes)
+            if service_agreement_bytes and service_agreement_filename:
+                zf.writestr(service_agreement_filename, service_agreement_bytes)
+
+        response = HttpResponse(zip_buffer.getvalue(), content_type='application/zip')
+        response['Content-Disposition'] = f'attachment; filename="Bank_Submission_{display_invoice_number}.zip"'
+        return response
+
+    except Invoice.DoesNotExist:
+        return JsonResponse({"error": "Invoice not found"}, status=404)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
 class DownloadExportDeclarationPDF(View):
     def get(self, request, InvoiceId="", invoice_id="", *args, **kwargs):
         return ExportDeclarationPDF(request, InvoiceId=InvoiceId, invoice_id=invoice_id)
+
 
 
 @csrf_exempt
