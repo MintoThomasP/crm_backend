@@ -1749,7 +1749,7 @@ def ExportDeclarationPDF(request, InvoiceId="", invoice_id=""):
             filename = f"EDF_{display_invoice_number}.pdf"
             pdf_content = pdf.content if hasattr(pdf, 'content') else pdf
             response = HttpResponse(pdf_content, content_type='application/pdf')
-            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            response['Content-Disposition'] = f'inline; filename="{filename}"'
             return response
         else:
             return JsonResponse({"error": "Failed to generate Export Declaration PDF"}, status=500)
@@ -1777,7 +1777,7 @@ def FemaDeclarationPDF(request, InvoiceId="", invoice_id=""):
             filename = f"FEMA_Declaration_{display_invoice_number}.pdf"
             pdf_content = pdf.content if hasattr(pdf, 'content') else pdf
             response = HttpResponse(pdf_content, content_type='application/pdf')
-            response['Content-Disposition'] = f'attachment; filename="{filename}"'
+            response['Content-Disposition'] = f'inline; filename="{filename}"'
             return response
         else:
             return JsonResponse({"error": "Failed to generate FEMA Declaration PDF"}, status=500)
