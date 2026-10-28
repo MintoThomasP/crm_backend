@@ -1656,7 +1656,7 @@ def build_fema_context(context, export_invoice, inr_invoice, invoice, display_in
         'total_amount': total_amount,
         'client_name': client_name,
         'client_address_str': context.get('client_address_str', ''),
-        'purpose_of_remittance': "The invoice amount",
+        'purpose_of_remittance': "Software Development / Services",
         'applicant_name': "MINTO THOMAS",
         'applicant_name_title': "Minto Thomas",
         'company_name': "CUBEXIZSOFT TECHNOLOGIES PVT LTD",
