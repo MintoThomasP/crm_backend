@@ -6,16 +6,16 @@
 @page {
     size: letter;
     margin-top: 155pt;
-    margin-bottom: 95pt;
+    margin-bottom: 115pt;
     margin-left: 72pt;
     margin-right: 72pt;
     @frame header_frame {
         -pdf-frame-content: page_header;
-        left: 0pt; width: 612pt; top: 0pt; height: 148pt;
+        left: 0pt; width: 612pt; top: 0pt; height: 150pt;
     }
     @frame footer_frame {
         -pdf-frame-content: page_footer;
-        left: 0pt; width: 612pt; bottom: 8pt; height: 95pt;
+        left: 0pt; width: 612pt; bottom: 0pt; height: 122pt;
     }
 }
 
@@ -117,16 +117,16 @@ li {
 
 <div id="page_header" style="margin: 0; padding: 0; line-height: 0;">
     {% if header_image %}
-    <img src="{{ header_image }}" style="width: 612pt; height: 145.2pt;" />
+    <img src="{{ header_image }}" style="width: 612pt; height: 147pt;" />
     {% endif %}
 </div>
 
 <div id="page_footer" style="margin: 0; padding: 0;">
-    <div style="text-align: center; font-size: 9pt; font-weight: bold; color: #333333; margin: 0; padding: 0; line-height: 11pt;">
+    <div style="text-align: center; font-size: 8.5pt; font-weight: bold; color: #333333; margin: 0; padding: 0; line-height: 11pt;">
         &nbsp;<pdf:pagenumber/>&nbsp;
     </div>
     {% if footer_image %}
-    <img src="{{ footer_image }}" style="width: 612pt; height: 75pt;" />
+    <img src="{{ footer_image }}" style="width: 612pt; height: 107pt;" />
     {% endif %}
 </div>
 

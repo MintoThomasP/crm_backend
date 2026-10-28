@@ -3425,11 +3425,15 @@ def build_service_agreement_context(data):
     governing_law_p2_html = _format_clause_content(data.get('governing_law_p2')) if data.get('governing_law_p2') else None
 
     # Assets
-    header_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_header_ultra.png')
+    header_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_header_user.png')
+    if not os.path.exists(header_image):
+        header_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_header_ultra.png')
     if not os.path.exists(header_image):
         header_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_header.png')
 
-    footer_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_footer_ultra.png')
+    footer_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_footer_user.png')
+    if not os.path.exists(footer_image):
+        footer_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_footer_ultra.png')
     if not os.path.exists(footer_image):
         footer_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_footer.png')
 
