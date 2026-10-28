@@ -1,4 +1,5 @@
 import uuid
+import re
 import base64
 from django.core.files.base import ContentFile
 import shutil
@@ -16,13 +17,17 @@ from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
 from app_basic.models import TempleteType
 from app_basic.serializers import TempleteTypeSerializer
+from io import BytesIO
+from xhtml2pdf import pisa
+from django.template.loader import get_template
+from django.http import HttpResponse, JsonResponse
 from app_client.serializers import ClientVisitRegisterSerializer
+from app_client.models import Client, ClientAddress, ContactPerson
 from app_company.models import Company
 from app_company.serializers import CompanySerializer
 from app_default.views import retry
 from app_login.models import Login
 from rest_framework.parsers import JSONParser
-from django.http.response import JsonResponse
 from app_default.models import TaskStatus
 from app_default.serializers import TaskStatusSerializer
 from rest_framework.views import APIView
@@ -3063,4 +3068,418 @@ def ProjectDocumentsByProjectId(request, ProjectId=""):
             return JsonResponse([], safe=False)
     except Exception as e:
         return JsonResponse({"error": str(e)}, status=500, safe=False)
+
+
+# ==========================================================
+# ANNUAL MAINTENANCE CONTRACT (AMC) / SERVICE AGREEMENT
+# ==========================================================
+
+def _get_ordinal_day(day_num):
+    if 11 <= day_num <= 13:
+        return f"{day_num}th"
+    last_digit = day_num % 10
+    if last_digit == 1:
+        return f"{day_num}st"
+    elif last_digit == 2:
+        return f"{day_num}nd"
+    elif last_digit == 3:
+        return f"{day_num}rd"
+    else:
+        return f"{day_num}th"
+
+
+def _format_clause_content(content):
+    if not content:
+        return ''
+    content = str(content).strip()
+    if '<' in content and '>' in content:
+        return content
+    lines = [l.strip() for l in content.split('\n') if l.strip()]
+    html_parts = []
+    in_list = False
+    for line in lines:
+        if line.startswith(('-', '*', '•', '●')):
+            if not in_list:
+                html_parts.append('<ul>')
+                in_list = True
+            clean_l = line.lstrip('-*•● ').strip()
+            if ':' in clean_l and not clean_l.startswith('http'):
+                parts = clean_l.split(':', 1)
+                clean_l = f'<b>{parts[0].strip()}:</b> {parts[1].strip()}'
+            html_parts.append(f'<li>{clean_l}</li>')
+        else:
+            if in_list:
+                html_parts.append('</ul>')
+                in_list = False
+            html_parts.append(f'<p>{line}</p>')
+    if in_list:
+        html_parts.append('</ul>')
+    return '\n'.join(html_parts)
+
+
+def build_service_agreement_context(data):
+    project_id = data.get('project_id') or data.get('ProjectId')
+    project = None
+    client = None
+    contact_person = None
+    client_address_obj = None
+
+    if project_id:
+        try:
+            project = Project.objects.filter(ProjectId=project_id).first()
+            if project and project.ClientId:
+                client = Client.objects.filter(ClientId=project.ClientId).first()
+                contact_person = ContactPerson.objects.filter(ClientId=project.ClientId).first()
+                client_address_obj = (
+                    ClientAddress.objects.filter(ClientId=project.ClientId, IsDefaultAddress=True).first()
+                    or ClientAddress.objects.filter(ClientId=project.ClientId).first()
+                )
+        except Exception:
+            pass
+
+    # Dates
+    effective_date_raw = data.get('effective_date') or datetime.now().strftime('%Y-%m-%d')
+    try:
+        if isinstance(effective_date_raw, str) and len(effective_date_raw) >= 10:
+            effective_date_obj = datetime.strptime(effective_date_raw[:10], '%Y-%m-%d')
+        else:
+            effective_date_obj = datetime.now()
+    except Exception:
+        effective_date_obj = datetime.now()
+
+    try:
+        duration_years = int(data.get('duration_years', 5) or 5)
+    except Exception:
+        duration_years = 5
+
+    end_date_obj = effective_date_obj + relativedelta(years=duration_years) - timedelta(days=1)
+
+    effective_date_formatted = f"{_get_ordinal_day(effective_date_obj.day)} day of {effective_date_obj.strftime('%B %Y')}"
+    start_date_formatted = effective_date_obj.strftime('%B %d, %Y')
+    end_date_formatted = end_date_obj.strftime('%B %d, %Y')
+    execution_date = effective_date_obj.strftime('%d-%m-%Y')
+    duration_text = f"{duration_years} years"
+
+    # Domain / Platform
+    domain_name = data.get('domain_name')
+    if not domain_name and project:
+        domain_name = project.ProjectName or ""
+        domain_name = re.sub(r'^https?:\/\/', '', domain_name).rstrip('/')
+    if not domain_name:
+        domain_name = "spogprint.com"
+
+    # Client
+    client_name = data.get('client_name')
+    if not client_name and client:
+        client_name = (
+            client.CustomerDisplayName
+            or client.CompanyName
+            or f"{client.FirstName or ''} {client.LastName or ''}".strip()
+        )
+    if not client_name:
+        client_name = "SILVER POINT THE PRINT HOUSE"
+
+    client_address = data.get('client_address')
+    if not client_address:
+        if client_address_obj:
+            addr_parts = [
+                client_address_obj.Address1,
+                client_address_obj.Address2,
+                client_address_obj.City,
+                client_address_obj.State,
+                client_address_obj.Country,
+                client_address_obj.ZipCode
+            ]
+            client_address = ", ".join([p for p in addr_parts if p])
+        elif project and project.Address:
+            client_address = project.Address
+    if not client_address:
+        client_address = "Shed No:05 Caterpillar Building, Salah Al Din St, Al Khabaisi, Deira, United Arab Emirates"
+
+    # Client Signatory
+    client_signatory_name = data.get('client_signatory_name')
+    if not client_signatory_name and contact_person:
+        client_signatory_name = f"{contact_person.FirstName or ''} {contact_person.LastName or ''}".strip()
+    if not client_signatory_name:
+        client_signatory_name = "KRISHNADAS KAMALON"
+
+    client_signatory_designation = data.get('client_signatory_designation')
+    if not client_signatory_designation and contact_person:
+        client_signatory_designation = contact_person.Designation or ""
+    if not client_signatory_designation:
+        client_signatory_designation = "Operations Manager"
+
+    # Service Provider
+    service_provider_name = data.get('service_provider_name') or "Cubexizsoft Technologies PVT. LTD."
+    service_provider_address = data.get('service_provider_address') or (
+        "No. 6/858-M, 2nd Floor, Suite No. 422 Valamkottil Towers, Judgemukku, Kakkanad, Kochi - 682021, Kerala, India"
+    )
+    service_provider_cin = data.get('service_provider_cin') or "U72900KL2018PTC055399"
+    service_provider_gstin = data.get('service_provider_gstin') or "32AAHCC8464C1ZU"
+    service_provider_signatory_name = data.get('service_provider_signatory_name') or "MINTO THOMAS"
+    service_provider_signatory_designation = data.get('service_provider_signatory_designation') or "Managing Director"
+
+    # Financials
+    payment_frequency = data.get('payment_frequency') or "Monthly"
+    payment_frequency_title = payment_frequency.capitalize()
+    payment_frequency_lower = payment_frequency.lower()
+    if 'year' in payment_frequency_lower or 'annual' in payment_frequency_lower:
+        payment_period_unit = "year"
+    elif 'quarter' in payment_frequency_lower:
+        payment_period_unit = "quarter"
+    else:
+        payment_period_unit = "month"
+
+    currency = data.get('currency') or "AED"
+    raw_amount = str(data.get('amount') or "2,000/-").strip()
+    if not raw_amount.endswith('/-') and not raw_amount.endswith('.'):
+        amount_formatted = f"{raw_amount}/-"
+    else:
+        amount_formatted = raw_amount
+
+    # Governing Law
+    governing_law_country = data.get('governing_law_country') or "the United Arab Emirates (UAE)"
+
+    # Clauses (HTML or formatted text)
+    scope_of_services_html = _format_clause_content(data.get('scope_of_services')) if data.get('scope_of_services') else None
+    fees_payment_html = _format_clause_content(data.get('fees_payment_terms')) if data.get('fees_payment_terms') else None
+    sla_response_html = _format_clause_content(data.get('sla_response_time')) if data.get('sla_response_time') else None
+    exclusions_html = _format_clause_content(data.get('exclusions')) if data.get('exclusions') else None
+    confidentiality_html = _format_clause_content(data.get('confidentiality_ip')) if data.get('confidentiality_ip') else None
+    term_termination_html = _format_clause_content(data.get('term_termination')) if data.get('term_termination') else None
+    governing_law_p1_html = _format_clause_content(data.get('governing_law_p1')) if data.get('governing_law_p1') else None
+    governing_law_p2_html = _format_clause_content(data.get('governing_law_p2')) if data.get('governing_law_p2') else None
+
+    # Assets
+    header_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_header.png')
+    footer_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_footer.png')
+    seal_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'amc_company_seal.png')
+    signature_image = os.path.join(settings.BASE_DIR, 'static', 'images', 'applicant_signature.png')
+
+    return {
+        'header_image': header_image if os.path.exists(header_image) else "",
+        'footer_image': footer_image if os.path.exists(footer_image) else "",
+        'seal_image': seal_image if os.path.exists(seal_image) else "",
+        'signature_image': signature_image if os.path.exists(signature_image) else "",
+        'domain_name': domain_name,
+        'effective_date_formatted': effective_date_formatted,
+        'effective_date_obj': effective_date_obj,
+        'end_date_obj': end_date_obj,
+        'service_provider_name': service_provider_name,
+        'service_provider_address': service_provider_address,
+        'service_provider_cin': service_provider_cin,
+        'service_provider_gstin': service_provider_gstin,
+        'client_name': client_name,
+        'client_address': client_address,
+        'payment_frequency_title': payment_frequency_title,
+        'payment_frequency_lower': payment_frequency_lower,
+        'currency': currency,
+        'amount_formatted': amount_formatted,
+        'payment_period_unit': payment_period_unit,
+        'duration_text': duration_text,
+        'duration_years': duration_years,
+        'start_date_formatted': start_date_formatted,
+        'end_date_formatted': end_date_formatted,
+        'governing_law_country': governing_law_country,
+        'service_provider_signatory_name': service_provider_signatory_name,
+        'service_provider_signatory_designation': service_provider_signatory_designation,
+        'client_signatory_name': client_signatory_name,
+        'client_signatory_designation': client_signatory_designation,
+        'execution_date': execution_date,
+        'scope_of_services_html': scope_of_services_html,
+        'fees_payment_html': fees_payment_html,
+        'sla_response_html': sla_response_html,
+        'exclusions_html': exclusions_html,
+        'confidentiality_html': confidentiality_html,
+        'term_termination_html': term_termination_html,
+        'governing_law_p1_html': governing_law_p1_html,
+        'governing_law_p2_html': governing_law_p2_html,
+    }
+
+
+def _render_amc_pdf(context):
+    template = get_template('amc_service_agreement.html')
+    html = template.render(context)
+    result = BytesIO()
+    pdf = pisa.pisaDocument(BytesIO(html.encode("UTF-8")), result)
+    if not pdf.err:
+        return result.getvalue()
+    return None
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API to get initial pre-filled AMC Service Agreement data for a Project")
+@api_view(['GET'])
+def GetServiceAgreementInitialData(request):
+    try:
+        project_id = request.GET.get('ProjectId') or request.GET.get('project_id') or ""
+        ctx = build_service_agreement_context({'project_id': project_id})
+
+        default_scope = (
+            f"The Service Provider agrees to provide monthly technical maintenance and support services for the Client's website/platform {ctx['domain_name']}. The services include:\n"
+            "- Routine Maintenance & Updates: Regular updates to core application framework, dependencies, and plugins to ensure system stability.\n"
+            "- Bug Fixes & Technical Support: Troubleshooting and resolving errors, bugs, and technical issues related to the platform functionality.\n"
+            "- Server & Hosting Monitoring: Monitoring server performance, uptime, and database management.\n"
+            "- Security & Backups: Regular database and file backups, security updates, and vulnerability patches.\n"
+            "- Content / Minor UI Updates: Minor updates to text, images, or configuration settings as requested by the Client."
+        )
+
+        default_fees = (
+            f"- {ctx['payment_frequency_title']} AMC Fee: The Client agrees to pay the Service Provider a {ctx['payment_frequency_lower']} retainer fee of {ctx['currency']} {ctx['amount_formatted']} per {ctx['payment_period_unit']}.\n"
+            f"- Payment Schedule: Payments shall be made in advance/on a {ctx['payment_frequency_lower']} basis on or before the agreed date of each calendar month.\n"
+            "- Payment Mode: Payment shall be remitted directly to the Service Provider's designated bank account via Direct Wire Transfer / Bank Transfer."
+        )
+
+        default_sla = (
+            "- Support Hours: Standard support hours are Monday to Friday.\n"
+            "- Critical Issues (Downtime/Major Bug): Response within 2–4 hours.\n"
+            "- Non-Critical Updates/Fixes: Response within 24–48 hours."
+        )
+
+        default_exclusions = (
+            "The following services are not included under this routine AMC agreement and will be charged separately upon mutual agreement:\n"
+            "- Major feature additions or complete redesign/re-architecture of the system.\n"
+            "- Third-party software/API costs, domain renewal, third-party hosting fees, or external plugin costs.\n"
+            "- Issues caused by unauthorized third-party modifications to the source code."
+        )
+
+        default_confidentiality = (
+            "- Both parties agree to keep all proprietary data, trade secrets, user information, and technical details confidential.\n"
+            f"- All custom code developed specifically for {ctx['domain_name']} shall remain/become the property of the Client upon full settlement of dues."
+        )
+
+        default_term = (
+            f"- Duration: This Agreement is valid for a period of {ctx['duration_text']} starting from {ctx['start_date_formatted']} to {ctx['end_date_formatted']}.\n"
+            "- Termination for Convenience: Either party may terminate this Agreement by giving a 30 days' written notice to the other party.\n"
+            "- Immediate Termination: Either party may terminate immediately if there is a material breach of terms or non-payment of agreed fees."
+        )
+
+        default_governing_p1 = (
+            f"This Agreement shall be governed by and construed in accordance with the laws of {ctx['governing_law_country']} for services delivered to the Client's operating entity, and the laws of India for technical development and operational activities conducted by the Service Provider. Any dispute,"
+        )
+
+        default_governing_p2 = (
+            "controversy, or claim arising out of or relating to this Agreement shall first be attempted to be resolved amicably through good-faith mutual negotiations. If unresolved through negotiation within 30 days, the parties agree that disputes may be referred to international arbitration or subject to the jurisdiction of the courts agreed upon by both parties."
+        )
+
+        return JsonResponse({
+            'project_id': project_id,
+            'effective_date': ctx['effective_date_obj'].strftime('%Y-%m-%d'),
+            'duration_years': ctx['duration_years'],
+            'payment_frequency': 'Monthly',
+            'currency': ctx['currency'],
+            'amount': '2,000/-',
+            'domain_name': ctx['domain_name'],
+            'client_name': ctx['client_name'],
+            'client_address': ctx['client_address'],
+            'client_signatory_name': ctx['client_signatory_name'],
+            'client_signatory_designation': ctx['client_signatory_designation'],
+            'service_provider_name': ctx['service_provider_name'],
+            'service_provider_address': ctx['service_provider_address'],
+            'service_provider_cin': ctx['service_provider_cin'],
+            'service_provider_gstin': ctx['service_provider_gstin'],
+            'service_provider_signatory_name': ctx['service_provider_signatory_name'],
+            'service_provider_signatory_designation': ctx['service_provider_signatory_designation'],
+            'governing_law_country': ctx['governing_law_country'],
+            'scope_of_services': default_scope,
+            'fees_payment_terms': default_fees,
+            'sla_response_time': default_sla,
+            'exclusions': default_exclusions,
+            'confidentiality_ip': default_confidentiality,
+            'term_termination': default_term,
+            'governing_law_p1': default_governing_p1,
+            'governing_law_p2': default_governing_p2,
+        }, safe=False)
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500, safe=False)
+
+
+@csrf_exempt
+@swagger_auto_schema(method='GET', operation_description="NOTE: API to generate and view/download AMC Service Agreement PDF")
+@swagger_auto_schema(method='POST', operation_description="NOTE: API to generate AMC Service Agreement PDF with customized clauses")
+@api_view(['GET', 'POST'])
+def GenerateServiceAgreementPDF(request):
+    try:
+        if request.method == 'POST':
+            if request.content_type == 'application/json':
+                data = json.loads(request.body.decode('utf-8'))
+            else:
+                data = request.POST.dict()
+        else:
+            data = request.GET.dict()
+
+        context = build_service_agreement_context(data)
+        pdf_bytes = _render_amc_pdf(context)
+        if pdf_bytes:
+            safe_domain = re.sub(r'[^a-zA-Z0-9_-]', '_', context['domain_name'])
+            filename = f"AMC_Service_Agreement_{safe_domain}.pdf"
+            response = HttpResponse(pdf_bytes, content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="{filename}"'
+            return response
+        else:
+            return JsonResponse({"error": "Failed to generate Service Agreement PDF"}, status=500)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+
+@csrf_exempt
+@swagger_auto_schema(method='POST', operation_description="NOTE: API to generate and attach AMC Service Agreement to Project Documents")
+@api_view(['POST'])
+def SaveServiceAgreementToProject(request):
+    try:
+        if request.content_type == 'application/json':
+            data = json.loads(request.body.decode('utf-8'))
+        else:
+            data = request.POST.dict()
+
+        project_id = data.get('project_id') or data.get('ProjectId')
+        if not project_id:
+            return JsonResponse({"error": "project_id is required"}, status=400)
+
+        context = build_service_agreement_context(data)
+        pdf_bytes = _render_amc_pdf(context)
+        if not pdf_bytes:
+            return JsonResponse({"error": "Failed to render Service Agreement PDF"}, status=500)
+
+        safe_domain = re.sub(r'[^a-zA-Z0-9_-]', '_', context['domain_name'])
+        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+        filename = f"AMC_Service_Agreement_{safe_domain}_{timestamp}.pdf"
+
+        # Destination in media/projectdocuments/
+        docs_dir = os.path.join(settings.MEDIA_ROOT, 'projectdocuments')
+        os.makedirs(docs_dir, exist_ok=True)
+        file_path = os.path.join(docs_dir, filename)
+
+        with open(file_path, 'wb') as f:
+            f.write(pdf_bytes)
+
+        relative_doc_path = f"projectdocuments/{filename}"
+
+        # Create or update ProjectDocument
+        doc_number = f"AMC/{context['effective_date_obj'].year}/{safe_domain[:8].upper()}"
+        doc = ProjectDocument.objects.create(
+            ProjectId=project_id,
+            Document=relative_doc_path,
+            DocumentName=f"AMC Service Agreement - {context['domain_name']}.pdf",
+            DocumentType="Service Agreement",
+            DocumentNumber=doc_number,
+            IssuedOn=context['effective_date_obj'].strftime('%Y-%m-%d'),
+            ExpiryDate=context['end_date_obj'].strftime('%Y-%m-%d'),
+            Comment=f"Annual Maintenance Contract (AMC) for {context['domain_name']} ({context['currency']} {context['amount_formatted']} / {context['payment_frequency_lower']})"
+        )
+
+        return JsonResponse({
+            "status": "success",
+            "message": "Service Agreement saved to Project Documents successfully",
+            "ProjectDocumentId": doc.ProjectDocumentId,
+            "DocumentName": doc.DocumentName,
+            "DocumentUrl": doc.Document.url if doc.Document else f"/media/{relative_doc_path}",
+            "DocumentType": doc.DocumentType,
+            "IssuedOn": doc.IssuedOn,
+            "ExpiryDate": doc.ExpiryDate
+        }, safe=False)
+
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500, safe=False)
+
 

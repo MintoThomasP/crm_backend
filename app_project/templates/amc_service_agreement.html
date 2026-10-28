@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+@page {
+    size: letter;
+    margin-top: 135pt;
+    margin-bottom: 85pt;
+    margin-left: 54pt;
+    margin-right: 54pt;
+    @frame header_frame {
+        -pdf-frame-content: page_header;
+        left: 0pt; width: 612pt; top: 10pt; height: 120pt;
+    }
+    @frame footer_frame {
+        -pdf-frame-content: page_footer;
+        left: 0pt; width: 612pt; bottom: 5pt; height: 75pt;
+    }
+}
+
+body {
+    font-family: Helvetica, Arial, sans-serif;
+    font-size: 9.5pt;
+    line-height: 1.45;
+    color: #222222;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.title-main {
+    font-size: 16pt;
+    font-weight: bold;
+    text-align: center;
+    color: #0b1a2c;
+    letter-spacing: 0.5px;
+    margin: 0;
+    padding: 0;
+}
+
+.title-sub {
+    font-size: 15pt;
+    font-weight: bold;
+    text-align: center;
+    color: #0b1a2c;
+    margin-top: 2pt;
+    margin-bottom: 12pt;
+}
+
+.agreement-subtitle {
+    font-size: 10.5pt;
+    font-weight: bold;
+    color: #1a2a3a;
+    margin-bottom: 8pt;
+}
+
+.party-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 12pt;
+}
+
+.party-table th, .party-table td {
+    border: 0.75pt solid #d0d7de;
+    padding: 8pt 10pt;
+    vertical-align: top;
+    font-size: 9pt;
+}
+
+.party-table th {
+    background-color: #f6f8fa;
+    font-weight: bold;
+    color: #24292f;
+}
+
+.section-heading {
+    font-size: 11pt;
+    font-weight: bold;
+    color: #0b1a2c;
+    margin-top: 14pt;
+    margin-bottom: 6pt;
+    border-bottom: 0.5pt solid #eaecef;
+    padding-bottom: 2pt;
+}
+
+ul {
+    margin: 4pt 0 10pt 0;
+    padding-left: 18pt;
+}
+
+li {
+    margin-bottom: 6pt;
+    line-height: 1.4;
+}
+
+.sign-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15pt;
+}
+
+.sign-table td {
+    width: 250pt;
+    vertical-align: top;
+    padding: 6pt 10pt;
+}
+
+.sign-inner-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 6pt;
+}
+
+.sign-inner-table td {
+    padding: 0;
+    border: none;
+    vertical-align: middle;
+}
+
+.page-break {
+    page-break-after: always;
+}
+</style>
+</head>
+<body>
+
+<div id="page_header">
+    {% if header_image %}
+    <img src="{{ header_image }}" style="width: 612pt; height: 115pt;" />
+    {% endif %}
+</div>
+<div id="page_footer">
+    {% if footer_image %}
+    <img src="{{ footer_image }}" style="width: 612pt; height: 75pt;" />
+    {% endif %}
+</div>
+
+<!-- PAGE 1 -->
+<div class="title-main">ANNUAL MAINTENANCE CONTRACT (AMC)</div>
+<div class="title-sub">AGREEMENT</div>
+
+<div class="agreement-subtitle">Technical Maintenance &amp; Support Services Agreement for {{ domain_name }}</div>
+
+<p style="margin-bottom: 12pt;">
+    THIS AGREEMENT is made and entered into on this <b>{{ effective_date_formatted }}</b> (Effective Date), by and between:
+</p>
+
+<table class="party-table">
+    <tr>
+        <th style="width: 32%;">Party</th>
+        <th style="width: 68%;">Details</th>
+    </tr>
+    <tr>
+        <td class="bold">SERVICE PROVIDER</td>
+        <td>
+            <b>{{ service_provider_name }}</b><br/>
+            Address: {{ service_provider_address }}<br/>
+            {% if service_provider_cin %}CIN: {{ service_provider_cin }}<br/>{% endif %}
+            {% if service_provider_gstin %}GSTIN: {{ service_provider_gstin }}<br/>{% endif %}
+            <i>(Hereinafter referred to as the &quot;Service Provider&quot;)</i>
+        </td>
+    </tr>
+    <tr>
+        <td class="bold">CLIENT</td>
+        <td>
+            <b>{{ client_name }}</b>{% if domain_name %} ({{ domain_name }}){% endif %}<br/>
+            Address: {{ client_address }}<br/>
+            <i>(Hereinafter referred to as the &quot;Client&quot;)</i>
+        </td>
+    </tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- PAGE 2 -->
+<div class="section-heading">1. SCOPE OF SERVICES</div>
+{% if scope_of_services_html %}
+    {{ scope_of_services_html|safe }}
+{% else %}
+    <p>The Service Provider agrees to provide monthly technical maintenance and support services for the Client's website/platform <b>{{ domain_name }}</b>. The services include:</p>
+    <ul>
+        <li><b>Routine Maintenance &amp; Updates:</b> Regular updates to core application framework, dependencies, and plugins to ensure system stability.</li>
+        <li><b>Bug Fixes &amp; Technical Support:</b> Troubleshooting and resolving errors, bugs, and technical issues related to the platform functionality.</li>
+        <li><b>Server &amp; Hosting Monitoring:</b> Monitoring server performance, uptime, and database management.</li>
+        <li><b>Security &amp; Backups:</b> Regular database and file backups, security updates, and vulnerability patches.</li>
+        <li><b>Content / Minor UI Updates:</b> Minor updates to text, images, or configuration settings as requested by the Client.</li>
+    </ul>
+{% endif %}
+
+<div class="section-heading">2. FEES AND PAYMENT TERMS</div>
+{% if fees_payment_html %}
+    {{ fees_payment_html|safe }}
+{% else %}
+    <ul>
+        <li><b>{{ payment_frequency_title }} AMC Fee:</b> The Client agrees to pay the Service Provider a {{ payment_frequency_lower }} retainer fee of <b>{{ currency }} {{ amount_formatted }} per {{ payment_period_unit }}</b>.</li>
+        <li><b>Payment Schedule:</b> Payments shall be made in advance/on a {{ payment_frequency_lower }} basis on or before the agreed date of each calendar month.</li>
+        <li><b>Payment Mode:</b> Payment shall be remitted directly to the Service Provider's designated bank account via Direct Wire Transfer / Bank Transfer.</li>
+    </ul>
+{% endif %}
+
+<div class="section-heading">3. SERVICE LEVEL AGREEMENT (SLA) &amp; RESPONSE TIME</div>
+{% if sla_response_html %}
+    {{ sla_response_html|safe }}
+{% else %}
+    <ul>
+        <li><b>Support Hours:</b> Standard support hours are Monday to Friday.</li>
+        <li><b>Critical Issues (Downtime/Major Bug):</b> Response within 2–4 hours.</li>
+        <li><b>Non-Critical Updates/Fixes:</b> Response within 24–48 hours.</li>
+    </ul>
+{% endif %}
+
+<div class="page-break"></div>
+
+<!-- PAGE 3 -->
+<div class="section-heading">4. EXCLUSIONS FROM AMC</div>
+{% if exclusions_html %}
+    {{ exclusions_html|safe }}
+{% else %}
+    <p>The following services are not included under this routine AMC agreement and will be charged separately upon mutual agreement:</p>
+    <ul>
+        <li>Major feature additions or complete redesign/re-architecture of the system.</li>
+        <li>Third-party software/API costs, domain renewal, third-party hosting fees, or external plugin costs.</li>
+        <li>Issues caused by unauthorized third-party modifications to the source code.</li>
+    </ul>
+{% endif %}
+
+<div class="section-heading">5. CONFIDENTIALITY &amp; INTELLECTUAL PROPERTY</div>
+{% if confidentiality_html %}
+    {{ confidentiality_html|safe }}
+{% else %}
+    <ul>
+        <li>Both parties agree to keep all proprietary data, trade secrets, user information, and technical details confidential.</li>
+        <li>All custom code developed specifically for {{ domain_name }} shall remain/become the property of the Client upon full settlement of dues.</li>
+    </ul>
+{% endif %}
+
+<div class="section-heading">6. TERM AND TERMINATION</div>
+{% if term_termination_html %}
+    {{ term_termination_html|safe }}
+{% else %}
+    <ul>
+        <li><b>Duration:</b> This Agreement is valid for a period of {{ duration_text }} starting from {{ start_date_formatted }} to {{ end_date_formatted }}.</li>
+        <li><b>Termination for Convenience:</b> Either party may terminate this Agreement by giving a 30 days' written notice to the other party.</li>
+        <li><b>Immediate Termination:</b> Either party may terminate immediately if there is a material breach of terms or non-payment of agreed fees.</li>
+    </ul>
+{% endif %}
+
+<div class="section-heading">7. GOVERNING LAW &amp; JURISDICTION</div>
+{% if governing_law_p1_html %}
+    {{ governing_law_p1_html|safe }}
+{% else %}
+    <p>
+        This Agreement shall be governed by and construed in accordance with the laws of {{ governing_law_country }} for services delivered to the Client's operating entity, and the laws of India for technical development and operational activities conducted by the Service Provider. Any dispute,
+    </p>
+{% endif %}
+
+<div class="page-break"></div>
+
+<!-- PAGE 4 -->
+{% if governing_law_p2_html %}
+    {{ governing_law_p2_html|safe }}
+{% else %}
+    <p style="margin-top: 0;">
+        controversy, or claim arising out of or relating to this Agreement shall first be attempted to be resolved amicably through good-faith mutual negotiations. If unresolved through negotiation within 30 days, the parties agree that disputes may be referred to international arbitration or subject to the jurisdiction of the courts agreed upon by both parties.
+    </p>
+{% endif %}
+
+<p style="margin-top: 15pt;">
+    IN WITNESS WHEREOF, the parties hereto have executed this Agreement on the date first above written.
+</p>
+
+<table class="sign-table">
+    <tr>
+        <td>
+            <b>For Service Provider</b><br/>
+            <b>({{ service_provider_name }})</b><br/><br/>
+            Name: {{ service_provider_signatory_name }}<br/>
+            Designation: {{ service_provider_signatory_designation }}<br/>
+            
+            <table class="sign-inner-table">
+                <tr>
+                    <td style="width: 75pt;">
+                        {% if seal_image %}
+                        <img src="{{ seal_image }}" style="height: 58pt;" />
+                        {% endif %}
+                    </td>
+                    <td style="padding-left: 8pt;">
+                        {% if signature_image %}
+                        <img src="{{ signature_image }}" style="height: 35pt;" />
+                        {% endif %}
+                    </td>
+                </tr>
+            </table>
+
+            <div style="border-bottom: 0.75pt solid #333; width: 170pt; margin-top: 5pt;"></div>
+            <div style="font-size: 8.5pt; margin-top: 4pt;">Date: {{ execution_date }}</div>
+        </td>
+        <td>
+            <b>For Client</b><br/>
+            <b>({{ client_name }})</b><br/><br/>
+            Name: {{ client_signatory_name }}<br/>
+            Designation: {{ client_signatory_designation }}<br/>
+            <div style="height: 60pt; margin-top: 6pt;"></div>
+            <div style="border-bottom: 0.75pt solid #333; width: 170pt; margin-top: 5pt;"></div>
+            <div style="font-size: 8.5pt; margin-top: 4pt;">Date: {{ execution_date }}</div>
+        </td>
+    </tr>
+</table>
+
+</body>
+</html>

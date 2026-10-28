@@ -107,4 +107,9 @@ urlpatterns = [
         views.ProjectDocumentApiById),
     url(r'^ProjectDocuments/(?P<ProjectId>[0-9a-zA-Z\-]+)$',
         views.ProjectDocumentsByProjectId),
+
+    # AMC / Service Agreement
+    path('GetServiceAgreementInitialData/', views.GetServiceAgreementInitialData),
+    path('GenerateServiceAgreementPDF/', views.GenerateServiceAgreementPDF),
+    path('SaveServiceAgreementToProject/', views.SaveServiceAgreementToProject),
 ]
